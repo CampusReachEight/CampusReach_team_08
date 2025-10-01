@@ -17,8 +17,7 @@ on:
 jobs:
   project-ci:
     name: CI-Project
-    runs-on:
-      group: runners_v1   # Uses the project’s runner group
+    runs-on: [ubuntu-latest]
 
     env:
       app_name: ProjectDebug
