@@ -17,10 +17,11 @@ on:
 jobs:
   project-ci:
     name: CI-Project
-    runs-on: [ubuntu-latest]
+    runs-on: ubuntu-latest  # Fixed: removed array brackets
 
     env:
       app_name: ProjectDebug
+      base_folder: .  # Fixed: added missing base_folder environment variable
 
     defaults:
       run:
@@ -30,7 +31,7 @@ jobs:
       # Step 1: Checkout repository source code
       # Fetches the repo including all submodules. Full history is required (fetch-depth: 0).
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4  # Updated from v3 to v4 for ubuntu-24.04 compatibility
         with:
           submodules: recursive
           fetch-depth: 0
@@ -43,7 +44,7 @@ jobs:
       # Step 3: Setup JDK 17 (Temurin distribution)
       # Required for building Android projects.
       - name: Setup JDK
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4  # Updated from v3 to v4 for ubuntu-24.04 compatibility
         with:
           distribution: "temurin"
           java-version: "17"
@@ -51,7 +52,7 @@ jobs:
       # Step 4: Restore Gradle dependency cache
       # Saves time by reusing Gradle wrapper and dependency caches across builds.
       - name: Retrieve gradle cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4  # Updated from v3 to v4
         with:
           path: |
             ~/.gradle/caches
@@ -133,13 +134,22 @@ jobs:
             echo "Firebase emulators not configured, skipping emulator startup..."
           fi
 
-      # Step 13: Run instrumentation tests on an Android emulator
+      # Step 13: Enable KVM for hardware acceleration
+      # Required for Android emulator to run efficiently on Linux
+      - name: Enable KVM group perms
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      # Step 14: Run instrumentation tests on an Android emulator
+      # - Uses ReactiveCircus runner which handles SDK setup automatically
       # - Spins up an Android emulator (API 34, x86_64, Google APIs)
       # - Disables UI (no-window) and animations for faster CI execution
       # - Runs connectedCheck (integration/instrumentation tests)
       - name: Run instrumentation tests
         timeout-minutes: 25
-        uses: RandyLutcavich/android-emulator-runner-without-sdk-setup@v1.0.3
+        uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34
           target: google_apis
@@ -150,12 +160,12 @@ jobs:
           disable-animations: true
           script: ./gradlew connectedCheck --parallel --build-cache
 
-      # Step 14: Generate code coverage report
+      # Step 15: Generate code coverage report
       # Uses Jacoco to collect test coverage metrics.
       - name: Generate coverage
         run: ./gradlew jacocoTestReport
 
-      # Step 15: Upload coverage report as an artifact
+      # Step 16: Upload coverage report as an artifact
       # Stores results in GitHub Actions for later download/inspection.
       - name: Upload coverage
         uses: actions/upload-artifact@v4
