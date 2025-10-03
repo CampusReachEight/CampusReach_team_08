@@ -7,7 +7,6 @@ on:
   push:
     branches:
       - main
-      - feature/add-project-ci # Temporary: to test the workflow itself
   pull_request:
     types:
       - opened
@@ -67,7 +66,7 @@ jobs:
           if [ -n "$GOOGLE_SERVICES" ]; then
             echo "$GOOGLE_SERVICES" | base64 --decode > ./app/google-services.json
           else
-            echo "::warning::GOOGLE_SERVICES secret is not set. google-services.json will not be created. Should be present after B2"
+            echo "::warning::GOOGLE_SERVICES secret is not set. google-services.json will not be created."
           fi
 
       # Step 6: Ensure gradlew wrapper is executable
