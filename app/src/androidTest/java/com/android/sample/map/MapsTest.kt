@@ -9,17 +9,17 @@ import org.junit.Rule
 import org.junit.Test
 
 class MapsTest {
-    @get:Rule val composeTestRule = createComposeRule()
+  @get:Rule val composeTestRule = createComposeRule()
 
-    @Before
-    fun setUp() {
-        composeTestRule.setContent { MapScreen() }
-    }
+  @Before
+  fun setUp() {
+    composeTestRule.setContent { MapScreen() }
+  }
 
-    @Test
-    fun mapScreen_exist() {
-        composeTestRule
-            .onNodeWithTag(MapTestTags.GOOGLE_MAP_SCREEN, useUnmergedTree = true)
-            .assertExists()
-    }
+  @Test
+  fun mapScreen_exist() {
+    composeTestRule
+        .onNodeWithTag(MapTestTags.GOOGLE_MAP_SCREEN, useUnmergedTree = true)
+        .assertExists()
+  }
 }

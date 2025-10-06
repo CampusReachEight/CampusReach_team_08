@@ -20,50 +20,49 @@ import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
 
 object MapTestTags {
-    const val GOOGLE_MAP_SCREEN = "mapScreen"
+  const val GOOGLE_MAP_SCREEN = "mapScreen"
 }
-
 
 @Composable
 fun MapScreen(
     viewModel: MapViewModel = viewModel(),
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+  val uiState by viewModel.uiState.collectAsState()
 
-    val errorMsg = uiState.errorMsg
+  val errorMsg = uiState.errorMsg
 
-    val context = LocalContext.current
+  val context = LocalContext.current
 
-    LaunchedEffect(errorMsg) {
-        if (errorMsg != null) {
-            Toast.makeText(context, errorMsg, Toast.LENGTH_SHORT).show()
-            viewModel.clearErrorMsg()
-        }
+  LaunchedEffect(errorMsg) {
+    if (errorMsg != null) {
+      Toast.makeText(context, errorMsg, Toast.LENGTH_SHORT).show()
+      viewModel.clearErrorMsg()
     }
+  }
 
-    Scaffold(
-        bottomBar = {
-            //Add the bottomBar
-        },
-        topBar = {
-            //Add the topBar
-        },
-        content = { pd ->
-            val cameraPositionState = rememberCameraPositionState {
-                position = CameraPosition.fromLatLngZoom(uiState.target, 15f)
+  Scaffold(
+      bottomBar = {
+        // Add the bottomBar
+      },
+      topBar = {
+        // Add the topBar
+      },
+      content = { pd ->
+        val cameraPositionState = rememberCameraPositionState {
+          position = CameraPosition.fromLatLngZoom(uiState.target, 15f)
+        }
+        GoogleMap(
+            modifier = Modifier.fillMaxSize().padding(pd).testTag(MapTestTags.GOOGLE_MAP_SCREEN),
+            cameraPositionState = cameraPositionState) {
+              uiState.request.forEach { request ->
+                Marker(
+                    state =
+                        MarkerState(
+                            position =
+                                LatLng(request.location.latitude, request.location.longitude)),
+                    title = request.title,
+                    snippet = request.description)
+              }
             }
-            GoogleMap(
-                modifier =
-                    Modifier.fillMaxSize().padding(pd).testTag(MapTestTags.GOOGLE_MAP_SCREEN),
-                cameraPositionState = cameraPositionState) {
-                uiState.request.forEach { request ->
-                    Marker(
-                        state =
-                            MarkerState(
-                                position = LatLng(request.location.latitude, request.location.longitude)),
-                        title = request.title,
-                        snippet = request.description)
-                }
-            }
-        })
+      })
 }
