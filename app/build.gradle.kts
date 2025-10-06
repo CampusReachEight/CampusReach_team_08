@@ -116,6 +116,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
+
     // Jetpack Compose
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
@@ -126,23 +127,32 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
     // Navigation
     implementation(libs.androidx.navigation.compose)
+
     // Firebase
     implementation(platform("com.google.firebase:firebase-bom:32.8.0"))
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
+
     // Credential Manager (for Google Sign-In)
     implementation(libs.credentials)
     implementation(libs.credentials.play.services.auth)
     implementation(libs.googleid)
     implementation(libs.play.services.auth)
-    // Testing Unit
+
+    // Testing Unit (Robolectric tests in src/test/)
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
     testImplementation(libs.robolectric)
     testImplementation(libs.kotlinx.coroutines.test)
-    // Test UI
+    testImplementation(libs.androidx.ui.test.junit4)
+    testImplementation(libs.kaspresso)
+    testImplementation(libs.kaspresso.compose.support)
+    testImplementation(libs.json)                   
+
+    // Test UI (Instrumented tests in src/androidTest/)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.ui.test.junit4)
@@ -150,8 +160,13 @@ dependencies {
     androidTestImplementation(libs.mockk.agent)
     androidTestImplementation(libs.kaspresso)
     androidTestImplementation(libs.kaspresso.compose.support)
+    androidTestImplementation(libs.androidx.espresso.intents)
+    androidTestImplementation(libs.mockito.core)
+    androidTestImplementation(libs.mockito.kotlin)
+    androidTestImplementation(libs.mockito.android)
+    androidTestImplementation(libs.kaspresso.allure.support)
 
-    // Additional dependencies from the second file
+    // Additional dependencies
     implementation(libs.core.ktx)
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.fragment.ktx)
@@ -159,12 +174,6 @@ dependencies {
     implementation(libs.firebase.database.ktx)
     implementation(libs.firebase.auth.ktx)
     implementation(libs.okhttp)
-    testImplementation(libs.json)
-    androidTestImplementation(libs.androidx.espresso.intents)
-    androidTestImplementation(libs.mockito.core)
-    androidTestImplementation(libs.mockito.kotlin)
-    androidTestImplementation(libs.mockito.android)
-    androidTestImplementation(libs.kaspresso.allure.support)
 }
 tasks.withType<Test> {
     configure<JacocoTaskExtension> {
