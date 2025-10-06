@@ -51,9 +51,11 @@ import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.auth
 import kotlinx.coroutines.launch
 
-/** Test tags for UI testing purposes.
+/**
+ * Test tags for UI testing purposes.
+ *
  * @author Thibaud Babin
-  */
+ */
 object SignInScreenTestTags {
   const val APP_LOGO = "appLogo"
   const val LOGIN_TITLE = "loginTitle"
@@ -84,7 +86,9 @@ fun SignInScreen(
   val showLoading = remember { mutableStateOf(false) }
   val errorText = remember { mutableStateOf<String?>(null) }
 
-  /** Initiates the Google sign-in process.
+  /**
+   * Initiates the Google sign-in process.
+   *
    * @author Thibaud Babin
    */
   fun startGoogleLogin() {

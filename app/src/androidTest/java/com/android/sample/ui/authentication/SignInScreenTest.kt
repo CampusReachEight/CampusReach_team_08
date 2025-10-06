@@ -26,9 +26,9 @@ class SignInScreenTest {
     composeTestRule.onNodeWithTag(SignInScreenTestTags.APP_LOGO).assertIsDisplayed()
     composeTestRule.onNodeWithTag(SignInScreenTestTags.LOGIN_TITLE).assertIsDisplayed()
     composeTestRule
-      .onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON)
-      .assertIsDisplayed()
-      .assertIsEnabled()
+        .onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON)
+        .assertIsDisplayed()
+        .assertIsEnabled()
     composeTestRule.onNodeWithText("Se connecter avec Google").assertIsDisplayed()
   }
 
@@ -241,7 +241,7 @@ class SignInScreenTest {
   fun clientId_resourceExists() {
     val context = ApplicationProvider.getApplicationContext<Context>()
     val resourceId =
-      context.resources.getIdentifier("default_web_client_id", "string", context.packageName)
+        context.resources.getIdentifier("default_web_client_id", "string", context.packageName)
 
     assert(resourceId != 0) { "default_web_client_id resource should exist" }
   }

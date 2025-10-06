@@ -19,9 +19,7 @@ import io.mockk.mockkObject
 import kotlinx.coroutines.delay
 import org.json.JSONObject
 
-/**
- * Utility object for generating fake JWT tokens for testing authentication flows.
- */
+/** Utility object for generating fake JWT tokens for testing authentication flows. */
 object FakeJwtGenerator {
   private var _counter = 0
   private val counter
@@ -38,8 +36,8 @@ object FakeJwtGenerator {
   }
 
   /**
-   * Creates a fake Google ID token (JWT) with the provided name and email.
-   * The token is unsigned and suitable for use in emulator or test environments.
+   * Creates a fake Google ID token (JWT) with the provided name and email. The token is unsigned
+   * and suitable for use in emulator or test environments.
    *
    * @param name The user's display name.
    * @param email The user's email address.
@@ -48,12 +46,12 @@ object FakeJwtGenerator {
   fun createFakeGoogleIdToken(name: String, email: String): String {
     val header = JSONObject(mapOf("alg" to "none"))
     val payload =
-      JSONObject(
-        mapOf(
-          "sub" to counter.toString(),
-          "email" to email,
-          "name" to name,
-          "picture" to "http://example.com/avatar.png"))
+        JSONObject(
+            mapOf(
+                "sub" to counter.toString(),
+                "email" to email,
+                "name" to name,
+                "picture" to "http://example.com/avatar.png"))
 
     val headerEncoded = base64UrlEncode(header.toString().toByteArray())
     val payloadEncoded = base64UrlEncode(payload.toString().toByteArray())
@@ -66,16 +64,16 @@ object FakeJwtGenerator {
 }
 
 /**
- * Fake implementation and factory for [CredentialManager] used in authentication tests.
- * Provides various static methods to create mocked [CredentialManager] instances
- * with different behaviors for testing success and error scenarios.
+ * Fake implementation and factory for [CredentialManager] used in authentication tests. Provides
+ * various static methods to create mocked [CredentialManager] instances with different behaviors
+ * for testing success and error scenarios.
  */
 class FakeCredentialManager private constructor(private val context: Context) :
-  CredentialManager by CredentialManager.create(context) {
+    CredentialManager by CredentialManager.create(context) {
   companion object {
     /**
-     * Creates a mock [CredentialManager] that always returns a [CustomCredential]
-     * containing the given fakeUserIdToken when [getCredential] is called.
+     * Creates a mock [CredentialManager] that always returns a [CustomCredential] containing the
+     * given fakeUserIdToken when [getCredential] is called.
      *
      * @param fakeUserIdToken The fake ID token to return.
      * @return A mocked [CredentialManager] instance.
@@ -89,9 +87,9 @@ class FakeCredentialManager private constructor(private val context: Context) :
       val mockGetCredentialResponse = mockk<GetCredentialResponse>()
 
       val fakeCustomCredential =
-        CustomCredential(
-          type = TYPE_GOOGLE_ID_TOKEN_CREDENTIAL,
-          data = bundleOf("id_token" to fakeUserIdToken))
+          CustomCredential(
+              type = TYPE_GOOGLE_ID_TOKEN_CREDENTIAL,
+              data = bundleOf("id_token" to fakeUserIdToken))
 
       every { mockGetCredentialResponse.credential } returns fakeCustomCredential
       coEvery {
@@ -102,8 +100,8 @@ class FakeCredentialManager private constructor(private val context: Context) :
     }
 
     /**
-     * Creates a mock [CredentialManager] that throws [GetCredentialCancellationException]
-     * when [getCredential] is called, simulating user cancellation.
+     * Creates a mock [CredentialManager] that throws [GetCredentialCancellationException] when
+     * [getCredential] is called, simulating user cancellation.
      *
      * @return A mocked [CredentialManager] instance.
      */
@@ -117,8 +115,8 @@ class FakeCredentialManager private constructor(private val context: Context) :
     }
 
     /**
-     * Creates a mock [CredentialManager] that throws [NoCredentialException]
-     * when [getCredential] is called, simulating no credentials found.
+     * Creates a mock [CredentialManager] that throws [NoCredentialException] when [getCredential]
+     * is called, simulating no credentials found.
      *
      * @return A mocked [CredentialManager] instance.
      */
@@ -132,8 +130,8 @@ class FakeCredentialManager private constructor(private val context: Context) :
     }
 
     /**
-     * Creates a mock [CredentialManager] that throws [GetCredentialUnknownException]
-     * with a custom error message when [getCredential] is called.
+     * Creates a mock [CredentialManager] that throws [GetCredentialUnknownException] with a custom
+     * error message when [getCredential] is called.
      *
      * @param errorMessage The error message for the exception.
      * @return A mocked [CredentialManager] instance.
@@ -148,8 +146,8 @@ class FakeCredentialManager private constructor(private val context: Context) :
     }
 
     /**
-     * Creates a mock [CredentialManager] that delays for [delayMs] milliseconds
-     * and then throws [GetCredentialCancellationException], useful for testing loading states.
+     * Creates a mock [CredentialManager] that delays for [delayMs] milliseconds and then throws
+     * [GetCredentialCancellationException], useful for testing loading states.
      *
      * @param delayMs The delay in milliseconds before throwing the exception.
      * @return A mocked [CredentialManager] instance.
@@ -159,10 +157,10 @@ class FakeCredentialManager private constructor(private val context: Context) :
       coEvery {
         fakeCredentialManager.getCredential(any<Context>(), any<GetCredentialRequest>())
       } coAnswers
-              {
-                delay(delayMs)
-                throw GetCredentialCancellationException("timeout")
-              }
+          {
+            delay(delayMs)
+            throw GetCredentialCancellationException("timeout")
+          }
 
       return fakeCredentialManager
     }
