@@ -101,9 +101,9 @@ jacoco {
 }
 sonar {
     properties {
-        property("sonar.projectKey", "your_project_key")
-        property("sonar.projectName", "Android-Sample")
-        property("sonar.organization", "your_organization")
+        property("sonar.projectKey", "CampusReachEight_CampusReach_team_08")
+        property("sonar.projectName", "Campus Reach Team 08")
+        property("sonar.organization", "campusreacheight")
         property("sonar.host.url", "https://sonarcloud.io")
         property("sonar.junit.reportPaths", "${project.layout.buildDirectory.get()}/test-results/testDebugunitTest/")
         property("sonar.androidLint.reportPaths", "${project.layout.buildDirectory.get()}/reports/lint-results-debug.xml")
