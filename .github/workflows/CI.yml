@@ -61,7 +61,7 @@ jobs:
             ~/.gradle/wrapper
           key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
 
-      # Step 5: Load google-services.json and local.properties from the secrets
+      # Step 5: Load google-services.json from the secrets
       - name: Decode secrets
         env:
           GOOGLE_SERVICES: ${{ secrets.GOOGLE_SERVICES }}
@@ -185,3 +185,11 @@ jobs:
         with:
           name: Coverage report
           path: app/build/reports/jacoco/jacocoTestReport
+
+      # Step 18: Run SonarCloud analysis
+      # Analyzes code quality and uploads test coverage to SonarCloud
+      - name: SonarCloud analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: ./gradlew sonar -Dsonar.token=$SONAR_TOKEN
+
