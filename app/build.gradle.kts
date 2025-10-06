@@ -112,10 +112,14 @@ sonar {
 }
 dependencies {
     // Core
+    implementation(libs.core.ktx)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
+    implementation(libs.androidx.constraintlayout)
+    implementation(libs.androidx.fragment.ktx)
+    implementation(libs.kotlinx.serialization.json)
 
     // Jetpack Compose
     implementation(platform(libs.androidx.compose.bom))
@@ -125,22 +129,35 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.ui.tooling.preview)
+    implementation(libs.androidx.material.icons.extended)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
     // Navigation
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.navigation.fragment.ktx)
+    implementation(libs.androidx.navigation.ui.ktx)
+
+    // Google Service and Maps
+    implementation(libs.play.services.maps)
+    implementation(libs.maps.compose)
+    implementation(libs.maps.compose.utils)
+    implementation(libs.play.services.auth)
 
     // Firebase
     implementation(platform("com.google.firebase:firebase-bom:32.8.0"))
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
+    implementation(libs.firebase.database.ktx)
+    implementation(libs.firebase.auth.ktx)
 
     // Credential Manager (for Google Sign-In)
     implementation(libs.credentials)
     implementation(libs.credentials.play.services.auth)
     implementation(libs.googleid)
-    implementation(libs.play.services.auth)
+
+    // Networking with OkHttp
+    implementation(libs.okhttp)
 
     // Testing Unit (Robolectric tests in src/test/)
     testImplementation(libs.junit)
@@ -150,30 +167,26 @@ dependencies {
     testImplementation(libs.androidx.ui.test.junit4)
     testImplementation(libs.kaspresso)
     testImplementation(libs.kaspresso.compose.support)
-    testImplementation(libs.json)                   
+    testImplementation(libs.json)
+    testImplementation(libs.test.core.ktx)
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.mockito.kotlin)
 
     // Test UI (Instrumented tests in src/androidTest/)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.androidx.espresso.intents)
     androidTestImplementation(libs.androidx.ui.test.junit4)
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.mockk)
     androidTestImplementation(libs.mockk.android)
     androidTestImplementation(libs.mockk.agent)
     androidTestImplementation(libs.kaspresso)
     androidTestImplementation(libs.kaspresso.compose.support)
-    androidTestImplementation(libs.androidx.espresso.intents)
+    androidTestImplementation(libs.kaspresso.allure.support)
     androidTestImplementation(libs.mockito.core)
     androidTestImplementation(libs.mockito.kotlin)
     androidTestImplementation(libs.mockito.android)
-    androidTestImplementation(libs.kaspresso.allure.support)
-
-    // Additional dependencies
-    implementation(libs.core.ktx)
-    implementation(libs.androidx.constraintlayout)
-    implementation(libs.androidx.fragment.ktx)
-    implementation(libs.kotlinx.serialization.json)
-    implementation(libs.firebase.database.ktx)
-    implementation(libs.firebase.auth.ktx)
-    implementation(libs.okhttp)
 }
 tasks.withType<Test> {
     configure<JacocoTaskExtension> {
