@@ -51,8 +51,15 @@ jobs:
           distribution: "temurin"
           java-version: "17"
 
-      # Step 4: Restore Gradle dependency cache
+      # Step 4: Restore Gradle and SonarQube dependency cache
       # Saves time by reusing Gradle wrapper and dependency caches across builds.
+      - name: Cache SonarQube packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
       - name: Retrieve gradle cache
         uses: actions/cache@v4  # Updated from v3 to v4
         with:
@@ -191,5 +198,5 @@ jobs:
       - name: SonarCloud analysis
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: ./gradlew sonar -Dsonar.token=$SONAR_TOKEN
+        run: ./gradlew sonar --info
 
