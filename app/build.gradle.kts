@@ -1,3 +1,5 @@
+import org.gradle.kotlin.dsl.debug
+import org.gradle.kotlin.dsl.release
 import java.io.FileInputStream
 import java.util.Properties
 plugins {
@@ -32,9 +34,11 @@ android {
     }
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true  // Enable obfuscation
+            isShrinkResources = true // Removes unused resources (colors, strings, etc.)
             proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
             )
         }
         debug {
@@ -42,6 +46,7 @@ android {
             enableAndroidTestCoverage = true
         }
     }
+
     testCoverage {
         jacocoVersion = "0.8.11"
     }
