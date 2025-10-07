@@ -32,4 +32,27 @@ sealed class Screen(val route: String, val doesResetStack: Boolean = false) {
   }
 }
 
+open class NavigationActions(private val navController: NavHostController) {
+  open fun navigateTo(screen: Screen) {
+    if (screen.route == currentRoute()) {
+      return
+    }
 
+    if (screen.doesResetStack) {
+      navController.navigate(screen.route) {
+        popUpTo(Screen.Requests.route) { saveState = false }
+        launchSingleTop = true
+      }
+    } else {
+      navController.navigate(screen.route) { launchSingleTop = true }
+    }
+  }
+
+  open fun goBack() {
+    navController.popBackStack()
+  }
+
+  open fun currentRoute(): String {
+    return navController.currentBackStackEntry?.destination?.route ?: ""
+  }
+}
