@@ -2,6 +2,7 @@ package com.android.sample.model.profile
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import com.google.firebase.Timestamp
 import com.google.firebase.firestore.Blob
 import java.io.ByteArrayOutputStream
 import java.util.Date
@@ -31,6 +32,8 @@ const val MAX_PHOTO_SIZE_BYTES = 100 * 1024 // 100KB
  * - bio: String? (nullable user biography)
  * - username: String? (nullable if not set) - different from first/last name (e.g: "johndoe123",
  *   "tinyMike" etc.)
+ * - userData: <TBD> (an additional user-specific data sub-class containing preferences, settings,
+ *   favorites etc.)
  */
 data class UserProfile(
     val id: String,
@@ -41,8 +44,13 @@ data class UserProfile(
     val photo: Bitmap?, // Nullable Bitmap for user photo in case user hasn't set one
     val kudos: Int,
     val section: Section,
-    val arrivalDate: Date
+    val arrivalDate: Date,
 ) {
+
+  // Lowercase versions for case-insensitive search
+  val nameLowercase = name.lowercase()
+  val lastNameLowercase = lastName.lowercase()
+
   companion object {
     // Allows for deserialization from Firestore document data
     fun fromMap(data: Map<String, Any?>): UserProfile {
@@ -50,11 +58,12 @@ data class UserProfile(
           id = data["id"] as String,
           name = data["name"] as String,
           lastName = data["lastName"] as String,
-          email = data["email"] as String,
-          photo = bitmapFromBlob(data["photo"] as Blob),
-          kudos = (data["kudos"] as Int),
+          email = data["email"] as String?,
+          photo = bitmapFromBlob(data["photo"] as Blob?),
+          kudos = (data["kudos"] as Long).toInt(),
           section = Section.valueOf(data["section"] as String),
-          arrivalDate = (data["arrivalDate"] as Date))
+          arrivalDate = (data["arrivalDate"] as Timestamp).toDate(),
+      )
     }
 
     // Converts Firestore Blob to Bitmap, ensuring size constraints
@@ -109,7 +118,11 @@ data class UserProfile(
           "photo" to bitmapToBlob(photo),
           "kudos" to kudos,
           "section" to section.name,
-          "arrivalDate" to arrivalDate)
+          "arrivalDate" to arrivalDate,
+          // Used exclusively for search queries
+          "nameLowercase" to nameLowercase,
+          "lastNameLowercase" to lastNameLowercase,
+      )
 }
 
 enum class Section {
