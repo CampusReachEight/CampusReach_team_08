@@ -84,6 +84,21 @@ class NavigationTestNoUi : TestCase() {
     assertScreen(NavigationTestTags.MAP_SCREEN)
   }
 
+  @Test
+  fun canGoToProfile() {
+    navigateTo(Screen.Profile("user123"))
+    assertScreen(NavigationTestTags.PROFILE_SCREEN)
+  }
+
+  @Test
+  fun navigateToCurrentRouteDoesNothing() {
+    navigateTo(Screen.Requests)
+    assertScreen(NavigationTestTags.REQUESTS_SCREEN)
+
+    navigateTo(Screen.Requests)
+    assertScreen(NavigationTestTags.REQUESTS_SCREEN)
+  }
+
   // ========== Navigate to tabs at any time ==========
   @Test
   fun canNavigateToRequestsFromAnyScreen() {

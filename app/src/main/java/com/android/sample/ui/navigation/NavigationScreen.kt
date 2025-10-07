@@ -23,8 +23,6 @@ fun NavigationScreen(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
     navigationActions: NavigationActions = NavigationActions(navController),
-    context: Context = LocalContext.current,
-    credentialManager: CredentialManager = CredentialManager.create(context),
 ) {
 
   val startDestination = if (FirebaseAuth.getInstance().currentUser == null) "login" else "requests"
