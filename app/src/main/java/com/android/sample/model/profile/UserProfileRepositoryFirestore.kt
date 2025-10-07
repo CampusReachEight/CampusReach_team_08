@@ -111,6 +111,6 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
   override suspend fun searchUserProfiles(
       query: String,
       section: Section?,
-      resultsPerPage: Int,
+      resultsPerView: Int,
   ): Flow<UserProfile> = flowOf() // TODO: Implement search with Firestore queries and return Flow
 }
