@@ -19,7 +19,7 @@ import com.google.firebase.auth.FirebaseAuth
 fun NavigationScreen(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
-    navigationActions: NavigationActions = NavigationActions(navController),
+    //navigationActions: NavigationActions = NavigationActions(navController), // commented bcs of sonarcloud
 ) {
 
   val startDestination = if (FirebaseAuth.getInstance().currentUser == null) "login" else "requests"
@@ -86,6 +86,6 @@ fun NavigationScreen(
 }
 
 @Composable
-fun PlaceHolderScreen(text: String, modifier: Modifier = Modifier) {
+fun PlaceHolderScreen(text: String, modifier: Modifier) {
   Text(text = text, textAlign = TextAlign.Center, modifier = modifier.fillMaxSize().padding(20.dp))
 }
