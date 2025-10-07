@@ -59,6 +59,6 @@ interface UserProfileRepository {
   suspend fun searchUserProfiles(
       query: String,
       section: Section?,
-      resultsPerPage: Int = 20,
+      resultsPerView: Int = 20,
   ): Flow<UserProfile>
 }
