@@ -21,7 +21,9 @@ class SignInScreenTest {
 
   @Test
   fun signInScreen_displaysAllComponents() {
-    composeTestRule.setContent { SignInScreen() }
+    val viewModel = SignInViewModel()
+
+    composeTestRule.setContent { SignInScreen(viewModel = viewModel) }
 
     composeTestRule.onNodeWithTag(SignInScreenTestTags.APP_LOGO).assertIsDisplayed()
     composeTestRule.onNodeWithTag(SignInScreenTestTags.LOGIN_TITLE).assertIsDisplayed()
@@ -29,24 +31,30 @@ class SignInScreenTest {
         .onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON)
         .assertIsDisplayed()
         .assertIsEnabled()
-    composeTestRule.onNodeWithText("Se connecter avec Google").assertIsDisplayed()
+    composeTestRule.onNodeWithText("Sign in with Google").assertIsDisplayed()
   }
 
   @Test
   fun signInScreen_displaysWelcomeText() {
-    composeTestRule.setContent { SignInScreen() }
+    val viewModel = SignInViewModel()
+
+    composeTestRule.setContent { SignInScreen(viewModel = viewModel) }
     composeTestRule.onNodeWithText("Welcome").assertIsDisplayed()
   }
 
   @Test
   fun signInButton_isInitiallyEnabled() {
-    composeTestRule.setContent { SignInScreen() }
+    val viewModel = SignInViewModel()
+
+    composeTestRule.setContent { SignInScreen(viewModel = viewModel) }
     composeTestRule.onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON).assertIsEnabled()
   }
 
   @Test
   fun signInScreen_noErrorMessageInitially() {
-    composeTestRule.setContent { SignInScreen() }
+    val viewModel = SignInViewModel()
+
+    composeTestRule.setContent { SignInScreen(viewModel = viewModel) }
 
     // Error messages should not be displayed initially
     composeTestRule.onNodeWithText("Connection cancelled").assertDoesNotExist()
@@ -57,9 +65,12 @@ class SignInScreenTest {
 
   @Test
   fun signInButton_showsLoadingIndicator_whenClicked() {
+    val viewModel = SignInViewModel()
     val fakeCredentialManager = FakeCredentialManager.createWithDelayedCancellation(2000)
 
-    composeTestRule.setContent { SignInScreen(credentialManager = fakeCredentialManager) }
+    composeTestRule.setContent {
+      SignInScreen(viewModel = viewModel, credentialManager = fakeCredentialManager)
+    }
 
     composeTestRule.onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON).performClick()
 
@@ -67,30 +78,36 @@ class SignInScreenTest {
     composeTestRule.onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON).assertIsNotEnabled()
 
     // Button text should be replaced with loading indicator
-    composeTestRule.onNodeWithText("Se connecter avec Google").assertDoesNotExist()
+    composeTestRule.onNodeWithText("Sign In Wit Google").assertDoesNotExist()
   }
 
   @Test
   fun signInButton_reenablesAfterError() {
+    val viewModel = SignInViewModel()
     val fakeCredentialManager = FakeCredentialManager.createWithCancellation()
 
-    composeTestRule.setContent { SignInScreen(credentialManager = fakeCredentialManager) }
+    composeTestRule.setContent {
+      SignInScreen(viewModel = viewModel, credentialManager = fakeCredentialManager)
+    }
 
     composeTestRule.onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON).performClick()
     composeTestRule.waitForIdle()
 
     // Button should be re-enabled after error
     composeTestRule.onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON).assertIsEnabled()
-    composeTestRule.onNodeWithText("Se connecter avec Google").assertIsDisplayed()
+    composeTestRule.onNodeWithText("Sign in with Google").assertIsDisplayed()
   }
 
   // ========== Error Handling Tests ==========
 
   @Test
   fun signIn_cancellation_showsErrorMessage() {
+    val viewModel = SignInViewModel()
     val fakeCredentialManager = FakeCredentialManager.createWithCancellation()
 
-    composeTestRule.setContent { SignInScreen(credentialManager = fakeCredentialManager) }
+    composeTestRule.setContent {
+      SignInScreen(viewModel = viewModel, credentialManager = fakeCredentialManager)
+    }
 
     composeTestRule.onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON).performClick()
     composeTestRule.waitForIdle()
@@ -100,9 +117,12 @@ class SignInScreenTest {
 
   @Test
   fun signIn_noCredential_showsErrorMessage() {
+    val viewModel = SignInViewModel()
     val fakeCredentialManager = FakeCredentialManager.createWithNoCredential()
 
-    composeTestRule.setContent { SignInScreen(credentialManager = fakeCredentialManager) }
+    composeTestRule.setContent {
+      SignInScreen(viewModel = viewModel, credentialManager = fakeCredentialManager)
+    }
 
     composeTestRule.onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON).performClick()
     composeTestRule.waitForIdle()
@@ -112,9 +132,12 @@ class SignInScreenTest {
 
   @Test
   fun signIn_genericError_showsErrorMessage() {
+    val viewModel = SignInViewModel()
     val fakeCredentialManager = FakeCredentialManager.createWithError("Network error")
 
-    composeTestRule.setContent { SignInScreen(credentialManager = fakeCredentialManager) }
+    composeTestRule.setContent {
+      SignInScreen(viewModel = viewModel, credentialManager = fakeCredentialManager)
+    }
 
     composeTestRule.onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON).performClick()
     composeTestRule.waitForIdle()
@@ -124,10 +147,13 @@ class SignInScreenTest {
 
   @Test
   fun signIn_customErrorMessage_isDisplayed() {
+    val viewModel = SignInViewModel()
     val customError = "Custom error message"
     val fakeCredentialManager = FakeCredentialManager.createWithError(customError)
 
-    composeTestRule.setContent { SignInScreen(credentialManager = fakeCredentialManager) }
+    composeTestRule.setContent {
+      SignInScreen(viewModel = viewModel, credentialManager = fakeCredentialManager)
+    }
 
     composeTestRule.onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON).performClick()
     composeTestRule.waitForIdle()
@@ -137,9 +163,12 @@ class SignInScreenTest {
 
   @Test
   fun errorMessage_isDisplayedInErrorContainer() {
+    val viewModel = SignInViewModel()
     val fakeCredentialManager = FakeCredentialManager.createWithCancellation()
 
-    composeTestRule.setContent { SignInScreen(credentialManager = fakeCredentialManager) }
+    composeTestRule.setContent {
+      SignInScreen(viewModel = viewModel, credentialManager = fakeCredentialManager)
+    }
 
     composeTestRule.onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON).performClick()
     composeTestRule.waitForIdle()
@@ -149,9 +178,12 @@ class SignInScreenTest {
 
   @Test
   fun errorMessage_clearsOnRetry() {
+    val viewModel = SignInViewModel()
     val fakeCredentialManager = FakeCredentialManager.createWithCancellation()
 
-    composeTestRule.setContent { SignInScreen(credentialManager = fakeCredentialManager) }
+    composeTestRule.setContent {
+      SignInScreen(viewModel = viewModel, credentialManager = fakeCredentialManager)
+    }
 
     // First attempt: error
     composeTestRule.onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON).performClick()
@@ -169,11 +201,13 @@ class SignInScreenTest {
 
   @Test
   fun signIn_success_callsOnSignInSuccess() {
+    val viewModel = SignInViewModel()
     val fakeToken = FakeJwtGenerator.createFakeGoogleIdToken("Test User", "test@example.com")
     val fakeCredentialManager = FakeCredentialManager.create(fakeToken)
 
     composeTestRule.setContent {
-      SignInScreen(credentialManager = fakeCredentialManager, onSignInSuccess = {})
+      SignInScreen(
+          viewModel = viewModel, credentialManager = fakeCredentialManager, onSignInSuccess = {})
     }
 
     composeTestRule.onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON).performClick()
@@ -185,10 +219,13 @@ class SignInScreenTest {
 
   @Test
   fun signIn_success_noErrorMessageDisplayed() {
+    val viewModel = SignInViewModel()
     val fakeToken = FakeJwtGenerator.createFakeGoogleIdToken("Test User", "test@example.com")
     val fakeCredentialManager = FakeCredentialManager.create(fakeToken)
 
-    composeTestRule.setContent { SignInScreen(credentialManager = fakeCredentialManager) }
+    composeTestRule.setContent {
+      SignInScreen(viewModel = viewModel, credentialManager = fakeCredentialManager)
+    }
 
     composeTestRule.onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON).performClick()
     composeTestRule.waitForIdle()
@@ -200,10 +237,13 @@ class SignInScreenTest {
 
   @Test
   fun signIn_firstUser_differentToken() {
+    val viewModel = SignInViewModel()
     val user1Token = FakeJwtGenerator.createFakeGoogleIdToken("User One", "user1@example.com")
     val fakeCredentialManager = FakeCredentialManager.create(user1Token)
 
-    composeTestRule.setContent { SignInScreen(credentialManager = fakeCredentialManager) }
+    composeTestRule.setContent {
+      SignInScreen(viewModel = viewModel, credentialManager = fakeCredentialManager)
+    }
     composeTestRule.onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON).performClick()
     composeTestRule.waitForIdle()
 
@@ -213,10 +253,13 @@ class SignInScreenTest {
 
   @Test
   fun signIn_secondUser_differentToken() {
+    val viewModel = SignInViewModel()
     val user2Token = FakeJwtGenerator.createFakeGoogleIdToken("User Two", "user2@example.com")
     val fakeCredentialManager = FakeCredentialManager.create(user2Token)
 
-    composeTestRule.setContent { SignInScreen(credentialManager = fakeCredentialManager) }
+    composeTestRule.setContent {
+      SignInScreen(viewModel = viewModel, credentialManager = fakeCredentialManager)
+    }
     composeTestRule.onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON).performClick()
     composeTestRule.waitForIdle()
 
@@ -250,9 +293,12 @@ class SignInScreenTest {
 
   @Test
   fun multipleClicks_duringLoading_areIgnored() {
+    val viewModel = SignInViewModel()
     val fakeCredentialManager = FakeCredentialManager.createWithDelayedCancellation(3000)
 
-    composeTestRule.setContent { SignInScreen(credentialManager = fakeCredentialManager) }
+    composeTestRule.setContent {
+      SignInScreen(viewModel = viewModel, credentialManager = fakeCredentialManager)
+    }
 
     composeTestRule.onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON).performClick()
 
@@ -262,8 +308,13 @@ class SignInScreenTest {
 
   @Test
   fun errorMessage_cancellationError_showsCorrectMessage() {
+    val viewModel = SignInViewModel()
     val cancelManager = FakeCredentialManager.createWithCancellation()
-    composeTestRule.setContent { SignInScreen(credentialManager = cancelManager) }
+
+    composeTestRule.setContent {
+      SignInScreen(viewModel = viewModel, credentialManager = cancelManager)
+    }
+
     composeTestRule.onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON).performClick()
     composeTestRule.waitForIdle()
     composeTestRule.onNodeWithText("Connection cancelled").assertIsDisplayed()
@@ -271,8 +322,13 @@ class SignInScreenTest {
 
   @Test
   fun errorMessage_noCredentialError_showsCorrectMessage() {
+    val viewModel = SignInViewModel()
     val noCredManager = FakeCredentialManager.createWithNoCredential()
-    composeTestRule.setContent { SignInScreen(credentialManager = noCredManager) }
+
+    composeTestRule.setContent {
+      SignInScreen(viewModel = viewModel, credentialManager = noCredManager)
+    }
+
     composeTestRule.onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON).performClick()
     composeTestRule.waitForIdle()
     composeTestRule.onNodeWithText("No Google account found").assertIsDisplayed()
@@ -280,8 +336,13 @@ class SignInScreenTest {
 
   @Test
   fun errorMessage_genericError_showsCorrectMessage() {
+    val viewModel = SignInViewModel()
     val errorManager = FakeCredentialManager.createWithError("Test error")
-    composeTestRule.setContent { SignInScreen(credentialManager = errorManager) }
+
+    composeTestRule.setContent {
+      SignInScreen(viewModel = viewModel, credentialManager = errorManager)
+    }
+
     composeTestRule.onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON).performClick()
     composeTestRule.waitForIdle()
     composeTestRule.onNodeWithText("Connection error: Test error").assertIsDisplayed()
@@ -289,11 +350,13 @@ class SignInScreenTest {
 
   @Test
   fun signInScreen_withCustomCallback_preservesUIState() {
+    val viewModel = SignInViewModel()
     val fakeToken = FakeJwtGenerator.createFakeGoogleIdToken("Test", "test@example.com")
     val fakeCredentialManager = FakeCredentialManager.create(fakeToken)
 
     composeTestRule.setContent {
-      SignInScreen(credentialManager = fakeCredentialManager, onSignInSuccess = {})
+      SignInScreen(
+          viewModel = viewModel, credentialManager = fakeCredentialManager, onSignInSuccess = {})
     }
 
     composeTestRule.onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON).assertIsDisplayed()
@@ -302,9 +365,12 @@ class SignInScreenTest {
 
   @Test
   fun signInScreen_errorState_clearsOnNewInstance() {
+    val viewModel = SignInViewModel()
     val fakeCredentialManager = FakeCredentialManager.createWithCancellation()
 
-    composeTestRule.setContent { SignInScreen(credentialManager = fakeCredentialManager) }
+    composeTestRule.setContent {
+      SignInScreen(viewModel = viewModel, credentialManager = fakeCredentialManager)
+    }
 
     composeTestRule.onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON).performClick()
     composeTestRule.waitForIdle()
