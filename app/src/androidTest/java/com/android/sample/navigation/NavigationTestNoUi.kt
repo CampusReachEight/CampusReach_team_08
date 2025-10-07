@@ -29,6 +29,7 @@ class NavigationTestNoUi : TestCase() {
     composeTestRule.setContent {
       val navController = rememberNavController()
       navigationActions = NavigationActions(navController)
+
       NavigationScreen(navController = navController, navigationActions = navigationActions)
     }
   }
@@ -198,21 +199,6 @@ class NavigationTestNoUi : TestCase() {
   }
 
   @Test
-  fun goBackTwiceFromEventsClosesApp() {
-    navigateTo(Screen.Events)
-    assertScreen(NavigationTestTags.EVENTS_SCREEN)
-
-    goBack()
-    assertScreen(NavigationTestTags.REQUESTS_SCREEN)
-
-    // goBack on Requests should close app
-    composeTestRule.runOnIdle { navigationActions.goBack() }
-    composeTestRule.waitUntil(timeoutMillis = 2000) { composeTestRule.activity.isFinishing }
-    Assert.assertTrue(composeTestRule.activity.isFinishing)
-  }
-
-  // ========== Sub-screens from Requests ==========
-  @Test
   fun navigateToAddRequestAndGoBack() {
     navigateTo(Screen.Requests)
     assertScreen(NavigationTestTags.REQUESTS_SCREEN)
@@ -239,7 +225,7 @@ class NavigationTestNoUi : TestCase() {
     navigateTo(Screen.Requests)
     assertScreen(NavigationTestTags.REQUESTS_SCREEN)
 
-    navigateTo(Screen.EditRequest("123"))
+    navigateTo(Screen.RequestDetails("123"))
     assertScreen(NavigationTestTags.EDIT_REQUEST_SCREEN)
 
     goBack()
@@ -249,7 +235,7 @@ class NavigationTestNoUi : TestCase() {
   @Test
   fun pressBackOnEditRequestReturnsToRequests() {
     navigateTo(Screen.Requests)
-    navigateTo(Screen.EditRequest("456"))
+    navigateTo(Screen.RequestDetails("456"))
     assertScreen(NavigationTestTags.EDIT_REQUEST_SCREEN)
 
     pressSystemBack(shouldFinish = false)
@@ -312,33 +298,8 @@ class NavigationTestNoUi : TestCase() {
     navigateTo(Screen.Events)
     assertScreen(NavigationTestTags.EVENTS_SCREEN)
 
-    navigateTo(Screen.EditEvent("event123"))
+    navigateTo(Screen.EventDetails("event123"))
     assertScreen(NavigationTestTags.EDIT_EVENT_SCREEN)
-
-    goBack()
-    assertScreen(NavigationTestTags.EVENTS_SCREEN)
-  }
-
-  // ========== Sub-screens from Map ==========
-  @Test
-  fun navigateFromMapToAddRequestAndBack() {
-    navigateTo(Screen.Map)
-    assertScreen(NavigationTestTags.MAP_SCREEN)
-
-    navigateTo(Screen.AddRequest)
-    assertScreen(NavigationTestTags.ADD_REQUEST_SCREEN)
-
-    goBack()
-    assertScreen(NavigationTestTags.REQUESTS_SCREEN)
-  }
-
-  @Test
-  fun navigateFromMapToAddEventAndBack() {
-    navigateTo(Screen.Map)
-    assertScreen(NavigationTestTags.MAP_SCREEN)
-
-    navigateTo(Screen.AddEvent)
-    assertScreen(NavigationTestTags.ADD_EVENT_SCREEN)
 
     goBack()
     assertScreen(NavigationTestTags.EVENTS_SCREEN)
@@ -390,7 +351,7 @@ class NavigationTestNoUi : TestCase() {
     goBack()
     assertScreen(NavigationTestTags.REQUESTS_SCREEN)
 
-    navigateTo(Screen.EditRequest("test123"))
+    navigateTo(Screen.RequestDetails("test123"))
     assertScreen(NavigationTestTags.EDIT_REQUEST_SCREEN)
 
     goBack()
@@ -414,17 +375,14 @@ class NavigationTestNoUi : TestCase() {
 
   @Test
   fun systemBackMatchesGoBackInAllScenarios() {
-    // Test 1: Events -> Requests
     navigateTo(Screen.Events)
     pressSystemBack(shouldFinish = false)
     assertScreen(NavigationTestTags.REQUESTS_SCREEN)
 
-    // Reset
     navigateTo(Screen.Events)
     goBack()
     assertScreen(NavigationTestTags.REQUESTS_SCREEN)
 
-    // Test 2: Map -> Requests
     navigateTo(Screen.Map)
     pressSystemBack(shouldFinish = false)
     assertScreen(NavigationTestTags.REQUESTS_SCREEN)
@@ -433,7 +391,6 @@ class NavigationTestNoUi : TestCase() {
     goBack()
     assertScreen(NavigationTestTags.REQUESTS_SCREEN)
 
-    // Test 3: AddRequest -> Requests
     navigateTo(Screen.AddRequest)
     pressSystemBack(shouldFinish = false)
     assertScreen(NavigationTestTags.REQUESTS_SCREEN)

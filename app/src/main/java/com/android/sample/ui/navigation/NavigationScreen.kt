@@ -14,11 +14,10 @@ import androidx.credentials.CredentialManager
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navigation
+import com.google.firebase.auth.FirebaseAuth
 
-// TODO: implement login logic for starting destination
 @Composable
 fun NavigationScreen(
     modifier: Modifier = Modifier,
@@ -27,9 +26,12 @@ fun NavigationScreen(
     context: Context = LocalContext.current,
     credentialManager: CredentialManager = CredentialManager.create(context),
 ) {
+
+  val startDestination = if (FirebaseAuth.getInstance().currentUser == null) "login" else "requests"
+
   NavHost(
       navController = navController,
-      startDestination = "login",
+      startDestination = startDestination,
       modifier = modifier,
   ) {
     navigation(startDestination = Screen.Login.route, route = "login") {
@@ -47,8 +49,8 @@ fun NavigationScreen(
         PlaceHolderScreen(
             text = "Add Request Screen", Modifier.testTag(NavigationTestTags.ADD_REQUEST_SCREEN))
       }
-      composable(Screen.EditRequest.route) { navBackStackEntry ->
-        val requestId = navBackStackEntry.arguments?.getString(Screen.EditRequest.ARG_REQUEST_ID)
+      composable(Screen.RequestDetails.route) { navBackStackEntry ->
+        val requestId = navBackStackEntry.arguments?.getString(Screen.RequestDetails.ARG_REQUEST_ID)
         PlaceHolderScreen(
             text = "Edit Request Screen: $requestId",
             Modifier.testTag(NavigationTestTags.EDIT_REQUEST_SCREEN))
@@ -64,8 +66,8 @@ fun NavigationScreen(
         PlaceHolderScreen(
             text = "Add Event Screen", Modifier.testTag(NavigationTestTags.ADD_EVENT_SCREEN))
       }
-      composable(Screen.EditEvent.route) { navBackStackEntry ->
-        val eventId = navBackStackEntry.arguments?.getString(Screen.EditEvent.ARG_EVENT_ID)
+      composable(Screen.EventDetails.route) { navBackStackEntry ->
+        val eventId = navBackStackEntry.arguments?.getString(Screen.EventDetails.ARG_EVENT_ID)
         PlaceHolderScreen(
             text = "Edit Event Screen : $eventId",
             Modifier.testTag(NavigationTestTags.EDIT_EVENT_SCREEN))
@@ -73,9 +75,10 @@ fun NavigationScreen(
     }
 
     navigation(startDestination = Screen.Profile.route, route = "profile") {
-      composable(Screen.Profile.route) {
+      composable(Screen.Profile.route) { navBackStackEntry ->
+        val userId = navBackStackEntry.arguments?.getString(Screen.Profile.ARG_USER_ID)
         PlaceHolderScreen(
-            text = "Profile Screen", Modifier.testTag(NavigationTestTags.PROFILE_SCREEN))
+            text = "Profile Screen: $userId", Modifier.testTag(NavigationTestTags.PROFILE_SCREEN))
       }
     }
 

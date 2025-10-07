@@ -1,62 +1,116 @@
 package com.android.sample.ui.navigation
 
-import android.annotation.SuppressLint
 import androidx.navigation.NavHostController
 
-sealed class Screen(val route: String, val isTopLevel: Boolean = false) {
-  object Login : Screen(route = "login/main", isTopLevel = true)
+/**
+ * Class defining the different screens in the app
+ *
+ * Each screen has a route and a navigation type The navigation type defines how the screen is
+ * treated in the navigation stack, see [NavigationType]
+ */
+sealed class Screen(
+    val route: String,
+    val navigationType: NavigationType = NavigationType.SUB_SCREEN
+) {
+  object Login : Screen(route = "login/main", NavigationType.APP_ENTRY_POINT)
 
-  object Requests : Screen(route = "requests/main", isTopLevel = true)
+  object Requests : Screen(route = "requests/main", NavigationType.APP_ENTRY_POINT)
 
-  object Events : Screen(route = "events/main", isTopLevel = true)
+  object Events : Screen(route = "events/main", NavigationType.TAB)
 
-  object Map : Screen(route = "map/main", isTopLevel = true)
-
-  object Profile : Screen(route = "profile/main")
+  object Map : Screen(route = "map/main", NavigationType.TAB)
 
   object AddRequest : Screen(route = "requests/add")
 
   object AddEvent : Screen(route = "events/add")
 
-  data class EditRequest(val requestId: String) : Screen(route = "requests/edit/${requestId}") {
+  data class RequestDetails(val requestId: String) :
+      Screen(route = "requests/details/${requestId}") {
     companion object {
       const val ARG_REQUEST_ID = "requestId"
-      const val route = "requests/edit/{$ARG_REQUEST_ID}"
+      const val route = "requests/details/{$ARG_REQUEST_ID}"
     }
   }
 
-  data class EditEvent(val eventId: String) : Screen(route = "events/edit/${eventId}") {
+  data class EventDetails(val eventId: String) : Screen(route = "events/details/${eventId}") {
     companion object {
       const val ARG_EVENT_ID = "eventId"
-      const val route = "events/edit/{$ARG_EVENT_ID}"
+      const val route = "events/details/{$ARG_EVENT_ID}"
+    }
+  }
+
+  data class Profile(val userId: String) : Screen(route = "profile/main/${userId}") {
+    companion object {
+      const val ARG_USER_ID = "userId"
+      const val route = "profile/main/{$ARG_USER_ID}"
     }
   }
 }
 
+/**
+ * Defines how the screen is treated in the navigation stack
+ * - TAB: Bottom navigation tab, navigating to a tab clears the back stack, sets Requests as the
+ *   root, then adds the tab on top
+ * - APP_ENTRY_POINT: App entry point, navigating to an entry point clears the back stack and sets
+ *   the screen as the root
+ * - SUB_SCREEN: Regular screen, navigating to a sub screen adds it to the back stack (navigating to
+ *   a sub screen from a tab not associated with it will still put it on top of the stack without
+ *   clearing it)
+ */
+enum class NavigationType {
+  TAB,
+  APP_ENTRY_POINT,
+  SUB_SCREEN,
+}
+
+/**
+ * Class holding navigation actions this the main way to navigate between screens in the app
+ *
+ * @param navController NavHostController to be used for navigation actions
+ */
 open class NavigationActions(private val navController: NavHostController) {
 
   open fun navigateTo(screen: Screen) {
-    // Don't navigate if already on this screen
     if (currentRoute() == screen.route) {
       return
     }
 
-    if (screen is Screen.Requests || screen is Screen.Login) {
-      navController.navigate(screen.route) {
-        popUpTo(0) { inclusive = true }
-        launchSingleTop = true
+    when (screen.navigationType) {
+      NavigationType.TAB -> {
+        // Clear stack and set Requests as the root
+        navController.navigate(Screen.Requests.route) {
+          popUpTo(0) { inclusive = true }
+          restoreState = false
+          launchSingleTop = true
+        }
+
+        // Navigate to the tab
+        navController.navigate(screen.route) {
+          launchSingleTop = true
+          restoreState = false
+        }
       }
-    } else if (screen.isTopLevel) {
-      navController.navigate(screen.route) {
-        popUpTo(Screen.Requests.route) { inclusive = false }
-        launchSingleTop = true
+      NavigationType.APP_ENTRY_POINT -> {
+        navController.navigate(screen.route) {
+          popUpTo(0) { inclusive = true }
+          restoreState = false
+          launchSingleTop = true
+        }
       }
-    } else {
-      navController.navigate(screen.route)
+      NavigationType.SUB_SCREEN -> {
+        navController.navigate(screen.route) {
+          launchSingleTop = true
+          restoreState = false
+        }
+      }
     }
   }
 
-  @SuppressLint("RestrictedApi")
+  /**
+   * Navigate back to previous screen
+   *
+   * contrary to the system back button, this does not close the app
+   */
   open fun goBack() {
     navController.popBackStack()
   }
