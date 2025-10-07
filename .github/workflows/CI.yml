@@ -51,8 +51,15 @@ jobs:
           distribution: "temurin"
           java-version: "17"
 
-      # Step 4: Restore Gradle dependency cache
+      # Step 4: Restore Gradle and SonarQube dependency cache
       # Saves time by reusing Gradle wrapper and dependency caches across builds.
+      - name: Cache SonarQube packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
       - name: Retrieve gradle cache
         uses: actions/cache@v4  # Updated from v3 to v4
         with:
@@ -61,7 +68,7 @@ jobs:
             ~/.gradle/wrapper
           key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
 
-      # Step 5: Load google-services.json and local.properties from the secrets
+      # Step 5: Load google-services.json from the secrets
       - name: Decode secrets
         env:
           GOOGLE_SERVICES: ${{ secrets.GOOGLE_SERVICES }}
@@ -185,3 +192,11 @@ jobs:
         with:
           name: Coverage report
           path: app/build/reports/jacoco/jacocoTestReport
+
+      # Step 18: Run SonarCloud analysis
+      # Analyzes code quality and uploads test coverage to SonarCloud
+      - name: SonarCloud analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: ./gradlew sonar --info
+
