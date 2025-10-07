@@ -54,13 +54,14 @@ data class UserProfile(
   companion object {
     // Allows for deserialization from Firestore document data
     fun fromMap(data: Map<String, Any?>): UserProfile {
+      val blob = data["photo"] as Blob?
       return UserProfile(
           id = data["id"] as String,
           name = data["name"] as String,
           lastName = data["lastName"] as String,
           email = data["email"] as String?,
-          photo = bitmapFromBlob(data["photo"] as Blob?),
-          kudos = (data["kudos"] as Long).toInt(),
+          photo = bitmapFromBlob(blob),
+          kudos = (data["kudos"] as Number).toInt(),
           section = Section.valueOf(data["section"] as String),
           arrivalDate = (data["arrivalDate"] as Timestamp).toDate(),
       )
@@ -118,7 +119,7 @@ data class UserProfile(
           "photo" to bitmapToBlob(photo),
           "kudos" to kudos,
           "section" to section.name,
-          "arrivalDate" to arrivalDate,
+          "arrivalDate" to Timestamp(arrivalDate),
           // Used exclusively for search queries
           "nameLowercase" to nameLowercase,
           "lastNameLowercase" to lastNameLowercase,

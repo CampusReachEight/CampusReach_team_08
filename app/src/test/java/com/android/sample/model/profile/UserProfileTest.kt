@@ -2,6 +2,7 @@ package com.android.sample.model.profile
 
 import android.graphics.Bitmap
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.firebase.Timestamp
 import com.google.firebase.firestore.Blob
 import java.util.Date
 import org.junit.Assert.*
@@ -112,7 +113,7 @@ class UserProfileTest {
             "photo" to corruptBlob,
             "kudos" to 0,
             "section" to Section.OTHER.name,
-            "arrivalDate" to date)
+            "arrivalDate" to Timestamp(date))
 
     val reconstructed = UserProfile.fromMap(map)
     assertNull(reconstructed.photo)
