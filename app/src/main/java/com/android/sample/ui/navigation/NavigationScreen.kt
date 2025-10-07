@@ -19,7 +19,7 @@ import com.google.firebase.auth.FirebaseAuth
 fun NavigationScreen(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
-    //navigationActions: NavigationActions = NavigationActions(navController)
+    // navigationActions: NavigationActions = NavigationActions(navController)
 ) {
 
   val startDestination = if (FirebaseAuth.getInstance().currentUser == null) "login" else "requests"
