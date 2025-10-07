@@ -29,23 +29,23 @@ fun NavigationScreen(
 ) {
   NavHost(
       navController = navController,
-      startDestination = Screen.Login.route,
+      startDestination = "login",
       modifier = modifier,
   ) {
-    navigation(startDestination = Screen.Login.route, route = Screen.Login.route) {
+    navigation(startDestination = Screen.Login.route, route = "login") {
       composable(Screen.Login.route) {
         PlaceHolderScreen(text = "Login Screen", Modifier.testTag(NavigationTestTags.LOGIN_SCREEN))
       }
     }
 
-    navigation(startDestination = Screen.Requests.route, route = Screen.Requests.route) {
+    navigation(startDestination = Screen.Requests.route, route = "requests") {
       composable(Screen.Requests.route) {
         PlaceHolderScreen(
             text = "Requests Screen", Modifier.testTag(NavigationTestTags.REQUESTS_SCREEN))
       }
       composable(Screen.AddRequest.route) {
         PlaceHolderScreen(
-            text = "Add Request Screen", Modifier.testTag(NavigationTestTags.ADD_EVENT_SCREEN))
+            text = "Add Request Screen", Modifier.testTag(NavigationTestTags.ADD_REQUEST_SCREEN))
       }
       composable(Screen.EditRequest.route) { navBackStackEntry ->
         val requestId = navBackStackEntry.arguments?.getString(Screen.EditRequest.ARG_REQUEST_ID)
@@ -55,7 +55,7 @@ fun NavigationScreen(
       }
     }
 
-    navigation(startDestination = Screen.Events.route, route = Screen.Events.route) {
+    navigation(startDestination = Screen.Events.route, route = "events") {
       composable(Screen.Events.route) {
         PlaceHolderScreen(
             text = "Events Screen", Modifier.testTag(NavigationTestTags.EVENTS_SCREEN))
@@ -72,14 +72,14 @@ fun NavigationScreen(
       }
     }
 
-    navigation(startDestination = Screen.Profile.route, route = Screen.Profile.route) {
+    navigation(startDestination = Screen.Profile.route, route = "profile") {
       composable(Screen.Profile.route) {
         PlaceHolderScreen(
             text = "Profile Screen", Modifier.testTag(NavigationTestTags.PROFILE_SCREEN))
       }
     }
 
-    navigation(startDestination = Screen.Map.route, route = Screen.Map.route) {
+    navigation(startDestination = Screen.Map.route, route = "map") {
       composable(Screen.Map.route) {
         PlaceHolderScreen(text = "Map Screen", Modifier.testTag(NavigationTestTags.MAP_SCREEN))
       }
