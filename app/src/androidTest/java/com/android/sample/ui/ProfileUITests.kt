@@ -59,4 +59,19 @@ class ProfileUITests {
     composeTestRule.onNodeWithTag("profile_info_name").assertTextEquals("Alice Smith")
     composeTestRule.onNodeWithTag("profile_info_section").assertTextEquals("Physics")
   }
+
+  @Test
+  fun profileScreen_loadingState_showsLoadingIndicator() {
+    val loadingState = ProfileState.loading()
+    composeTestRule.setContent { ProfileScreen(viewModel = ProfileViewModel(loadingState)) }
+    composeTestRule.onNodeWithTag("profile_loading").assertIsDisplayed()
+  }
+
+  @Test
+  fun profileScreen_errorState_showsErrorMessage() {
+    val errorState = ProfileState.withError()
+    composeTestRule.setContent { ProfileScreen(viewModel = ProfileViewModel(errorState)) }
+    composeTestRule.onNodeWithTag("profile_error").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("profile_error").assertTextEquals("Failed to load profile data")
+  }
 }

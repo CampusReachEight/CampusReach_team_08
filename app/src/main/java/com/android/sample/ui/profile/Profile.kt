@@ -16,7 +16,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -28,16 +27,11 @@ object ProfileTestTags {
   const val PROFILE_STATS = "profile_stats"
   const val PROFILE_INFORMATION = "profile_information"
   const val PROFILE_ACTIONS = "profile_actions"
-  const val ACTION_LOGOUT_EXPANDED = "action_logout_expanded"
-  const val ACTION_ABOUT_COLLAPSED = "action_about_collapsed"
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileScreen(
-    viewModel: ProfileViewModel = viewModel(),
-    onBackClick: () -> Unit = {} // Will be implemented later
-) {
+fun ProfileScreen(viewModel: ProfileViewModel = viewModel(), onBackClick: () -> Unit = {}) {
   val state = viewModel.state.value
 
   Scaffold(
@@ -48,17 +42,30 @@ fun ProfileScreen(
               IconButton(onClick = onBackClick) { Icon(Icons.Default.ArrowBack, "Back") }
             })
       }) { padding ->
-        Column(
-            modifier =
-                Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState())) {
+        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+          if (state.isLoading) {
+            CircularProgressIndicator(
+                modifier = Modifier.align(Alignment.Center).testTag("profile_loading"))
+          } else {
+            Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+              if (state.errorMessage != null) {
+                Text(
+                    text = state.errorMessage,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.fillMaxWidth().padding(16.dp).testTag("profile_error"),
+                    textAlign = TextAlign.Center)
+                Spacer(modifier = Modifier.height(8.dp))
+              }
               ProfileHeader(state = state)
               Spacer(modifier = Modifier.height(16.dp))
               ProfileStats(state = state)
               Spacer(modifier = Modifier.height(16.dp))
               ProfileInformation(state = state)
               Spacer(modifier = Modifier.height(16.dp))
-              ProfileActions(state = state)
+              ProfileActions()
             }
+          }
+        }
       }
 }
 
@@ -173,7 +180,7 @@ fun ProfileInformation(state: ProfileState) {
 }
 
 @Composable
-fun ProfileActions(state: ProfileState) {
+fun ProfileActions() {
   Column(modifier = Modifier.padding(horizontal = 16.dp).testTag(ProfileTestTags.PROFILE_ACTIONS)) {
     Text(
         text = "Actions",
