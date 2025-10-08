@@ -3,7 +3,6 @@ package com.android.sample.model.profile
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
-import java.util.UUID
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.tasks.await
@@ -28,9 +27,17 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
   private val publicCollectionRef = db.collection(PUBLIC_PROFILES_PATH)
   private val privateCollectionRef = db.collection(PRIVATE_PROFILES_PATH)
 
-  // Near zero collision probability for user profile IDs
+  private fun notAuthenticated(): Unit = throw IllegalStateException("No authenticated user")
+
+  private fun notAuthorized(): Unit =
+      throw IllegalArgumentException("Can only modify the currently authenticated user's profile")
+
+  // Fix: Document ID should be the authenticated user's UID
   override fun getNewUid(): String {
-    return UUID.randomUUID().toString()
+    if (Firebase.auth.currentUser == null) {
+      notAuthenticated()
+    }
+    return Firebase.auth.currentUser!!.uid
   }
 
   // Retrieves all public user profiles
@@ -46,17 +53,16 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
     val collectionRef = if (userId == currentUserId) privateCollectionRef else publicCollectionRef
 
     return collectionRef.document(userId).get().await().data?.let { UserProfile.fromMap(it) }
-        ?: throw Exception("UserProfile with ID $userId not found")
+        ?: throw NoSuchElementException("UserProfile with ID $userId not found")
   }
 
   // Blurs email (and potentially other fields) for public profiles, keep full details in private
   // profile
   override suspend fun addUserProfile(userProfile: UserProfile) {
-    val currentUserId =
-        Firebase.auth.currentUser?.uid ?: throw IllegalStateException("No authenticated user")
+    val currentUserId = Firebase.auth.currentUser?.uid ?: notAuthenticated()
     if (userProfile.id != currentUserId) {
       // We assume profile is added post-authentication and user can only add their own profile
-      throw IllegalArgumentException("UserProfile ID must match the current user ID")
+      notAuthorized()
     }
 
     // Add to private collection with full details
@@ -71,10 +77,9 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
   }
 
   override suspend fun updateUserProfile(userId: String, updatedProfile: UserProfile) {
-    val currentUserId =
-        Firebase.auth.currentUser?.uid ?: throw IllegalStateException("No authenticated user")
+    val currentUserId = Firebase.auth.currentUser?.uid ?: notAuthenticated()
     if (userId != currentUserId || updatedProfile.id != currentUserId) {
-      throw IllegalArgumentException("Can only update the current user's profile")
+      notAuthorized()
     }
 
     // Update private profile with full details
@@ -89,10 +94,9 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
   }
 
   override suspend fun deleteUserProfile(userId: String) {
-    val currentUserId =
-        Firebase.auth.currentUser?.uid ?: throw IllegalStateException("No authenticated user")
+    val currentUserId = Firebase.auth.currentUser?.uid ?: notAuthenticated()
     if (userId != currentUserId) {
-      throw IllegalArgumentException("Can only delete the current user's profile")
+      notAuthorized()
     }
 
     // Delete from both collections
