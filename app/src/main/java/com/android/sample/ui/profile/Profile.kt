@@ -7,8 +7,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Person
@@ -94,12 +92,27 @@ fun ProfileHeader(state: ProfileState) {
               Text(
                   text = state.userName,
                   style = MaterialTheme.typography.headlineSmall,
-                  color = MaterialTheme.colorScheme.onPrimary)
+                  color = MaterialTheme.colorScheme.onPrimary,
+                  modifier = Modifier.testTag("profile_header_name"))
               Text(
                   text = state.userEmail,
                   style = MaterialTheme.typography.bodyMedium,
                   color = MaterialTheme.colorScheme.onPrimary)
             }
+      }
+}
+
+@Composable
+fun InfoRow(label: String, value: String) {
+  Row(
+      modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+      horizontalArrangement = Arrangement.SpaceBetween) {
+        Text(text = label, style = MaterialTheme.typography.bodyMedium)
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.testTag("profile_info_$label".replace(" ", "_").lowercase()))
       }
 }
 
@@ -160,19 +173,6 @@ fun ProfileInformation(state: ProfileState) {
 }
 
 @Composable
-fun InfoRow(label: String, value: String) {
-  Row(
-      modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-      horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(text = label, style = MaterialTheme.typography.bodyMedium)
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.primary)
-      }
-}
-
-@Composable
 fun ProfileActions(state: ProfileState) {
   Column(modifier = Modifier.padding(horizontal = 16.dp).testTag(ProfileTestTags.PROFILE_ACTIONS)) {
     Text(
@@ -183,14 +183,12 @@ fun ProfileActions(state: ProfileState) {
     ActionItem(
         icon = Icons.Default.Logout,
         title = "Log out",
-        subtitle = "Further secure your account for safety",
-        isExpanded = state.isLogoutExpanded)
+        subtitle = "Further secure your account for safety")
 
     ActionItem(
         icon = Icons.Default.Info,
         title = "About App",
-        subtitle = "Find out more about CampusReach",
-        isExpanded = state.isAboutAppExpanded)
+        subtitle = "Find out more about CampusReach")
   }
 }
 
@@ -198,8 +196,7 @@ fun ProfileActions(state: ProfileState) {
 fun ActionItem(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     title: String,
-    subtitle: String,
-    isExpanded: Boolean
+    subtitle: String
 ) {
   Column {
     Row(
@@ -212,17 +209,11 @@ fun ActionItem(
 
           Column(modifier = Modifier.weight(1f)) {
             Text(text = title, style = MaterialTheme.typography.bodyLarge)
-            if (isExpanded) {
-              Text(
-                  text = subtitle,
-                  style = MaterialTheme.typography.bodySmall,
-                  color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
-            }
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
           }
-
-          Icon(
-              imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-              contentDescription = null)
         }
     Divider()
   }

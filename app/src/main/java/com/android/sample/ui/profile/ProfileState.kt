@@ -2,9 +2,9 @@ package com.android.sample.ui.profile
 
 data class ProfileState(
     // Header section
-    val userName: String = "John Doe",
-    val userEmail: String = "john.doe@epfl.ch",
-    val profileId: String = "000000",
+    val userName: String = "",
+    val userEmail: String = "",
+    val profileId: String = "",
 
     // Stats cards
     val kudosReceived: Int = 0,
@@ -13,12 +13,8 @@ data class ProfileState(
     val following: Int = 0,
 
     // Information section
-    val arrivalDate: String = "01/01/2025",
+    val arrivalDate: String = "00/00/0000",
     val section: String = "None",
-
-    // Actions section (for expandable states)
-    val isLogoutExpanded: Boolean = false,
-    val isAboutAppExpanded: Boolean = false,
 
     // UI States
     val isLoading: Boolean = false,
@@ -27,7 +23,32 @@ data class ProfileState(
 
     // Profile picture (optional, if you add it later)
     val profilePictureUrl: String? = null
-)
+) {
+
+  companion object {
+    // Default empty state
+    fun empty() = ProfileState()
+
+    // Default state with mock data
+    fun default() =
+        ProfileState(
+            userName = "John Doe",
+            userEmail = "john.doe@example.com",
+            profileId = "123456",
+            kudosReceived = 10,
+            helpReceived = 5,
+            followers = 3,
+            following = 7,
+            arrivalDate = "01/09/2025",
+            section = "Computer Science")
+
+    // State with loading state
+    fun loading() = default().copy(isLoading = true)
+
+    // State with error
+    fun withError() = default().copy(errorMessage = "Failed to load profile data")
+  }
+}
 
 sealed class ProfileEvent {
   // Data loading
