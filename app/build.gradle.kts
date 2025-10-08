@@ -1,3 +1,5 @@
+import org.gradle.kotlin.dsl.debug
+import org.gradle.kotlin.dsl.release
 import java.io.FileInputStream
 import java.util.Properties
 plugins {
@@ -32,9 +34,11 @@ android {
     }
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true  // Enable obfuscation
+            isShrinkResources = true // Removes unused resources (colors, strings, etc.)
             proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
             )
         }
         debug {
@@ -42,6 +46,7 @@ android {
             enableAndroidTestCoverage = true
         }
     }
+
     testCoverage {
         jacocoVersion = "0.8.11"
     }
@@ -101,9 +106,9 @@ jacoco {
 }
 sonar {
     properties {
-        property("sonar.projectKey", "your_project_key")
-        property("sonar.projectName", "Android-Sample")
-        property("sonar.organization", "your_organization")
+        property("sonar.projectKey", "CampusReachEight_CampusReach_team_08")
+        property("sonar.projectName", "Campus Reach Team 08")
+        property("sonar.organization", "campusreacheight")
         property("sonar.host.url", "https://sonarcloud.io")
         property("sonar.junit.reportPaths", "${project.layout.buildDirectory.get()}/test-results/testDebugunitTest/")
         property("sonar.androidLint.reportPaths", "${project.layout.buildDirectory.get()}/reports/lint-results-debug.xml")
