@@ -1,9 +1,12 @@
 package com.android.sample.model.profile
 
+import android.util.Log
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.sample.utils.FirebaseEmulator
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.ktx.Firebase
 import java.util.Date
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.tasks.await
@@ -256,6 +259,9 @@ class UserProfileRepositoryFirestoreTest {
   @Test
   fun cannotPerformOperationsWhenNotAuthenticated() = runTest {
     FirebaseEmulator.signOut()
+
+    assertEquals(Firebase.auth.currentUser, null)
+
     val profile = testProfile1.copy(id = "some-user-id")
 
     try {
@@ -283,6 +289,33 @@ class UserProfileRepositoryFirestoreTest {
       repository.deleteUserProfile("some-user-id")
       fail("Expected IllegalStateException when deleting profile while not authenticated")
     } catch (e: IllegalStateException) {
+      Log.d("UserProfileRepoTest", "Caught expected exception: ${e.message}")
+    }
+  }
+
+  fun fullUserProfileLifecycle() = runTest {
+    // Add profile
+    val profile = testProfile1.copy(id = currentUserId)
+    repository.addUserProfile(profile)
+
+    // Retrieve and verify
+    var retrievedProfile = repository.getUserProfile(currentUserId)
+    assertEquals(profile, retrievedProfile)
+
+    // Update profile
+    val updatedProfile = profile.copy(name = "UpdatedName", lastName = "UpdatedLastName")
+    repository.updateUserProfile(currentUserId, updatedProfile)
+
+    // Retrieve and verify update
+    retrievedProfile = repository.getUserProfile(currentUserId)
+    assertEquals(updatedProfile, retrievedProfile)
+
+    // Delete profile
+    repository.deleteUserProfile(currentUserId)
+    try {
+      repository.getUserProfile(currentUserId)
+      fail("Expected NoSuchElementException when retrieving deleted profile")
+    } catch (e: NoSuchElementException) {
       // Expected exception
     }
   }
