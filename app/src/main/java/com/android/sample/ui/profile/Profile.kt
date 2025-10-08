@@ -17,11 +17,24 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTag
+
+
+object ProfileTestTags {
+    const val PROFILE_HEADER = "profile_header"
+    const val PROFILE_STATS = "profile_stats"
+    const val PROFILE_INFORMATION = "profile_information"
+    const val PROFILE_ACTIONS = "profile_actions"
+    const val ACTION_LOGOUT_EXPANDED = "action_logout_expanded"
+    const val ACTION_ABOUT_COLLAPSED = "action_about_collapsed"
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,7 +78,8 @@ fun ProfileHeader(state: ProfileState) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp),
+            .padding(horizontal = 16.dp)
+            .testTag(ProfileTestTags.PROFILE_HEADER ),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primary
         )
@@ -113,7 +127,8 @@ fun ProfileStats(state: ProfileState) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp),
+            .padding(horizontal = 16.dp)
+            .testTag(ProfileTestTags.PROFILE_STATS),
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
         StatCard(value = state.kudosReceived, label = "Kudos Received")
@@ -128,7 +143,9 @@ fun StatCard(value: Int, label: String) {
     Card(
         modifier = Modifier
             .width(80.dp)
-            .height(80.dp),
+            .height(80.dp)
+            //.semantics{ testTag = ProfileTestTags.PROFILE_STATS }
+        ,
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
         Column(
@@ -152,7 +169,9 @@ fun StatCard(value: Int, label: String) {
 
 @Composable
 fun ProfileInformation(state: ProfileState) {
-    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+    Column(modifier = Modifier
+        .padding(horizontal = 16.dp)
+        .testTag(ProfileTestTags.PROFILE_INFORMATION )) {
         Text(
             text = "Information",
             style = MaterialTheme.typography.titleMedium,
@@ -186,7 +205,9 @@ fun InfoRow(label: String, value: String) {
 
 @Composable
 fun ProfileActions(state: ProfileState) {
-    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+    Column(modifier = Modifier
+        .padding(horizontal = 16.dp)
+        .testTag(ProfileTestTags.PROFILE_ACTIONS)) {
         Text(
             text = "Actions",
             style = MaterialTheme.typography.titleMedium,
