@@ -4,6 +4,7 @@ import androidx.navigation.NavHostController
 
 /**
  * Class defining the different screens in the app
+ *
  * @param route Navigation route for the screen
  * @param navigationType Type of navigation for the screen, see [NavigationType]
  */
