@@ -1,11 +1,11 @@
 package com.android.sample
 
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.android.sample.screen.MainScreen
+import com.android.sample.ui.authentication.SignInScreenTestTags
 import com.kaspersky.kaspresso.testcases.api.testcase.TestCase
-import io.github.kakaocup.compose.node.element.ComposeScreen
-import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -22,13 +22,10 @@ class MainActivityTest : TestCase() {
 
   @Test
   fun test() = run {
-    step("Start Main Activity") {
-      ComposeScreen.onComposeScreen<MainScreen>(composeTestRule) {
-        simpleText {
-          assertIsDisplayed()
-          assertTextEquals("Hello Android!")
-        }
-      }
+    step("Main Activity launches and shows sign-in screen") {
+      composeTestRule.onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON).assertIsDisplayed()
+      composeTestRule.onNodeWithTag(SignInScreenTestTags.LOGIN_TITLE).assertIsDisplayed()
+      composeTestRule.onNodeWithTag(SignInScreenTestTags.APP_LOGO).assertIsDisplayed()
     }
   }
 }
