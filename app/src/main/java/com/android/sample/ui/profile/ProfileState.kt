@@ -1,4 +1,4 @@
-package com.android.sample.ui.Profile
+package com.android.sample.ui.profile
 
 data class ProfileState(
     // Header section
