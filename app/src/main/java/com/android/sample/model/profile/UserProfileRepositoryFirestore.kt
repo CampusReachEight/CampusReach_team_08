@@ -45,7 +45,7 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
     val collectionRef = if (userId == currentUserId) privateCollectionRef else publicCollectionRef
 
     return collectionRef.document(userId).get().await().data?.let { UserProfile.fromMap(it) }
-        ?: throw Exception("UserProfile with ID $userId not found")
+        ?: throw NoSuchElementException("UserProfile with ID $userId not found")
   }
 
   // Blurs email (and potentially other fields) for public profiles, keep full details in private

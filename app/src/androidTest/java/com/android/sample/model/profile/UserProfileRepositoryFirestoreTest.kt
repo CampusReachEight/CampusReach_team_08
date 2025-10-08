@@ -253,6 +253,53 @@ class UserProfileRepositoryFirestoreTest {
     }
   }
 
+  @Test
+  fun cannotPerformOperationsWhenNotAuthenticated() = runTest {
+    FirebaseEmulator.signOut()
+    val profile = testProfile1.copy(id = "some-user-id")
+
+    try {
+      repository.addUserProfile(profile)
+      fail("Expected IllegalStateException when adding profile while not authenticated")
+    } catch (e: IllegalStateException) {
+      // Expected exception
+    }
+
+    try {
+      repository.getUserProfile("some-user-id")
+      fail("Expected IllegalStateException when getting profile while not authenticated")
+    } catch (e: NoSuchElementException) {
+      // Expected exception
+    }
+
+    try {
+      repository.updateUserProfile("some-user-id", profile)
+      fail("Expected IllegalStateException when updating profile while not authenticated")
+    } catch (e: IllegalStateException) {
+      // Expected exception
+    }
+
+    try {
+      repository.deleteUserProfile("some-user-id")
+      fail("Expected IllegalStateException when deleting profile while not authenticated")
+    } catch (e: IllegalStateException) {
+      // Expected exception
+    }
+  }
+
+  @Test
+  fun unauthenticatedGetNewIdThrows() = runTest {
+    FirebaseEmulator.signOut()
+    try {
+      repository.getNewUid()
+      fail("Expected IllegalStateException when getting new ID unauthenticated")
+    } catch (e: IllegalStateException) {
+      // Expected exception
+    } finally {
+      FirebaseEmulator.signInTestUser()
+    }
+  }
+
   @Ignore("To re-add once implemented")
   @Test
   fun searchUserProfilesByName() = runTest {
