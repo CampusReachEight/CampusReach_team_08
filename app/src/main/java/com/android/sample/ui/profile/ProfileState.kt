@@ -30,16 +30,19 @@ data class ProfileState(
 )
 
 sealed class ProfileEvent {
-    // Data loading
-    data object LoadProfile : ProfileEvent()
+  // Data loading
+  data object LoadProfile : ProfileEvent()
 
-    // UI interactions
-    data object ToggleLogoutExpand : ProfileEvent()
-    data object ToggleAboutAppExpand : ProfileEvent()
-    data object ToggleEditMode : ProfileEvent()
+  // UI interactions
+  data object ToggleLogoutExpand : ProfileEvent()
 
-    // Data updates (if editable)
-    data class UpdateName(val newName: String) : ProfileEvent()
-    data class UpdateEmail(val newEmail: String) : ProfileEvent()
-    // Add other update events as needed
+  data object ToggleAboutAppExpand : ProfileEvent()
+
+  data object ToggleEditMode : ProfileEvent()
+
+  // Data updates (if editable)
+  data class UpdateName(val newName: String) : ProfileEvent()
+
+  data class UpdateEmail(val newEmail: String) : ProfileEvent()
+  // Add other update events as needed
 }
