@@ -4,9 +4,8 @@ import androidx.navigation.NavHostController
 
 /**
  * Class defining the different screens in the app
- *
- * Each screen has a route and a navigation type The navigation type defines how the screen is
- * treated in the navigation stack, see [NavigationType]
+ * @param route Navigation route for the screen
+ * @param navigationType Type of navigation for the screen, see [NavigationType]
  */
 sealed class Screen(
     val route: String,

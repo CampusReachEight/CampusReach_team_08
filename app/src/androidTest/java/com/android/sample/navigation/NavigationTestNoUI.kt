@@ -18,7 +18,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-class NavigationTestNoUi : TestCase() {
+class NavigationTestNoUI : TestCase() {
   @get:Rule val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
   lateinit var navigationActions: NavigationActions
@@ -30,7 +30,7 @@ class NavigationTestNoUi : TestCase() {
       val navController = rememberNavController()
       navigationActions = NavigationActions(navController)
 
-      NavigationScreen(navController = navController)
+      NavigationScreen(navController = navController, navigationActions = navigationActions)
     }
   }
 
