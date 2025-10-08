@@ -173,71 +173,67 @@ class MapsViewModelTest {
   @OptIn(ExperimentalCoroutinesApi::class)
   @Test
   fun baseRequestsIsGood() {
-      fakeRepository.setShouldThrowError(false)
-      viewModel = MapViewModel(fakeRepository)
-      composeTestRule.setContent { MapScreen(viewModel) }
+    fakeRepository.setShouldThrowError(false)
+    viewModel = MapViewModel(fakeRepository)
+    composeTestRule.setContent { MapScreen(viewModel) }
 
-      runTest {
-          viewModel.refreshUIState()
-          advanceUntilIdle()
+    runTest {
+      viewModel.refreshUIState()
+      advanceUntilIdle()
 
-          assertEquals(
-              LatLng(EPFL_LOCATION.latitude, EPFL_LOCATION.longitude),
-              viewModel.uiState.value.target
-          )
-      }
+      assertEquals(
+          LatLng(EPFL_LOCATION.latitude, EPFL_LOCATION.longitude), viewModel.uiState.value.target)
+    }
   }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    @Test
-    fun addRequestsIsGood() {
-        fakeRepository.setShouldThrowError(false)
-        viewModel = MapViewModel(fakeRepository)
-        composeTestRule.setContent { MapScreen(viewModel) }
-        runTest {
-            fakeRepository.addRequest(request1)
-            viewModel.refreshUIState()
-            advanceUntilIdle()
-            assertEquals(LatLng(10.0, 10.0), viewModel.uiState.value.target)
-            assertEquals(listOf(request1), viewModel.uiState.value.request)
-            fakeRepository.deleteRequest(request1.requestId)
-        }
-
+  @OptIn(ExperimentalCoroutinesApi::class)
+  @Test
+  fun addRequestsIsGood() {
+    fakeRepository.setShouldThrowError(false)
+    viewModel = MapViewModel(fakeRepository)
+    composeTestRule.setContent { MapScreen(viewModel) }
+    runTest {
+      fakeRepository.addRequest(request1)
+      viewModel.refreshUIState()
+      advanceUntilIdle()
+      assertEquals(LatLng(10.0, 10.0), viewModel.uiState.value.target)
+      assertEquals(listOf(request1), viewModel.uiState.value.request)
+      fakeRepository.deleteRequest(request1.requestId)
     }
+  }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    @Test
-    fun editRequestsIsGood() {
-        fakeRepository.setShouldThrowError(false)
-        viewModel = MapViewModel(fakeRepository)
-        composeTestRule.setContent { MapScreen(viewModel) }
-        runTest {
-            fakeRepository.addRequest(request1)
-            fakeRepository.updateRequest("1", request3)
-            viewModel.refreshUIState()
-            advanceUntilIdle()
-            assertEquals(LatLng(0.0, 50.0), viewModel.uiState.value.target)
-            assertEquals(listOf(request3), viewModel.uiState.value.request)
-            fakeRepository.deleteRequest(request3.requestId)
-        }
+  @OptIn(ExperimentalCoroutinesApi::class)
+  @Test
+  fun editRequestsIsGood() {
+    fakeRepository.setShouldThrowError(false)
+    viewModel = MapViewModel(fakeRepository)
+    composeTestRule.setContent { MapScreen(viewModel) }
+    runTest {
+      fakeRepository.addRequest(request1)
+      fakeRepository.updateRequest("1", request3)
+      viewModel.refreshUIState()
+      advanceUntilIdle()
+      assertEquals(LatLng(0.0, 50.0), viewModel.uiState.value.target)
+      assertEquals(listOf(request3), viewModel.uiState.value.request)
+      fakeRepository.deleteRequest(request3.requestId)
     }
+  }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    @Test
-    fun deleteRequestsIsGood() {
-        fakeRepository.setShouldThrowError(false)
-        viewModel = MapViewModel(fakeRepository)
-        composeTestRule.setContent { MapScreen(viewModel) }
-        runTest {
-            fakeRepository.addRequest(request3)
-            fakeRepository.addRequest(request2)
-            fakeRepository.deleteRequest("3")
-            viewModel.refreshUIState()
-            advanceUntilIdle()
-            assertEquals(LatLng(20.0, 20.0), viewModel.uiState.value.target)
-            assertEquals(listOf(request2), viewModel.uiState.value.request)
-            fakeRepository.deleteRequest(request2.requestId)
-        }
+  @OptIn(ExperimentalCoroutinesApi::class)
+  @Test
+  fun deleteRequestsIsGood() {
+    fakeRepository.setShouldThrowError(false)
+    viewModel = MapViewModel(fakeRepository)
+    composeTestRule.setContent { MapScreen(viewModel) }
+    runTest {
+      fakeRepository.addRequest(request3)
+      fakeRepository.addRequest(request2)
+      fakeRepository.deleteRequest("3")
+      viewModel.refreshUIState()
+      advanceUntilIdle()
+      assertEquals(LatLng(20.0, 20.0), viewModel.uiState.value.target)
+      assertEquals(listOf(request2), viewModel.uiState.value.request)
+      fakeRepository.deleteRequest(request2.requestId)
     }
-
+  }
 }
