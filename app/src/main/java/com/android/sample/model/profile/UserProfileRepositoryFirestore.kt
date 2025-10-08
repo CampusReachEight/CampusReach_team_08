@@ -3,7 +3,6 @@ package com.android.sample.model.profile
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
-import java.util.UUID
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.tasks.await
@@ -28,9 +27,9 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
   private val publicCollectionRef = db.collection(PUBLIC_PROFILES_PATH)
   private val privateCollectionRef = db.collection(PRIVATE_PROFILES_PATH)
 
-  // Near zero collision probability for user profile IDs
+  // Fix: Document ID should be the authenticated user's UID
   override fun getNewUid(): String {
-    return UUID.randomUUID().toString()
+    return Firebase.auth.currentUser?.uid ?: throw IllegalStateException("No authenticated user")
   }
 
   // Retrieves all public user profiles

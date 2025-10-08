@@ -87,12 +87,25 @@ class UserProfileRepositoryFirestoreTest {
   }
 
   private suspend fun clearTestCollections() {
-    val publicProfiles = db.collection(PUBLIC_PROFILES_PATH).get().await()
-    val privateProfiles = db.collection(PRIVATE_PROFILES_PATH).get().await()
+    val currentUserId = auth.currentUser?.uid ?: return
+
+    // Only delete the current user's documents
+    val publicDoc = db.collection(PUBLIC_PROFILES_PATH).document(currentUserId)
+    val privateDoc = db.collection(PRIVATE_PROFILES_PATH).document(currentUserId)
 
     val batch = db.batch()
-    publicProfiles.documents.forEach { batch.delete(it.reference) }
-    privateProfiles.documents.forEach { batch.delete(it.reference) }
+
+    // Check if documents exist before deleting
+    val publicSnapshot = publicDoc.get().await()
+    if (publicSnapshot.exists()) {
+      batch.delete(publicDoc)
+    }
+
+    val privateSnapshot = privateDoc.get().await()
+    if (privateSnapshot.exists()) {
+      batch.delete(privateDoc)
+    }
+
     batch.commit().await()
   }
 
@@ -100,16 +113,13 @@ class UserProfileRepositoryFirestoreTest {
     return db.collection(PUBLIC_PROFILES_PATH).get().await().size()
   }
 
-  private suspend fun getPrivateProfilesCount(): Int {
-    return db.collection(PRIVATE_PROFILES_PATH).get().await().size()
+  private suspend fun getPrivateProfilesCount(id: String = currentUserId): Int {
+    val doc = db.collection(PRIVATE_PROFILES_PATH).document(id).get().await()
+    return if (doc.exists()) 1 else 0
   }
 
   @Test
-  fun getNewUidReturnsUniqueIDs() = runTest {
-    val numberIDs = 100
-    val uids = (0 until numberIDs).map { repository.getNewUid() }.toSet()
-    assertEquals(numberIDs, uids.size)
-  }
+  fun getNewIdReturnsCorrectId() = runTest { assertEquals(currentUserId, repository.getNewUid()) }
 
   @Test
   fun canAddUserProfileToRepository() = runTest {
@@ -164,15 +174,19 @@ class UserProfileRepositoryFirestoreTest {
     val profile = testProfile1.copy(id = currentUserId)
     repository.addUserProfile(profile)
 
-    val otherUserProfile = testProfile2.copy(email = null)
-    db.collection(PUBLIC_PROFILES_PATH)
-        .document(otherUserProfile.id)
-        .set(otherUserProfile.toMap())
-        .await()
+    FirebaseEmulator.signOut()
+    FirebaseEmulator.signInTestUser("otheremail@mail.com", "password")
+    val otherUserId = auth.currentUser?.uid ?: throw IllegalStateException("No authenticated user")
+    val otherUserProfile = testProfile2.copy(id = otherUserId)
+    repository.addUserProfile(otherUserProfile)
 
-    val retrievedProfile = repository.getUserProfile(otherUserProfile.id)
-    assertNotNull(retrievedProfile)
-    assertEquals(otherUserProfile.id, retrievedProfile.id)
+    val retrievedProfile = repository.getUserProfile(currentUserId)
+    assertEquals(profile.id, retrievedProfile.id)
+    assertEquals(profile.name, retrievedProfile.name)
+    assertEquals(null, retrievedProfile.email) // Email should be blurred
+    assertNotEquals(profile.email, retrievedProfile.email)
+    FirebaseEmulator.signOut()
+    FirebaseEmulator.signInTestUser()
   }
 
   @Test
