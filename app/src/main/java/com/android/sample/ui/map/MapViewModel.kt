@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.sample.model.map.Location
 import com.android.sample.model.request.Request
+import com.android.sample.model.request.RequestRepository
 import com.google.android.gms.maps.model.LatLng
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -30,9 +31,7 @@ data class MapUIState(
  * It handles fetching requests, managing the target location, and exposing the MapUIState to the UI
  * as a StateFlow.
  */
-class MapViewModel(
-    // add the repository
-) : ViewModel() {
+class MapViewModel(private val requestRepository: RequestRepository? = null) : ViewModel() {
   companion object {
     private val EPFL_LOCATION = Location(46.5191, 6.5668, "EPFL")
   }
@@ -77,10 +76,18 @@ class MapViewModel(
       try {
         // Temporary: since there is no repository yet,
         // we set the list of requests to an empty list and the location to EPFL.
-        val loc = EPFL_LOCATION
-        _uiState.value = MapUIState(target = LatLng(loc.latitude, loc.longitude))
+        if (requestRepository == null) {
+          val loc = EPFL_LOCATION
+          _uiState.value = MapUIState(target = LatLng(loc.latitude, loc.longitude))
+          return@launch
+        }
+
+        val requests = requestRepository.getAllRequests()
+        val loc = requests.firstOrNull()?.location ?: EPFL_LOCATION
+        _uiState.value =
+            MapUIState(target = LatLng(loc.latitude, loc.longitude), request = requests)
       } catch (e: Exception) {
-        setErrorMsg("Failed to load todos: ${e.message}")
+        setErrorMsg("Failed to load requests: ${e.message}")
       }
     }
   }
