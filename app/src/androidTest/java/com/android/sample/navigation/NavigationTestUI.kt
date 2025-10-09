@@ -1,0 +1,68 @@
+package com.github.se.bootcamp.ui.navigation
+
+import androidx.activity.ComponentActivity
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
+import androidx.navigation.compose.rememberNavController
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.android.sample.ui.navigation.NavigationActions
+import com.android.sample.ui.navigation.NavigationScreen
+import com.android.sample.ui.navigation.NavigationTestTags
+import junit.framework.TestCase
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+
+
+@RunWith(AndroidJUnit4::class)
+class NavigationTestUI : TestCase() {
+  @get:Rule val composeTestRule = createAndroidComposeRule<ComponentActivity>()
+
+  lateinit var navigationActions: NavigationActions
+
+  @Before
+  override fun setUp() {
+    super.setUp()
+    composeTestRule.setContent {
+      val navController = rememberNavController()
+      navigationActions = NavigationActions(navController)
+
+      NavigationScreen(navController = navController, navigationActions = navigationActions)
+    }
+  }
+
+  @Test
+  fun testTagsAreCorrectlySet() {
+    composeTestRule.onNodeWithTag(NavigationTestTags.TOP_BAR_TITLE).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(NavigationTestTags.BOTTOM_NAVIGATION_MENU).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(NavigationTestTags.REQUEST_TAB).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(NavigationTestTags.MAP_TAB).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(NavigationTestTags.EVENT_TAB).assertIsDisplayed()
+  }
+
+  @Test
+  fun navigationBarIsDisplayedForOverview() {
+    composeTestRule.onNodeWithTag(NavigationTestTags.BOTTOM_NAVIGATION_MENU).assertIsDisplayed()
+  }
+
+  @Test
+  fun navigationBarIsDisplayedForMap() {
+    composeTestRule.onNodeWithTag(NavigationTestTags.MAP_TAB).performClick()
+    composeTestRule.onNodeWithTag(NavigationTestTags.BOTTOM_NAVIGATION_MENU).assertIsDisplayed()
+  }
+
+  @Test
+  fun tabsAreClickable() {
+    composeTestRule
+      .onNodeWithTag(NavigationTestTags.REQUEST_TAB)
+      .assertIsDisplayed()
+      .performClick()
+    composeTestRule.onNodeWithTag(NavigationTestTags.MAP_TAB).assertIsDisplayed().performClick()
+    composeTestRule.onNodeWithTag(NavigationTestTags.EVENT_TAB).assertIsDisplayed().performClick()
+
+  }
+}
