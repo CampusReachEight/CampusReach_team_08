@@ -6,7 +6,6 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.navigation.compose.rememberNavController
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.android.sample.ui.navigation.NavigationActions
 import com.android.sample.ui.navigation.NavigationScreen
 import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.navigation.Screen
@@ -21,14 +20,14 @@ import org.junit.runner.RunWith
 class NavigationTestNoUI : TestCase() {
   @get:Rule val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
-  lateinit var navigationActions: NavigationActions
+  lateinit var navigationActions: Screen.NavigationActions
 
   @Before
   public override fun setUp() {
     super.setUp()
     composeTestRule.setContent {
       val navController = rememberNavController()
-      navigationActions = NavigationActions(navController)
+      navigationActions = Screen.NavigationActions(navController)
 
       NavigationScreen(navController = navController, navigationActions = navigationActions)
     }
@@ -86,7 +85,7 @@ class NavigationTestNoUI : TestCase() {
 
   @Test
   fun canGoToProfile() {
-    navigateTo(Screen.Profile("user123"))
+    navigateTo(Screen.Profile)
     assertScreen(NavigationTestTags.PROFILE_SCREEN)
   }
 

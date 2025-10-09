@@ -23,6 +23,7 @@ import com.android.sample.ui.theme.BottomNavigationMenu
 import com.android.sample.ui.theme.Tab
 import com.google.firebase.auth.FirebaseAuth
 
+
 @Composable
 fun NavigationScreen(
     modifier: Modifier = Modifier,
