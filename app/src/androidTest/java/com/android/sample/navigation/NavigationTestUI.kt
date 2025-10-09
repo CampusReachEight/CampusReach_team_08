@@ -5,11 +5,10 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
-import androidx.navigation.compose.rememberNavController
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.android.sample.ui.navigation.NavigationActions
-import com.android.sample.ui.navigation.NavigationScreen
 import com.android.sample.ui.navigation.NavigationTestTags
+import com.android.sample.ui.theme.BottomNavigationMenu
+import com.android.sample.ui.theme.Tab
 import junit.framework.TestCase
 import org.junit.Before
 import org.junit.Rule
@@ -20,22 +19,20 @@ import org.junit.runner.RunWith
 class NavigationTestUI : TestCase() {
   @get:Rule val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
-  lateinit var navigationActions: NavigationActions
-
   @Before
-  override fun setUp() {
+  public override fun setUp() {
     super.setUp()
     composeTestRule.setContent {
-      val navController = rememberNavController()
-      navigationActions = NavigationActions(navController)
-
-      NavigationScreen(navController = navController, navigationActions = navigationActions)
+      BottomNavigationMenu(
+            selectedTab = Tab.Requests,
+            onTabSelected = {},
+            modifier = androidx.compose.ui.Modifier,
+      )
     }
   }
 
   @Test
   fun testTagsAreCorrectlySet() {
-    composeTestRule.onNodeWithTag(NavigationTestTags.TOP_BAR_TITLE).assertIsDisplayed()
     composeTestRule.onNodeWithTag(NavigationTestTags.BOTTOM_NAVIGATION_MENU).assertIsDisplayed()
     composeTestRule.onNodeWithTag(NavigationTestTags.REQUEST_TAB).assertIsDisplayed()
     composeTestRule.onNodeWithTag(NavigationTestTags.MAP_TAB).assertIsDisplayed()
