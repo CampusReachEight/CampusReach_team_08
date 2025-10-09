@@ -9,14 +9,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.Navigation
-import androidx.navigation.compose.rememberNavController
 import com.android.sample.ui.navigation.NavigationActions
 import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.navigation.Screen
@@ -47,10 +44,7 @@ fun calculateZoomLevel(markerCount: Int): Float {
 }
 
 @Composable
-fun MapScreen(
-    viewModel: MapViewModel = viewModel(),
-    navigationActions : NavigationActions? = null
-) {
+fun MapScreen(viewModel: MapViewModel = viewModel(), navigationActions: NavigationActions? = null) {
   val uiState by viewModel.uiState.collectAsState()
 
   val errorMsg = uiState.errorMsg
@@ -63,21 +57,29 @@ fun MapScreen(
       viewModel.clearErrorMsg()
     }
   }
-    LaunchedEffect(Unit) {
-        viewModel.refreshUIState()
-    }
+  LaunchedEffect(Unit) { viewModel.refreshUIState() }
 
   Scaffold(
       modifier = Modifier.testTag(NavigationTestTags.MAP_SCREEN),
       bottomBar = {
-          BottomNavigationMenu(selectedNavigationTab = NavigationTab.Map, onTabSelected = {
-              when(it) {
-                  NavigationTab.Requests -> {navigationActions?.navigateTo(Screen.Requests)}
-                  NavigationTab.Events -> {navigationActions?.navigateTo(Screen.Events)}
-                  NavigationTab.Map -> {navigationActions?.navigateTo(Screen.Map)}
-                NavigationTab.Profile -> {navigationActions?.navigateTo(Screen.Profile("TODO"))}
-              }}
-          )
+        BottomNavigationMenu(
+            selectedNavigationTab = NavigationTab.Map,
+            onTabSelected = {
+              when (it) {
+                NavigationTab.Requests -> {
+                  navigationActions?.navigateTo(Screen.Requests)
+                }
+                NavigationTab.Events -> {
+                  navigationActions?.navigateTo(Screen.Events)
+                }
+                NavigationTab.Map -> {
+                  navigationActions?.navigateTo(Screen.Map)
+                }
+                NavigationTab.Profile -> {
+                  navigationActions?.navigateTo(Screen.Profile("TODO"))
+                }
+              }
+            })
       },
       topBar = {
         // Add the topBar

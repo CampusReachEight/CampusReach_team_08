@@ -30,15 +30,11 @@ sealed class NavigationTab(val name: String, val icon: ImageVector, val destinat
 
   object Map : NavigationTab("Map", Icons.Outlined.Place, Screen.Map)
 
-    object Profile : NavigationTab("Profile", Icons.Outlined.AccountCircle, Screen.Profile("TODO"))
+  object Profile : NavigationTab("Profile", Icons.Outlined.AccountCircle, Screen.Profile("TODO"))
 }
 
-private val navigationTabs = listOf(
-    NavigationTab.Requests,
-    NavigationTab.Events,
-    NavigationTab.Map,
-    NavigationTab.Profile
-)
+private val navigationTabs =
+    listOf(NavigationTab.Requests, NavigationTab.Events, NavigationTab.Map, NavigationTab.Profile)
 
 @Composable
 fun BottomNavigationMenu(

@@ -1,15 +1,12 @@
 package com.android.sample.ui.navigation
 
-import android.R
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -38,24 +35,23 @@ fun NavigationScreen(
     navigationActions: NavigationActions = NavigationActions(navController)
 ) {
 
-    val user = FirebaseAuth.getInstance().currentUser
-    var isSignedIn by rememberSaveable { mutableStateOf(user != null) }
-    val startDestination = if (!isSignedIn) "login" else "requests"
+  val user = FirebaseAuth.getInstance().currentUser
+  var isSignedIn by rememberSaveable { mutableStateOf(user != null) }
+  val startDestination = if (!isSignedIn) "login" else "requests"
 
-    //ViewModels
-    val signInViewModel : SignInViewModel = SignInViewModel()
-    val profileViewModel : ProfileViewModel = ProfileViewModel()
-    val mapViewModel : MapViewModel = MapViewModel()
+  // ViewModels
+  val signInViewModel: SignInViewModel = SignInViewModel()
+  val profileViewModel: ProfileViewModel = ProfileViewModel()
+  val mapViewModel: MapViewModel = MapViewModel()
 
-
-    NavHost(
+  NavHost(
       navController = navController,
       startDestination = startDestination,
       modifier = modifier,
   ) {
     navigation(startDestination = Screen.Login.route, route = "login") {
       composable(Screen.Login.route) {
-          SignInScreen(viewModel = signInViewModel, onSignInSuccess = {isSignedIn = true})
+        SignInScreen(viewModel = signInViewModel, onSignInSuccess = { isSignedIn = true })
       }
     }
 
@@ -66,8 +62,7 @@ fun NavigationScreen(
             modifier = Modifier.testTag(NavigationTestTags.REQUESTS_SCREEN),
             withBottomBar = true,
             navigationActions = navigationActions,
-            defaultTab = NavigationTab.Requests
-        )
+            defaultTab = NavigationTab.Requests)
       }
       composable(Screen.AddRequest.route) {
         PlaceHolderScreen(
@@ -93,36 +88,33 @@ fun NavigationScreen(
             modifier = Modifier.testTag(NavigationTestTags.EVENTS_SCREEN),
             withBottomBar = true,
             navigationActions = navigationActions,
-            defaultTab = NavigationTab.Events
-        )
+            defaultTab = NavigationTab.Events)
       }
       composable(Screen.AddEvent.route) {
         PlaceHolderScreen(
             text = "Add Event Screen",
             modifier = Modifier.testTag(NavigationTestTags.ADD_EVENT_SCREEN),
-            withBottomBar = false
-        )
+            withBottomBar = false)
       }
       composable(Screen.EventDetails.route) { navBackStackEntry ->
         val eventId = navBackStackEntry.arguments?.getString(Screen.EventDetails.ARG_EVENT_ID)
         PlaceHolderScreen(
             text = "Edit Event Screen : $eventId",
             modifier = Modifier.testTag(NavigationTestTags.EDIT_EVENT_SCREEN),
-            withBottomBar = false
-        )
+            withBottomBar = false)
       }
     }
 
     navigation(startDestination = Screen.Profile.route, route = "profile") {
       composable(Screen.Profile.route) { navBackStackEntry ->
         val userId = navBackStackEntry.arguments?.getString(Screen.Profile.ARG_USER_ID)
-          ProfileScreen(viewModel = profileViewModel, onBackClick = {navigationActions.goBack()})
+        ProfileScreen(viewModel = profileViewModel, onBackClick = { navigationActions.goBack() })
       }
     }
 
     navigation(startDestination = Screen.Map.route, route = "map") {
       composable(Screen.Map.route) {
-          MapScreen(viewModel = mapViewModel, navigationActions = navigationActions)
+        MapScreen(viewModel = mapViewModel, navigationActions = navigationActions)
       }
     }
   }
@@ -131,32 +123,41 @@ fun NavigationScreen(
 @Composable
 fun PlaceHolderScreen(
     text: String,
-    withBottomBar : Boolean,
+    withBottomBar: Boolean,
     modifier: Modifier = Modifier,
     defaultTab: NavigationTab? = null,
-    navigationActions : NavigationActions? = null,
-    ) {
-    Scaffold(
-        modifier = modifier.fillMaxSize(),
-        bottomBar = {
-            if (!withBottomBar) {
-                return@Scaffold
-            }
-            defaultTab?.let {
-                BottomNavigationMenu(selectedNavigationTab = it, onTabSelected = {
-                    when(it) {
-                        NavigationTab.Requests -> {navigationActions?.navigateTo(Screen.Requests)}
-                        NavigationTab.Events -> {navigationActions?.navigateTo(Screen.Events)}
-                        NavigationTab.Map -> {navigationActions?.navigateTo(Screen.Map)}
-                        NavigationTab.Profile -> {navigationActions?.navigateTo(Screen.Profile("TODO"))}
-                    }}
-                )
-            }
+    navigationActions: NavigationActions? = null,
+) {
+  Scaffold(
+      modifier = modifier.fillMaxSize(),
+      bottomBar = {
+        if (!withBottomBar) {
+          return@Scaffold
         }
-    )
-    { padding ->
-        Text(text = text, textAlign = TextAlign.Center, modifier = Modifier
-            .fillMaxSize()
-            .padding(20.dp))
-    }
+        defaultTab?.let {
+          BottomNavigationMenu(
+              selectedNavigationTab = it,
+              onTabSelected = {
+                when (it) {
+                  NavigationTab.Requests -> {
+                    navigationActions?.navigateTo(Screen.Requests)
+                  }
+                  NavigationTab.Events -> {
+                    navigationActions?.navigateTo(Screen.Events)
+                  }
+                  NavigationTab.Map -> {
+                    navigationActions?.navigateTo(Screen.Map)
+                  }
+                  NavigationTab.Profile -> {
+                    navigationActions?.navigateTo(Screen.Profile("TODO"))
+                  }
+                }
+              })
+        }
+      }) { padding ->
+        Text(
+            text = text,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxSize().padding(20.dp))
+      }
 }
