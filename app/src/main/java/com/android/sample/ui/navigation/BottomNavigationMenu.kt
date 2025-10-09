@@ -30,9 +30,8 @@ sealed class Tab(val name: String, val icon: ImageVector, val destination: Scree
 
   object Map : Tab("Map", Icons.Outlined.Place, Screen.Map)
 
-    //added this:
-    object Profile : Tab("Profile", Icons.Outlined.Person, Screen.Profile)
-
+  // added this:
+  object Profile : Tab("Profile", Icons.Outlined.Person, Screen.Profile)
 }
 
 private val tabs = listOf(Tab.Requests, Tab.Events, Tab.Map, Tab.Profile)

@@ -21,10 +21,8 @@ sealed class Screen(
   object Map : Screen(route = "map/main", NavigationType.TAB)
 
   object AddRequest : Screen(route = "requests/add")
-  //added profile instead of data class
+  // added profile instead of data class
   object Profile : Screen(route = "profile/main", NavigationType.TAB)
-
-
 
   object AddEvent : Screen(route = "events/add")
 
@@ -43,83 +41,83 @@ sealed class Screen(
     }
   }
 
-  //removed this
-  //data class Profile(val userId: String) : Screen(route = "profile/main/${userId}") {
-    //companion object {
-      //const val ARG_USER_ID = "userId"
-      //const val route = "profile/main/{$ARG_USER_ID}"
-    //}
-  //}
-//}
+  // removed this
+  // data class Profile(val userId: String) : Screen(route = "profile/main/${userId}") {
+  // companion object {
+  // const val ARG_USER_ID = "userId"
+  // const val route = "profile/main/{$ARG_USER_ID}"
+  // }
+  // }
+  // }
 
-/**
- * Defines how the screen is treated in the navigation stack
- * - TAB: Bottom navigation tab, navigating to a tab clears the back stack, sets Requests as the
- *   root, then adds the tab on top
- * - APP_ENTRY_POINT: App entry point, navigating to an entry point clears the back stack and sets
- *   the screen as the root
- * - SUB_SCREEN: Regular screen, navigating to a sub screen adds it to the back stack (navigating to
- *   a sub screen from a tab not associated with it will still put it on top of the stack without
- *   clearing it)
- */
-enum class NavigationType {
-  TAB,
-  APP_ENTRY_POINT,
-  SUB_SCREEN,
-}
-
-/**
- * Class holding navigation actions this the main way to navigate between screens in the app
- *
- * @param navController NavHostController to be used for navigation actions
- */
-open class NavigationActions(private val navController: NavHostController) {
-
-  open fun navigateTo(screen: Screen) {
-    if (currentRoute() == screen.route) {
-      return
-    }
-
-    when (screen.navigationType) {
-      NavigationType.TAB -> {
-        // Clear stack and set Requests as the root
-        navController.navigate(Screen.Requests.route) {
-          popUpTo(0) { inclusive = true }
-          restoreState = false
-          launchSingleTop = true
-        }
-
-        // Navigate to the tab
-        navController.navigate(screen.route) {
-          launchSingleTop = true
-          restoreState = false
-        }
-      }
-      NavigationType.APP_ENTRY_POINT -> {
-        navController.navigate(screen.route) {
-          popUpTo(0) { inclusive = true }
-          restoreState = false
-          launchSingleTop = true
-        }
-      }
-      NavigationType.SUB_SCREEN -> {
-        navController.navigate(screen.route) {
-          launchSingleTop = true
-          restoreState = false
-        }
-      }
-    }
+  /**
+   * Defines how the screen is treated in the navigation stack
+   * - TAB: Bottom navigation tab, navigating to a tab clears the back stack, sets Requests as the
+   *   root, then adds the tab on top
+   * - APP_ENTRY_POINT: App entry point, navigating to an entry point clears the back stack and sets
+   *   the screen as the root
+   * - SUB_SCREEN: Regular screen, navigating to a sub screen adds it to the back stack (navigating
+   *   to a sub screen from a tab not associated with it will still put it on top of the stack
+   *   without clearing it)
+   */
+  enum class NavigationType {
+    TAB,
+    APP_ENTRY_POINT,
+    SUB_SCREEN,
   }
 
   /**
-   * Navigate back to previous screen
+   * Class holding navigation actions this the main way to navigate between screens in the app
    *
-   * contrary to the system back button, this does not close the app
+   * @param navController NavHostController to be used for navigation actions
    */
-  open fun goBack() {
-    navController.popBackStack()
-  }
+  open class NavigationActions(private val navController: NavHostController) {
 
-  open fun currentRoute(): String = navController.currentBackStackEntry?.destination?.route ?: ""
-}
+    open fun navigateTo(screen: Screen) {
+      if (currentRoute() == screen.route) {
+        return
+      }
+
+      when (screen.navigationType) {
+        NavigationType.TAB -> {
+          // Clear stack and set Requests as the root
+          navController.navigate(Screen.Requests.route) {
+            popUpTo(0) { inclusive = true }
+            restoreState = false
+            launchSingleTop = true
+          }
+
+          // Navigate to the tab
+          navController.navigate(screen.route) {
+            launchSingleTop = true
+            restoreState = false
+          }
+        }
+        NavigationType.APP_ENTRY_POINT -> {
+          navController.navigate(screen.route) {
+            popUpTo(0) { inclusive = true }
+            restoreState = false
+            launchSingleTop = true
+          }
+        }
+        NavigationType.SUB_SCREEN -> {
+          navController.navigate(screen.route) {
+            launchSingleTop = true
+            restoreState = false
+          }
+        }
+      }
+    }
+
+    /**
+     * Navigate back to previous screen
+     *
+     * contrary to the system back button, this does not close the app
+     */
+    open fun goBack() {
+      navController.popBackStack()
+    }
+
+    open fun currentRoute(): String = navController.currentBackStackEntry?.destination?.route ?: ""
+  }
 }
