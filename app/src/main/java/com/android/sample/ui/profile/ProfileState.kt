@@ -49,21 +49,3 @@ data class ProfileState(
     fun withError() = default().copy(errorMessage = "Failed to load profile data")
   }
 }
-
-sealed class ProfileEvent {
-  // Data loading
-  data object LoadProfile : ProfileEvent()
-
-  // UI interactions
-  data object ToggleLogoutExpand : ProfileEvent()
-
-  data object ToggleAboutAppExpand : ProfileEvent()
-
-  data object ToggleEditMode : ProfileEvent()
-
-  // Data updates (if editable)
-  data class UpdateName(val newName: String) : ProfileEvent()
-
-  data class UpdateEmail(val newEmail: String) : ProfileEvent()
-  // Add other update events as needed
-}

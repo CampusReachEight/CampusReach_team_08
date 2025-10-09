@@ -12,6 +12,8 @@ import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -29,10 +31,16 @@ object ProfileTestTags {
   const val PROFILE_ACTIONS = "profile_actions"
 }
 
+private val HorizontalPadding = 16.dp
+private val VerticalPadding = 8.dp
+private val CardElevation = 4.dp
+private val ProfilePictureSize = 80.dp
+private val IconSize = 40.dp
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(viewModel: ProfileViewModel = viewModel(), onBackClick: () -> Unit = {}) {
-  val state = viewModel.state.value
+  val state by viewModel.state.collectAsState()
 
   Scaffold(
       topBar = {
@@ -50,18 +58,19 @@ fun ProfileScreen(viewModel: ProfileViewModel = viewModel(), onBackClick: () -> 
             Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
               if (state.errorMessage != null) {
                 Text(
-                    text = state.errorMessage,
+                    text = state.errorMessage!!,
                     color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.fillMaxWidth().padding(16.dp).testTag("profile_error"),
+                    modifier =
+                        Modifier.fillMaxWidth().padding(HorizontalPadding).testTag("profile_error"),
                     textAlign = TextAlign.Center)
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(VerticalPadding))
               }
               ProfileHeader(state = state)
-              Spacer(modifier = Modifier.height(16.dp))
+              Spacer(modifier = Modifier.height(HorizontalPadding))
               ProfileStats(state = state)
-              Spacer(modifier = Modifier.height(16.dp))
+              Spacer(modifier = Modifier.height(HorizontalPadding))
               ProfileInformation(state = state)
-              Spacer(modifier = Modifier.height(16.dp))
+              Spacer(modifier = Modifier.height(HorizontalPadding))
               ProfileActions()
             }
           }
@@ -74,27 +83,27 @@ fun ProfileHeader(state: ProfileState) {
   Card(
       modifier =
           Modifier.fillMaxWidth()
-              .padding(horizontal = 16.dp)
+              .padding(horizontal = HorizontalPadding)
               .testTag(ProfileTestTags.PROFILE_HEADER),
       colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary)) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            modifier = Modifier.fillMaxWidth().padding(HorizontalPadding),
             horizontalAlignment = Alignment.CenterHorizontally) {
               // Profile picture placeholder
               Box(
                   modifier =
-                      Modifier.size(80.dp)
+                      Modifier.size(ProfilePictureSize)
                           .clip(CircleShape)
                           .background(MaterialTheme.colorScheme.primaryContainer),
                   contentAlignment = Alignment.Center) {
                     Icon(
                         Icons.Default.Person,
                         contentDescription = "Profile Picture",
-                        modifier = Modifier.size(40.dp),
+                        modifier = Modifier.size(IconSize),
                         tint = MaterialTheme.colorScheme.onPrimaryContainer)
                   }
 
-              Spacer(modifier = Modifier.height(8.dp))
+              Spacer(modifier = Modifier.height(VerticalPadding))
 
               Text(
                   text = state.userName,
@@ -112,7 +121,7 @@ fun ProfileHeader(state: ProfileState) {
 @Composable
 fun InfoRow(label: String, value: String) {
   Row(
-      modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+      modifier = Modifier.fillMaxWidth().padding(vertical = CardElevation),
       horizontalArrangement = Arrangement.SpaceBetween) {
         Text(text = label, style = MaterialTheme.typography.bodyMedium)
         Text(
@@ -128,7 +137,7 @@ fun ProfileStats(state: ProfileState) {
   Row(
       modifier =
           Modifier.fillMaxWidth()
-              .padding(horizontal = 16.dp)
+              .padding(horizontal = HorizontalPadding)
               .testTag(ProfileTestTags.PROFILE_STATS),
       horizontalArrangement = Arrangement.SpaceEvenly) {
         StatCard(value = state.kudosReceived, label = "Kudos Received")
@@ -141,10 +150,10 @@ fun ProfileStats(state: ProfileState) {
 @Composable
 fun StatCard(value: Int, label: String) {
   Card(
-      modifier = Modifier.width(80.dp).height(80.dp)
+      modifier = Modifier.width(ProfilePictureSize).height(ProfilePictureSize)
       // .semantics{ testTag = ProfileTestTags.PROFILE_STATS }
       ,
-      elevation = CardDefaults.cardElevation(4.dp)) {
+      elevation = CardDefaults.cardElevation(CardElevation)) {
         Column(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.Center,
@@ -165,11 +174,12 @@ fun StatCard(value: Int, label: String) {
 fun ProfileInformation(state: ProfileState) {
   Column(
       modifier =
-          Modifier.padding(horizontal = 16.dp).testTag(ProfileTestTags.PROFILE_INFORMATION)) {
+          Modifier.padding(horizontal = HorizontalPadding)
+              .testTag(ProfileTestTags.PROFILE_INFORMATION)) {
         Text(
             text = "Information",
             style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(bottom = 8.dp))
+            modifier = Modifier.padding(bottom = VerticalPadding))
 
         InfoRow(label = "Name", value = state.userName)
         InfoRow(label = "Profile Id", value = state.profileId)
@@ -181,22 +191,25 @@ fun ProfileInformation(state: ProfileState) {
 
 @Composable
 fun ProfileActions() {
-  Column(modifier = Modifier.padding(horizontal = 16.dp).testTag(ProfileTestTags.PROFILE_ACTIONS)) {
-    Text(
-        text = "Actions",
-        style = MaterialTheme.typography.titleMedium,
-        modifier = Modifier.padding(bottom = 8.dp))
+  Column(
+      modifier =
+          Modifier.padding(horizontal = HorizontalPadding)
+              .testTag(ProfileTestTags.PROFILE_ACTIONS)) {
+        Text(
+            text = "Actions",
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(bottom = VerticalPadding))
 
-    ActionItem(
-        icon = Icons.Default.Logout,
-        title = "Log out",
-        subtitle = "Further secure your account for safety")
+        ActionItem(
+            icon = Icons.Default.Logout,
+            title = "Log out",
+            subtitle = "Further secure your account for safety")
 
-    ActionItem(
-        icon = Icons.Default.Info,
-        title = "About App",
-        subtitle = "Find out more about CampusReach")
-  }
+        ActionItem(
+            icon = Icons.Default.Info,
+            title = "About App",
+            subtitle = "Find out more about CampusReach")
+      }
 }
 
 @Composable
@@ -207,12 +220,12 @@ fun ActionItem(
 ) {
   Column {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        modifier = Modifier.fillMaxWidth().padding(vertical = VerticalPadding),
         verticalAlignment = Alignment.CenterVertically) {
           Icon(
               imageVector = icon,
               contentDescription = null,
-              modifier = Modifier.padding(end = 16.dp))
+              modifier = Modifier.padding(end = HorizontalPadding))
 
           Column(modifier = Modifier.weight(1f)) {
             Text(text = title, style = MaterialTheme.typography.bodyLarge)
