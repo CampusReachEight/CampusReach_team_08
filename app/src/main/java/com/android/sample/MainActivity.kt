@@ -16,8 +16,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.compose.rememberNavController
 import com.android.sample.resources.C
 import com.android.sample.ui.authentication.SignInScreen
+import com.android.sample.ui.navigation.NavigationActions
+import com.android.sample.ui.navigation.NavigationScreen
 import com.android.sample.ui.theme.SampleAppTheme
 import com.google.firebase.auth.FirebaseAuth
 
@@ -36,14 +39,9 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun AppNavigation() {
-  val currentUser = FirebaseAuth.getInstance().currentUser
-  var isSignedIn by remember { mutableStateOf(currentUser != null) }
-
-  if (isSignedIn) {
-    Greeting("Android")
-  } else {
-    SignInScreen(onSignInSuccess = { isSignedIn = true })
-  }
+  val navController = rememberNavController()
+  val navigationActions = NavigationActions(navController = navController)
+  NavigationScreen(navigationActions = navigationActions, navController = navController, modifier = Modifier.fillMaxSize())
 }
 
 @Composable

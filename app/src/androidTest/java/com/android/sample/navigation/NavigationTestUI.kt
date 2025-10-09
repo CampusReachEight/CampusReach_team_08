@@ -8,7 +8,7 @@ import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.theme.BottomNavigationMenu
-import com.android.sample.ui.theme.Tab
+import com.android.sample.ui.theme.NavigationTab
 import junit.framework.TestCase
 import org.junit.Before
 import org.junit.Rule
@@ -24,7 +24,7 @@ class NavigationTestUI : TestCase() {
     super.setUp()
     composeTestRule.setContent {
       BottomNavigationMenu(
-          selectedTab = Tab.Requests,
+          selectedNavigationTab = NavigationTab.Requests,
           onTabSelected = {},
           modifier = androidx.compose.ui.Modifier,
       )
