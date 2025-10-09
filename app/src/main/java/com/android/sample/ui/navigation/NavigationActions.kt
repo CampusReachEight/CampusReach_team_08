@@ -21,6 +21,10 @@ sealed class Screen(
   object Map : Screen(route = "map/main", NavigationType.TAB)
 
   object AddRequest : Screen(route = "requests/add")
+  //added profile instead of data class
+  object Profile : Screen(route = "profile/main", NavigationType.TAB)
+
+
 
   object AddEvent : Screen(route = "events/add")
 
@@ -39,13 +43,14 @@ sealed class Screen(
     }
   }
 
-  data class Profile(val userId: String) : Screen(route = "profile/main/${userId}") {
-    companion object {
-      const val ARG_USER_ID = "userId"
-      const val route = "profile/main/{$ARG_USER_ID}"
-    }
-  }
-}
+  //removed this
+  //data class Profile(val userId: String) : Screen(route = "profile/main/${userId}") {
+    //companion object {
+      //const val ARG_USER_ID = "userId"
+      //const val route = "profile/main/{$ARG_USER_ID}"
+    //}
+  //}
+//}
 
 /**
  * Defines how the screen is treated in the navigation stack
@@ -116,4 +121,5 @@ open class NavigationActions(private val navController: NavHostController) {
   }
 
   open fun currentRoute(): String = navController.currentBackStackEntry?.destination?.route ?: ""
+}
 }

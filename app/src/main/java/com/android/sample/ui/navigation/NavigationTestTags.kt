@@ -27,5 +27,6 @@ object NavigationTestTags {
         is Tab.Map -> MAP_TAB
         is Tab.Events -> EVENT_TAB
         is Tab.Requests -> REQUEST_TAB
+          Tab.Profile -> PROFILE_BUTTON
       }
 }

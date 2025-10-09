@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Alarm
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material.icons.outlined.SyncAlt
 import androidx.compose.material3.Icon
@@ -28,9 +29,13 @@ sealed class Tab(val name: String, val icon: ImageVector, val destination: Scree
   object Events : Tab("Events", Icons.Outlined.Alarm, Screen.Events)
 
   object Map : Tab("Map", Icons.Outlined.Place, Screen.Map)
+
+    //added this:
+    object Profile : Tab("Profile", Icons.Outlined.Person, Screen.Profile)
+
 }
 
-private val tabs = listOf(Tab.Requests, Tab.Events, Tab.Map)
+private val tabs = listOf(Tab.Requests, Tab.Events, Tab.Map, Tab.Profile)
 
 @Composable
 fun BottomNavigationMenu(

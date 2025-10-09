@@ -18,6 +18,7 @@ import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import com.android.sample.resources.C
 import com.android.sample.ui.authentication.SignInScreen
+import com.android.sample.ui.navigation.NavigationScreen
 import com.android.sample.ui.theme.SampleAppTheme
 import com.google.firebase.auth.FirebaseAuth
 
@@ -27,32 +28,9 @@ class MainActivity : ComponentActivity() {
     setContent {
       SampleAppTheme {
         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-          AppNavigation()
+          NavigationScreen()
         }
       }
     }
   }
-}
-
-@Composable
-fun AppNavigation() {
-  val currentUser = FirebaseAuth.getInstance().currentUser
-  var isSignedIn by remember { mutableStateOf(currentUser != null) }
-
-  if (isSignedIn) {
-    Greeting("Android")
-  } else {
-    SignInScreen(onSignInSuccess = { isSignedIn = true })
-  }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-  Text(text = "Hello $name!", modifier = modifier.semantics { testTag = C.Tag.greeting })
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-  SampleAppTheme { Greeting("Android") }
 }
