@@ -5,7 +5,10 @@ import androidx.lifecycle.viewModelScope
 import com.android.sample.model.map.Location
 import com.android.sample.model.request.Request
 import com.android.sample.model.request.RequestRepository
+import com.android.sample.model.request.RequestRepositoryFirestore
 import com.google.android.gms.maps.model.LatLng
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -31,7 +34,10 @@ data class MapUIState(
  * It handles fetching requests, managing the target location, and exposing the MapUIState to the UI
  * as a StateFlow.
  */
-class MapViewModel(private val requestRepository: RequestRepository? = null) : ViewModel() {
+class MapViewModel(
+  private val requestRepository: RequestRepository =
+    RequestRepositoryFirestore(Firebase.firestore)
+) : ViewModel() {
   companion object {
     private val EPFL_LOCATION = Location(46.5191, 6.5668, "EPFL")
   }
@@ -40,12 +46,7 @@ class MapViewModel(private val requestRepository: RequestRepository? = null) : V
   val uiState: StateFlow<MapUIState> = _uiState.asStateFlow()
 
   init {
-    // Add Listener when it is implemented
-    // Firebase.auth.addAuthStateListener {
-    // if (it.currentUser != null) {
     fetchAcceptedRequest()
-    // }
-    // }
   }
 
   /**
@@ -74,18 +75,10 @@ class MapViewModel(private val requestRepository: RequestRepository? = null) : V
   private fun fetchAcceptedRequest() {
     viewModelScope.launch {
       try {
-        // Temporary: since there is no repository yet,
-        // we set the list of requests to an empty list and the location to EPFL.
-        if (requestRepository == null) {
-          val loc = EPFL_LOCATION
-          _uiState.value = MapUIState(target = LatLng(loc.latitude, loc.longitude))
-          return@launch
-        }
-
         val requests = requestRepository.getAllRequests()
         val loc = requests.firstOrNull()?.location ?: EPFL_LOCATION
         _uiState.value =
-            MapUIState(target = LatLng(loc.latitude, loc.longitude), request = requests)
+          MapUIState(target = LatLng(loc.latitude, loc.longitude), request = requests)
       } catch (e: Exception) {
         setErrorMsg("Failed to load requests: ${e.message}")
       }
