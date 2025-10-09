@@ -61,7 +61,7 @@ class MapsTest {
   @Test
   fun mapScreen_exist() {
     composeTestRule
-      .onNodeWithTag(MapTestTags.GOOGLE_MAP_SCREEN, useUnmergedTree = true)
-      .assertExists()
+        .onNodeWithTag(MapTestTags.GOOGLE_MAP_SCREEN, useUnmergedTree = true)
+        .assertExists()
   }
 }

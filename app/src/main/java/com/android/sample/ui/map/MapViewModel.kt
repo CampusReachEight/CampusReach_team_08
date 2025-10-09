@@ -35,8 +35,8 @@ data class MapUIState(
  * as a StateFlow.
  */
 class MapViewModel(
-  private val requestRepository: RequestRepository =
-    RequestRepositoryFirestore(Firebase.firestore)
+    private val requestRepository: RequestRepository =
+        RequestRepositoryFirestore(Firebase.firestore)
 ) : ViewModel() {
   companion object {
     private val EPFL_LOCATION = Location(46.5191, 6.5668, "EPFL")
@@ -78,7 +78,7 @@ class MapViewModel(
         val requests = requestRepository.getAllRequests()
         val loc = requests.firstOrNull()?.location ?: EPFL_LOCATION
         _uiState.value =
-          MapUIState(target = LatLng(loc.latitude, loc.longitude), request = requests)
+            MapUIState(target = LatLng(loc.latitude, loc.longitude), request = requests)
       } catch (e: Exception) {
         setErrorMsg("Failed to load requests: ${e.message}")
       }
