@@ -6,6 +6,7 @@ import com.android.sample.model.request.RequestRepository
 import com.android.sample.model.request.RequestStatus
 import com.android.sample.ui.map.MapViewModel
 import com.google.android.gms.maps.model.LatLng
+import java.util.Date
 import java.util.UUID
 import junit.framework.TestCase
 import kotlinx.coroutines.Dispatchers
@@ -52,8 +53,8 @@ class MapsViewModelTest {
           Location(0.0, 0.0, ""),
           "",
           RequestStatus.ARCHIVED,
-          0L,
-          0L,
+          Date(0L),
+          Date(0L),
           emptyList(),
           emptyList(),
           "")
@@ -91,8 +92,8 @@ class MapsViewModelTest {
           Location(10.0, 10.0, "test1"),
           "",
           RequestStatus.ARCHIVED,
-          0L,
-          0L,
+          Date(0L),
+          Date(0L),
           emptyList(),
           emptyList(),
           "")
@@ -105,8 +106,8 @@ class MapsViewModelTest {
           Location(20.0, 20.0, "test2"),
           "",
           RequestStatus.ARCHIVED,
-          0L,
-          0L,
+          Date(0L),
+          Date(0L),
           emptyList(),
           emptyList(),
           "")
@@ -119,8 +120,8 @@ class MapsViewModelTest {
           Location(0.0, 50.0, "test3"),
           "",
           RequestStatus.ARCHIVED,
-          0L,
-          0L,
+          Date(0L),
+          Date(0L),
           emptyList(),
           emptyList(),
           "")
