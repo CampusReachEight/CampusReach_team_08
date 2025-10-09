@@ -2,7 +2,6 @@ package com.github.se.bootcamp.ui.navigation
 
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -16,7 +15,6 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-
 
 @RunWith(AndroidJUnit4::class)
 class NavigationTestUI : TestCase() {
@@ -57,12 +55,8 @@ class NavigationTestUI : TestCase() {
 
   @Test
   fun tabsAreClickable() {
-    composeTestRule
-      .onNodeWithTag(NavigationTestTags.REQUEST_TAB)
-      .assertIsDisplayed()
-      .performClick()
+    composeTestRule.onNodeWithTag(NavigationTestTags.REQUEST_TAB).assertIsDisplayed().performClick()
     composeTestRule.onNodeWithTag(NavigationTestTags.MAP_TAB).assertIsDisplayed().performClick()
     composeTestRule.onNodeWithTag(NavigationTestTags.EVENT_TAB).assertIsDisplayed().performClick()
-
   }
 }

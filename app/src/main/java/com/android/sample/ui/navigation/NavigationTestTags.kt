@@ -23,9 +23,9 @@ object NavigationTestTags {
   const val PROFILE_BUTTON = "ProfileButton"
 
   fun getTabTestTag(tab: Tab): String =
-    when (tab) {
-      is Tab.Map -> MAP_TAB
-      is Tab.Events -> EVENT_TAB
-      is Tab.Requests -> REQUEST_TAB
-    }
+      when (tab) {
+        is Tab.Map -> MAP_TAB
+        is Tab.Events -> EVENT_TAB
+        is Tab.Requests -> REQUEST_TAB
+      }
 }
