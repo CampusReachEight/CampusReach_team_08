@@ -1,5 +1,7 @@
 package com.android.sample.ui.navigation
 
+import com.android.sample.ui.theme.Tab
+
 object NavigationTestTags {
   const val BOTTOM_NAVIGATION_MENU = "BottomNavigationMenu"
   const val GO_BACK_BUTTON = "GoBackButton"
@@ -19,4 +21,11 @@ object NavigationTestTags {
   const val EVENT_TAB = "EventTab"
   const val MAP_TAB = "MapTab"
   const val PROFILE_BUTTON = "ProfileButton"
+
+  fun getTabTestTag(tab: Tab): String =
+      when (tab) {
+        is Tab.Map -> MAP_TAB
+        is Tab.Events -> EVENT_TAB
+        is Tab.Requests -> REQUEST_TAB
+      }
 }
