@@ -64,22 +64,8 @@ fun MapScreen(viewModel: MapViewModel = viewModel(), navigationActions: Navigati
       bottomBar = {
         BottomNavigationMenu(
             selectedNavigationTab = NavigationTab.Map,
-            onTabSelected = {
-              when (it) {
-                NavigationTab.Requests -> {
-                  navigationActions?.navigateTo(Screen.Requests)
-                }
-                NavigationTab.Events -> {
-                  navigationActions?.navigateTo(Screen.Events)
-                }
-                NavigationTab.Map -> {
-                  navigationActions?.navigateTo(Screen.Map)
-                }
-                NavigationTab.Profile -> {
-                  navigationActions?.navigateTo(Screen.Profile("TODO"))
-                }
-              }
-            })
+            navigationActions = navigationActions
+        )
       },
       topBar = {
         // Add the topBar

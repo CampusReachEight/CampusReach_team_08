@@ -137,22 +137,8 @@ fun PlaceHolderScreen(
         defaultTab?.let {
           BottomNavigationMenu(
               selectedNavigationTab = it,
-              onTabSelected = {
-                when (it) {
-                  NavigationTab.Requests -> {
-                    navigationActions?.navigateTo(Screen.Requests)
-                  }
-                  NavigationTab.Events -> {
-                    navigationActions?.navigateTo(Screen.Events)
-                  }
-                  NavigationTab.Map -> {
-                    navigationActions?.navigateTo(Screen.Map)
-                  }
-                  NavigationTab.Profile -> {
-                    navigationActions?.navigateTo(Screen.Profile("TODO"))
-                  }
-                }
-              })
+              navigationActions = navigationActions
+          )
         }
       }) { padding ->
         Text(

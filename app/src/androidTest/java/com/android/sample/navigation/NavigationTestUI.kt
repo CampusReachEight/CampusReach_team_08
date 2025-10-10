@@ -25,7 +25,7 @@ class NavigationTestUI : TestCase() {
     composeTestRule.setContent {
       BottomNavigationMenu(
           selectedNavigationTab = NavigationTab.Requests,
-          onTabSelected = {},
+          navigationActions = null,
           modifier = androidx.compose.ui.Modifier,
       )
     }

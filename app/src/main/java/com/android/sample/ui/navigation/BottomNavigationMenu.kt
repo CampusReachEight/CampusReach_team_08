@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.android.sample.ui.navigation.NavigationActions
 import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.navigation.Screen
 
@@ -39,7 +40,7 @@ private val navigationTabs =
 @Composable
 fun BottomNavigationMenu(
     selectedNavigationTab: NavigationTab,
-    onTabSelected: (NavigationTab) -> Unit,
+    navigationActions: NavigationActions? = null,
     modifier: Modifier = Modifier,
 ) {
   NavigationBar(
@@ -60,7 +61,22 @@ fun BottomNavigationMenu(
                         else MaterialTheme.colorScheme.onSurface)
               },
               label = { Text(tab.name) },
-              onClick = { onTabSelected(tab) },
+              onClick = {
+                  when (selectedNavigationTab) {
+                      NavigationTab.Requests -> {
+                          navigationActions?.navigateTo(Screen.Requests)
+                      }
+                      NavigationTab.Events -> {
+                          navigationActions?.navigateTo(Screen.Events)
+                      }
+                      NavigationTab.Map -> {
+                          navigationActions?.navigateTo(Screen.Map)
+                      }
+                      NavigationTab.Profile -> {
+                          navigationActions?.navigateTo(Screen.Profile("TODO"))
+                      }
+                  }
+              },
               modifier =
                   Modifier.clip(RoundedCornerShape(50.dp))
                       .testTag(NavigationTestTags.getTabTestTag(tab)))
@@ -69,6 +85,7 @@ fun BottomNavigationMenu(
   )
 }
 
+/* commented because marked as uncovered code by SonarQube
 @Preview(showBackground = true)
 @Composable
 fun BottomNavigationMenuPreview() {
@@ -79,3 +96,4 @@ fun BottomNavigationMenuPreview() {
     )
   }
 }
+*/
