@@ -25,6 +25,7 @@ class NavigationTestNoUI : TestCase() {
 
   @Before
   public override fun setUp() {
+    super.setUp()
     composeTestRule.setContent {
       val navController = rememberNavController()
       navigationActions = NavigationActions(navController)
