@@ -18,7 +18,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.android.sample.ui.navigation.NavigationActions
 import com.android.sample.ui.navigation.NavigationTestTags
@@ -62,20 +61,20 @@ fun BottomNavigationMenu(
               },
               label = { Text(tab.name) },
               onClick = {
-                  when (tab) {
-                      NavigationTab.Requests -> {
-                          navigationActions?.navigateTo(Screen.Requests)
-                      }
-                      NavigationTab.Events -> {
-                          navigationActions?.navigateTo(Screen.Events)
-                      }
-                      NavigationTab.Map -> {
-                          navigationActions?.navigateTo(Screen.Map)
-                      }
-                      NavigationTab.Profile -> {
-                          navigationActions?.navigateTo(Screen.Profile("TODO"))
-                      }
+                when (tab) {
+                  NavigationTab.Requests -> {
+                    navigationActions?.navigateTo(Screen.Requests)
                   }
+                  NavigationTab.Events -> {
+                    navigationActions?.navigateTo(Screen.Events)
+                  }
+                  NavigationTab.Map -> {
+                    navigationActions?.navigateTo(Screen.Map)
+                  }
+                  NavigationTab.Profile -> {
+                    navigationActions?.navigateTo(Screen.Profile("TODO"))
+                  }
+                }
               },
               modifier =
                   Modifier.clip(RoundedCornerShape(50.dp))

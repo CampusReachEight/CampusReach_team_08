@@ -16,7 +16,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.ui.navigation.NavigationActions
 import com.android.sample.ui.navigation.NavigationTestTags
-import com.android.sample.ui.navigation.Screen
 import com.android.sample.ui.theme.BottomNavigationMenu
 import com.android.sample.ui.theme.NavigationTab
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -63,9 +62,7 @@ fun MapScreen(viewModel: MapViewModel = viewModel(), navigationActions: Navigati
       modifier = Modifier.testTag(NavigationTestTags.MAP_SCREEN),
       bottomBar = {
         BottomNavigationMenu(
-            selectedNavigationTab = NavigationTab.Map,
-            navigationActions = navigationActions
-        )
+            selectedNavigationTab = NavigationTab.Map, navigationActions = navigationActions)
       },
       topBar = {
         // Add the topBar

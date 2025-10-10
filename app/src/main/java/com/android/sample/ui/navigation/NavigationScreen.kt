@@ -135,10 +135,7 @@ fun PlaceHolderScreen(
           return@Scaffold
         }
         defaultTab?.let {
-          BottomNavigationMenu(
-              selectedNavigationTab = it,
-              navigationActions = navigationActions
-          )
+          BottomNavigationMenu(selectedNavigationTab = it, navigationActions = navigationActions)
         }
       }) { padding ->
         Text(

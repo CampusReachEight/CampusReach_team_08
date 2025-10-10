@@ -7,15 +7,12 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.navigation.compose.rememberNavController
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.android.sample.model.profile.PRIVATE_PROFILES_PATH
-import com.android.sample.model.profile.PUBLIC_PROFILES_PATH
 import com.android.sample.ui.navigation.NavigationActions
 import com.android.sample.ui.navigation.NavigationScreen
 import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.navigation.Screen
 import com.android.sample.utils.BaseEmulatorTest
 import com.android.sample.utils.FirebaseEmulator
-import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
@@ -50,7 +47,6 @@ class NavigationTests : BaseEmulatorTest() {
   override fun tearDown() {
     super.tearDown()
   }
-
 
   @Test
   fun initialScreenIsRequestsScreen() {
