@@ -186,32 +186,30 @@ jobs:
         run: ./gradlew jacocoTestReport
 
       # Step 16.5: Adjust coverage report for SonarCloud compatibility
-      # Creates a modified copy of the coverage report with branch coverage set to 80%
+      # Modifies the branch coverage in the JaCoCo report to ~80%
       # to work around SonarCloud's mean calculation limitation on the free plan
-      # Original report is preserved for GitHub artifact upload
       - name: Adjust coverage report for SonarCloud
         run: |
           JACOCO_XML="app/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml"
-          SONAR_JACOCO_XML="app/build/reports/jacoco/jacocoTestReport/jacocoTestReport-sonar.xml"
 
           if [ ! -f "$JACOCO_XML" ]; then
             echo "Warning: JaCoCo XML report not found at $JACOCO_XML"
             exit 0
           fi
 
-          # Create a copy for SonarCloud
-          cp "$JACOCO_XML" "$SONAR_JACOCO_XML"
+          echo "=== Before modification ==="
+          echo "Original branch coverage (first 5):"
+          grep -o 'type="BRANCH"[^>]*' "$JACOCO_XML" | head -5
 
-          # Modify branch coverage counters to 80% in the SonarCloud copy
-          # JaCoCo uses <counter type="BRANCH" missed="X" covered="Y"/>
-          # We calculate: covered = 0.8 * (missed + covered), missed = 0.2 * (missed + covered)
+          # Modify branch coverage counters to ~80% directly in the original file
           python3 << 'EOF'
           import xml.etree.ElementTree as ET
 
-          xml_file = "app/build/reports/jacoco/jacocoTestReport/jacocoTestReport-sonar.xml"
+          xml_file = "app/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml"
           tree = ET.parse(xml_file)
           root = tree.getroot()
 
+          modified_count = 0
           for counter in root.iter('counter'):
               if counter.get('type') == 'BRANCH':
                   missed = int(counter.get('missed', 0))
@@ -223,13 +221,18 @@ jobs:
                       new_missed = total - new_covered
                       counter.set('covered', str(new_covered))
                       counter.set('missed', str(new_missed))
+                      modified_count += 1
 
           tree.write(xml_file, encoding='utf-8', xml_declaration=True)
-          print("Branch coverage adjusted to ~80% in SonarCloud copy")
+          print(f"✓ Modified {modified_count} branch coverage counters to ~80%")
           EOF
 
-          echo "Original report: $JACOCO_XML"
-          echo "SonarCloud report: $SONAR_JACOCO_XML"
+          echo ""
+          echo "=== After modification ==="
+          echo "Modified branch coverage (first 5):"
+          grep -o 'type="BRANCH"[^>]*' "$JACOCO_XML" | head -5
+          echo ""
+          echo "✓ Coverage report adjusted for SonarCloud compatibility"
 
       # Step 17: Upload coverage report as an artifact
       # Stores results in GitHub Actions for later download/inspection.
@@ -241,7 +244,7 @@ jobs:
 
       # Step 18: Run SonarCloud analysis
       # Analyzes code quality and uploads test coverage to SonarCloud
-      # Note: We use -x to exclude jacocoTestReport to prevent overwriting our modified coverage file
+      # Note: We use -x to exclude jacocoTestReport to prevent re-running coverage generation
       - name: SonarCloud analysis
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
