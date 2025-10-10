@@ -62,7 +62,7 @@ fun BottomNavigationMenu(
               },
               label = { Text(tab.name) },
               onClick = {
-                  when (selectedNavigationTab) {
+                  when (tab) {
                       NavigationTab.Requests -> {
                           navigationActions?.navigateTo(Screen.Requests)
                       }

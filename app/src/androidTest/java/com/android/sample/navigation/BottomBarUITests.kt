@@ -16,7 +16,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-class NavigationTestUI : TestCase() {
+class BottomBarUITests : TestCase() {
   @get:Rule val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
   @Before
