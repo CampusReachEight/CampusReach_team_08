@@ -13,4 +13,9 @@ class ExampleUnitTest {
   fun addition_isCorrect() {
     assertEquals(4, 2 + 2)
   }
+
+  @Test
+  fun coverage_update_works() {
+    assertEquals(-1.0, Point(5.0, 11.0).coverageTest(), 0.01)
+  }
 }
