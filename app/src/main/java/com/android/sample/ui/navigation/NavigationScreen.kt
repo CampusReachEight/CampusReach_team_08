@@ -68,7 +68,7 @@ fun NavigationScreen(
         PlaceHolderScreen(
             text = "Add Request Screen",
             modifier = Modifier.testTag(NavigationTestTags.ADD_REQUEST_SCREEN),
-            withBottomBar = false,
+            withBottomBar = true
         )
       }
       composable(Screen.RequestDetails.route) { navBackStackEntry ->
