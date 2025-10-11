@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.Alarm
 import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material.icons.outlined.SyncAlt
@@ -17,25 +18,28 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.android.sample.ui.navigation.NavigationActions
 import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.navigation.Screen
 
-sealed class Tab(val name: String, val icon: ImageVector, val destination: Screen) {
-  object Requests : Tab("Reach", Icons.Outlined.SyncAlt, Screen.Requests)
+sealed class NavigationTab(val name: String, val icon: ImageVector, val destination: Screen) {
+  object Requests : NavigationTab("Reach", Icons.Outlined.SyncAlt, Screen.Requests)
 
-  object Events : Tab("Events", Icons.Outlined.Alarm, Screen.Events)
+  object Events : NavigationTab("Events", Icons.Outlined.Alarm, Screen.Events)
 
-  object Map : Tab("Map", Icons.Outlined.Place, Screen.Map)
+  object Map : NavigationTab("Map", Icons.Outlined.Place, Screen.Map)
+
+  object Profile : NavigationTab("Profile", Icons.Outlined.AccountCircle, Screen.Profile("TODO"))
 }
 
-private val tabs = listOf(Tab.Requests, Tab.Events, Tab.Map)
+private val navigationTabs =
+    listOf(NavigationTab.Requests, NavigationTab.Events, NavigationTab.Map, NavigationTab.Profile)
 
 @Composable
 fun BottomNavigationMenu(
-    selectedTab: Tab,
-    onTabSelected: (Tab) -> Unit,
+    selectedNavigationTab: NavigationTab,
+    navigationActions: NavigationActions? = null,
     modifier: Modifier = Modifier,
 ) {
   NavigationBar(
@@ -43,8 +47,8 @@ fun BottomNavigationMenu(
           modifier.fillMaxWidth().height(60.dp).testTag(NavigationTestTags.BOTTOM_NAVIGATION_MENU),
       containerColor = MaterialTheme.colorScheme.surface,
       content = {
-        tabs.forEach { tab ->
-          val isSelected = tab == selectedTab
+        navigationTabs.forEach { tab ->
+          val isSelected = tab == selectedNavigationTab
           NavigationBarItem(
               selected = isSelected,
               icon = {
@@ -56,7 +60,22 @@ fun BottomNavigationMenu(
                         else MaterialTheme.colorScheme.onSurface)
               },
               label = { Text(tab.name) },
-              onClick = { onTabSelected(tab) },
+              onClick = {
+                when (tab) {
+                  NavigationTab.Requests -> {
+                    navigationActions?.navigateTo(Screen.Requests)
+                  }
+                  NavigationTab.Events -> {
+                    navigationActions?.navigateTo(Screen.Events)
+                  }
+                  NavigationTab.Map -> {
+                    navigationActions?.navigateTo(Screen.Map)
+                  }
+                  NavigationTab.Profile -> {
+                    navigationActions?.navigateTo(Screen.Profile("TODO"))
+                  }
+                }
+              },
               modifier =
                   Modifier.clip(RoundedCornerShape(50.dp))
                       .testTag(NavigationTestTags.getTabTestTag(tab)))
@@ -65,13 +84,15 @@ fun BottomNavigationMenu(
   )
 }
 
+/* commented because marked as uncovered code by SonarQube
 @Preview(showBackground = true)
 @Composable
 fun BottomNavigationMenuPreview() {
   MaterialTheme {
     BottomNavigationMenu(
-        selectedTab = Tab.Requests,
+        selectedNavigationTab = NavigationTab.Requests,
         onTabSelected = {},
     )
   }
 }
+*/
