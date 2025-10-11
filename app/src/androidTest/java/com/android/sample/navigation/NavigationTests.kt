@@ -132,6 +132,11 @@ class NavigationTests : BaseEmulatorTest() {
     composeTestRule.onNodeWithTag(NavigationTestTags.EVENT_TAB).performClick()
     composeTestRule.waitForIdle()
     composeTestRule.onNodeWithTag(NavigationTestTags.EVENTS_SCREEN).assertIsDisplayed()
+
+    // Navigate to Profile
+    composeTestRule.onNodeWithTag(NavigationTestTags.PROFILE_BUTTON).performClick()
+    composeTestRule.waitForIdle()
+    composeTestRule.onNodeWithTag(NavigationTestTags.PROFILE_SCREEN).assertIsDisplayed()
   }
 
   @Test
