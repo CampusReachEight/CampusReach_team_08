@@ -79,4 +79,56 @@ class RequestRepositoryFirestore(
 
     collectionRef.document(requestId).delete().await()
   }
+
+  override suspend fun hasUserAcceptedRequest(requestId: String): Boolean {
+    val currentUserId = Firebase.auth.currentUser?.uid ?: notAuthenticated()
+
+    val request = getRequest(requestId)
+
+    return request.people.contains(currentUserId)
+  }
+
+  override suspend fun acceptRequest(requestId: String) {
+    val currentUserId = Firebase.auth.currentUser?.uid
+
+    // to have a String, and not String?
+    var auth = ""
+    if (currentUserId == null) {
+      notAuthenticated()
+    } else {
+      auth = currentUserId
+    }
+
+    val request = getRequest(requestId)
+
+    if (hasUserAcceptedRequest(requestId)) {
+      throw IllegalStateException("You have already accepted this request")
+    } else if (request.creatorId == auth) {
+      throw IllegalArgumentException("You cannot accept your own request")
+    } else {
+      val list: List<String> = request.people + auth
+      collectionRef.document(requestId).update("people", list).await()
+    }
+  }
+
+  override suspend fun cancelAcceptance(requestId: String) {
+    val currentUserId = Firebase.auth.currentUser?.uid
+
+    var auth = ""
+    if (currentUserId == null) {
+      notAuthenticated()
+    } else {
+      auth = currentUserId
+    }
+    val request = getRequest(requestId)
+
+    if (!hasUserAcceptedRequest(requestId)) {
+      throw IllegalStateException("You haven't accepted this request")
+    } else if (request.creatorId == auth) {
+      throw IllegalArgumentException("You cannot revoke acceptance on a request you created")
+    } else {
+      val list: List<String> = request.people - auth
+      collectionRef.document(requestId).update("people", list).await()
+    }
+  }
 }

@@ -44,4 +44,25 @@ interface RequestRepository {
    * @throws Exception if the request is not found.
    */
   suspend fun deleteRequest(requestId: String)
+
+  /**
+   * Check if the current user has accepted this request.
+   *
+   * @param requestId The unique identifier of the request.
+   */
+  suspend fun hasUserAcceptedRequest(requestId: String): Boolean
+
+  /**
+   * Accept the request
+   *
+   * @param requestId The unique identifier of the request to accept.
+   */
+  suspend fun acceptRequest(requestId: String)
+
+  /**
+   * Cancel the acceptance of the request
+   *
+   * @param requestId The unique identifier of the request to cancel.
+   */
+  suspend fun cancelAcceptance(requestId: String)
 }
