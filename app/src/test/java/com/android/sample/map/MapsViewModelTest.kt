@@ -78,15 +78,13 @@ class MapsViewModelTest {
       }
     }
 
-      override suspend fun hasUserAcceptedRequest(requestId: String): Boolean {
-          return true
-      }
+    override suspend fun hasUserAcceptedRequest(requestId: String): Boolean {
+      return true
+    }
 
-      override suspend fun acceptRequest(requestId: String) {
-      }
+    override suspend fun acceptRequest(requestId: String) {}
 
-      override suspend fun cancelAcceptance(requestId: String) {
-      }
+    override suspend fun cancelAcceptance(requestId: String) {}
   }
 
   private lateinit var fakeRepository: FakeRequestRepository
