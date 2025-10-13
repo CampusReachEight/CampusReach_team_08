@@ -14,7 +14,7 @@ import org.json.JSONArray
 // The email was created to comply with nominatim's usage policy.
 const val USER_AGENT_BASE = "CampusReach/1.0 (campusreachteam08@gmail.com)"
 
-const val MAX_LIMIT = 50 // Nominatim allows up to 50 results per request
+const val MAX_LIMIT = 40 // Nominatim allows up to 40 results per request in version 5.X
 
 class NominatimLocationRepository(
     private val client: OkHttpClient,
