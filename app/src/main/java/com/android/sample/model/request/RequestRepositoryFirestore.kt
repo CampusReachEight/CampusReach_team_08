@@ -101,14 +101,10 @@ class RequestRepositoryFirestore(
 
     val request = getRequest(requestId)
 
-    if (hasUserAcceptedRequest(requestId)) {
-      throw IllegalStateException("You have already accepted this request")
-    } else if (request.creatorId == auth) {
-      throw IllegalStateException("You cannot accept your own request")
-    } else {
-      val list: List<String> = request.people + auth
-      collectionRef.document(requestId).update("people", list).await()
-    }
+    check(!hasUserAcceptedRequest(requestId)) { "You have already accepted this request" }
+    check(request.creatorId != auth) { "You cannot accept your own request" }
+    val list: List<String> = request.people + auth
+    collectionRef.document(requestId).update("people", list).await()
   }
 
   override suspend fun cancelAcceptance(requestId: String) {
@@ -122,13 +118,9 @@ class RequestRepositoryFirestore(
     }
     val request = getRequest(requestId)
 
-    if (!hasUserAcceptedRequest(requestId)) {
-      throw IllegalStateException("You haven't accepted this request")
-    } else if (request.creatorId == auth) {
-      throw IllegalStateException("You cannot revoke acceptance on a request you created")
-    } else {
-      val list: List<String> = request.people - auth
-      collectionRef.document(requestId).update("people", list).await()
-    }
+    check(hasUserAcceptedRequest(requestId)) { "You haven't accepted this request" }
+    check(request.creatorId != auth) { "You cannot revoke acceptance on a request you created" }
+    val list: List<String> = request.people - auth
+    collectionRef.document(requestId).update("people", list).await()
   }
 }
