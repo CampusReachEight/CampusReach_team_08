@@ -25,7 +25,7 @@ class NominatimLocationRepository(private val client: OkHttpClient) : LocationRe
     }
   }
 
-  override suspend fun search(query: String): List<Location> =
+  override suspend fun search(query: String, limit: Int): List<Location> =
       withContext(Dispatchers.IO) {
         // Using HttpUrl.Builder to properly construct the URL with query parameters.
         val url =
@@ -35,6 +35,7 @@ class NominatimLocationRepository(private val client: OkHttpClient) : LocationRe
                 .addPathSegment("search")
                 .addQueryParameter("q", query)
                 .addQueryParameter("format", "json")
+                .addQueryParameter("limit", limit.toString())
                 .build()
 
         // Create the request with a custom User-Agent and optional Referer

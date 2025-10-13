@@ -300,4 +300,212 @@ class NominatimLocationRepositoryTest {
     assertEquals(-58.3816, result[0].longitude, 0.0001)
     assertEquals("Buenos Aires, Argentina", result[0].name)
   }
+
+  @Test
+  fun `search handles small query with many diverse results`() = runTest {
+    // Given
+    val query = "Main"
+    val jsonResponse =
+        """
+        [
+          {
+            "lat": "50.0007",
+            "lon": "8.2703",
+            "display_name": "Main, Frankfurt, Germany"
+          },
+          {
+            "lat": "43.6426",
+            "lon": "-70.2568",
+            "display_name": "Main Street, Portland, Maine, USA"
+          },
+          {
+            "lat": "40.7580",
+            "lon": "-73.9855",
+            "display_name": "Main Street, New York, USA"
+          },
+          {
+            "lat": "51.5074",
+            "lon": "-0.1278",
+            "display_name": "Main Road, London, UK"
+          },
+          {
+            "lat": "48.8566",
+            "lon": "2.3522",
+            "display_name": "Main Avenue, Paris, France"
+          },
+          {
+            "lat": "35.6762",
+            "lon": "139.6503",
+            "display_name": "Main Street, Tokyo, Japan"
+          },
+          {
+            "lat": "-33.8688",
+            "lon": "151.2093",
+            "display_name": "Main Street, Sydney, Australia"
+          },
+          {
+            "lat": "55.7558",
+            "lon": "37.6173",
+            "display_name": "Main Street, Moscow, Russia"
+          },
+          {
+            "lat": "-23.5505",
+            "lon": "-46.6333",
+            "display_name": "Main Avenue, São Paulo, Brazil"
+          },
+          {
+            "lat": "19.4326",
+            "lon": "-99.1332",
+            "display_name": "Main Street, Mexico City, Mexico"
+          }
+        ]
+        """
+            .trimIndent()
+
+    val mockResponse =
+        Response.Builder()
+            .request(Request.Builder().url("https://nominatim.openstreetmap.org/search").build())
+            .protocol(Protocol.HTTP_1_1)
+            .code(200)
+            .message("OK")
+            .body(jsonResponse.toResponseBody())
+            .build()
+
+    every { mockClient.newCall(any()) } returns mockCall
+    every { mockCall.execute() } returns mockResponse
+
+    // When
+    val result = repository.search(query)
+
+    // Then
+    assertEquals(10, result.size)
+
+    // Verify first result
+    assertEquals(50.0007, result[0].latitude, 0.0001)
+    assertEquals(8.2703, result[0].longitude, 0.0001)
+    assertEquals("Main, Frankfurt, Germany", result[0].name)
+
+    // Verify a middle result
+    assertEquals(48.8566, result[4].latitude, 0.0001)
+    assertEquals(2.3522, result[4].longitude, 0.0001)
+    assertEquals("Main Avenue, Paris, France", result[4].name)
+
+    // Verify last result
+    assertEquals(19.4326, result[9].latitude, 0.0001)
+    assertEquals(-99.1332, result[9].longitude, 0.0001)
+    assertEquals("Main Street, Mexico City, Mexico", result[9].name)
+
+    // Verify diversity - check that all locations have different coordinates
+    val uniqueCoordinates = result.map { Pair(it.latitude, it.longitude) }.toSet()
+    assertEquals(10, uniqueCoordinates.size)
+  }
+
+  @Test
+  fun `search uses default limit of 10 when not specified`() = runTest {
+    // Given
+    val query = "test"
+    val jsonResponse = "[]"
+
+    val mockResponse =
+        Response.Builder()
+            .request(Request.Builder().url("https://nominatim.openstreetmap.org/search").build())
+            .protocol(Protocol.HTTP_1_1)
+            .code(200)
+            .message("OK")
+            .body(jsonResponse.toResponseBody())
+            .build()
+
+    every { mockClient.newCall(any()) } returns mockCall
+    every { mockCall.execute() } returns mockResponse
+
+    // When
+    repository.search(query)
+
+    // Then
+    verify { mockClient.newCall(match { request -> request.url.queryParameter("limit") == "10" }) }
+  }
+
+  @Test
+  fun `search respects custom limit parameter`() = runTest {
+    // Given
+    val query = "Paris"
+    val customLimit = 5
+    val jsonResponse =
+        """
+        [
+          {
+            "lat": "48.8566",
+            "lon": "2.3522",
+            "display_name": "Paris, France"
+          },
+          {
+            "lat": "48.8567",
+            "lon": "2.3523",
+            "display_name": "Paris Center, France"
+          },
+          {
+            "lat": "48.8568",
+            "lon": "2.3524",
+            "display_name": "Paris Downtown, France"
+          }
+        ]
+        """
+            .trimIndent()
+
+    val mockResponse =
+        Response.Builder()
+            .request(Request.Builder().url("https://nominatim.openstreetmap.org/search").build())
+            .protocol(Protocol.HTTP_1_1)
+            .code(200)
+            .message("OK")
+            .body(jsonResponse.toResponseBody())
+            .build()
+
+    every { mockClient.newCall(any()) } returns mockCall
+    every { mockCall.execute() } returns mockResponse
+
+    // When
+    val result = repository.search(query, customLimit)
+
+    // Then
+    verify { mockClient.newCall(match { request -> request.url.queryParameter("limit") == "5" }) }
+    assertEquals(3, result.size)
+  }
+
+  @Test
+  fun `search with limit 1 returns only one result`() = runTest {
+    // Given
+    val query = "London"
+    val jsonResponse =
+        """
+        [
+          {
+            "lat": "51.5074",
+            "lon": "-0.1278",
+            "display_name": "London, UK"
+          }
+        ]
+        """
+            .trimIndent()
+
+    val mockResponse =
+        Response.Builder()
+            .request(Request.Builder().url("https://nominatim.openstreetmap.org/search").build())
+            .protocol(Protocol.HTTP_1_1)
+            .code(200)
+            .message("OK")
+            .body(jsonResponse.toResponseBody())
+            .build()
+
+    every { mockClient.newCall(any()) } returns mockCall
+    every { mockCall.execute() } returns mockResponse
+
+    // When
+    val result = repository.search(query, limit = 1)
+
+    // Then
+    verify { mockClient.newCall(match { request -> request.url.queryParameter("limit") == "1" }) }
+    assertEquals(1, result.size)
+    assertEquals("London, UK", result[0].name)
+  }
 }
