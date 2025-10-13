@@ -104,7 +104,7 @@ class RequestRepositoryFirestore(
     if (hasUserAcceptedRequest(requestId)) {
       throw IllegalStateException("You have already accepted this request")
     } else if (request.creatorId == auth) {
-      throw IllegalArgumentException("You cannot accept your own request")
+      throw IllegalStateException("You cannot accept your own request")
     } else {
       val list: List<String> = request.people + auth
       collectionRef.document(requestId).update("people", list).await()
@@ -125,7 +125,7 @@ class RequestRepositoryFirestore(
     if (!hasUserAcceptedRequest(requestId)) {
       throw IllegalStateException("You haven't accepted this request")
     } else if (request.creatorId == auth) {
-      throw IllegalArgumentException("You cannot revoke acceptance on a request you created")
+      throw IllegalStateException("You cannot revoke acceptance on a request you created")
     } else {
       val list: List<String> = request.people - auth
       collectionRef.document(requestId).update("people", list).await()

@@ -7,9 +7,15 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -37,12 +43,16 @@ object AcceptRequestScreenTestTags {
   const val REQUEST_EXPIRATION_TIME = "requestExpirationTime"
   const val NO_REQUEST = "noRequest"
   const val REQUEST_COLUMN = "requestColumn"
+  const val REQUEST_TOP_BAR = "requestTopBar"
+  const val REQUEST_GO_BACK = "requestGoBack"
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AcceptRequestScreen(
     requestId: String,
     acceptRequestViewModel: AcceptRequestViewModel = viewModel(),
+    onGoBack: () -> Unit = {}
 ) {
   LaunchedEffect(requestId) { acceptRequestViewModel.loadRequest(requestId) }
 
@@ -60,7 +70,21 @@ fun AcceptRequestScreen(
 
   Scaffold(
       topBar = {
-        // add when implemented
+        TopAppBar(
+            title = {
+              Text(
+                  requestState.request?.title ?: "",
+                  Modifier.testTag(AcceptRequestScreenTestTags.REQUEST_TOP_BAR))
+            },
+            navigationIcon = {
+              IconButton(
+                  onClick = { onGoBack() },
+                  Modifier.testTag(AcceptRequestScreenTestTags.REQUEST_GO_BACK)) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
+                        contentDescription = "Back")
+                  }
+            })
       },
       content = { pd ->
         Column(

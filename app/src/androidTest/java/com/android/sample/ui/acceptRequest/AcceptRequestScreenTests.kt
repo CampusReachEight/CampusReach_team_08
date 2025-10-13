@@ -16,9 +16,8 @@ import com.android.sample.model.request.RequestType
 import com.android.sample.model.request.Tags
 import com.android.sample.ui.overview.AcceptRequestScreen
 import com.android.sample.ui.overview.AcceptRequestScreenTestTags
+import com.android.sample.utils.BaseEmulatorTest
 import com.android.sample.utils.FirebaseEmulator
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 import java.util.Calendar
 import java.util.Date
 import kotlinx.coroutines.test.runTest
@@ -27,51 +26,34 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
-class AcceptRequestScreenTests {
+class AcceptRequestScreenTests : BaseEmulatorTest() {
   @get:Rule val composeTestRule = createComposeRule()
 
   private lateinit var repository: RequestRepositoryFirestore
-  private lateinit var db: FirebaseFirestore
-  private lateinit var auth: FirebaseAuth
-
-  private lateinit var currentUserId: String
   private lateinit var previousUserId: String
-  private var currentEmail: String = DEFAULT_USER_EMAIL
-  private var currentPassword: String = DEFAULT_USER_PASSWORD
-
   private val uiWaitTimeout = 5_000L
-
-  companion object {
-    private const val DEFAULT_USER_EMAIL = "test@example.com"
-    private const val OTHER_USER_MAIL = "tests@example.com"
-    private const val DEFAULT_USER_PASSWORD = "test123456"
-  }
-
-  private suspend fun signInUser(email: String, password: String) {
-    previousUserId = auth.currentUser?.uid ?: ""
-    FirebaseEmulator.signOut()
-    FirebaseEmulator.signInTestUser(email, password)
-    currentEmail = email
-    currentPassword = password
-    currentUserId = auth.currentUser?.uid ?: error("Failed to sign in user $email")
-  }
 
   private lateinit var request1: Request
   private lateinit var request2: Request
   private lateinit var request3: Request
 
+  private fun signIn(email: String = DEFAULT_USER_EMAIL, password: String = DEFAULT_USER_PASSWORD) {
+    previousUserId = currentUserId
+
+    runTest { signInUser(email, password) }
+  }
+
   @Before
-  fun setUp() {
-    db = FirebaseEmulator.firestore
-    auth = FirebaseEmulator.auth
+  override fun setUp() {
+    super.setUp()
     repository = RequestRepositoryFirestore(db)
     runTest {
       FirebaseEmulator.clearAuthEmulator()
       // for having the previous User
-      signInUser(OTHER_USER_MAIL, DEFAULT_USER_PASSWORD)
+      signIn(SECOND_USER_EMAIL)
 
       // actual user
-      signInUser(DEFAULT_USER_EMAIL, DEFAULT_USER_PASSWORD)
+      signIn(DEFAULT_USER_EMAIL)
 
       val calendar = Calendar.getInstance()
       calendar.set(2024, Calendar.MARCH, 15, 14, 30, 0)
@@ -123,7 +105,7 @@ class AcceptRequestScreenTests {
       repository.addRequest(request3)
 
       // will try to accept his own request -> fail
-      signInUser(OTHER_USER_MAIL, DEFAULT_USER_PASSWORD)
+      signIn(SECOND_USER_EMAIL)
       request2 =
           Request(
               "request2",
@@ -143,10 +125,8 @@ class AcceptRequestScreenTests {
   }
 
   @After
-  fun tearDown() {
-    FirebaseEmulator.clearFirestoreEmulator()
-    FirebaseEmulator.clearAuthEmulator()
-    FirebaseEmulator.signOut()
+  override fun tearDown() {
+    super.tearDown()
   }
 
   @Test
@@ -171,6 +151,11 @@ class AcceptRequestScreenTests {
     }
 
     composeTestRule.onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_COLUMN).assertIsDisplayed()
+
+    composeTestRule
+        .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_TOP_BAR)
+        .assertIsDisplayed()
+        .assertTextContains("Here is a good title", substring = true, ignoreCase = true)
 
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_TITLE)
@@ -250,6 +235,11 @@ class AcceptRequestScreenTests {
             text.contains("Accept", ignoreCase = true)
           }
     }
+
+    composeTestRule
+        .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_GO_BACK)
+        .assertIsDisplayed()
+        .performClick()
   }
 
   @Test
