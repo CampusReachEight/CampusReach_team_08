@@ -39,7 +39,7 @@ class MapViewModel(
         RequestRepositoryFirestore(Firebase.firestore)
 ) : ViewModel() {
   companion object {
-    private val EPFL_LOCATION = Location(46.5191, 6.5668, "EPFL")
+    val EPFL_LOCATION = Location(46.5191, 6.5668, "EPFL")
   }
 
   private val _uiState = MutableStateFlow(MapUIState())
