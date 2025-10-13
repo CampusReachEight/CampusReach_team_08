@@ -17,6 +17,7 @@ import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.GetCredentialException
 import androidx.credentials.exceptions.NoCredentialException
 import com.android.sample.R
+import com.android.sample.ui.navigation.NavigationTestTags
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import kotlinx.coroutines.launch
 
@@ -97,7 +98,7 @@ fun SignInScreen(
 
   // Main UI layout
   Column(
-      modifier = Modifier.fillMaxSize().padding(32.dp),
+      modifier = Modifier.fillMaxSize().padding(32.dp).testTag(NavigationTestTags.LOGIN_SCREEN),
       horizontalAlignment = Alignment.CenterHorizontally,
       verticalArrangement = Arrangement.Center) {
         // App logo icon
