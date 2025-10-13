@@ -32,9 +32,16 @@ object ProfileTestTags {
     const val PROFILE_STATS = "profile_stats"
     const val PROFILE_INFORMATION = "profile_information"
     const val PROFILE_ACTIONS = "profile_actions"
+    const val PROFILE_HEADER_NAME = "profile_header_name"
+    const val PROFILE_HEADER_EMAIL = "profile_header_email"
+    const val PROFILE_STAT_TOP_KUDOS = "profile_stat_top_kudos"
+    const val PROFILE_STAT_BOTTOM_HELP_RECEIVED = "profile_stat_bottom_help_received"
+    const val PROFILE_STAT_TOP_FOLLOWERS = "profile_stat_top_followers"
+    const val PROFILE_STAT_BOTTOM_FOLLOWING = "profile_stat_bottom_following"
+    const val PROFILE_ACTION_LOG_OUT = "profile_action_log_out"
+    const val PROFILE_ACTION_ABOUT_APP = "profile_action_about_app"
 }
 
-// Define custom colors
 val PrimaryColor = Color(0xFFF0F4FF)
 val SecondaryColor = Color(0xFFD8E4FF)
 val AccentColor = Color(0xFF1247F8)
@@ -42,29 +49,18 @@ val BlackColor = Color(0xFF1F242F)
 val WhiteColor = Color(0xFFFFFFFF)
 
 object ProfileDimens {
-    // General paddings
     val Horizontal = 16.dp
     val Vertical = 8.dp
-
-    // Card
     val CardElevation = 4.dp
-
-    // Profile header
     val ProfilePicture = 80.dp
     val HeaderPadding = 16.dp
     val HeaderSpacer = 16.dp
-
-    // Stats
     val StatCardHeight = 150.dp
     val StatCardVerticalPadding = 20.dp
     val StatCardHorizontalPadding = 16.dp
     val StatCardSpacer = 6.dp
-
-    // Info rows
     val InfoCornerRadius = 4.dp
     val InfoSpacer = 4.dp
-
-    // Actions
     val ActionVerticalPadding = 10.dp
     val ActionInternalPadding = 10.dp
     val IconSize = 40.dp
@@ -114,7 +110,10 @@ fun ProfileScreen(viewModel: ProfileViewModel = viewModel(), onBackClick: () -> 
 @Composable
 fun ProfileHeader(state: ProfileState, onEditClick: () -> Unit = {}) {
     Card(
-        modifier = Modifier.fillMaxWidth().padding(ProfileDimens.HeaderPadding),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(ProfileDimens.HeaderPadding)
+            .testTag(ProfileTestTags.PROFILE_HEADER),
         colors = CardDefaults.cardColors(containerColor = AccentColor),
         elevation = CardDefaults.cardElevation(defaultElevation = ProfileDimens.CardElevation)) {
         Box(modifier = Modifier.padding(ProfileDimens.HeaderPadding)) {
@@ -130,11 +129,15 @@ fun ProfileHeader(state: ProfileState, onEditClick: () -> Unit = {}) {
                     Text(
                         text = state.userName,
                         style = MaterialTheme.typography.titleMedium,
-                        color = WhiteColor)
+                        color = WhiteColor,
+                        modifier = Modifier.testTag(ProfileTestTags.PROFILE_HEADER_NAME)
+                    )
                     Text(
                         text = state.userEmail,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = WhiteColor)
+                        color = WhiteColor,
+                        modifier = Modifier.testTag(ProfileTestTags.PROFILE_HEADER_EMAIL)
+                    )
                 }
                 Spacer(modifier = Modifier.weight(1f))
                 IconButton(onClick = onEditClick) {
@@ -151,7 +154,9 @@ fun StatGroupCard(
     topValue: Int,
     labelBottom: String,
     bottomValue: Int,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    topTag: String,
+    bottomTag: String
 ) {
     Card(
         modifier = modifier.height(ProfileDimens.StatCardHeight),
@@ -172,7 +177,9 @@ fun StatGroupCard(
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = AccentColor,
-                textAlign = TextAlign.Center)
+                textAlign = TextAlign.Center,
+                modifier = Modifier.testTag(topTag)
+            )
             Spacer(modifier = Modifier.height(ProfileDimens.StatCardSpacer))
             Text(
                 text = labelBottom,
@@ -185,7 +192,9 @@ fun StatGroupCard(
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = AccentColor,
-                textAlign = TextAlign.Center)
+                textAlign = TextAlign.Center,
+                modifier = Modifier.testTag(bottomTag)
+            )
         }
     }
 }
@@ -193,20 +202,29 @@ fun StatGroupCard(
 @Composable
 fun ProfileStats(state: ProfileState) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(start = ProfileDimens.ProfilePicture, end = ProfileDimens.ProfilePicture),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = ProfileDimens.ProfilePicture, end = ProfileDimens.ProfilePicture)
+            .testTag(ProfileTestTags.PROFILE_STATS),
         horizontalArrangement = Arrangement.spacedBy(ProfileDimens.Horizontal)) {
         StatGroupCard(
             labelTop = "Kudos",
             topValue = state.kudosReceived,
             labelBottom = "Help Received",
             bottomValue = state.helpReceived,
-            modifier = Modifier.weight(1f))
+            modifier = Modifier.weight(1f),
+            topTag = ProfileTestTags.PROFILE_STAT_TOP_KUDOS,
+            bottomTag = ProfileTestTags.PROFILE_STAT_BOTTOM_HELP_RECEIVED
+        )
         StatGroupCard(
             labelTop = "Followers",
             topValue = state.followers,
             labelBottom = "Following",
             bottomValue = state.following,
-            modifier = Modifier.weight(1f))
+            modifier = Modifier.weight(1f),
+            topTag = ProfileTestTags.PROFILE_STAT_TOP_FOLLOWERS,
+            bottomTag = ProfileTestTags.PROFILE_STAT_BOTTOM_FOLLOWING
+        )
     }
 }
 
@@ -224,7 +242,8 @@ fun InfoRow(label: String, value: String) {
                 text = value,
                 style = MaterialTheme.typography.bodyMedium,
                 color = AccentColor,
-                modifier = Modifier.testTag("profile_info_$label".replace(" ", "_").lowercase()))
+                modifier = Modifier.testTag("profile_info_${label.replace(" ", "_").lowercase()}")
+            )
         }
     }
 }
@@ -266,11 +285,15 @@ fun ProfileActions() {
         ActionItem(
             icon = Icons.Default.Logout,
             title = "Log out",
-            subtitle = "Further secure your account for safety")
+            subtitle = "Further secure your account for safety",
+            tag = ProfileTestTags.PROFILE_ACTION_LOG_OUT
+        )
         ActionItem(
             icon = Icons.Default.Info,
             title = "About App",
-            subtitle = "Find out more about CampusReach")
+            subtitle = "Find out more about CampusReach",
+            tag = ProfileTestTags.PROFILE_ACTION_ABOUT_APP
+        )
     }
 }
 
@@ -278,10 +301,14 @@ fun ProfileActions() {
 fun ActionItem(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     title: String,
-    subtitle: String
+    subtitle: String,
+    tag: String
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth().padding(vertical = ProfileDimens.ActionVerticalPadding),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = ProfileDimens.ActionVerticalPadding)
+            .testTag(tag),
         colors = CardDefaults.cardColors(containerColor = WhiteColor)) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(ProfileDimens.ActionInternalPadding),
