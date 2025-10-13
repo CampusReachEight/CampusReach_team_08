@@ -27,6 +27,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.model.request.displayString
+import com.android.sample.ui.overview.ConstantAcceptRequest.TEXT_SIZE
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -91,35 +92,47 @@ fun AcceptRequestScreen(
             modifier =
                 Modifier.fillMaxSize()
                     .padding(pd)
-                    .padding(top = 24.dp, start = 12.dp, end = 12.dp, bottom = 12.dp)
+                    .padding(
+                        top = ConstantAcceptRequest.BIG_PADDING,
+                        start = ConstantAcceptRequest.SMALL_PADDING,
+                        end = ConstantAcceptRequest.SMALL_PADDING,
+                        bottom = ConstantAcceptRequest.SMALL_PADDING)
                     .testTag(AcceptRequestScreenTestTags.REQUEST_COLUMN),
-            verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            verticalArrangement = Arrangement.spacedBy(ConstantAcceptRequest.SPACE_BETWEEN_TEXT)) {
               requestState.request?.let { request ->
                 Text(
                     text = "Title : " + (request.title),
+                    fontSize = TEXT_SIZE,
                     modifier = Modifier.testTag(AcceptRequestScreenTestTags.REQUEST_TITLE))
                 Text(
                     text = "Description : " + (request.description),
+                    fontSize = TEXT_SIZE,
                     modifier = Modifier.testTag(AcceptRequestScreenTestTags.REQUEST_DESCRIPTION))
                 Text(
                     text = "Tags: " + (request.tags.joinToString(", ") { it.displayString() }),
+                    fontSize = TEXT_SIZE,
                     modifier = Modifier.testTag(AcceptRequestScreenTestTags.REQUEST_TAG))
                 Text(
                     text =
                         "Request type: " +
                             (request.requestType.joinToString(", ") { it.displayString() }),
+                    fontSize = TEXT_SIZE,
                     modifier = Modifier.testTag(AcceptRequestScreenTestTags.REQUEST_TYPE))
                 Text(
                     text = "Status: " + (request.status.displayString()),
+                    fontSize = TEXT_SIZE,
                     modifier = Modifier.testTag(AcceptRequestScreenTestTags.REQUEST_STATUS))
                 Text(
                     text = "Location : " + (request.locationName),
+                    fontSize = TEXT_SIZE,
                     modifier = Modifier.testTag(AcceptRequestScreenTestTags.REQUEST_LOCATION_NAME))
                 Text(
                     text = "Start time : " + dateToString(request.startTimeStamp),
+                    fontSize = TEXT_SIZE,
                     modifier = Modifier.testTag(AcceptRequestScreenTestTags.REQUEST_START_TIME))
                 Text(
                     text = "Expiration time : " + dateToString(request.expirationTime),
+                    fontSize = TEXT_SIZE,
                     modifier =
                         Modifier.testTag(AcceptRequestScreenTestTags.REQUEST_EXPIRATION_TIME))
 
@@ -141,6 +154,7 @@ fun AcceptRequestScreen(
               }
                   ?: Text(
                       text = "An error occurred. Please, reload window or go back",
+                      fontSize = TEXT_SIZE,
                       modifier = Modifier.testTag(AcceptRequestScreenTestTags.NO_REQUEST))
             }
       })

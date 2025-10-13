@@ -66,11 +66,7 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
               "request1",
               "Here is a good title",
               "In here we will do a lot of things, like beeing good persons",
-              listOf(
-                  RequestType.STUDYING,
-                  RequestType.STUDY_GROUP,
-                  RequestType.SPORT,
-                  RequestType.SPORT),
+              listOf(RequestType.STUDYING, RequestType.STUDY_GROUP, RequestType.SPORT),
               Location(46.5191, 6.5668, "EPFL"),
               "EPFL",
               RequestStatus.OPEN,
