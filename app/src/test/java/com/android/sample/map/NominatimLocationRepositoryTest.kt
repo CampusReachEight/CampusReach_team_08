@@ -29,7 +29,7 @@ class NominatimLocationRepositoryTest {
   fun setup() {
     mockClient = mockk()
     mockCall = mockk()
-    repository = NominatimLocationRepository(mockClient, "test-device-id")
+    repository = NominatimLocationRepository(mockClient, "test-device-id", true)
   }
 
   @Test
