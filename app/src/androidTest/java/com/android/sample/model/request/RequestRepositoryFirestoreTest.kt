@@ -2,9 +2,8 @@ package com.android.sample.model.request
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.sample.model.map.Location
+import com.android.sample.utils.BaseEmulatorTest
 import com.android.sample.utils.FirebaseEmulator
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 import java.util.Date
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -14,37 +13,19 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-class RequestRepositoryFirestoreTest {
+class RequestRepositoryFirestoreTest : BaseEmulatorTest() {
 
   private lateinit var repository: RequestRepositoryFirestore
-  private lateinit var db: FirebaseFirestore
-  private lateinit var auth: FirebaseAuth
-  private lateinit var currentUserId: String
-  private var currentEmail: String = DEFAULT_USER_EMAIL
-  private var currentPassword: String = DEFAULT_USER_PASSWORD
-
-  companion object {
-    private const val DEFAULT_USER_EMAIL = "test@example.com"
-    private const val DEFAULT_USER_PASSWORD = "test123456"
-    private const val SECOND_USER_EMAIL = "secondUser@example.com"
-    private const val SECOND_USER_PASSWORD = DEFAULT_USER_PASSWORD // unify to avoid mismatch
-  }
 
   private data class CreatedRequest(val email: String, val password: String, val id: String)
 
   private val createdRequests = mutableListOf<CreatedRequest>()
 
-  private suspend fun signInUser(email: String, password: String) {
-    FirebaseEmulator.signOut()
-    FirebaseEmulator.signInTestUser(email, password)
-    currentEmail = email
-    currentPassword = password
-    currentUserId = auth.currentUser?.uid ?: error("Failed to sign in user $email")
-  }
-
   private suspend fun addRequestTracking(request: Request) {
     repository.addRequest(request)
-    createdRequests.add(CreatedRequest(currentEmail, currentPassword, request.requestId))
+    createdRequests.add(
+        CreatedRequest(
+            currentUser.email ?: DEFAULT_USER_EMAIL, DEFAULT_USER_PASSWORD, request.requestId))
   }
 
   private fun generateRequest(
@@ -75,16 +56,11 @@ class RequestRepositoryFirestoreTest {
   private lateinit var request3: Request
 
   @Before
-  fun setUp() {
-    db = FirebaseEmulator.firestore
-    auth = FirebaseEmulator.auth
+  override fun setUp() {
+    super.setUp()
     repository = RequestRepositoryFirestore(db)
 
     runTest {
-      // Ensure a clean auth state so previously created users with different passwords do not
-      // linger
-      FirebaseEmulator.clearAuthEmulator()
-      signInUser(DEFAULT_USER_EMAIL, DEFAULT_USER_PASSWORD)
       request1 =
           generateRequest("test-request-1", "Study Session", "Need help with Math", currentUserId)
       request2 =
@@ -96,12 +72,9 @@ class RequestRepositoryFirestoreTest {
   }
 
   @After
-  fun tearDown() {
+  override fun tearDown() {
     runTest { clearAllTestRequests() }
-    // Clean both Firestore and Auth emulators to avoid password mismatch on next test run
-    FirebaseEmulator.clearFirestoreEmulator()
-    FirebaseEmulator.clearAuthEmulator()
-    FirebaseEmulator.signOut()
+    super.tearDown()
   }
 
   private suspend fun clearAllTestRequests() {
