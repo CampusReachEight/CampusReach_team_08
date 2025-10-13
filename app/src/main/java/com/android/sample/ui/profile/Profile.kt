@@ -26,7 +26,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.android.sample.ui.navigation.NavigationTestTags
 
 object ProfileTestTags {
   const val PROFILE_HEADER = "profile_header"
