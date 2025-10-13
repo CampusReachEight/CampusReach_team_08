@@ -1,7 +1,8 @@
 package com.android.sample.map
 
+import com.android.sample.model.map.LocationSearchException
 import com.android.sample.model.map.NominatimLocationRepository
-import com.android.sample.model.map.USER_AGENT
+import com.android.sample.model.map.USER_AGENT_BASE
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -28,7 +29,7 @@ class NominatimLocationRepositoryTest {
   fun setup() {
     mockClient = mockk()
     mockCall = mockk()
-    repository = NominatimLocationRepository(mockClient)
+    repository = NominatimLocationRepository(mockClient, "test-device-id")
   }
 
   @Test
@@ -102,7 +103,7 @@ class NominatimLocationRepositoryTest {
     assertTrue(result.isEmpty())
   }
 
-  @Test(expected = Exception::class)
+  @Test(expected = LocationSearchException::class)
   fun `search throws exception when response is not successful`() = runTest {
     // Given
     val query = "test query"
@@ -125,8 +126,8 @@ class NominatimLocationRepositoryTest {
     // Then - exception is thrown
   }
 
-  @Test(expected = IOException::class)
-  fun `search throws IOException when network request fails`() = runTest {
+  @Test(expected = LocationSearchException::class)
+  fun `search throws LocationSearchException when network request fails`() = runTest {
     // Given
     val query = "test query"
 
@@ -136,7 +137,7 @@ class NominatimLocationRepositoryTest {
     // When
     repository.search(query)
 
-    // Then - IOException is thrown
+    // Then - LocationSearchException is thrown
   }
 
   @Test
@@ -196,7 +197,122 @@ class NominatimLocationRepositoryTest {
     repository.search(query)
 
     // Then
-    verify { mockClient.newCall(match { request -> request.header("User-Agent") == USER_AGENT }) }
+    verify {
+      mockClient.newCall(
+          match { request ->
+            request.header("User-Agent") == "$USER_AGENT_BASE device:test-device-id"
+          })
+    }
+  }
+
+  @Test
+  fun `search includes Referer header`() = runTest {
+    // Given
+    val query = "test"
+    val jsonResponse = "[]"
+
+    val mockResponse =
+        Response.Builder()
+            .request(Request.Builder().url("https://nominatim.openstreetmap.org/search").build())
+            .protocol(Protocol.HTTP_1_1)
+            .code(200)
+            .message("OK")
+            .body(jsonResponse.toResponseBody())
+            .build()
+
+    every { mockClient.newCall(any()) } returns mockCall
+    every { mockCall.execute() } returns mockResponse
+
+    // When
+    repository.search(query)
+
+    // Then
+    verify {
+      mockClient.newCall(
+          match { request ->
+            request.header("Referer") == "https://github.com/CampusReachEight/CampusReach_team_08"
+          })
+    }
+  }
+
+  @Test
+  fun `search returns cached results on second call`() = runTest {
+    // Given
+    val query = "EPFL"
+    val jsonResponse =
+        """
+        [
+          {
+            "lat": "46.5191",
+            "lon": "6.5668",
+            "display_name": "EPFL, Lausanne, Switzerland"
+          }
+        ]
+        """
+            .trimIndent()
+
+    val mockResponse =
+        Response.Builder()
+            .request(Request.Builder().url("https://nominatim.openstreetmap.org/search").build())
+            .protocol(Protocol.HTTP_1_1)
+            .code(200)
+            .message("OK")
+            .body(jsonResponse.toResponseBody())
+            .build()
+
+    every { mockClient.newCall(any()) } returns mockCall
+    every { mockCall.execute() } returns mockResponse
+
+    // When - First call
+    val result1 = repository.search(query)
+
+    // Second call should use cache
+    val result2 = repository.search(query)
+
+    // Then - API should only be called once
+    verify(exactly = 1) { mockClient.newCall(any()) }
+    assertEquals(result1, result2)
+    assertEquals(1, result1.size)
+  }
+
+  @Test
+  fun `search enforces rate limiting between requests`() = runTest {
+    // Given
+    val query1 = "Paris"
+    val query2 = "London"
+    val jsonResponse = "[]"
+
+    val mockResponse1 =
+        Response.Builder()
+            .request(Request.Builder().url("https://nominatim.openstreetmap.org/search").build())
+            .protocol(Protocol.HTTP_1_1)
+            .code(200)
+            .message("OK")
+            .body(jsonResponse.toResponseBody())
+            .build()
+
+    val mockResponse2 =
+        Response.Builder()
+            .request(Request.Builder().url("https://nominatim.openstreetmap.org/search").build())
+            .protocol(Protocol.HTTP_1_1)
+            .code(200)
+            .message("OK")
+            .body(jsonResponse.toResponseBody())
+            .build()
+
+    every { mockClient.newCall(any()) } returnsMany listOf(mockCall, mockCall)
+    every { mockCall.execute() } returnsMany listOf(mockResponse1, mockResponse2)
+
+    // When - Make two requests quickly
+    val startTime = System.currentTimeMillis()
+    repository.search(query1)
+    repository.search(query2)
+    val endTime = System.currentTimeMillis()
+
+    // Then - Should take at least 1 second due to rate limiting
+    val duration = endTime - startTime
+    assertTrue("Duration should be >= 1000ms, was ${duration}ms", duration >= 1000)
+    verify(exactly = 2) { mockClient.newCall(any()) }
   }
 
   @Test
