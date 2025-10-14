@@ -107,7 +107,15 @@ fun NavigationScreen(
     navigation(startDestination = Screen.Profile.route, route = "profile") {
       composable(Screen.Profile.route) { navBackStackEntry ->
         val userId = navBackStackEntry.arguments?.getString(Screen.Profile.ARG_USER_ID)
-        ProfileScreen(viewModel = profileViewModel, onBackClick = { navigationActions.goBack() })
+          ProfileScreen(
+              viewModel = ProfileViewModel(onLogout = {
+                  isSignedIn = false
+                  navController.navigate(Screen.Login.route) {
+                      popUpTo(0) // Clears the back stack
+                  }
+              }),
+              onBackClick = { navigationActions.goBack() }
+          )
       }
     }
 
