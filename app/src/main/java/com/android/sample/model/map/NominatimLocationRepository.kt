@@ -54,12 +54,8 @@ class NominatimLocationRepository(
   override suspend fun search(query: String, limit: Int): List<Location> =
       withContext(Dispatchers.IO) {
         // Validate parameters
-        if (query.isBlank()) {
-          throw IllegalArgumentException("Query must not be blank")
-        }
-        if (limit <= 0 || limit > MAX_LIMIT) {
-          throw IllegalArgumentException("Limit must be between 1 and 50")
-        }
+        require(!(query.isBlank())) { "Query must not be blank" }
+        require(limit > 0 || limit <= MAX_LIMIT) { "Limit must be between 1 and $MAX_LIMIT" }
 
         // Check cache first
         val cacheKey = "$query-$limit"
@@ -114,7 +110,7 @@ class NominatimLocationRepository(
             }
 
             val body = response.body?.string()
-            if (body != null) {
+            return@withContext if (body != null) {
               if (verbose) {
                 Log.d("NominatimLocationRepository", "Body: $body")
               }
@@ -123,12 +119,12 @@ class NominatimLocationRepository(
               // Store in cache
               cache[cacheKey] = System.currentTimeMillis() to results
 
-              return@withContext results
+              results
             } else {
               if (verbose) {
                 Log.d("NominatimLocationRepository", "Empty body")
               }
-              return@withContext emptyList()
+              emptyList()
             }
           }
         } catch (e: IOException) {

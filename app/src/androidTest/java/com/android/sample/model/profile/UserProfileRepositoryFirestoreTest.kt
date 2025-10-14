@@ -7,13 +7,11 @@ import com.android.sample.utils.FirebaseEmulator
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import java.util.Date
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -322,97 +320,5 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
     } finally {
       signInUser()
     }
-  }
-
-  @Ignore("To re-add once implemented")
-  @Test
-  fun searchUserProfilesByName() = runTest {
-    db.collection(PUBLIC_PROFILES_PATH)
-        .document(testProfile1.id)
-        .set(testProfile1.copy(email = null).toMap())
-        .await()
-    db.collection(PUBLIC_PROFILES_PATH)
-        .document(testProfile2.id)
-        .set(testProfile2.copy(email = null).toMap())
-        .await()
-
-    val results = repository.searchUserProfiles("John", null, 10).toList()
-    assertTrue(results.any { it.name == "John" })
-  }
-
-  @Ignore("To re-add once implemented")
-  @Test
-  fun searchUserProfilesByLastName() = runTest {
-    db.collection(PUBLIC_PROFILES_PATH)
-        .document(testProfile1.id)
-        .set(testProfile1.copy(email = null).toMap())
-        .await()
-    db.collection(PUBLIC_PROFILES_PATH)
-        .document(testProfile2.id)
-        .set(testProfile2.copy(email = null).toMap())
-        .await()
-
-    val results = repository.searchUserProfiles("Smith", null, 10).toList()
-    assertTrue(results.any { it.lastName == "Smith" })
-  }
-
-  @Ignore("To re-add once implemented")
-  @Test
-  fun searchUserProfilesWithSectionFilter() = runTest {
-    db.collection(PUBLIC_PROFILES_PATH)
-        .document(testProfile1.id)
-        .set(testProfile1.copy(email = null).toMap())
-        .await()
-    db.collection(PUBLIC_PROFILES_PATH)
-        .document(testProfile2.id)
-        .set(testProfile2.copy(email = null).toMap())
-        .await()
-    db.collection(PUBLIC_PROFILES_PATH)
-        .document(testProfile3.id)
-        .set(testProfile3.copy(email = null).toMap())
-        .await()
-
-    val results = repository.searchUserProfiles("", Section.CYBER_SECURITY, 10).toList()
-    assertEquals(2, results.size)
-    assertTrue(results.all { it.section == Section.CYBER_SECURITY })
-  }
-
-  @Ignore("To re-add once implemented")
-  @Test
-  fun searchReturnsEmptyListForEmptyQuery() = runTest {
-    val results = repository.searchUserProfiles("", null, 10).toList()
-    assertTrue(results.isEmpty())
-  }
-
-  @Ignore("To re-add once implemented")
-  @Test
-  fun searchRespectsResultsPerPageLimit() = runTest {
-    // Add 5 profiles with same section
-    repeat(5) { index ->
-      val profile =
-          generateProfile(
-                  id = "test-user-$index",
-                  name = "User$index",
-                  lastName = "Test",
-                  email = "user$index@example.com",
-                  section = Section.CYBER_SECURITY)
-              .copy(email = null)
-      db.collection(PUBLIC_PROFILES_PATH).document(profile.id).set(profile.toMap()).await()
-    }
-
-    val results = repository.searchUserProfiles("", Section.CYBER_SECURITY, 3).toList()
-    assertEquals(3, results.size)
-  }
-
-  @Ignore("To re-add once implemented")
-  @Test
-  fun searchMatchesMultipleKeywords() = runTest {
-    db.collection(PUBLIC_PROFILES_PATH)
-        .document(testProfile1.id)
-        .set(testProfile1.copy(email = null).toMap())
-        .await()
-
-    val results = repository.searchUserProfiles("John Doe", null, 10).toList()
-    assertTrue(results.any { it.name == "John" && it.lastName == "Doe" })
   }
 }

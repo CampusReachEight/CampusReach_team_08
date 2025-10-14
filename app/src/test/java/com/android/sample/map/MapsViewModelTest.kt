@@ -77,6 +77,14 @@ class MapsViewModelTest {
         requestsToReturn.remove(requestToDelete)
       }
     }
+
+    override fun hasUserAcceptedRequest(request: Request): Boolean {
+      return true
+    }
+
+    override suspend fun acceptRequest(requestId: String) {}
+
+    override suspend fun cancelAcceptance(requestId: String) {}
   }
 
   private lateinit var fakeRepository: FakeRequestRepository
