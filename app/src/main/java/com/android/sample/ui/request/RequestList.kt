@@ -30,11 +30,11 @@ val LIST_ITEM_PADDING = 8.dp
 val ICON_SIZE = 40.dp
 
 object RequestListTestTags {
-    const val REQUEST_ITEM = "requestItem"
-    const val REQUEST_ITEM_TITLE = "requestItemTitle"
-    const val REQUEST_ITEM_DESCRIPTION = "requestItemDescription"
-    const val REQUEST_ITEM_ICON = "requestItemIcon"
-    const val EMPTY_LIST_MESSAGE = "emptyListMessage"
+  const val REQUEST_ITEM = "requestItem"
+  const val REQUEST_ITEM_TITLE = "requestItemTitle"
+  const val REQUEST_ITEM_DESCRIPTION = "requestItemDescription"
+  const val REQUEST_ITEM_ICON = "requestItemIcon"
+  const val EMPTY_LIST_MESSAGE = "emptyListMessage"
 }
 
 @Composable
@@ -43,33 +43,35 @@ fun RequestListScreen(
     requestListViewModel: RequestListViewModel = viewModel(),
     navigationActions: NavigationActions? = null,
 ) {
-    LaunchedEffect(Unit) { requestListViewModel.loadRequests() }
+  LaunchedEffect(Unit) { requestListViewModel.loadRequests() }
 
-    val icons by requestListViewModel.profileIcons.collectAsState()
+  val icons by requestListViewModel.profileIcons.collectAsState()
 
-    Scaffold(
-        modifier = modifier.fillMaxSize().testTag(NavigationTestTags.REQUESTS_SCREEN),
-        topBar = { },
-        bottomBar = {
-            BottomNavigationMenu(
-                selectedNavigationTab = NavigationTab.Requests,
-                navigationActions = navigationActions)
-        }) { innerPadding ->
+  Scaffold(
+      modifier = modifier.fillMaxSize().testTag(NavigationTestTags.REQUESTS_SCREEN),
+      topBar = {},
+      bottomBar = {
+        BottomNavigationMenu(
+            selectedNavigationTab = NavigationTab.Requests, navigationActions = navigationActions)
+      }) { innerPadding ->
         val state by requestListViewModel.state.collectAsState()
         if (state.requests.isEmpty()) {
-            Text(
-                text = "No requests at the moment",
-                modifier = Modifier.fillMaxSize().padding(innerPadding).wrapContentSize().testTag(RequestListTestTags.EMPTY_LIST_MESSAGE),
-                textAlign = TextAlign.Center
-            )
-            return@Scaffold
+          Text(
+              text = "No requests at the moment",
+              modifier =
+                  Modifier.fillMaxSize()
+                      .padding(innerPadding)
+                      .wrapContentSize()
+                      .testTag(RequestListTestTags.EMPTY_LIST_MESSAGE),
+              textAlign = TextAlign.Center)
+          return@Scaffold
         }
         RequestList(
             state = state,
             icons = icons,
             onRequestClick = { navigationActions?.navigateTo(Screen.RequestDetails(it)) },
             modifier = Modifier.fillMaxSize().padding(innerPadding))
-    }
+      }
 }
 
 @Composable
@@ -79,15 +81,12 @@ fun RequestList(
     onRequestClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    LazyColumn(modifier = modifier.padding(LIST_PADDING)) {
-        items(state.requests.size) { index ->
-            val request = state.requests[index]
-            RequestListItem(
-                request = request,
-                icon = icons[request.creatorId],
-                onClick = onRequestClick)
-        }
+  LazyColumn(modifier = modifier.padding(LIST_PADDING)) {
+    items(state.requests.size) { index ->
+      val request = state.requests[index]
+      RequestListItem(request = request, icon = icons[request.creatorId], onClick = onRequestClick)
     }
+  }
 }
 
 @Composable
@@ -97,30 +96,35 @@ fun RequestListItem(
     onClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Card(
-        modifier = modifier
-            .padding(bottom = LIST_ITEM_PADDING)
-            .fillMaxWidth()
-            .clickable(onClick = { onClick(request.requestId) })
-            .testTag(RequestListTestTags.REQUEST_ITEM),
-    ) {
-        Row(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
-            if (icon != null) {
-                Image(
-                    bitmap = icon.asImageBitmap(),
-                    contentDescription = "Photo profile",
-                    modifier = Modifier.size(ICON_SIZE).testTag(RequestListTestTags.REQUEST_ITEM_ICON))
-            } else {
-                Box(Modifier.size(ICON_SIZE))
-            }
-            Spacer(Modifier.width(8.dp))
-            Column(Modifier.fillMaxWidth()) {
-                Row(Modifier.fillMaxWidth()) {
-                    Text(request.title, modifier = Modifier.testTag(RequestListTestTags.REQUEST_ITEM_TITLE).weight(1f))
-                    Text(request.requestType.toString(), textAlign = TextAlign.End)
-                }
-                Text(request.description, modifier = Modifier.testTag(RequestListTestTags.REQUEST_ITEM_DESCRIPTION))
-            }
+  Card(
+      modifier =
+          modifier
+              .padding(bottom = LIST_ITEM_PADDING)
+              .fillMaxWidth()
+              .clickable(onClick = { onClick(request.requestId) })
+              .testTag(RequestListTestTags.REQUEST_ITEM),
+  ) {
+    Row(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+      if (icon != null) {
+        Image(
+            bitmap = icon.asImageBitmap(),
+            contentDescription = "Photo profile",
+            modifier = Modifier.size(ICON_SIZE).testTag(RequestListTestTags.REQUEST_ITEM_ICON))
+      } else {
+        Box(Modifier.size(ICON_SIZE))
+      }
+      Spacer(Modifier.width(8.dp))
+      Column(Modifier.fillMaxWidth()) {
+        Row(Modifier.fillMaxWidth()) {
+          Text(
+              request.title,
+              modifier = Modifier.testTag(RequestListTestTags.REQUEST_ITEM_TITLE).weight(1f))
+          Text(request.requestType.toString(), textAlign = TextAlign.End)
         }
+        Text(
+            request.description,
+            modifier = Modifier.testTag(RequestListTestTags.REQUEST_ITEM_DESCRIPTION))
+      }
     }
+  }
 }

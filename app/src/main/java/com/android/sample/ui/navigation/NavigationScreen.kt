@@ -46,7 +46,7 @@ fun NavigationScreen(
   val signInViewModel: SignInViewModel = viewModel()
   val profileViewModel: ProfileViewModel = viewModel()
   val mapViewModel: MapViewModel = viewModel()
-    val requestListViewModel : RequestListViewModel = viewModel()
+  val requestListViewModel: RequestListViewModel = viewModel()
 
   NavHost(
       navController = navController,
@@ -61,10 +61,8 @@ fun NavigationScreen(
 
     navigation(startDestination = Screen.Requests.route, route = "requests") {
       composable(Screen.Requests.route) {
-          RequestListScreen(
-              requestListViewModel = requestListViewModel,
-              navigationActions = navigationActions
-          )
+        RequestListScreen(
+            requestListViewModel = requestListViewModel, navigationActions = navigationActions)
       }
       composable(Screen.AddRequest.route) {
         PlaceHolderScreen(
