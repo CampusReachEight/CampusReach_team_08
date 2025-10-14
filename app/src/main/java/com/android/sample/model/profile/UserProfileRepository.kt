@@ -1,7 +1,5 @@
 package com.android.sample.model.profile
 
-import kotlinx.coroutines.flow.Flow
-
 interface UserProfileRepository {
   /** Generates and returns a new unique identifier for a user profile. */
   fun getNewUid(): String
@@ -45,20 +43,4 @@ interface UserProfileRepository {
    * @throws Exception if the user profile is not found.
    */
   suspend fun deleteUserProfile(userId: String)
-
-  /**
-   * Searches for user profiles matching the given query and optional section filter. The
-   * implementation should return results as a Flow to support real-time updates and not block the
-   * main thread.
-   *
-   * @param query The search query string.
-   * @param section Optional section to filter the search results.
-   * @param resultsPerPage The maximum number of results to return per page (default is 20).
-   * @return A Flow emitting UserProfile objects that match the search criteria.
-   */
-  suspend fun searchUserProfiles(
-      query: String,
-      section: Section?,
-      resultsPerView: Int = 20,
-  ): Flow<UserProfile>
 }

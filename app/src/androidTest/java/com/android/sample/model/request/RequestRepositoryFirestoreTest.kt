@@ -34,7 +34,8 @@ class RequestRepositoryFirestoreTest : BaseEmulatorTest() {
       description: String,
       creatorId: String,
       start: Date = Date(),
-      expires: Date = Date(System.currentTimeMillis() + 3_600_000)
+      expires: Date = Date(System.currentTimeMillis() + 3_600_000),
+      people: List<String> = emptyList()
   ): Request {
     return Request(
         requestId = requestId,
@@ -46,7 +47,7 @@ class RequestRepositoryFirestoreTest : BaseEmulatorTest() {
         status = RequestStatus.OPEN,
         startTimeStamp = start,
         expirationTime = expires,
-        people = emptyList(),
+        people = people,
         tags = listOf(Tags.URGENT),
         creatorId = creatorId)
   }
@@ -65,7 +66,11 @@ class RequestRepositoryFirestoreTest : BaseEmulatorTest() {
           generateRequest("test-request-1", "Study Session", "Need help with Math", currentUserId)
       request2 =
           generateRequest(
-              "test-request-2", "Lunch Together", "Looking for lunch buddy", currentUserId)
+              "test-request-2",
+              "Lunch Together",
+              "Looking for lunch buddy",
+              currentUserId,
+              people = listOf(currentUserId))
       request3 = generateRequest("test-request-3", "Basketball Game", "Need players", currentUserId)
       createdRequests.clear()
     }
@@ -284,5 +289,76 @@ class RequestRepositoryFirestoreTest : BaseEmulatorTest() {
     signInUser(DEFAULT_USER_EMAIL, DEFAULT_USER_PASSWORD)
     val userAIds = repository.getAllRequests().map { it.requestId }.toSet()
     assertTrue(userAIds.containsAll(listOf(request1.requestId, secondReq.requestId)))
+  }
+
+  @Test
+  fun unauthenticatedAcceptAndCancelRequestThrow() {
+    runTest {
+      addRequestTracking(request1)
+
+      FirebaseEmulator.signOut()
+
+      try {
+        repository.acceptRequest(request1.requestId)
+        fail("Expected IllegalStateException when adding unauthenticated")
+      } catch (_: IllegalStateException) {}
+
+      try {
+        repository.cancelAcceptance(request1.requestId)
+        fail("Expected IllegalStateException when adding unauthenticated")
+      } catch (_: IllegalStateException) {}
+    }
+  }
+
+  @Test
+  fun sameAuthAcceptAndCancelRequestThrow() {
+    runTest {
+      addRequestTracking(request1)
+      addRequestTracking(request2)
+      try {
+        repository.acceptRequest(request1.requestId)
+        fail("Expected IllegalStateException when try to accept his own request")
+      } catch (_: IllegalStateException) {}
+
+      try {
+        repository.cancelAcceptance(request2.requestId)
+        fail("Expected IllegalStateException when try to cancel his own request")
+      } catch (_: IllegalStateException) {}
+    }
+  }
+
+  @Test
+  fun tryAcceptRequestButAlreadyAcceptedThrow() {
+    runTest {
+      val previousUserId = currentUserId
+      signInUser(SECOND_USER_EMAIL, SECOND_USER_PASSWORD)
+      val secondReq =
+          generateRequest(
+              "second-user-request",
+              "Second",
+              "Desc",
+              currentUserId,
+              people = listOf(previousUserId))
+      addRequestTracking(secondReq)
+
+      signInUser(DEFAULT_USER_EMAIL, DEFAULT_USER_PASSWORD)
+
+      try {
+        repository.acceptRequest(secondReq.requestId)
+        fail("Expected IllegalStateException when try to accept a request he already accept")
+      } catch (_: IllegalStateException) {}
+    }
+  }
+
+  @Test
+  fun tryCancelRequestButAlreadyCancelThrow() {
+    runTest {
+      addRequestTracking(request1)
+      signInUser(SECOND_USER_EMAIL, SECOND_USER_PASSWORD)
+      try {
+        repository.cancelAcceptance(request1.requestId)
+        fail("Expected IllegalStateException when try to cancel a request he has not accepted")
+      } catch (_: IllegalStateException) {}
+    }
   }
 }
