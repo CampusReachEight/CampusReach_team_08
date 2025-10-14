@@ -2,4 +2,11 @@
     <string name="app_name">SampleApp</string>
     <string name="title_activity_main">MainActivity</string>
     <string name="title_activity_second">SecondActivity</string>
+    <string name="location_field_label">Location *</string>
+    <string name="location_field_name">Location Name</string>
+    <string name="location_field_placeholder">e.g., BC Building, EPFL, Lausanne</string>
+    <string name="location_field_clear_description">Clear</string>
+    <string name="location_selected_title">Selected Location</string>
+    <string name="location_coordinates_format">Lat: %1$s, Lng: %2$s</string>
+    <string name="location_field_name_simple">Location</string>
 </resources>
