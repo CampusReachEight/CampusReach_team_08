@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -24,6 +25,8 @@ import com.android.sample.ui.map.MapScreen
 import com.android.sample.ui.map.MapViewModel
 import com.android.sample.ui.profile.ProfileScreen
 import com.android.sample.ui.profile.ProfileViewModel
+import com.android.sample.ui.request.RequestListScreen
+import com.android.sample.ui.request.RequestListViewModel
 import com.android.sample.ui.theme.BottomNavigationMenu
 import com.android.sample.ui.theme.NavigationTab
 import com.google.firebase.auth.FirebaseAuth
@@ -40,9 +43,10 @@ fun NavigationScreen(
   val startDestination = if (!isSignedIn) "login" else "requests"
 
   // ViewModels
-  val signInViewModel: SignInViewModel = SignInViewModel()
-  val profileViewModel: ProfileViewModel = ProfileViewModel()
-  val mapViewModel: MapViewModel = MapViewModel()
+  val signInViewModel: SignInViewModel = viewModel()
+  val profileViewModel: ProfileViewModel = viewModel()
+  val mapViewModel: MapViewModel = viewModel()
+    val requestListViewModel : RequestListViewModel = viewModel()
 
   NavHost(
       navController = navController,
@@ -57,12 +61,10 @@ fun NavigationScreen(
 
     navigation(startDestination = Screen.Requests.route, route = "requests") {
       composable(Screen.Requests.route) {
-        PlaceHolderScreen(
-            text = "Requests Screen",
-            modifier = Modifier.testTag(NavigationTestTags.REQUESTS_SCREEN),
-            withBottomBar = true,
-            navigationActions = navigationActions,
-            defaultTab = NavigationTab.Requests)
+          RequestListScreen(
+              requestListViewModel = requestListViewModel,
+              navigationActions = navigationActions
+          )
       }
       composable(Screen.AddRequest.route) {
         PlaceHolderScreen(
