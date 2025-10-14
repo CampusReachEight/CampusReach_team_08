@@ -118,7 +118,10 @@ class RequestRepositoryLocal(
 
   init {
     if (defaultRequests > 0 && requestData.isEmpty()) {
-      generateRequests(defaultRequests, 1)
+      val generatedRequests = generateRequests(defaultRequests, 1)
+      for (request in generatedRequests) {
+        this.requests[request.requestId] = request
+      }
     } else if (requestData.isNotEmpty()) {
       for (request in
           generateRequests(
@@ -148,8 +151,9 @@ class RequestRepositoryLocal(
   }
 
   override suspend fun updateRequest(requestId: String, updatedRequest: Request) {
-    val existingRequest =
-        requests[requestId] ?: throw NoSuchElementException("Request with ID $requestId not found")
+    if (!requests.containsKey(requestId)) {
+      throw NoSuchElementException("Request with ID $requestId not found")
+    }
 
     require(requestId == updatedRequest.requestId) { "Request ID cannot be changed" }
 
@@ -170,16 +174,18 @@ class RequestRepositoryLocal(
   }
 
   override suspend fun acceptRequest(requestId: String) {
-    val request =
-        requests[requestId] ?: throw NoSuchElementException("Request with ID $requestId not found")
+    if (!requests.containsKey(requestId)) {
+      throw NoSuchElementException("Request with ID $requestId not found")
+    }
 
     // Simply add a placeholder user ID or do nothing
     // Tests can override this behavior
   }
 
   override suspend fun cancelAcceptance(requestId: String) {
-    val request =
-        requests[requestId] ?: throw NoSuchElementException("Request with ID $requestId not found")
+    if (!requests.containsKey(requestId)) {
+      throw NoSuchElementException("Request with ID $requestId not found")
+    }
 
     // Simply remove placeholder user ID or do nothing
     // Tests can override this behavior
