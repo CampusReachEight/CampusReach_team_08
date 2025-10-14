@@ -78,7 +78,7 @@ class MapsViewModelTest {
       }
     }
 
-    override suspend fun hasUserAcceptedRequest(requestId: String): Boolean {
+    override fun hasUserAcceptedRequest(request: Request): Boolean {
       return true
     }
 
