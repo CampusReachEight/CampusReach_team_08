@@ -39,6 +39,7 @@ object EditRequestScreenTestTags {
  * @param creatorId The ID of the request creator.
  * @param onNavigateBack Callback for navigation when user cancels or saves.
  * @param viewModel The ViewModel managing request state.
+ * @param verbose If true, enables verbose logging for debugging.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -180,8 +181,10 @@ fun EditRequestContent(
   var showLocationNameError by remember { mutableStateOf(false) }
   var showStartDateError by remember { mutableStateOf(false) }
   var showExpirationDateError by remember { mutableStateOf(false) }
+    var showDateOrderError by remember { mutableStateOf(false) }
+    var showSuccessMessage by remember { mutableStateOf(false) }
 
-  // Date formatters and state
+    // Date formatters and state
   val dateFormat = remember { SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()) }
   var startDateString by remember { mutableStateOf(dateFormat.format(startTimeStamp)) }
   var expirationDateString by remember { mutableStateOf(dateFormat.format(expirationTime)) }
@@ -190,7 +193,6 @@ fun EditRequestContent(
 
   // Update local states when props change
   LaunchedEffect(startTimeStamp) { startDateString = dateFormat.format(startTimeStamp) }
-  LaunchedEffect(expirationTime) { expirationDateString = dateFormat.format(expirationTime) }
 
   /** Validates date string format and optionally checks if date is in the past. */
   fun isValidDate(dateString: String, allowPast: Boolean = false): Boolean {
@@ -235,6 +237,30 @@ fun EditRequestContent(
                     }
               }
         }
+      if (showSuccessMessage) {
+          Card(
+              colors = CardDefaults.cardColors(
+                  containerColor = MaterialTheme.colorScheme.primaryContainer
+              ),
+              modifier = Modifier.fillMaxWidth()
+          ) {
+              Row(
+                  modifier = Modifier.fillMaxWidth().padding(12.dp),
+                  horizontalArrangement = Arrangement.SpaceBetween
+              ) {
+                  Text(
+                      text = if (isEditMode) "Request updated successfully!"
+                      else "Request created successfully!",
+                      color = MaterialTheme.colorScheme.onPrimaryContainer,
+                      style = MaterialTheme.typography.bodyMedium,
+                      modifier = Modifier.weight(1f)
+                  )
+                  TextButton(onClick = { showSuccessMessage = false }) {
+                      Text("Dismiss")
+                  }
+              }
+          }
+      }
 
         // Title Field
         OutlinedTextField(
@@ -349,40 +375,61 @@ fun EditRequestContent(
             enabled = !isLoading)
 
         // Expiration Date Field
-        OutlinedTextField(
-            value = expirationDateString,
-            onValueChange = {
+      OutlinedTextField(
+          value = expirationDateString,
+          onValueChange = {
               expirationDateString = it
-              val isValid = isValidDate(it)
+              val isValid = isValidDate(it, true)
               showExpirationDateError = it.isNotBlank() && !isValid
+
+              // Clear date order error if format is invalid
+              if (!isValid) {
+                  showDateOrderError = false
+              }
+
+              // Check date order only if format is valid
               if (isValid) {
-                try {
-                  val parsedDate = dateFormat.parse(it)
-                  if (parsedDate != null) {
-                    onExpirationTimeChange(parsedDate)
+                  showExpirationDateError = false
+                  try {
+                      val parsedDate = dateFormat.parse(it)
+                      if (parsedDate != null) {
+                          onExpirationTimeChange(parsedDate)
+
+                          // Check if expiration is after start date
+                          if (parsedDate.before(startTimeStamp)) {
+                              showDateOrderError = true
+                          } else {
+                              showDateOrderError = false
+                          }
+                      }
+                  } catch (e: Exception) {
+                      // Handle parsing error
                   }
-                } catch (e: Exception) {
-                  println("Error parsing expiration date !: ${e.localizedMessage}")
-                  if (verbose) {
-                    Log.d("EditRequest", "Error parsing expiration date: ${e.localizedMessage}")
+              }
+          },
+          label = { Text("Expiration Date & Time") },
+          placeholder = { Text("dd/MM/yyyy HH:mm") },
+          isError = showExpirationDateError || showDateOrderError,
+          supportingText = {
+              when {
+                  showExpirationDateError -> {
+                      Text(
+                          text = "Invalid format (must be dd/MM/yyyy HH:mm)",
+                          color = MaterialTheme.colorScheme.error,
+                          modifier = Modifier.testTag(EditRequestScreenTestTags.ERROR_MESSAGE))
                   }
-                }
+                  showDateOrderError -> {
+                      Text(
+                          text = "Expiration date must be after start date",
+                          color = MaterialTheme.colorScheme.error,
+                          modifier = Modifier.testTag(EditRequestScreenTestTags.ERROR_MESSAGE))
+                  }
               }
-            },
-            label = { Text("Expiration Date & Time") },
-            placeholder = { Text("dd/MM/yyyy HH:mm") },
-            isError = showExpirationDateError,
-            supportingText = {
-              if (showExpirationDateError) {
-                Text(
-                    text = "Invalid format (must be dd/MM/yyyy HH:mm)",
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.testTag(EditRequestScreenTestTags.ERROR_MESSAGE))
-              }
-            },
-            modifier =
-                Modifier.fillMaxWidth().testTag(EditRequestScreenTestTags.INPUT_EXPIRATION_DATE),
-            enabled = !isLoading)
+          },
+          modifier = Modifier.fillMaxWidth()
+              .testTag(EditRequestScreenTestTags.INPUT_EXPIRATION_DATE),
+          enabled = !isLoading
+      )
 
         // Tags Selection
         Text("Tags (Optional)", style = MaterialTheme.typography.labelLarge)
@@ -391,36 +438,36 @@ fun EditRequestContent(
         Spacer(modifier = Modifier.height(8.dp))
 
         // Save/Create Button
-        Button(
-            onClick = {
+      Button(
+          onClick = {
               // Validate all fields before saving
               val isTitleValid = title.isNotBlank()
               val isDescriptionValid = description.isNotBlank()
               val isRequestTypeValid = requestTypes.isNotEmpty()
               val isLocationValid = location != null
-
               val isLocationNameValid = locationName.isNotBlank()
-
-              // For dates, just check they're not blank - the Date objects are already valid
               val isStartDateValid = startDateString.isNotBlank()
               val isExpirationDateValid = expirationDateString.isNotBlank()
-              if (verbose) {
-                Log.d("EditRequest", "validation check")
-                Log.d("EditRequest", "title: $isTitleValid (value: '$title')")
-                Log.d("EditRequest", "description: $isDescriptionValid (value: '$description')")
-                Log.d("EditRequest", "requestTypes: $isRequestTypeValid (value: $requestTypes)")
-                Log.d("EditRequest", "locationName: $isLocationNameValid (value: '$locationName')")
-                Log.d("EditRequest", "startDate: $isStartDateValid (value: '$startDateString')")
-                Log.d(
-                    "EditRequest",
-                    "expirationDate: $isExpirationDateValid (value: '$expirationDateString')")
-              }
+
+              // ← ADD: Date order validation
+              val isDateOrderValid = !expirationTime.before(startTimeStamp)
+
+              Log.d("EditRequest", "=== Validation Check ===")
+              Log.d("EditRequest", "title: $isTitleValid (value: '$title')")
+              Log.d("EditRequest", "description: $isDescriptionValid (value: '$description')")
+              Log.d("EditRequest", "requestTypes: $isRequestTypeValid (value: $requestTypes)")
+              Log.d("EditRequest", "locationName: $isLocationNameValid (value: '$locationName')")
+              Log.d("EditRequest", "startDate: $isStartDateValid (value: '$startDateString')")
+              Log.d("EditRequest", "expirationDate: $isExpirationDateValid (value: '$expirationDateString')")
+              Log.d("EditRequest", "dateOrder: $isDateOrderValid")  // ← ADD THIS
+
               showTitleError = !isTitleValid
               showDescriptionError = !isDescriptionValid
               showRequestTypeError = !isRequestTypeValid
               showLocationNameError = !isLocationNameValid
               showStartDateError = !isStartDateValid
               showExpirationDateError = !isExpirationDateValid
+              showDateOrderError = !isDateOrderValid  // ← ADD THIS
 
               if (isTitleValid &&
                   isDescriptionValid &&
@@ -428,21 +475,28 @@ fun EditRequestContent(
                   isLocationValid &&
                   isLocationNameValid &&
                   isStartDateValid &&
-                  isExpirationDateValid) {
-                onSave()
+                  isExpirationDateValid &&
+                  isDateOrderValid) {
+
+                  showSuccessMessage = true
+                  onSave()
               }
-            },
-            modifier = Modifier.fillMaxWidth().testTag(EditRequestScreenTestTags.SAVE_BUTTON),
-            enabled = !isLoading) {
-              if (isLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary)
-              } else {
-                Text(if (isEditMode) "Update Request" else "Create Request")
-              }
+          },
+          modifier = Modifier.fillMaxWidth().testTag(EditRequestScreenTestTags.SAVE_BUTTON),
+          enabled = !isLoading
+      ) {
+          if (isLoading) {
+              CircularProgressIndicator(
+                  modifier = Modifier.size(24.dp),
+                  color = MaterialTheme.colorScheme.onPrimary
+              )
+          } else {
+              Text(if (isEditMode) "Update Request" else "Create Request")
+          }
+      }
             }
       }
-}
+
 
 /**
  * Multi-select chip group for Request Types.

@@ -12,6 +12,7 @@ import com.android.sample.model.request.RequestRepositoryProvider
 import com.android.sample.model.request.RequestStatus
 import com.android.sample.model.request.RequestType
 import com.android.sample.model.request.Tags
+import kotlinx.coroutines.delay
 import java.util.Date
 import java.util.UUID
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -193,6 +194,7 @@ class EditRequestViewModel(
     viewModelScope.launch {
       _isLoading.value = true
       _errorMessage.value = null
+      delay(2000)
 
       // Validate
       val validationError = validateFields()
