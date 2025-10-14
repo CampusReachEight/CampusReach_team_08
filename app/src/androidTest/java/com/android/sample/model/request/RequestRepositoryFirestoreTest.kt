@@ -45,7 +45,7 @@ class RequestRepositoryFirestoreTest : BaseEmulatorTest() {
         location = Location(46.5191, 6.5668, "EPFL"),
         locationName = "EPFL",
         status = RequestStatus.OPEN,
-        startTimeStamp = start,
+        startTime = start,
         expirationTime = expires,
         people = people,
         tags = listOf(Tags.URGENT),
@@ -122,7 +122,7 @@ class RequestRepositoryFirestoreTest : BaseEmulatorTest() {
     val r = generateRequest("timed-req", "Timed", "Check times", currentUserId, start, end)
     addRequestTracking(r)
     val stored = repository.getRequest(r.requestId)
-    assertEquals(start.time / 1000, stored.startTimeStamp.time / 1000)
+    assertEquals(start.time / 1000, stored.startTime.time / 1000)
     assertEquals(end.time / 1000, stored.expirationTime.time / 1000)
   }
 

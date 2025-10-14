@@ -48,7 +48,7 @@ interface RequestRepository {
   /**
    * Check if the current user has accepted this request.
    *
-   * @param requestId The unique identifier of the request.
+   * @param request The request to check.
    */
   fun hasUserAcceptedRequest(request: Request): Boolean
 
@@ -125,7 +125,7 @@ interface RequestRepository {
 //              location = getNearbyLocation(MapViewModel.EPFL_LOCATION, 500), // 500 meters radius
 //              locationName = "CM1",
 //              status = RequestStatus.IN_PROGRESS,
-//              startTimeStamp = Date(),
+//              startTime = Date(),
 //              expirationTime = Date(),
 //              people = listOf(),
 //              tags = listOf(),

@@ -27,7 +27,7 @@ class RequestTest {
         location = Location(46.5191, 6.5668, "EPFL"),
         locationName = "EPFL",
         status = RequestStatus.OPEN,
-        startTimeStamp = Date(currentTime),
+        startTime = Date(currentTime),
         expirationTime = Date(oneHourLater),
         people = listOf("user1", "user2"),
         tags = listOf(Tags.URGENT, Tags.INDOOR),
@@ -48,7 +48,7 @@ class RequestTest {
     assertEquals(request.creatorId, map["creatorId"])
 
     // Verify timestamps are Timestamp objects
-    assertTrue(map["startTimeStamp"] is Timestamp)
+    assertTrue(map["startTime"] is Timestamp)
     assertTrue(map["expirationTime"] is Timestamp)
 
     // Reconstruct from map
@@ -64,7 +64,7 @@ class RequestTest {
     assertEquals(request.location.name, reconstructed.location.name)
     assertEquals(request.locationName, reconstructed.locationName)
     assertEquals(request.status, reconstructed.status)
-    assertEquals(request.startTimeStamp.time / 1000, reconstructed.startTimeStamp.time / 1000)
+    assertEquals(request.startTime.time / 1000, reconstructed.startTime.time / 1000)
     assertEquals(request.expirationTime.time / 1000, reconstructed.expirationTime.time / 1000)
     assertEquals(request.people, reconstructed.people)
     assertEquals(request.tags, reconstructed.tags)
@@ -94,7 +94,7 @@ class RequestTest {
             "location" to mapOf("latitude" to 46.5191, "longitude" to 6.5668, "name" to "EPFL"),
             "locationName" to "EPFL",
             "status" to "OPEN",
-            "startTimeStamp" to Timestamp(Date()),
+            "startTime" to Timestamp(Date()),
             "expirationTime" to Timestamp(Date(System.currentTimeMillis() + 3600000)),
             "people" to emptyList<String>(),
             "tags" to listOf("URGENT"),
@@ -130,7 +130,7 @@ class RequestTest {
             "location" to locationMap,
             "locationName" to "Zurich",
             "status" to "OPEN",
-            "startTimeStamp" to Timestamp(Date()),
+            "startTime" to Timestamp(Date()),
             "expirationTime" to Timestamp(Date(System.currentTimeMillis() + 3600000)),
             "people" to emptyList<String>(),
             "tags" to listOf("INDOOR"),
@@ -166,7 +166,7 @@ class RequestTest {
             "location" to mapOf("latitude" to 46.5191, "longitude" to 6.5668, "name" to "EPFL"),
             "locationName" to "EPFL",
             "status" to "OPEN",
-            "startTimeStamp" to Timestamp(Date()),
+            "startTime" to Timestamp(Date()),
             "expirationTime" to Timestamp(Date(System.currentTimeMillis() + 3600000)),
             "people" to emptyList<String>(),
             "tags" to listOf("EASY", "SOLO_WORK"),
@@ -201,7 +201,7 @@ class RequestTest {
             "location" to mapOf("latitude" to 46.5191, "longitude" to 6.5668, "name" to "EPFL"),
             "locationName" to "EPFL",
             "status" to "IN_PROGRESS",
-            "startTimeStamp" to Timestamp(Date()),
+            "startTime" to Timestamp(Date()),
             "expirationTime" to Timestamp(Date(System.currentTimeMillis() + 3600000)),
             "people" to listOf("alice", "bob", "charlie"),
             "tags" to emptyList<String>(),
@@ -218,10 +218,10 @@ class RequestTest {
   fun toMap_timestampsAsFirebaseTimestamp() {
     val now = Date()
     val later = Date(now.time + 7200000) // 2 hours later
-    val request = createTestRequest().copy(startTimeStamp = now, expirationTime = later)
+    val request = createTestRequest().copy(startTime = now, expirationTime = later)
     val map = request.toMap()
 
-    val startTimestamp = map["startTimeStamp"] as Timestamp
+    val startTimestamp = map["startTime"] as Timestamp
     val expireTimestamp = map["expirationTime"] as Timestamp
 
     assertEquals(now.time / 1000, startTimestamp.toDate().time / 1000)
@@ -241,16 +241,16 @@ class RequestTest {
             "location" to mapOf("latitude" to 46.5191, "longitude" to 6.5668, "name" to "EPFL"),
             "locationName" to "EPFL",
             "status" to "OPEN",
-            "startTimeStamp" to Timestamp(now),
+            "startTime" to Timestamp(now),
             "expirationTime" to Timestamp(later),
             "people" to emptyList<String>(),
             "tags" to emptyList<String>(),
             "creatorId" to "user123")
 
     val request = Request.fromMap(map)
-    assertTrue(request.startTimeStamp is Date)
+    assertTrue(request.startTime is Date)
     assertTrue(request.expirationTime is Date)
-    assertEquals(now.time / 1000, request.startTimeStamp.time / 1000)
+    assertEquals(now.time / 1000, request.startTime.time / 1000)
     assertEquals(later.time / 1000, request.expirationTime.time / 1000)
   }
 
@@ -305,7 +305,7 @@ class RequestTest {
             "location" to mapOf("latitude" to 46.5191, "longitude" to 6.5668, "name" to "EPFL"),
             "locationName" to "EPFL",
             "status" to "OPEN",
-            "startTimeStamp" to Timestamp(Date()),
+            "startTime" to Timestamp(Date()),
             "expirationTime" to Timestamp(Date(System.currentTimeMillis() + 3600000)),
             "people" to emptyList<String>(),
             "tags" to emptyList<String>(),
@@ -328,7 +328,7 @@ class RequestTest {
             "location" to null,
             "locationName" to "Unknown",
             "status" to "OPEN",
-            "startTimeStamp" to Timestamp(Date()),
+            "startTime" to Timestamp(Date()),
             "expirationTime" to Timestamp(Date(System.currentTimeMillis() + 3600000)),
             "people" to emptyList<String>(),
             "tags" to emptyList<String>(),
@@ -352,7 +352,7 @@ class RequestTest {
             "location" to mapOf("latitude" to 0.0, "longitude" to 0.0, "name" to "Nowhere"),
             "locationName" to "Nowhere",
             // "status" missing
-            "startTimeStamp" to Timestamp(Date()),
+            "startTime" to Timestamp(Date()),
             "expirationTime" to Timestamp(Date(System.currentTimeMillis() + 3600000)),
             "people" to emptyList<String>(),
             "tags" to emptyList<String>(),
@@ -374,7 +374,7 @@ class RequestTest {
     assertTrue(map.containsKey("location"))
     assertTrue(map.containsKey("locationName"))
     assertTrue(map.containsKey("status"))
-    assertTrue(map.containsKey("startTimeStamp"))
+    assertTrue(map.containsKey("startTime"))
     assertTrue(map.containsKey("expirationTime"))
     assertTrue(map.containsKey("people"))
     assertTrue(map.containsKey("tags"))
