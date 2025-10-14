@@ -16,7 +16,8 @@ import kotlinx.coroutines.launch
 data class AcceptRequestUIState(
     val request: Request? = null,
     val errorMsg: String? = null,
-    val accepted: Boolean = false
+    val accepted: Boolean = false,
+    val isLoading: Boolean = false
 )
 
 class AcceptRequestViewModel(
@@ -51,7 +52,7 @@ class AcceptRequestViewModel(
       try {
         val request = requestRepository.getRequest(requestID)
 
-        val accept = requestRepository.hasUserAcceptedRequest(requestID)
+        val accept = requestRepository.hasUserAcceptedRequest(request)
         _uiState.value = AcceptRequestUIState(request = request, accepted = accept)
       } catch (e: Exception) {
         Log.e("AcceptRequestViewModel", "Failed to load request: ${e.message}", e)
@@ -68,11 +69,15 @@ class AcceptRequestViewModel(
   fun acceptRequest(requestID: String) {
     viewModelScope.launch {
       try {
+        _uiState.value = _uiState.value.copy(isLoading = true)
         requestRepository.acceptRequest(requestID)
         _uiState.value = _uiState.value.copy(accepted = true)
       } catch (e: Exception) {
         Log.e("AcceptRequestViewModel", "Failed to accept request: ${e.message}", e)
-        setErrorMsg("Failed to accept request ${e.message}")
+        setErrorMsg("Failed to accept request: ${e.message}")
+        loadRequest(requestID)
+      } finally {
+        _uiState.value = _uiState.value.copy(isLoading = false)
       }
     }
   }
@@ -85,11 +90,15 @@ class AcceptRequestViewModel(
   fun cancelAcceptanceToRequest(requestID: String) {
     viewModelScope.launch {
       try {
+        _uiState.value = _uiState.value.copy(isLoading = true)
         requestRepository.cancelAcceptance(requestID)
         _uiState.value = _uiState.value.copy(accepted = false)
       } catch (e: Exception) {
         Log.e("AcceptRequestViewModel", "Failed to cancel request: ${e.message}", e)
-        setErrorMsg("Failed to cancel acceptance to request ${e.message}")
+        setErrorMsg("Failed to cancel acceptance to request: ${e.message}")
+        loadRequest(requestID)
+      } finally {
+        _uiState.value = _uiState.value.copy(isLoading = false)
       }
     }
   }

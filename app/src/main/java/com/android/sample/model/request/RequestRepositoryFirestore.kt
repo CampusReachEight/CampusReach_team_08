@@ -80,47 +80,32 @@ class RequestRepositoryFirestore(
     collectionRef.document(requestId).delete().await()
   }
 
-  override suspend fun hasUserAcceptedRequest(requestId: String): Boolean {
+  override fun hasUserAcceptedRequest(request: Request): Boolean {
     val currentUserId = Firebase.auth.currentUser?.uid ?: notAuthenticated()
-
-    val request = getRequest(requestId)
-
     return request.people.contains(currentUserId)
   }
 
   override suspend fun acceptRequest(requestId: String) {
-    val currentUserId = Firebase.auth.currentUser?.uid
-
-    // to have a String, and not String?
-    var auth = ""
-    if (currentUserId == null) {
-      notAuthenticated()
-    } else {
-      auth = currentUserId
-    }
+    val currentUserId = Firebase.auth.currentUser?.uid ?: notAuthenticated()
 
     val request = getRequest(requestId)
 
-    check(!hasUserAcceptedRequest(requestId)) { "You have already accepted this request" }
-    check(request.creatorId != auth) { "You cannot accept your own request" }
-    val list: List<String> = request.people + auth
+    check(!hasUserAcceptedRequest(request)) { "You have already accepted this request" }
+    check(request.creatorId != currentUserId) { "You cannot accept your own request" }
+    val list = request.people + currentUserId
     collectionRef.document(requestId).update("people", list).await()
   }
 
   override suspend fun cancelAcceptance(requestId: String) {
-    val currentUserId = Firebase.auth.currentUser?.uid
+    val currentUserId = Firebase.auth.currentUser?.uid ?: notAuthenticated()
 
-    var auth = ""
-    if (currentUserId == null) {
-      notAuthenticated()
-    } else {
-      auth = currentUserId
-    }
     val request = getRequest(requestId)
 
-    check(hasUserAcceptedRequest(requestId)) { "You haven't accepted this request" }
-    check(request.creatorId != auth) { "You cannot revoke acceptance on a request you created" }
-    val list: List<String> = request.people - auth
+    check(hasUserAcceptedRequest(request)) { "You haven't accepted this request" }
+    check(request.creatorId != currentUserId) {
+      "You cannot revoke acceptance on a request you created"
+    }
+    val list = request.people - currentUserId
     collectionRef.document(requestId).update("people", list).await()
   }
 }

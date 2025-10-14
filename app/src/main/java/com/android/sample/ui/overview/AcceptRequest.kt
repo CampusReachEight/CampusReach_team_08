@@ -7,9 +7,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -127,11 +129,11 @@ fun AcceptRequestScreen(
                     fontSize = TEXT_SIZE,
                     modifier = Modifier.testTag(AcceptRequestScreenTestTags.REQUEST_LOCATION_NAME))
                 Text(
-                    text = "Start time : " + dateToString(request.startTimeStamp),
+                    text = "Start time : " + request.startTimeStamp.toDisplayString(),
                     fontSize = TEXT_SIZE,
                     modifier = Modifier.testTag(AcceptRequestScreenTestTags.REQUEST_START_TIME))
                 Text(
-                    text = "Expiration time : " + dateToString(request.expirationTime),
+                    text = "Expiration time : " + request.expirationTime.toDisplayString(),
                     fontSize = TEXT_SIZE,
                     modifier =
                         Modifier.testTag(AcceptRequestScreenTestTags.REQUEST_EXPIRATION_TIME))
@@ -146,10 +148,16 @@ fun AcceptRequestScreen(
                         acceptRequestViewModel.acceptRequest(requestId)
                       }
                     },
+                    enabled = !requestState.isLoading,
                     modifier =
                         Modifier.align(Alignment.CenterHorizontally)
                             .testTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)) {
-                      Text(text = if (requestState.accepted) "Cancel" else "Accept")
+                      if (requestState.isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(ConstantAcceptRequest.CIRCULAR_LOAD_SIZE))
+                      } else {
+                        Text(if (requestState.accepted) "Cancel" else "Accept")
+                      }
                     }
               }
                   ?: Text(
@@ -160,8 +168,8 @@ fun AcceptRequestScreen(
       })
 }
 
-fun dateToString(date: Date): String {
-  return date.let { timestamp ->
+fun Date.toDisplayString(): String {
+  return this.let { timestamp ->
     SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(timestamp)
   }
 }

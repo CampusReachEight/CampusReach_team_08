@@ -50,7 +50,7 @@ interface RequestRepository {
    *
    * @param requestId The unique identifier of the request.
    */
-  suspend fun hasUserAcceptedRequest(requestId: String): Boolean
+  fun hasUserAcceptedRequest(request: Request): Boolean
 
   /**
    * Accept the request
