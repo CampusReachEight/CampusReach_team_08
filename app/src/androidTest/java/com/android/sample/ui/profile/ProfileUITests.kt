@@ -1,9 +1,12 @@
-// Kotlin
-package com.android.sample.ui
+package com.android.sample.ui.profile
 
-import androidx.compose.ui.test.*
+import androidx.compose.ui.test.assertHasClickAction
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
-import com.android.sample.ui.profile.*
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import org.junit.Rule
 import org.junit.Test
 
@@ -168,5 +171,13 @@ class ProfileUITests {
     composeTestRule.setContent { ProfileScreen() }
     composeTestRule.onNodeWithTag("profile_action_log_out").assertIsDisplayed()
     composeTestRule.onNodeWithTag("profile_action_about_app").assertIsDisplayed()
+  }
+
+  // Test error retry button is clickable (if present)
+  @Test
+  fun errorRetryButton_isClickable() {
+    val errorState = ProfileState.withError()
+    composeTestRule.setContent { ProfileScreen(viewModel = ProfileViewModel(errorState)) }
+    composeTestRule.onNodeWithTag("profile_error_retry").assertHasClickAction()
   }
 }

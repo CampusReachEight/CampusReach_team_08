@@ -28,7 +28,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.ui.navigation.NavigationTestTags
-import androidx.compose.foundation.clickable
 
 object ProfileTestTags {
   const val PROFILE_HEADER = "profile_header"
@@ -71,84 +70,67 @@ object ProfileDimens {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileScreen(
-    viewModel: ProfileViewModel = viewModel(),
-    onBackClick: () -> Unit = {}
-) {
-    val state by viewModel.state.collectAsState()
+fun ProfileScreen(viewModel: ProfileViewModel = viewModel(), onBackClick: () -> Unit = {}) {
+  val state by viewModel.state.collectAsState()
 
-    Scaffold(
-        modifier = Modifier.testTag(NavigationTestTags.PROFILE_SCREEN),
-        containerColor = PrimaryColor,
-        topBar = {
-            TopAppBar(
-                title = { Text("Profile") },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                    }
-                }
-            )
-        }
-    ) { padding ->
+  Scaffold(
+      modifier = Modifier.testTag(NavigationTestTags.PROFILE_SCREEN),
+      containerColor = PrimaryColor,
+      topBar = {
+        TopAppBar(
+            title = { Text("Profile") },
+            navigationIcon = {
+              IconButton(onClick = onBackClick) {
+                Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+              }
+            })
+      }) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
-            when {
-                state.isLoading -> {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.Center).testTag("profile_loading")
-                    )
-                }
-                else -> {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .verticalScroll(rememberScrollState())
-                    ) {
-                        state.errorMessage?.let {
-                            Text(
-                                text = it,
-                                color = MaterialTheme.colorScheme.error,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(ProfileDimens.Horizontal)
-                                    .testTag("profile_error"),
-                                textAlign = TextAlign.Center
-                            )
-                            Spacer(modifier = Modifier.height(ProfileDimens.Vertical))
-                        }
-
-                        ProfileHeader(state = state)
-                        Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
-                        ProfileStats(state = state)
-                        Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
-                        ProfileInformation(state = state)
-                        Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
-                        ProfileActions(onLogoutClick = { viewModel.showLogoutDialog() })
-
-                        if (state.isLoggingOut) {
-                            AlertDialog(
-                                onDismissRequest = { viewModel.hideLogoutDialog() },
-                                title = { Text("Log out") },
-                                text = { Text("Are you sure you want to log out?") },
-                                confirmButton = {
-                                    TextButton(onClick = { viewModel.logout() }) {
-                                        Text("Log out")
-                                    }
-                                },
-                                dismissButton = {
-                                    TextButton(onClick = { viewModel.hideLogoutDialog() }) {
-                                        Text("Cancel")
-                                    }
-                                }
-                            )
-                        }
-                    }
-                }
+          when {
+            state.isLoading -> {
+              CircularProgressIndicator(
+                  modifier = Modifier.align(Alignment.Center).testTag("profile_loading"))
             }
-        }
-    }
-}
+            else -> {
+              Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                state.errorMessage?.let {
+                  Text(
+                      text = it,
+                      color = MaterialTheme.colorScheme.error,
+                      modifier =
+                          Modifier.fillMaxWidth()
+                              .padding(ProfileDimens.Horizontal)
+                              .testTag("profile_error"),
+                      textAlign = TextAlign.Center)
+                  Spacer(modifier = Modifier.height(ProfileDimens.Vertical))
+                }
 
+                ProfileHeader(state = state)
+                Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
+                ProfileStats(state = state)
+                Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
+                ProfileInformation(state = state)
+                Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
+                ProfileActions(onLogoutClick = { viewModel.showLogoutDialog() })
+
+                if (state.isLoggingOut) {
+                  AlertDialog(
+                      onDismissRequest = { viewModel.hideLogoutDialog() },
+                      title = { Text("Log out") },
+                      text = { Text("Are you sure you want to log out?") },
+                      confirmButton = {
+                        TextButton(onClick = { viewModel.logout() }) { Text("Log out") }
+                      },
+                      dismissButton = {
+                        TextButton(onClick = { viewModel.hideLogoutDialog() }) { Text("Cancel") }
+                      })
+                }
+              }
+            }
+          }
+        }
+      }
+}
 
 @Composable
 fun ProfileHeader(state: ProfileState, onEditClick: () -> Unit = {}) {
@@ -330,8 +312,7 @@ fun ProfileActions(onLogoutClick: () -> Unit = {}) {
             title = "Log out",
             subtitle = "Further secure your account for safety",
             tag = ProfileTestTags.PROFILE_ACTION_LOG_OUT,
-            onClick = onLogoutClick
-        )
+            onClick = onLogoutClick)
         ActionItem(
             icon = Icons.Default.Info,
             title = "About App",
@@ -348,14 +329,13 @@ fun ActionItem(
     tag: String,
     onClick: () -> Unit = {}
 ) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = ProfileDimens.ActionVerticalPadding)
-            .testTag(tag)
-            .clickable { onClick() },
-        colors = CardDefaults.cardColors(containerColor = WhiteColor)
-    ) {
+  Card(
+      modifier =
+          Modifier.fillMaxWidth()
+              .padding(vertical = ProfileDimens.ActionVerticalPadding)
+              .testTag(tag)
+              .clickable { onClick() },
+      colors = CardDefaults.cardColors(containerColor = WhiteColor)) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(ProfileDimens.ActionInternalPadding),
             verticalAlignment = Alignment.CenterVertically) {
@@ -363,7 +343,7 @@ fun ActionItem(
                   imageVector = icon,
                   contentDescription = null,
                   modifier = Modifier.padding(end = ProfileDimens.Horizontal),
-                  tint = AccentColor)
+                  tint = SecondaryColor)
               Column(modifier = Modifier.weight(1f)) {
                 Text(text = title, style = MaterialTheme.typography.bodyLarge, color = BlackColor)
                 Text(
