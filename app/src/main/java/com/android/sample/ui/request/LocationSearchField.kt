@@ -1,4 +1,4 @@
-package com.android.sample.model.request
+package com.android.sample.ui.request
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
