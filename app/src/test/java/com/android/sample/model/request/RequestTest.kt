@@ -15,7 +15,9 @@ class RequestTest {
       requestId: String = "test-request-1",
       title: String = "Study Session",
       description: String = "Need help with Math",
-      creatorId: String = "user123"
+      creatorId: String = "user123",
+      currentTime: Long = System.currentTimeMillis(),
+      oneHourLater: Long = currentTime + 3600000 // 1 hour later
   ): Request {
     return Request(
         requestId = requestId,
@@ -25,8 +27,8 @@ class RequestTest {
         location = Location(46.5191, 6.5668, "EPFL"),
         locationName = "EPFL",
         status = RequestStatus.OPEN,
-        startTimeStamp = Date(System.currentTimeMillis()),
-        expirationTime = Date(System.currentTimeMillis() + 3600000),
+        startTimeStamp = Date(currentTime),
+        expirationTime = Date(oneHourLater),
         people = listOf("user1", "user2"),
         tags = listOf(Tags.URGENT, Tags.INDOOR),
         creatorId = creatorId)
@@ -393,9 +395,17 @@ class RequestTest {
 
   @Test
   fun request_equalityWorks() {
-    val request1 = createTestRequest(requestId = "same-id")
-    val request2 = createTestRequest(requestId = "same-id")
-    val request3 = createTestRequest(requestId = "different-id")
+    val currentTime = System.currentTimeMillis()
+    val oneHourLater = currentTime + 3600000 // 1 hour later
+    val request1 =
+        createTestRequest(
+            requestId = "same-id", currentTime = currentTime, oneHourLater = oneHourLater)
+    val request2 =
+        createTestRequest(
+            requestId = "same-id", currentTime = currentTime, oneHourLater = oneHourLater)
+    val request3 =
+        createTestRequest(
+            requestId = "different-id", currentTime = currentTime, oneHourLater = oneHourLater)
 
     assertEquals(request1, request2)
     assertNotEquals(request1, request3)

@@ -60,9 +60,7 @@ class RequestRepositoryFirestore(
       notAuthorized()
     }
 
-    if (requestId != updatedRequest.requestId) {
-      throw IllegalArgumentException("Request ID cannot be changed")
-    }
+    require(requestId == updatedRequest.requestId) { "Request ID cannot be changed" }
 
     collectionRef.document(requestId).set(updatedRequest.toMap()).await()
   }

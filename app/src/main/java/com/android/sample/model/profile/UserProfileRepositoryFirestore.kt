@@ -3,8 +3,6 @@ package com.android.sample.model.profile
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.tasks.await
 
 const val PUBLIC_PROFILES_PATH = "public_profiles"
@@ -103,18 +101,4 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
     privateCollectionRef.document(userId).delete().await()
     publicCollectionRef.document(userId).delete().await()
   }
-
-  /**
-   * Searches for user profiles matching the given query and optional section filter.
-   *
-   * Algorithm:
-   * 1. If section is provided, filter profiles by section.
-   * 2. Split the query into keywords and search for matches in name or lastName fields.
-   * 3. Combine filters to return profiles that match both section and query criteria.
-   */
-  override suspend fun searchUserProfiles(
-      query: String,
-      section: Section?,
-      resultsPerView: Int,
-  ): Flow<UserProfile> = flowOf() // TODO: Implement search with Firestore queries and return Flow
 }

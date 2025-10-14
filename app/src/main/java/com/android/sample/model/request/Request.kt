@@ -24,7 +24,14 @@ data class Request(
   companion object {
     fun fromMap(map: Map<String, Any?>): Request {
       // Basic presence validation (will throw if missing)
-      fun <T> req(key: String): T = map[key] as T
+      fun <T> req(key: String): T {
+        try {
+          return map[key] as T
+        } catch (e: Exception) {
+          // Catching ClassCastException, NullPointerException, etc.
+          throw IllegalArgumentException("Missing or invalid required field: $key")
+        }
+      }
 
       val loc = map["location"]
       val location =
