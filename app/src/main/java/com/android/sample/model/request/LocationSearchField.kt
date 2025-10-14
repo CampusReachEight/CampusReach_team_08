@@ -10,7 +10,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.android.sample.model.map.Location
 
@@ -166,165 +165,31 @@ private fun SelectedLocationCard(location: Location, modifier: Modifier = Modifi
       modifier = modifier.fillMaxWidth(),
       colors =
           CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
-      Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
           Icon(
               imageVector = Icons.Default.LocationOn,
               contentDescription = "Location",
               tint = MaterialTheme.colorScheme.primary,
-              modifier = Modifier.size(24.dp)
-          )
+              modifier = Modifier.size(24.dp))
           Spacer(modifier = Modifier.width(8.dp))
           Column {
-              Text(
-                  text = "Selected Location",
-                  style = MaterialTheme.typography.labelSmall,
-                  color = MaterialTheme.colorScheme.onPrimaryContainer
-              )
-              Text(
-                  text = location.name,
-                  style = MaterialTheme.typography.bodySmall,
-                  color = MaterialTheme.colorScheme.onPrimaryContainer,
-                  maxLines = 2,
-                  overflow = TextOverflow.Ellipsis
-              )
-              Text(
-                  text =
-                      "Lat: ${String.format("%.4f", location.latitude)}, " +
-                              "Lng: ${String.format("%.4f", location.longitude)}",
-                  style = MaterialTheme.typography.bodySmall,
-                  color = MaterialTheme.colorScheme.onPrimaryContainer
-              )
+            Text(
+                text = "Selected Location",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onPrimaryContainer)
+            Text(
+                text = location.name,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis)
+            Text(
+                text =
+                    "Lat: ${String.format("%.4f", location.latitude)}, " +
+                        "Lng: ${String.format("%.4f", location.longitude)}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onPrimaryContainer)
           }
+        }
       }
-  }
-}
-@Preview(showBackground = true, name = "Empty State")
-@Composable
-private fun LocationSearchFieldPreview_Empty() {
-    MaterialTheme {
-        LocationSearchField(
-            locationName = "",
-            location = null,
-            searchResults = emptyList(),
-            isSearching = false,
-            isError = false,
-            errorMessage = "",
-            onLocationNameChange = {},
-            onLocationSelected = {},
-            onSearchQueryChange = {},
-            onClearSearch = {})
-    }
-}
-
-@Preview(showBackground = true, name = "With Text")
-@Composable
-private fun LocationSearchFieldPreview_WithText() {
-    MaterialTheme {
-        LocationSearchField(
-            locationName = "EPFL Lausanne",
-            location = null,
-            searchResults = emptyList(),
-            isSearching = false,
-            isError = false,
-            errorMessage = "",
-            onLocationNameChange = {},
-            onLocationSelected = {},
-            onSearchQueryChange = {},
-            onClearSearch = {})
-    }
-}
-
-@Preview(showBackground = true, name = "Loading State")
-@Composable
-private fun LocationSearchFieldPreview_Loading() {
-    MaterialTheme {
-        LocationSearchField(
-            locationName = "EPFL",
-            location = null,
-            searchResults = emptyList(),
-            isSearching = true,
-            isError = false,
-            errorMessage = "",
-            onLocationNameChange = {},
-            onLocationSelected = {},
-            onSearchQueryChange = {},
-            onClearSearch = {})
-    }
-}
-
-@Preview(showBackground = true, name = "With Search Results")
-@Composable
-private fun LocationSearchFieldPreview_WithResults() {
-    MaterialTheme {
-        LocationSearchField(
-            locationName = "EPFL",
-            location = null,
-            searchResults = listOf(
-                Location(46.5197, 6.5668, "EPFL, Lausanne, Switzerland"),
-                Location(46.5191, 6.5667, "BC Building, EPFL"),
-                Location(46.5200, 6.5670, "Rolex Learning Center")
-            ),
-            isSearching = false,
-            isError = false,
-            errorMessage = "",
-            onLocationNameChange = {},
-            onLocationSelected = {},
-            onSearchQueryChange = {},
-            onClearSearch = {})
-    }
-}
-
-@Preview(showBackground = true, name = "Error State")
-@Composable
-private fun LocationSearchFieldPreview_Error() {
-    MaterialTheme {
-        LocationSearchField(
-            locationName = "",
-            location = null,
-            searchResults = emptyList(),
-            isSearching = false,
-            isError = true,
-            errorMessage = "Location name cannot be empty",
-            onLocationNameChange = {},
-            onLocationSelected = {},
-            onSearchQueryChange = {},
-            onClearSearch = {})
-    }
-}
-
-@Preview(showBackground = true, name = "Selected Location")
-@Composable
-private fun LocationSearchFieldPreview_SelectedLocation() {
-    MaterialTheme {
-        LocationSearchField(
-            locationName = "EPFL, Lausanne, Switzerland",
-            location = Location(46.5197, 6.5668, "EPFL, Lausanne, Switzerland"),
-            searchResults = emptyList(),
-            isSearching = false,
-            isError = false,
-            errorMessage = "",
-            onLocationNameChange = {},
-            onLocationSelected = {},
-            onSearchQueryChange = {},
-            onClearSearch = {})
-    }
-}
-
-@Preview(showBackground = true, name = "Disabled State")
-@Composable
-private fun LocationSearchFieldPreview_Disabled() {
-    MaterialTheme {
-        LocationSearchField(
-            locationName = "EPFL",
-            location = null,
-            searchResults = emptyList(),
-            isSearching = false,
-            isError = false,
-            errorMessage = "",
-            enabled = false,
-            onLocationNameChange = {},
-            onLocationSelected = {},
-            onSearchQueryChange = {},
-            onClearSearch = {})
-    }
 }
