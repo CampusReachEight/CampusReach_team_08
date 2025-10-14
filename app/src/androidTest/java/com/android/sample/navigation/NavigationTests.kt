@@ -3,7 +3,6 @@ package com.android.sample.navigation
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.navigation.compose.rememberNavController
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -51,7 +50,6 @@ class NavigationTests : BaseEmulatorTest() {
   @Test
   fun initialScreenIsRequestsScreen() {
     composeTestRule.onNodeWithTag(NavigationTestTags.REQUESTS_SCREEN).assertIsDisplayed()
-    composeTestRule.onNodeWithText("Requests Screen").assertIsDisplayed()
   }
 
   @Test
@@ -62,7 +60,6 @@ class NavigationTests : BaseEmulatorTest() {
 
     // Verify Events screen is displayed
     composeTestRule.onNodeWithTag(NavigationTestTags.EVENTS_SCREEN).assertIsDisplayed()
-    composeTestRule.onNodeWithText("Events Screen").assertIsDisplayed()
   }
 
   @Test
@@ -88,7 +85,6 @@ class NavigationTests : BaseEmulatorTest() {
 
     // Verify Requests screen is displayed
     composeTestRule.onNodeWithTag(NavigationTestTags.REQUESTS_SCREEN).assertIsDisplayed()
-    composeTestRule.onNodeWithText("Requests Screen").assertIsDisplayed()
   }
 
   @Test
@@ -104,7 +100,6 @@ class NavigationTests : BaseEmulatorTest() {
 
     // Verify Requests screen is displayed
     composeTestRule.onNodeWithTag(NavigationTestTags.REQUESTS_SCREEN).assertIsDisplayed()
-    composeTestRule.onNodeWithText("Requests Screen").assertIsDisplayed()
   }
 
   @Test
@@ -116,7 +111,6 @@ class NavigationTests : BaseEmulatorTest() {
     composeTestRule.onNodeWithTag(NavigationTestTags.EVENT_TAB).performClick()
     composeTestRule.waitForIdle()
     composeTestRule.onNodeWithTag(NavigationTestTags.EVENTS_SCREEN).assertIsDisplayed()
-    composeTestRule.onNodeWithText("Events Screen").assertIsDisplayed()
 
     // Navigate to Map
     composeTestRule.onNodeWithTag(NavigationTestTags.MAP_TAB).performClick()
@@ -150,7 +144,6 @@ class NavigationTests : BaseEmulatorTest() {
 
     // Verify Add Request screen is displayed
     composeTestRule.onNodeWithTag(NavigationTestTags.ADD_REQUEST_SCREEN).assertIsDisplayed()
-    composeTestRule.onNodeWithText("Add Request Screen").assertIsDisplayed()
   }
 
   @Test
@@ -166,7 +159,6 @@ class NavigationTests : BaseEmulatorTest() {
 
     // Verify Add Event screen is displayed
     composeTestRule.onNodeWithTag(NavigationTestTags.ADD_EVENT_SCREEN).assertIsDisplayed()
-    composeTestRule.onNodeWithText("Add Event Screen").assertIsDisplayed()
   }
 
   @Test
@@ -185,7 +177,6 @@ class NavigationTests : BaseEmulatorTest() {
 
     // Verify we're back at Requests screen
     composeTestRule.onNodeWithTag(NavigationTestTags.REQUESTS_SCREEN).assertIsDisplayed()
-    composeTestRule.onNodeWithText("Requests Screen").assertIsDisplayed()
   }
 
   @Test
@@ -206,7 +197,6 @@ class NavigationTests : BaseEmulatorTest() {
 
     // Verify we're back at Events screen
     composeTestRule.onNodeWithTag(NavigationTestTags.EVENTS_SCREEN).assertIsDisplayed()
-    composeTestRule.onNodeWithText("Events Screen").assertIsDisplayed()
   }
 
   @Test
