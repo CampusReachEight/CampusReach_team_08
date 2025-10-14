@@ -3,6 +3,7 @@ package com.android.sample.model.request
 import com.android.sample.model.map.Location
 import com.google.firebase.Timestamp
 import java.util.Date
+import java.util.Locale
 
 data class Request(
     val requestId: String,
@@ -99,3 +100,18 @@ enum class Tags {
   OUTDOOR,
   INDOOR
 }
+
+fun RequestStatus.displayString(): String =
+    name.replace("_", " ").lowercase(Locale.ROOT).replaceFirstChar {
+      if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString()
+    }
+
+fun RequestType.displayString(): String =
+    name.replace("_", " ").lowercase(Locale.ROOT).replaceFirstChar {
+      if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString()
+    }
+
+fun Tags.displayString(): String =
+    name.replace("_", " ").lowercase(Locale.ROOT).replaceFirstChar {
+      if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString()
+    }

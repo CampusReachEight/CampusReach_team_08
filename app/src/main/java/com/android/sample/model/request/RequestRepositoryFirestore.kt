@@ -79,4 +79,33 @@ class RequestRepositoryFirestore(
 
     collectionRef.document(requestId).delete().await()
   }
+
+  override fun hasUserAcceptedRequest(request: Request): Boolean {
+    val currentUserId = Firebase.auth.currentUser?.uid ?: notAuthenticated()
+    return request.people.contains(currentUserId)
+  }
+
+  override suspend fun acceptRequest(requestId: String) {
+    val currentUserId = Firebase.auth.currentUser?.uid ?: notAuthenticated()
+
+    val request = getRequest(requestId)
+
+    check(!hasUserAcceptedRequest(request)) { "You have already accepted this request" }
+    check(request.creatorId != currentUserId) { "You cannot accept your own request" }
+    val list = request.people + currentUserId
+    collectionRef.document(requestId).update("people", list).await()
+  }
+
+  override suspend fun cancelAcceptance(requestId: String) {
+    val currentUserId = Firebase.auth.currentUser?.uid ?: notAuthenticated()
+
+    val request = getRequest(requestId)
+
+    check(hasUserAcceptedRequest(request)) { "You haven't accepted this request" }
+    check(request.creatorId != currentUserId) {
+      "You cannot revoke acceptance on a request you created"
+    }
+    val list = request.people - currentUserId
+    collectionRef.document(requestId).update("people", list).await()
+  }
 }
