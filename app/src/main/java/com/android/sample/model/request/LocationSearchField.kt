@@ -9,8 +9,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.android.sample.R
 import com.android.sample.model.map.Location
 
 object LocationSearchFieldTestTags {
@@ -56,7 +58,7 @@ fun LocationSearchField(
   Column(modifier = modifier) {
     // Label
     Text(
-        text = "Location *",
+        text = stringResource(R.string.location_field_label),
         style = MaterialTheme.typography.labelLarge,
         modifier = Modifier.padding(bottom = 8.dp))
 
@@ -69,8 +71,8 @@ fun LocationSearchField(
             onSearchQueryChange(newValue)
             showDropdown = newValue.isNotEmpty()
           },
-          label = { Text("Location Name") },
-          placeholder = { Text("e.g., BC Building, EPFL, Lausanne") },
+          label = { Text(stringResource(R.string.location_field_name)) },
+          placeholder = { Text(stringResource(R.string.location_field_placeholder)) },
           isError = isError,
           supportingText = {
             if (isError) {
@@ -97,7 +99,9 @@ fun LocationSearchField(
                       showDropdown = false
                     },
                     modifier = Modifier.testTag(LocationSearchFieldTestTags.CLEAR_BUTTON)) {
-                      Icon(Icons.Default.Clear, "Clear")
+                      Icon(
+                          Icons.Default.Clear,
+                          stringResource(R.string.location_field_clear_description))
                     }
               }
             }
@@ -168,13 +172,13 @@ private fun SelectedLocationCard(location: Location, modifier: Modifier = Modifi
         Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
           Icon(
               imageVector = Icons.Default.LocationOn,
-              contentDescription = "Location",
+              contentDescription = stringResource(R.string.location_field_name_simple),
               tint = MaterialTheme.colorScheme.primary,
               modifier = Modifier.size(24.dp))
           Spacer(modifier = Modifier.width(8.dp))
           Column {
             Text(
-                text = "Selected Location",
+                text = stringResource(R.string.location_selected_title),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onPrimaryContainer)
             Text(
