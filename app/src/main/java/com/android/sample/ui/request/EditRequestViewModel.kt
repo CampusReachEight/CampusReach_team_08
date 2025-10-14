@@ -1,5 +1,5 @@
 package com.android.sample.ui.request
-//file for the view model of the edit request screen
+// file for the view model of the edit request screen
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
