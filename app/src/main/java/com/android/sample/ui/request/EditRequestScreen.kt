@@ -13,10 +13,12 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.model.map.Location
+import com.android.sample.model.map.NominatimLocationRepository
 import com.android.sample.model.request.RequestType
 import com.android.sample.model.request.Tags
 import java.text.SimpleDateFormat
 import java.util.*
+import okhttp3.OkHttpClient
 
 /** Test tags for UI elements in EditRequestScreen. Used for UI testing and automation. */
 object EditRequestScreenTestTags {
@@ -44,7 +46,11 @@ fun EditRequestScreen(
     requestId: String? = null,
     creatorId: String,
     onNavigateBack: () -> Unit,
-    viewModel: EditRequestViewModel = viewModel()
+    viewModel: EditRequestViewModel =
+        viewModel(
+            factory =
+                EditRequestViewModelFactory(
+                    locationRepository = NominatimLocationRepository(OkHttpClient())))
 ) {
   val isEditMode = requestId != null
 
@@ -68,6 +74,8 @@ fun EditRequestScreen(
   val tags by viewModel.tags.collectAsState()
   val isLoading by viewModel.isLoading.collectAsState()
   val errorMessage by viewModel.errorMessage.collectAsState()
+  val locationSearchResults by viewModel.locationSearchResults.collectAsState()
+  val isSearchingLocation by viewModel.isSearchingLocation.collectAsState()
 
   Scaffold(
       topBar = {
@@ -92,6 +100,8 @@ fun EditRequestScreen(
             isEditMode = isEditMode,
             isLoading = isLoading,
             errorMessage = errorMessage,
+            locationSearchResults = locationSearchResults,
+            isSearchingLocation = isSearchingLocation,
             onTitleChange = { viewModel.updateTitle(it) },
             onDescriptionChange = { viewModel.updateDescription(it) },
             onRequestTypesChange = { viewModel.updateRequestTypes(it) },
@@ -101,7 +111,9 @@ fun EditRequestScreen(
             onExpirationTimeChange = { viewModel.updateExpirationTime(it) },
             onTagsChange = { viewModel.updateTags(it) },
             onSave = { viewModel.saveRequest(creatorId) { onNavigateBack() } },
-            onClearError = { viewModel.clearError() })
+            onClearError = { viewModel.clearError() },
+            onSearchLocations = { viewModel.searchLocations(it) },
+            onClearLocationSearch = { viewModel.clearLocationSearch() })
       }
 }
 
@@ -154,7 +166,12 @@ fun EditRequestContent(
     onExpirationTimeChange: (Date) -> Unit,
     onTagsChange: (List<Tags>) -> Unit,
     onSave: () -> Unit,
-    onClearError: () -> Unit
+    onClearError: () -> Unit,
+    locationSearchResults: List<Location>,
+    isSearchingLocation: Boolean,
+    onSearchLocations: (String) -> Unit,
+    onClearLocationSearch: () -> Unit,
+    verbose: Boolean = false
 ) {
   // Local validation states for each field
   var showTitleError by remember { mutableStateOf(false) }
@@ -170,13 +187,10 @@ fun EditRequestContent(
   var expirationDateString by remember { mutableStateOf(dateFormat.format(expirationTime)) }
 
   // Location search state
-  var locationSearchText by remember { mutableStateOf(locationName) }
-  var selectedLocation by remember { mutableStateOf(location) }
 
   // Update local states when props change
   LaunchedEffect(startTimeStamp) { startDateString = dateFormat.format(startTimeStamp) }
   LaunchedEffect(expirationTime) { expirationDateString = dateFormat.format(expirationTime) }
-  LaunchedEffect(location) { selectedLocation = location }
 
   /** Validates date string format and optionally checks if date is in the past. */
   fun isValidDate(dateString: String, allowPast: Boolean = false): Boolean {
@@ -282,31 +296,23 @@ fun EditRequestContent(
               modifier = Modifier.testTag(EditRequestScreenTestTags.ERROR_MESSAGE))
         }
 
-        // Location Search
-        Text("Location *", style = MaterialTheme.typography.labelLarge)
-        // TODO: Implement location search field here
-
-        // Location Name
-        OutlinedTextField(
-            value = locationName,
-            onValueChange = {
-              onLocationNameChange(it)
-              showLocationNameError = it.isBlank()
-            },
-            label = { Text("Location Name") },
-            placeholder = { Text("e.g., BC Building, Room 123") },
+        // location search field
+        // separate class
+        LocationSearchField(
+            locationName = locationName,
+            location = location,
+            searchResults = locationSearchResults,
+            isSearching = isSearchingLocation,
             isError = showLocationNameError,
-            supportingText = {
-              if (showLocationNameError) {
-                Text(
-                    text = "Location name cannot be empty",
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.testTag(EditRequestScreenTestTags.ERROR_MESSAGE))
-              }
-            },
-            modifier =
-                Modifier.fillMaxWidth().testTag(EditRequestScreenTestTags.INPUT_LOCATION_NAME),
-            enabled = !isLoading)
+            errorMessage = "Location name cannot be empty",
+            enabled = !isLoading,
+            onLocationNameChange = onLocationNameChange,
+            onLocationSelected = onLocationChange,
+            onSearchQueryChange = onSearchLocations,
+            onClearSearch = onClearLocationSearch,
+            modifier = Modifier.fillMaxWidth())
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         // Start Date Field
         OutlinedTextField(
@@ -322,7 +328,9 @@ fun EditRequestContent(
                     onStartTimeStampChange(parsedDate)
                   }
                 } catch (e: Exception) {
-                  // Handle parsing error
+                  if (verbose) {
+                    Log.d("EditRequest", "Error parsing start date: ${e.localizedMessage}")
+                  }
                 }
               }
             },
@@ -354,7 +362,10 @@ fun EditRequestContent(
                     onExpirationTimeChange(parsedDate)
                   }
                 } catch (e: Exception) {
-                  // Handle parsing error
+                  println("Error parsing expiration date !: ${e.localizedMessage}")
+                  if (verbose) {
+                    Log.d("EditRequest", "Error parsing expiration date: ${e.localizedMessage}")
+                  }
                 }
               }
             },
@@ -386,22 +397,24 @@ fun EditRequestContent(
               val isTitleValid = title.isNotBlank()
               val isDescriptionValid = description.isNotBlank()
               val isRequestTypeValid = requestTypes.isNotEmpty()
-              val isLocationValid = selectedLocation != null
+              val isLocationValid = location != null
+
               val isLocationNameValid = locationName.isNotBlank()
 
               // For dates, just check they're not blank - the Date objects are already valid
               val isStartDateValid = startDateString.isNotBlank()
               val isExpirationDateValid = expirationDateString.isNotBlank()
-              Log.d("EditRequest", "=== Validation Check ===")
-              Log.d("EditRequest", "title: $isTitleValid (value: '$title')")
-              Log.d("EditRequest", "description: $isDescriptionValid (value: '$description')")
-              Log.d("EditRequest", "requestTypes: $isRequestTypeValid (value: $requestTypes)")
-              Log.d("EditRequest", "location: $isLocationValid (value: $selectedLocation)")
-              Log.d("EditRequest", "locationName: $isLocationNameValid (value: '$locationName')")
-              Log.d("EditRequest", "startDate: $isStartDateValid (value: '$startDateString')")
-              Log.d(
-                  "EditRequest",
-                  "expirationDate: $isExpirationDateValid (value: '$expirationDateString')")
+              if (verbose) {
+                Log.d("EditRequest", "validation check")
+                Log.d("EditRequest", "title: $isTitleValid (value: '$title')")
+                Log.d("EditRequest", "description: $isDescriptionValid (value: '$description')")
+                Log.d("EditRequest", "requestTypes: $isRequestTypeValid (value: $requestTypes)")
+                Log.d("EditRequest", "locationName: $isLocationNameValid (value: '$locationName')")
+                Log.d("EditRequest", "startDate: $isStartDateValid (value: '$startDateString')")
+                Log.d(
+                    "EditRequest",
+                    "expirationDate: $isExpirationDateValid (value: '$expirationDateString')")
+              }
               showTitleError = !isTitleValid
               showDescriptionError = !isDescriptionValid
               showRequestTypeError = !isRequestTypeValid
@@ -436,21 +449,6 @@ fun EditRequestContent(
  *
  * Displays all available RequestType enum values as FilterChips in a flowing layout that wraps to
  * multiple lines. Users can select/deselect multiple types.
- *
- * **What it does:**
- * - Shows chips like: [STUDYING] [SPORT] [EATING] [HARDWARE]...
- * - Selected chips are highlighted (filled style)
- * - Clicking a chip toggles it on/off
- * - Supports multiple selections (e.g., both STUDYING and SPORT can be selected)
- *
- * **Example usage:**
- *
- * ```
- * RequestTypeChipGroup(
- *     selectedTypes = listOf(RequestType.STUDYING, RequestType.SPORT),
- *     onSelectionChanged = { newList -> viewModel.updateRequestTypes(newList) }
- * )
- * ```
  *
  * @param selectedTypes List of currently selected RequestType values
  * @param onSelectionChanged Callback invoked when selection changes, receives the new list
@@ -494,22 +492,6 @@ fun RequestTypeChipGroup(
  * - Clicking toggles selection on/off
  * - Multiple tags can be selected simultaneously
  *
- * **Visual behavior:**
- *
- * ```
- * [URGENT] [EASY] [GROUP_WORK]     ← Row 1
- * [OUTDOOR] [INDOOR]                ← Row 2 (wrapped)
- * ```
- *
- * **Example usage:**
- *
- * ```
- * TagsChipGroup(
- *     selectedTags = listOf(Tags.URGENT, Tags.OUTDOOR),
- *     onSelectionChanged = { newTags -> viewModel.updateTags(newTags) }
- * )
- * ```
- *
  * @param selectedTags List of currently selected Tags values
  * @param onSelectionChanged Callback invoked when selection changes, receives the new list
  * @param enabled Whether the chips are interactive (default: true)
@@ -523,7 +505,7 @@ fun TagsChipGroup(
 ) {
   FlowRow(
       horizontalArrangement = Arrangement.spacedBy(8.dp),
-      verticalArrangement = Arrangement.spacedBy(8.dp), // Space between rows
+      verticalArrangement = Arrangement.spacedBy(8.dp),
       modifier = Modifier.fillMaxWidth()) {
         Tags.entries.forEach { tag ->
           FilterChip(

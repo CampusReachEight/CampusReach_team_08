@@ -1,8 +1,10 @@
 package com.android.sample.ui.request
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.android.sample.model.map.Location
+import com.android.sample.model.map.LocationRepository
 import com.android.sample.model.request.Request
 import com.android.sample.model.request.RequestRepository
 import com.android.sample.model.request.RequestRepositoryProvider
@@ -25,13 +27,14 @@ import kotlinx.coroutines.launch
  */
 class EditRequestViewModel(
     private val requestRepository: RequestRepository = RequestRepositoryProvider.repository,
+    private val locationRepository: LocationRepository
 ) : ViewModel() {
 
   // Current request being edited (null for create mode)
   private val _currentRequest = MutableStateFlow<Request?>(null)
   val currentRequest: StateFlow<Request?> = _currentRequest.asStateFlow()
 
-  // Form field states
+  // Form field statesF
   private val _title = MutableStateFlow("")
   val title: StateFlow<String> = _title.asStateFlow()
 
@@ -40,6 +43,11 @@ class EditRequestViewModel(
 
   private val _requestTypes = MutableStateFlow<List<RequestType>>(emptyList())
   val requestTypes: StateFlow<List<RequestType>> = _requestTypes.asStateFlow()
+
+  private val _locationSearchResults = MutableStateFlow<List<Location>>(emptyList())
+  val locationSearchResults = _locationSearchResults.asStateFlow()
+  private val _isSearchingLocation = MutableStateFlow(false)
+  val isSearchingLocation = _isSearchingLocation.asStateFlow()
 
   private val _location = MutableStateFlow<Location?>(null)
   val location: StateFlow<Location?> = _location.asStateFlow()
@@ -93,6 +101,30 @@ class EditRequestViewModel(
         _errorMessage.value = "Failed to load request: ${e.localizedMessage}"
       } finally {
         _isLoading.value = false
+      }
+    }
+  }
+
+  fun clearLocationSearch() {
+    _locationSearchResults.value = emptyList()
+  }
+
+  fun searchLocations(query: String) {
+    if (query.length < 3) { // Only search if 3+ characters
+      _locationSearchResults.value = emptyList()
+      return
+    }
+
+    viewModelScope.launch {
+      _isSearchingLocation.value = true
+      try {
+        val results = locationRepository.search(query, limit = 5)
+        _locationSearchResults.value = results
+      } catch (e: Exception) {
+        _errorMessage.value = "Location search failed: ${e.message}"
+        _locationSearchResults.value = emptyList()
+      } finally {
+        _isSearchingLocation.value = false
       }
     }
   }
@@ -225,5 +257,18 @@ class EditRequestViewModel(
     _errorMessage.value = null
     _isLoading.value = false
     _isEditMode.value = false
+  }
+}
+/** Factory for creating EditRequestViewModel with dependencies. */
+class EditRequestViewModelFactory(
+    private val requestRepository: RequestRepository = RequestRepositoryProvider.repository,
+    private val locationRepository: LocationRepository
+) : ViewModelProvider.Factory {
+  @Suppress("UNCHECKED_CAST")
+  override fun <T : ViewModel> create(modelClass: Class<T>): T {
+    if (modelClass.isAssignableFrom(EditRequestViewModel::class.java)) {
+      return EditRequestViewModel(requestRepository, locationRepository) as T
+    }
+    throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
   }
 }
