@@ -3,8 +3,13 @@ package com.android.sample.ui.profile
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import com.google.firebase.auth.FirebaseAuth
 
-class ProfileViewModel(initialState: ProfileState = ProfileState.default()) : ViewModel() {
+class ProfileViewModel(
+  initialState: ProfileState = ProfileState.default(),
+  private val fireBaseAuth: FirebaseAuth = FirebaseAuth.getInstance(),
+  private val onLogout: (() -> Unit)? = null // Optional callback for navigation
+) : ViewModel() {
   private val _state = MutableStateFlow(initialState)
   val state: StateFlow<ProfileState> = _state
 
@@ -20,7 +25,6 @@ class ProfileViewModel(initialState: ProfileState = ProfileState.default()) : Vi
       _state.value = _state.value.copy(isLoading = loading)
   }
 
-  // Example: update profile name
   fun updateUserName(newName: String) {
       _state.value = _state.value.copy(userName = newName)
   }
@@ -34,6 +38,9 @@ class ProfileViewModel(initialState: ProfileState = ProfileState.default()) : Vi
   }
 
   fun logout() {
-      _state.value = _state.value.copy(isLoggingOut = false)
+    _state.value = _state.value.copy(isLoggingOut = false, isLoading = true)
+    fireBaseAuth.signOut() // Log out user
+    _state.value = ProfileState.empty()
+    onLogout?.invoke()
   }
 }
