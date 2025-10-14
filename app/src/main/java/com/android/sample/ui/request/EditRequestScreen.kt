@@ -332,7 +332,8 @@ fun EditRequestContent(
             onLocationSelected = onLocationChange,
             onSearchQueryChange = onSearchLocations,
             onClearSearch = onClearLocationSearch,
-            modifier = Modifier.fillMaxWidth())
+            modifier =
+                Modifier.fillMaxWidth().testTag(EditRequestScreenTestTags.INPUT_LOCATION_NAME))
 
         Spacer(modifier = Modifier.height(16.dp))
 
