@@ -16,6 +16,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -67,89 +70,165 @@ object ProfileDimens {
   val IconSize = 40.dp
 }
 
+// Kotlin
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     viewModel: ProfileViewModel = viewModel(),
-    onBackClick: () -> Unit = {},
-    onEditProfile: (String, String) -> Unit = { _, _ -> }
+    onBackClick: () -> Unit = {}
 ) {
     val state by viewModel.state.collectAsState()
+    var nameInput by remember { mutableStateOf(state.userName) }
+    var sectionInput by remember { mutableStateOf(state.section) }
+
     Scaffold(
         modifier = Modifier.testTag(NavigationTestTags.PROFILE_SCREEN),
         containerColor = PrimaryColor,
-        topBar = {
-            TopAppBar(
-                title = { Text("Profile") },
-                navigationIcon = {
-                    IconButton(
-                        onClick = onBackClick,
-                        modifier = Modifier.testTag("profile_nav_back")
-                    ) {
-                        Icon(Icons.Default.ArrowBack, "Back")
-                    }
-                })
-        }
+        topBar = { ProfileTopBar(onBackClick) }
     ) { padding ->
-        Box(modifier = Modifier
-            .fillMaxSize()
-            .padding(padding)
-            .testTag("profile_content_box")) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .testTag("profile_content_box")
+        ) {
             when {
-                state.isLoading -> {
-                    CircularProgressIndicator(
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .testTag("profile_loading"))
-                }
-                state.errorMessage != null -> {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .verticalScroll(rememberScrollState())
-                            .testTag("profile_error_column")
-                    ) {
-                        Text(
-                            text = state.errorMessage!!,
-                            color = MaterialTheme.colorScheme.error,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(ProfileDimens.Horizontal)
-                                .testTag("profile_error"),
-                            textAlign = TextAlign.Center)
-                        Spacer(modifier = Modifier.height(ProfileDimens.Vertical))
-                        // Optionally add a retry button for error state
-                        Button(
-                            onClick = { /* TODO: Add retry logic */ },
-                            modifier = Modifier
-                                .align(Alignment.CenterHorizontally)
-                                .testTag("profile_error_retry")
-                        ) {
-                            Text("Retry")
-                        }
+                state.isLoading -> ProfileLoading()
+                state.errorMessage != null -> ProfileError(state.errorMessage)
+                state.isEditMode -> ProfileEditForm(
+                    nameInput = nameInput,
+                    sectionInput = sectionInput,
+                    onNameChange = { nameInput = it },
+                    onSectionChange = { sectionInput = it },
+                    onSave = {
+                        viewModel.updateProfile(nameInput, sectionInput)
+                    },
+                    onCancel = { viewModel.exitEditMode() }
+                )
+                else -> ProfileContent(
+                    state = state,
+                    onEditClick = {
+                        nameInput = state.userName
+                        sectionInput = state.section
+                        viewModel.enterEditMode()
                     }
-                }
-                else -> {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .verticalScroll(rememberScrollState())
-                            .testTag("profile_main_column")
-                    ) {
-                        ProfileHeader(
-                            state = state,
-                            onEditClick = { onEditProfile(state.userName, state.section) }
-                        )
-                        Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
-                        ProfileStats(state = state)
-                        Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
-                        ProfileInformation(state = state)
-                        Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
-                        ProfileActions()
-                    }
-                }
+                )
             }
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ProfileTopBar(onBackClick: () -> Unit) {
+    TopAppBar(
+        title = { Text("Profile") },
+        navigationIcon = {
+            IconButton(
+                onClick = onBackClick,
+                modifier = Modifier.testTag("profile_nav_back")
+            ) {
+                Icon(Icons.Default.ArrowBack, "Back")
+            }
+        }
+    )
+}
+
+@Composable
+fun ProfileLoading() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        CircularProgressIndicator(
+            modifier = Modifier.testTag("profile_loading")
+        )
+    }
+}
+
+@Composable
+fun ProfileError(errorMessage: String?) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .testTag("profile_error_column")
+    ) {
+        Text(
+            text = errorMessage ?: "",
+            color = MaterialTheme.colorScheme.error,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(ProfileDimens.Horizontal)
+                .testTag("profile_error"),
+            textAlign = TextAlign.Center
+        )
+        Spacer(modifier = Modifier.height(ProfileDimens.Vertical))
+        Button(
+            onClick = { /* TODO: Add retry logic */ },
+            modifier = Modifier
+                .align(Alignment.CenterHorizontally)
+                .testTag("profile_error_retry")
+        ) {
+            Text("Retry")
+        }
+    }
+}
+
+@Composable
+fun ProfileEditForm(
+    nameInput: String,
+    sectionInput: String,
+    onNameChange: (String) -> Unit,
+    onSectionChange: (String) -> Unit,
+    onSave: () -> Unit,
+    onCancel: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .testTag("profile_edit_form")
+            .padding(ProfileDimens.Horizontal)
+    ) {
+        OutlinedTextField(
+            value = nameInput,
+            onValueChange = onNameChange,
+            label = { Text("Name") }
+        )
+        Spacer(modifier = Modifier.height(ProfileDimens.Vertical))
+        OutlinedTextField(
+            value = sectionInput,
+            onValueChange = onSectionChange,
+            label = { Text("Section") }
+        )
+        Spacer(modifier = Modifier.height(ProfileDimens.Vertical))
+        Row {
+            Button(onClick = onSave) { Text("Save") }
+            Spacer(modifier = Modifier.width(ProfileDimens.Horizontal))
+            Button(onClick = onCancel) { Text("Cancel") }
+        }
+    }
+}
+
+@Composable
+fun ProfileContent(
+    state: ProfileState,
+    onEditClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .testTag("profile_main_column")
+    ) {
+        ProfileHeader(state = state, onEditClick = onEditClick)
+        Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
+        ProfileStats(state = state)
+        Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
+        ProfileInformation(state = state)
+        Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
+        ProfileActions()
     }
 }
 
