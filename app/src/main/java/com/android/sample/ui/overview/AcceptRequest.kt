@@ -29,6 +29,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.model.request.displayString
+import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.overview.ConstantAcceptRequest.TEXT_SIZE
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -72,6 +73,7 @@ fun AcceptRequestScreen(
   }
 
   Scaffold(
+      modifier = Modifier.testTag(NavigationTestTags.ACCEPT_REQUEST_SCREEN),
       topBar = {
         TopAppBar(
             title = {

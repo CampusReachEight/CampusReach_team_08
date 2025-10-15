@@ -16,6 +16,7 @@ import com.android.sample.model.map.Location
 import com.android.sample.model.map.NominatimLocationRepository
 import com.android.sample.model.request.RequestType
 import com.android.sample.model.request.Tags
+import com.android.sample.ui.navigation.NavigationTestTags
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import java.text.SimpleDateFormat
@@ -65,6 +66,13 @@ fun EditRequestScreen(
     }
   }
 
+  val navigationTag: String =
+      if (isEditMode) {
+        NavigationTestTags.EDIT_REQUEST_SCREEN
+      } else {
+        NavigationTestTags.ADD_REQUEST_SCREEN
+      }
+
   // Collect ViewModel state
   val title by viewModel.title.collectAsState()
   val description by viewModel.description.collectAsState()
@@ -88,7 +96,8 @@ fun EditRequestScreen(
                 Icon(Icons.Default.Close, contentDescription = "Cancel")
               }
             })
-      }) { paddingValues ->
+      },
+      modifier = Modifier.testTag(navigationTag)) { paddingValues ->
         EditRequestContent(
             paddingValues = paddingValues,
             title = title,
