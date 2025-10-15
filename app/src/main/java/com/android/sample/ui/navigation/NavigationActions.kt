@@ -24,11 +24,17 @@ sealed class Screen(
 
   object AddEvent : Screen(route = "events/add")
 
-  data class RequestDetails(val requestId: String) :
-      Screen(route = "requests/details/${requestId}") {
+  data class RequestAccept(val requestId: String) : Screen(route = "requests/accept/${requestId}") {
     companion object {
       const val ARG_REQUEST_ID = "requestId"
-      const val route = "requests/details/{$ARG_REQUEST_ID}"
+      const val route = "requests/accept/{$ARG_REQUEST_ID}"
+    }
+  }
+
+  data class EditRequest(val requestId: String) : Screen(route = "requests/edit/${requestId}") {
+    companion object {
+      const val ARG_REQUEST_ID = "requestId"
+      const val route = "requests/edit/{$ARG_REQUEST_ID}"
     }
   }
 

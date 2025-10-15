@@ -19,17 +19,27 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navigation
+import com.android.sample.model.map.NominatimLocationRepository
+import com.android.sample.model.request.RequestRepositoryFirestore
 import com.android.sample.ui.authentication.SignInScreen
 import com.android.sample.ui.authentication.SignInViewModel
 import com.android.sample.ui.map.MapScreen
 import com.android.sample.ui.map.MapViewModel
+import com.android.sample.ui.overview.AcceptRequestScreen
+import com.android.sample.ui.overview.AcceptRequestViewModel
 import com.android.sample.ui.profile.ProfileScreen
 import com.android.sample.ui.profile.ProfileViewModel
+import com.android.sample.ui.request.EditRequestScreen
+import com.android.sample.ui.request.EditRequestViewModel
+import com.android.sample.ui.request.EditRequestViewModelFactory
 import com.android.sample.ui.request.RequestListScreen
 import com.android.sample.ui.request.RequestListViewModel
 import com.android.sample.ui.theme.BottomNavigationMenu
 import com.android.sample.ui.theme.NavigationTab
+import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.firestore
+import okhttp3.OkHttpClient
 
 @Composable
 fun NavigationScreen(
@@ -42,11 +52,21 @@ fun NavigationScreen(
   var isSignedIn by rememberSaveable { mutableStateOf(user != null) }
   val startDestination = if (!isSignedIn) "login" else "requests"
 
+  // repositories
+  val requestRepository = RequestRepositoryFirestore(Firebase.firestore)
+  val locationRepository = NominatimLocationRepository(client = OkHttpClient())
+
   // ViewModels
   val signInViewModel: SignInViewModel = viewModel()
   val profileViewModel: ProfileViewModel = viewModel()
   val mapViewModel: MapViewModel = viewModel()
   val requestListViewModel: RequestListViewModel = viewModel()
+  val editRequestViewModel: EditRequestViewModel =
+      viewModel(
+          factory =
+              EditRequestViewModelFactory(
+                  requestRepository = requestRepository, locationRepository = locationRepository))
+  val acceptRequestViewModel: AcceptRequestViewModel = viewModel()
 
   NavHost(
       navController = navController,
@@ -65,18 +85,26 @@ fun NavigationScreen(
             requestListViewModel = requestListViewModel, navigationActions = navigationActions)
       }
       composable(Screen.AddRequest.route) {
-        PlaceHolderScreen(
-            text = "Add Request Screen",
-            modifier = Modifier.testTag(NavigationTestTags.ADD_REQUEST_SCREEN),
-            withBottomBar = true)
+        EditRequestScreen(
+            requestId = null, // launch in add mode
+            onNavigateBack = { navigationActions.goBack() },
+            viewModel = editRequestViewModel)
       }
-      composable(Screen.RequestDetails.route) { navBackStackEntry ->
-        val requestId = navBackStackEntry.arguments?.getString(Screen.RequestDetails.ARG_REQUEST_ID)
-        PlaceHolderScreen(
-            text = "Edit Request Screen: $requestId",
-            modifier = Modifier.testTag(NavigationTestTags.EDIT_REQUEST_SCREEN),
-            withBottomBar = false,
-        )
+      composable(Screen.RequestAccept.route) { navBackStackEntry ->
+        val requestId = navBackStackEntry.arguments?.getString(Screen.RequestAccept.ARG_REQUEST_ID)
+        requestId?.let { id ->
+          AcceptRequestScreen(
+              requestId = id,
+              onGoBack = { navigationActions.goBack() },
+              acceptRequestViewModel = acceptRequestViewModel)
+        }
+      }
+      composable(Screen.EditRequest.route) { navBackStackEntry ->
+        val requestId = navBackStackEntry.arguments?.getString(Screen.EditRequest.ARG_REQUEST_ID)
+        EditRequestScreen(
+            requestId = requestId,
+            onNavigateBack = { navigationActions.goBack() },
+            viewModel = editRequestViewModel)
       }
     }
 

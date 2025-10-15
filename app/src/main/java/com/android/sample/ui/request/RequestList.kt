@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Card
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,6 +25,8 @@ import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.navigation.Screen
 import com.android.sample.ui.theme.BottomNavigationMenu
 import com.android.sample.ui.theme.NavigationTab
+import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
 
 val LIST_PADDING = 16.dp
 val LIST_ITEM_PADDING = 8.dp
@@ -53,7 +56,8 @@ fun RequestListScreen(
       bottomBar = {
         BottomNavigationMenu(
             selectedNavigationTab = NavigationTab.Requests, navigationActions = navigationActions)
-      }) { innerPadding ->
+      },
+      floatingActionButton = { AddButton(navigationActions) }) { innerPadding ->
         val state by requestListViewModel.state.collectAsState()
         if (state.requests.isEmpty()) {
           Text(
@@ -69,7 +73,15 @@ fun RequestListScreen(
         RequestList(
             state = state,
             icons = icons,
-            onRequestClick = { navigationActions?.navigateTo(Screen.RequestDetails(it)) },
+            onRequestClick = {
+              Firebase.auth.currentUser?.uid?.let { id ->
+                if (it.creatorId == id) {
+                  navigationActions?.navigateTo(Screen.EditRequest(it.requestId))
+                  return@RequestList
+                }
+                navigationActions?.navigateTo(Screen.RequestAccept(it.requestId))
+              }
+            },
             modifier = Modifier.fillMaxSize().padding(innerPadding))
       }
 }
@@ -78,7 +90,7 @@ fun RequestListScreen(
 fun RequestList(
     state: RequestListState,
     icons: Map<String, Bitmap?>,
-    onRequestClick: (String) -> Unit,
+    onRequestClick: (Request) -> Unit,
     modifier: Modifier = Modifier
 ) {
   LazyColumn(modifier = modifier.padding(LIST_PADDING)) {
@@ -93,7 +105,7 @@ fun RequestList(
 fun RequestListItem(
     request: Request,
     icon: Bitmap?,
-    onClick: (String) -> Unit,
+    onClick: (Request) -> Unit,
     modifier: Modifier = Modifier
 ) {
   Card(
@@ -101,7 +113,7 @@ fun RequestListItem(
           modifier
               .padding(bottom = LIST_ITEM_PADDING)
               .fillMaxWidth()
-              .clickable(onClick = { onClick(request.requestId) })
+              .clickable(onClick = { onClick(request) })
               .testTag(RequestListTestTags.REQUEST_ITEM),
   ) {
     Row(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
@@ -127,4 +139,9 @@ fun RequestListItem(
       }
     }
   }
+}
+
+@Composable
+fun AddButton(navigationActions: NavigationActions?) {
+  FloatingActionButton(onClick = { navigationActions?.navigateTo(Screen.AddRequest) }) { Text("+") }
 }
