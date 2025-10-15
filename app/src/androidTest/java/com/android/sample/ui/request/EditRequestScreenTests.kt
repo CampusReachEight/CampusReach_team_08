@@ -43,38 +43,39 @@ class EditRequestScreenTest {
       isEditMode: Boolean = false,
       onSave: () -> Unit = {}
   ) {
-    var title by remember { mutableStateOf(initialTitle) }
-    var description by remember { mutableStateOf(initialDescription) }
-    var requestTypes by remember { mutableStateOf(initialRequestTypes) }
-    var location by remember { mutableStateOf(initialLocation) }
-    var locationName by remember { mutableStateOf(initialLocationName) }
-    var startTimeStamp by remember { mutableStateOf(futureDate) }
-    var expirationTime by remember { mutableStateOf(Date(futureDate.time + 86400000)) }
-    var tags by remember { mutableStateOf(initialTags) }
+    val title = remember { mutableStateOf(initialTitle) }
+    val description = remember { mutableStateOf(initialDescription) }
+    val requestTypes = remember { mutableStateOf(initialRequestTypes) }
+    val location = remember { mutableStateOf(initialLocation) }
+    val locationName = remember { mutableStateOf(initialLocationName) }
+    val startTimeStamp = remember { mutableStateOf(futureDate) }
+    val expirationTime = remember { mutableStateOf(Date(futureDate.time + 86400000)) }
+    val tags = remember { mutableStateOf(initialTags) }
+
     MaterialTheme {
       EditRequestContent(
           paddingValues = PaddingValues(0.dp),
-          title = title,
-          description = description,
-          requestTypes = requestTypes,
-          location = location,
-          locationName = locationName,
-          startTimeStamp = startTimeStamp,
-          expirationTime = expirationTime,
-          tags = tags,
+          title = title.value,
+          description = description.value,
+          requestTypes = requestTypes.value,
+          location = location.value,
+          locationName = locationName.value,
+          startTimeStamp = startTimeStamp.value,
+          expirationTime = expirationTime.value,
+          tags = tags.value,
           isEditMode = isEditMode,
           isLoading = false,
           errorMessage = null,
           locationSearchResults = emptyList(),
           isSearchingLocation = false,
-          onTitleChange = { title = it },
-          onDescriptionChange = { description = it },
-          onRequestTypesChange = { requestTypes = it },
-          onLocationChange = { location = it },
-          onLocationNameChange = { locationName = it },
-          onStartTimeStampChange = { startTimeStamp = it },
-          onExpirationTimeChange = { expirationTime = it },
-          onTagsChange = { tags = it },
+          onTitleChange = { title.value = it },
+          onDescriptionChange = { description.value = it },
+          onRequestTypesChange = { requestTypes.value = it },
+          onLocationChange = { location.value = it },
+          onLocationNameChange = { locationName.value = it },
+          onStartTimeStampChange = { startTimeStamp.value = it },
+          onExpirationTimeChange = { expirationTime.value = it },
+          onTagsChange = { tags.value = it },
           onSave = onSave,
           onClearError = {},
           onSearchLocations = {},
