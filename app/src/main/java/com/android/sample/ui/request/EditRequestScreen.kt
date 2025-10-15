@@ -16,6 +16,9 @@ import com.android.sample.model.map.Location
 import com.android.sample.model.map.NominatimLocationRepository
 import com.android.sample.model.request.RequestType
 import com.android.sample.model.request.Tags
+import com.android.sample.ui.navigation.NavigationTestTags
+import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
 import java.text.SimpleDateFormat
 import java.util.*
 import okhttp3.OkHttpClient
@@ -45,7 +48,6 @@ object EditRequestScreenTestTags {
 @Composable
 fun EditRequestScreen(
     requestId: String? = null,
-    creatorId: String,
     onNavigateBack: () -> Unit,
     viewModel: EditRequestViewModel =
         viewModel(
@@ -60,9 +62,16 @@ fun EditRequestScreen(
     if (requestId != null) {
       viewModel.loadRequest(requestId)
     } else {
-      viewModel.initializeForCreate(creatorId)
+      viewModel.initializeForCreate(Firebase.auth.currentUser?.uid ?: "")
     }
   }
+
+  val navigationTag: String =
+      if (isEditMode) {
+        NavigationTestTags.EDIT_REQUEST_SCREEN
+      } else {
+        NavigationTestTags.ADD_REQUEST_SCREEN
+      }
 
   // Collect ViewModel state
   val title by viewModel.title.collectAsState()
@@ -87,7 +96,8 @@ fun EditRequestScreen(
                 Icon(Icons.Default.Close, contentDescription = "Cancel")
               }
             })
-      }) { paddingValues ->
+      },
+      modifier = Modifier.testTag(navigationTag)) { paddingValues ->
         EditRequestContent(
             paddingValues = paddingValues,
             title = title,
@@ -111,7 +121,9 @@ fun EditRequestScreen(
             onStartTimeStampChange = { viewModel.updateStartTimeStamp(it) },
             onExpirationTimeChange = { viewModel.updateExpirationTime(it) },
             onTagsChange = { viewModel.updateTags(it) },
-            onSave = { viewModel.saveRequest(creatorId) { onNavigateBack() } },
+            onSave = {
+              viewModel.saveRequest(Firebase.auth.currentUser?.uid ?: "") { onNavigateBack() }
+            },
             onClearError = { viewModel.clearError() },
             onSearchLocations = { viewModel.searchLocations(it) },
             onClearLocationSearch = { viewModel.clearLocationSearch() })

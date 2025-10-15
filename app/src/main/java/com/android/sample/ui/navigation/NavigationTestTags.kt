@@ -11,6 +11,7 @@ object NavigationTestTags {
   const val REQUESTS_SCREEN = "RequestScreen"
   const val ADD_REQUEST_SCREEN = "AddRequestScreen"
   const val EDIT_REQUEST_SCREEN = "EditRequestScreen"
+  const val ACCEPT_REQUEST_SCREEN = "RequestAcceptScreen"
   const val EVENTS_SCREEN = "EventScreen"
   const val ADD_EVENT_SCREEN = "AddEventScreen"
   const val EDIT_EVENT_SCREEN = "EditEventScreen"
