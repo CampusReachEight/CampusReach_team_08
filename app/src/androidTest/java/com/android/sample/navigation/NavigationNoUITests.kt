@@ -240,7 +240,7 @@ class NavigationNoUITests : TestCase() {
     navigateTo(Screen.Requests)
     assertScreen(NavigationTestTags.REQUESTS_SCREEN)
 
-    navigateTo(Screen.RequestDetails("123"))
+    navigateTo(Screen.RequestAccept("123"))
     assertScreen(NavigationTestTags.EDIT_REQUEST_SCREEN)
 
     goBack()
@@ -250,7 +250,7 @@ class NavigationNoUITests : TestCase() {
   @Test
   fun pressBackOnEditRequestReturnsToRequests() {
     navigateTo(Screen.Requests)
-    navigateTo(Screen.RequestDetails("456"))
+    navigateTo(Screen.RequestAccept("456"))
     assertScreen(NavigationTestTags.EDIT_REQUEST_SCREEN)
 
     pressSystemBack(shouldFinish = false)
@@ -366,7 +366,7 @@ class NavigationNoUITests : TestCase() {
     goBack()
     assertScreen(NavigationTestTags.REQUESTS_SCREEN)
 
-    navigateTo(Screen.RequestDetails("test123"))
+    navigateTo(Screen.RequestAccept("test123"))
     assertScreen(NavigationTestTags.EDIT_REQUEST_SCREEN)
 
     goBack()

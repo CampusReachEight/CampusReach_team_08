@@ -204,7 +204,7 @@ class RequestListTests : BaseEmulatorTest() {
     composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
     composeTestRule.waitUntil(5_000) { vm.profileIcons.value.containsKey(fail) }
 
-    composeTestRule.onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM_ICON).assertCountEquals(0)
+    composeTestRule.onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM_ICON, useUnmergedTree = true).assertCountEquals(0)
   }
 
   @Test
