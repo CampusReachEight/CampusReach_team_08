@@ -42,6 +42,9 @@ object ProfileTestTags {
   const val PROFILE_STAT_BOTTOM_FOLLOWING = "profile_stat_bottom_following"
   const val PROFILE_ACTION_LOG_OUT = "profile_action_log_out"
   const val PROFILE_ACTION_ABOUT_APP = "profile_action_about_app"
+  const val LOG_OUT_DIALOG = "log_out_dialog"
+  const val LOG_OUT_DIALOG_CONFIRM = "log_out_dialog_confirm"
+  const val LOG_OUT_DIALOG_CANCEL = "log_out_dialog_cancel"
 }
 
 val PrimaryColor = Color(0xFFF0F4FF)
@@ -115,14 +118,23 @@ fun ProfileScreen(viewModel: ProfileViewModel = viewModel(), onBackClick: () -> 
 
                 if (state.isLoggingOut) {
                   AlertDialog(
+                      modifier = Modifier.testTag(ProfileTestTags.LOG_OUT_DIALOG),
                       onDismissRequest = { viewModel.hideLogoutDialog() },
                       title = { Text("Log out") },
                       text = { Text("Are you sure you want to log out?") },
                       confirmButton = {
-                        TextButton(onClick = { viewModel.logout() }) { Text("Log out") }
+                        TextButton(
+                            onClick = { viewModel.logout() },
+                            modifier = Modifier.testTag(ProfileTestTags.LOG_OUT_DIALOG_CONFIRM)) {
+                              Text("Log out")
+                            }
                       },
                       dismissButton = {
-                        TextButton(onClick = { viewModel.hideLogoutDialog() }) { Text("Cancel") }
+                        TextButton(
+                            onClick = { viewModel.hideLogoutDialog() },
+                            modifier = Modifier.testTag(ProfileTestTags.LOG_OUT_DIALOG_CANCEL)) {
+                              Text("Cancel")
+                            }
                       })
                 }
               }
@@ -343,7 +355,7 @@ fun ActionItem(
                   imageVector = icon,
                   contentDescription = null,
                   modifier = Modifier.padding(end = ProfileDimens.Horizontal),
-                  tint = SecondaryColor)
+                  tint = AccentColor)
               Column(modifier = Modifier.weight(1f)) {
                 Text(text = title, style = MaterialTheme.typography.bodyLarge, color = BlackColor)
                 Text(
