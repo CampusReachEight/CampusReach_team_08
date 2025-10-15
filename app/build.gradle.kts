@@ -176,6 +176,11 @@ dependencies {
     testImplementation(libs.test.core.ktx)
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.kotlin)
+    testImplementation("org.mockito.kotlin:mockito-kotlin:5.1.0")
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.robolectric:robolectric:4.11.1")
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+    debugImplementation("androidx.compose.ui:ui-test-manifest")
 
     // Test UI (Instrumented tests in src/androidTest/)
     androidTestImplementation(libs.androidx.junit)
