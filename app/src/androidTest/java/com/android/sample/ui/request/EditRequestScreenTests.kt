@@ -20,11 +20,8 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
-import org.mockito.Mock
 import org.mockito.Mockito.mock
 import org.mockito.kotlin.whenever
-
-@Mock private lateinit var mockLocationRepo: LocationRepository
 
 class EditRequestScreenTest {
 
