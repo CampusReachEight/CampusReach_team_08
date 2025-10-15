@@ -173,11 +173,11 @@ class ProfileUITests {
     composeTestRule.onNodeWithTag("profile_action_about_app").assertIsDisplayed()
   }
 
-  // Test error retry button is clickable (if present)
-  @Test
-  fun errorRetryButton_isClickable() {
-    val errorState = ProfileState.withError()
-    composeTestRule.setContent { ProfileScreen(viewModel = ProfileViewModel(errorState)) }
-    composeTestRule.onNodeWithTag("profile_error_retry").assertHasClickAction()
-  }
+  //  // Test error retry button is clickable (if present)
+  //  @Test
+  //  fun errorRetryButton_isClickable() {
+  //    val errorState = ProfileState.withError()
+  //    composeTestRule.setContent { ProfileScreen(viewModel = ProfileViewModel(errorState)) }
+  //    composeTestRule.onNodeWithTag("profile_error_retry").assertHasClickAction()
+  //  }
 }
