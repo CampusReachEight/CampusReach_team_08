@@ -18,9 +18,29 @@ service cloud.firestore {
           allow create: if request.auth != null
                         && request.auth.uid == request.resource.data.creatorId;
 
-          // Update, Delete: allow only if auth UID equals stored creatorId
-          allow update, delete: if request.auth != null
-                                      && request.auth.uid == resource.data.creatorId;
+
+          allow update: if request.auth != null && (
+                // Creator can change everything
+                request.auth.uid == resource.data.creatorId
+                ||
+                // Others can only add or remove their own UID from 'people'
+                  (
+                    request.resource.data.diff(resource.data).affectedKeys().hasOnly(['people']) &&
+                    (
+                      // Adding their UID
+                      (request.resource.data.people.hasAll(resource.data.people) &&
+                       request.resource.data.people.removeAll(resource.data.people) == [request.auth.uid])
+                      ||
+                      // Removing their UID
+                      (resource.data.people.hasAll(request.resource.data.people) &&
+                       resource.data.people.removeAll(request.resource.data.people) == [request.auth.uid])
+                    )
+                  )
+            )
+
+          // Delete: allow only if auth UID equals stored creatorId
+          allow delete: if request.auth != null
+                        && request.auth.uid == resource.data.creatorId;
 
           // Read: Allow any user to read requests
           allow read: if true;

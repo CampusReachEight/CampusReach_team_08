@@ -2,29 +2,23 @@ package com.android.sample.model.profile
 
 import android.util.Log
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.android.sample.utils.BaseEmulatorTest
 import com.android.sample.utils.FirebaseEmulator
-import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
-import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
 import java.util.Date
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-class UserProfileRepositoryFirestoreTest {
+class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
 
   private lateinit var repository: UserProfileRepositoryFirestore
-  private lateinit var db: FirebaseFirestore
-  private lateinit var auth: FirebaseAuth
-  private lateinit var currentUserId: String
 
   fun generateProfile(
       id: String,
@@ -70,23 +64,15 @@ class UserProfileRepositoryFirestoreTest {
           section = Section.CYBER_SECURITY)
 
   @Before
-  fun setUp() {
-    db = FirebaseEmulator.firestore
-    auth = FirebaseEmulator.auth
+  override fun setUp() {
+    super.setUp()
     repository = UserProfileRepositoryFirestore(db)
-
-    runTest {
-      FirebaseEmulator.signInTestUser()
-      currentUserId = auth.currentUser?.uid ?: throw IllegalStateException("No authenticated user")
-      clearTestCollections()
-    }
   }
 
   @After
-  fun tearDown() {
+  override fun tearDown() {
     runTest { clearTestCollections() }
-    FirebaseEmulator.clearFirestoreEmulator()
-    FirebaseEmulator.signOut()
+    super.tearDown()
   }
 
   private suspend fun clearTestCollections() {
@@ -158,7 +144,7 @@ class UserProfileRepositoryFirestoreTest {
     try {
       repository.addUserProfile(profile)
       fail("Expected IllegalArgumentException when adding profile with mismatched user ID")
-    } catch (e: IllegalArgumentException) {
+    } catch (_: IllegalArgumentException) {
       // Expected exception
     }
   }
@@ -175,10 +161,12 @@ class UserProfileRepositoryFirestoreTest {
   @Test
   fun getUserProfileReturnsPublicVersionForOtherUsers() = runTest {
     val profile = testProfile1.copy(id = currentUserId)
+    val currentUserId =
+        auth.currentUser?.uid
+            ?: throw IllegalStateException("No authenticated user") // Copy current user ID
     repository.addUserProfile(profile)
 
-    FirebaseEmulator.signOut()
-    FirebaseEmulator.signInTestUser("otheremail@mail.com", "password")
+    signInUser("otheremail@mail.com", "password")
     val otherUserId = auth.currentUser?.uid ?: throw IllegalStateException("No authenticated user")
     val otherUserProfile = testProfile2.copy(id = otherUserId)
     repository.addUserProfile(otherUserProfile)
@@ -188,8 +176,9 @@ class UserProfileRepositoryFirestoreTest {
     assertEquals(profile.name, retrievedProfile.name)
     assertEquals(null, retrievedProfile.email) // Email should be blurred
     assertNotEquals(profile.email, retrievedProfile.email)
-    FirebaseEmulator.signOut()
-    FirebaseEmulator.signInTestUser()
+
+    // Return to default user
+    signInUser()
   }
 
   @Test
@@ -227,7 +216,7 @@ class UserProfileRepositoryFirestoreTest {
     try {
       repository.updateUserProfile(otherProfile.id, otherProfile)
       fail("Expected IllegalArgumentException when updating another user's profile")
-    } catch (e: IllegalArgumentException) {
+    } catch (_: IllegalArgumentException) {
       // Expected exception
     }
   }
@@ -251,7 +240,7 @@ class UserProfileRepositoryFirestoreTest {
     try {
       repository.deleteUserProfile("some-other-user-id")
       fail("Expected IllegalArgumentException when deleting another user's profile")
-    } catch (e: IllegalArgumentException) {
+    } catch (_: IllegalArgumentException) {
       // Expected exception
     }
   }
@@ -267,29 +256,29 @@ class UserProfileRepositoryFirestoreTest {
     try {
       repository.addUserProfile(profile)
       fail("Expected IllegalStateException when adding profile while not authenticated")
-    } catch (e: IllegalStateException) {
+    } catch (_: IllegalStateException) {
       // Expected exception
     }
 
     try {
       repository.getUserProfile("some-user-id")
       fail("Expected IllegalStateException when getting profile while not authenticated")
-    } catch (e: NoSuchElementException) {
+    } catch (_: NoSuchElementException) {
       // Expected exception
     }
 
     try {
       repository.updateUserProfile("some-user-id", profile)
       fail("Expected IllegalStateException when updating profile while not authenticated")
-    } catch (e: IllegalStateException) {
+    } catch (_: IllegalStateException) {
       // Expected exception
     }
 
     try {
       repository.deleteUserProfile("some-user-id")
       fail("Expected IllegalStateException when deleting profile while not authenticated")
-    } catch (e: IllegalStateException) {
-      Log.d("UserProfileRepoTest", "Caught expected exception: ${e.message}")
+    } catch (_: IllegalStateException) {
+      Log.d("UserProfileRepoTest", "Caught expected exception")
     }
   }
 
@@ -315,7 +304,7 @@ class UserProfileRepositoryFirestoreTest {
     try {
       repository.getUserProfile(currentUserId)
       fail("Expected NoSuchElementException when retrieving deleted profile")
-    } catch (e: NoSuchElementException) {
+    } catch (_: NoSuchElementException) {
       // Expected exception
     }
   }
@@ -326,102 +315,10 @@ class UserProfileRepositoryFirestoreTest {
     try {
       repository.getNewUid()
       fail("Expected IllegalStateException when getting new ID unauthenticated")
-    } catch (e: IllegalStateException) {
+    } catch (_: IllegalStateException) {
       // Expected exception
     } finally {
-      FirebaseEmulator.signInTestUser()
+      signInUser()
     }
-  }
-
-  @Ignore("To re-add once implemented")
-  @Test
-  fun searchUserProfilesByName() = runTest {
-    db.collection(PUBLIC_PROFILES_PATH)
-        .document(testProfile1.id)
-        .set(testProfile1.copy(email = null).toMap())
-        .await()
-    db.collection(PUBLIC_PROFILES_PATH)
-        .document(testProfile2.id)
-        .set(testProfile2.copy(email = null).toMap())
-        .await()
-
-    val results = repository.searchUserProfiles("John", null, 10).toList()
-    assertTrue(results.any { it.name == "John" })
-  }
-
-  @Ignore("To re-add once implemented")
-  @Test
-  fun searchUserProfilesByLastName() = runTest {
-    db.collection(PUBLIC_PROFILES_PATH)
-        .document(testProfile1.id)
-        .set(testProfile1.copy(email = null).toMap())
-        .await()
-    db.collection(PUBLIC_PROFILES_PATH)
-        .document(testProfile2.id)
-        .set(testProfile2.copy(email = null).toMap())
-        .await()
-
-    val results = repository.searchUserProfiles("Smith", null, 10).toList()
-    assertTrue(results.any { it.lastName == "Smith" })
-  }
-
-  @Ignore("To re-add once implemented")
-  @Test
-  fun searchUserProfilesWithSectionFilter() = runTest {
-    db.collection(PUBLIC_PROFILES_PATH)
-        .document(testProfile1.id)
-        .set(testProfile1.copy(email = null).toMap())
-        .await()
-    db.collection(PUBLIC_PROFILES_PATH)
-        .document(testProfile2.id)
-        .set(testProfile2.copy(email = null).toMap())
-        .await()
-    db.collection(PUBLIC_PROFILES_PATH)
-        .document(testProfile3.id)
-        .set(testProfile3.copy(email = null).toMap())
-        .await()
-
-    val results = repository.searchUserProfiles("", Section.CYBER_SECURITY, 10).toList()
-    assertEquals(2, results.size)
-    assertTrue(results.all { it.section == Section.CYBER_SECURITY })
-  }
-
-  @Ignore("To re-add once implemented")
-  @Test
-  fun searchReturnsEmptyListForEmptyQuery() = runTest {
-    val results = repository.searchUserProfiles("", null, 10).toList()
-    assertTrue(results.isEmpty())
-  }
-
-  @Ignore("To re-add once implemented")
-  @Test
-  fun searchRespectsResultsPerPageLimit() = runTest {
-    // Add 5 profiles with same section
-    repeat(5) { index ->
-      val profile =
-          generateProfile(
-                  id = "test-user-$index",
-                  name = "User$index",
-                  lastName = "Test",
-                  email = "user$index@example.com",
-                  section = Section.CYBER_SECURITY)
-              .copy(email = null)
-      db.collection(PUBLIC_PROFILES_PATH).document(profile.id).set(profile.toMap()).await()
-    }
-
-    val results = repository.searchUserProfiles("", Section.CYBER_SECURITY, 3).toList()
-    assertEquals(3, results.size)
-  }
-
-  @Ignore("To re-add once implemented")
-  @Test
-  fun searchMatchesMultipleKeywords() = runTest {
-    db.collection(PUBLIC_PROFILES_PATH)
-        .document(testProfile1.id)
-        .set(testProfile1.copy(email = null).toMap())
-        .await()
-
-    val results = repository.searchUserProfiles("John Doe", null, 10).toList()
-    assertTrue(results.any { it.name == "John" && it.lastName == "Doe" })
   }
 }

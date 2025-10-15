@@ -26,7 +26,7 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = "com.android.sample.utils.EmulatorTestRunner"
         vectorDrawables {
             useSupportLibrary = true
         }
@@ -48,7 +48,7 @@ android {
     }
 
     testCoverage {
-        jacocoVersion = "0.8.11"
+        jacocoVersion = "0.8.13"
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -102,7 +102,7 @@ android {
     }
 }
 jacoco {
-    toolVersion = "0.8.11"
+    toolVersion = "0.8.13"
 }
 sonar {
     properties {
@@ -176,6 +176,11 @@ dependencies {
     testImplementation(libs.test.core.ktx)
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.kotlin)
+    testImplementation("org.mockito.kotlin:mockito-kotlin:5.1.0")
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.robolectric:robolectric:4.11.1")
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+    debugImplementation("androidx.compose.ui:ui-test-manifest")
 
     // Test UI (Instrumented tests in src/androidTest/)
     androidTestImplementation(libs.androidx.junit)
