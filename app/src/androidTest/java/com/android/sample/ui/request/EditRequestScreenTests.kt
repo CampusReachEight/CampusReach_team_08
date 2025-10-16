@@ -756,7 +756,6 @@ class EditRequestScreenTest {
       MaterialTheme {
         EditRequestScreen(
             requestId = null, // Create mode
-            creatorId = "test123",
             onNavigateBack = {},
             viewModel = viewModel)
       }
@@ -805,7 +804,6 @@ class EditRequestScreenTest {
       MaterialTheme {
         EditRequestScreen(
             requestId = "test-id", // Edit mode
-            creatorId = "creator123",
             onNavigateBack = {},
             viewModel = viewModel)
       }

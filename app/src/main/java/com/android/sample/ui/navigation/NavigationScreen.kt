@@ -36,6 +36,7 @@ import com.android.sample.ui.request.RequestListScreen
 import com.android.sample.ui.request.RequestListViewModel
 import com.android.sample.ui.theme.BottomNavigationMenu
 import com.android.sample.ui.theme.NavigationTab
+import com.android.sample.ui.theme.TopNavigationBar
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.firestore
@@ -157,6 +158,14 @@ fun PlaceHolderScreen(
 ) {
   Scaffold(
       modifier = modifier.fillMaxSize(),
+      topBar = {
+        defaultTab?.let {
+          TopNavigationBar(
+              selectedTab = defaultTab,
+              onProfileClick = { navigationActions?.navigateTo(Screen.Profile("TODO")) },
+          )
+        }
+      },
       bottomBar = {
         if (!withBottomBar) {
           return@Scaffold

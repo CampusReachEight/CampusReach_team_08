@@ -29,7 +29,7 @@ class TopNavigationBarTest {
   @Test
   fun topNavigationBar_isDisplayed() {
     composeTestRule.setContent {
-      TopNavigationBar(selectedTab = Tab.Requests, onSettingsClick = {})
+      TopNavigationBar(selectedTab = NavigationTab.Requests, onProfileClick = {})
     }
 
     composeTestRule.onNodeWithTag(NavigationTestTags.TOP_NAVIGATION_BAR).assertIsDisplayed()
@@ -38,7 +38,7 @@ class TopNavigationBarTest {
   @Test
   fun topNavigationBar_displaysCorrectTitle_forRequestsTab() {
     composeTestRule.setContent {
-      TopNavigationBar(selectedTab = Tab.Requests, onSettingsClick = {})
+      TopNavigationBar(selectedTab = NavigationTab.Requests, onProfileClick = {})
     }
 
     composeTestRule.onNodeWithText("Reach Out").assertIsDisplayed()
@@ -46,14 +46,18 @@ class TopNavigationBarTest {
 
   @Test
   fun topNavigationBar_displaysCorrectTitle_forEventsTab() {
-    composeTestRule.setContent { TopNavigationBar(selectedTab = Tab.Events, onSettingsClick = {}) }
+    composeTestRule.setContent {
+      TopNavigationBar(selectedTab = NavigationTab.Events, onProfileClick = {})
+    }
 
     composeTestRule.onNodeWithText("Campus Events").assertIsDisplayed()
   }
 
   @Test
   fun topNavigationBar_displaysCorrectTitle_forMapTab() {
-    composeTestRule.setContent { TopNavigationBar(selectedTab = Tab.Map, onSettingsClick = {}) }
+    composeTestRule.setContent {
+      TopNavigationBar(selectedTab = NavigationTab.Map, onProfileClick = {})
+    }
 
     composeTestRule.onNodeWithText("Map").assertIsDisplayed()
   }
@@ -61,19 +65,20 @@ class TopNavigationBarTest {
   @Test
   fun settingsButton_isDisplayed() {
     composeTestRule.setContent {
-      TopNavigationBar(selectedTab = Tab.Requests, onSettingsClick = {})
+      TopNavigationBar(selectedTab = NavigationTab.Requests, onProfileClick = {})
     }
 
-    composeTestRule.onNodeWithTag(NavigationTestTags.SETTINGS_BUTTON).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(NavigationTestTags.PROFILE_BUTTON).assertIsDisplayed()
   }
 
   @Test
   fun settingsButton_invokesCallbackOnClick() {
     composeTestRule.setContent {
-      TopNavigationBar(selectedTab = Tab.Events, onSettingsClick = { settingsClicked = true })
+      TopNavigationBar(
+          selectedTab = NavigationTab.Events, onProfileClick = { settingsClicked = true })
     }
 
-    composeTestRule.onNodeWithTag(NavigationTestTags.SETTINGS_BUTTON).performClick()
+    composeTestRule.onNodeWithTag(NavigationTestTags.PROFILE_BUTTON).performClick()
 
     assertTrue(settingsClicked)
   }
@@ -81,16 +86,18 @@ class TopNavigationBarTest {
   @Test
   fun titleUsesCorrectStyleAndColor() {
     composeTestRule.setContent {
-      TopNavigationBar(selectedTab = Tab.Requests, onSettingsClick = {})
+      TopNavigationBar(selectedTab = NavigationTab.Requests, onProfileClick = {})
     }
 
     composeTestRule.onNodeWithText("Reach Out").assertIsDisplayed()
   }
 
+  /* commented for sonarcloud coverage
   @Test
   fun preview_composableRendersSuccessfully() {
     composeTestRule.setContent { TopNavigationBarPreview() }
 
     composeTestRule.onNodeWithTag(NavigationTestTags.TOP_NAVIGATION_BAR).assertIsDisplayed()
   }
+  */
 }

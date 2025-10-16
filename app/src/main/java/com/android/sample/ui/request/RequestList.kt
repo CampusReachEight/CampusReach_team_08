@@ -25,6 +25,7 @@ import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.navigation.Screen
 import com.android.sample.ui.theme.BottomNavigationMenu
 import com.android.sample.ui.theme.NavigationTab
+import com.android.sample.ui.theme.TopNavigationBar
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 
@@ -52,7 +53,12 @@ fun RequestListScreen(
 
   Scaffold(
       modifier = modifier.fillMaxSize().testTag(NavigationTestTags.REQUESTS_SCREEN),
-      topBar = {},
+      topBar = {
+        TopNavigationBar(
+            selectedTab = NavigationTab.Requests,
+            onProfileClick = { navigationActions?.navigateTo(Screen.Profile("TODO")) },
+        )
+      },
       bottomBar = {
         BottomNavigationMenu(
             selectedNavigationTab = NavigationTab.Requests, navigationActions = navigationActions)

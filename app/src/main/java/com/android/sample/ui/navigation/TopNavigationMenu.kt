@@ -1,7 +1,7 @@
 package com.android.sample.ui.theme
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -17,12 +17,16 @@ import com.android.sample.ui.navigation.NavigationTestTags
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TopNavigationBar(selectedTab: Tab, onSettingsClick: () -> Unit, modifier: Modifier = Modifier) {
+fun TopNavigationBar(
+    selectedTab: NavigationTab,
+    onProfileClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
   val title =
       when (selectedTab) {
-        is Tab.Requests -> "Reach Out"
-        is Tab.Events -> "Campus Events"
-        is Tab.Map -> "Map"
+        NavigationTab.Requests -> "Reach Out"
+        NavigationTab.Events -> "Campus Events"
+        NavigationTab.Map -> "Map"
       }
 
   CenterAlignedTopAppBar(
@@ -35,11 +39,11 @@ fun TopNavigationBar(selectedTab: Tab, onSettingsClick: () -> Unit, modifier: Mo
       },
       actions = {
         IconButton(
-            onClick = onSettingsClick,
-            modifier = Modifier.testTag(NavigationTestTags.SETTINGS_BUTTON)) {
+            onClick = onProfileClick,
+            modifier = Modifier.testTag(NavigationTestTags.PROFILE_BUTTON)) {
               Icon(
-                  imageVector = Icons.Filled.Settings,
-                  contentDescription = "Settings",
+                  imageVector = Icons.Filled.AccountCircle,
+                  contentDescription = "Profile",
                   tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }
       },
@@ -52,5 +56,5 @@ fun TopNavigationBar(selectedTab: Tab, onSettingsClick: () -> Unit, modifier: Mo
 @Preview(showBackground = true)
 @Composable
 fun TopNavigationBarPreview() {
-  MaterialTheme { TopNavigationBar(selectedTab = Tab.Events, onSettingsClick = {}) }
+  MaterialTheme { TopNavigationBar(selectedTab = NavigationTab.Events, onProfileClick = {}) }
 }

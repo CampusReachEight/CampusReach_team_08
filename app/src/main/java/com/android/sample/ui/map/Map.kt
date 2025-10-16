@@ -28,8 +28,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.ui.navigation.NavigationActions
 import com.android.sample.ui.navigation.NavigationTestTags
+import com.android.sample.ui.navigation.Screen
 import com.android.sample.ui.theme.BottomNavigationMenu
 import com.android.sample.ui.theme.NavigationTab
+import com.android.sample.ui.theme.TopNavigationBar
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -85,7 +87,10 @@ fun MapScreen(viewModel: MapViewModel = viewModel(), navigationActions: Navigati
             selectedNavigationTab = NavigationTab.Map, navigationActions = navigationActions)
       },
       topBar = {
-        // Add the topBar
+        TopNavigationBar(
+            selectedTab = NavigationTab.Map,
+            onProfileClick = { navigationActions?.navigateTo(Screen.Profile("TODO")) },
+        )
       },
       content = { pd ->
 
