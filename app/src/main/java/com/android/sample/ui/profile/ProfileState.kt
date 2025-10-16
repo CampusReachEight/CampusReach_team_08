@@ -22,7 +22,10 @@ data class ProfileState(
     val isEditMode: Boolean = false, // If you plan to add edit functionality later
 
     // Profile picture (optional, if you add it later)
-    val profilePictureUrl: String? = null
+    val profilePictureUrl: String? = null,
+
+    // Logout dialog state
+    val isLoggingOut: Boolean = false
 ) {
 
   companion object {
@@ -47,5 +50,7 @@ data class ProfileState(
 
     // State with error
     fun withError() = default().copy(errorMessage = "Failed to load profile data")
+
+    fun loggingOut() = default().copy(isLoggingOut = true)
   }
 }
