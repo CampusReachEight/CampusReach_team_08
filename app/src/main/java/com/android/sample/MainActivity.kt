@@ -19,13 +19,10 @@ import com.android.sample.resources.C
 import com.android.sample.ui.navigation.NavigationActions
 import com.android.sample.ui.navigation.NavigationScreen
 import com.android.sample.ui.theme.SampleAppTheme
-import com.google.firebase.auth.FirebaseAuth
 
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
-
-    FirebaseAuth.getInstance().useEmulator("10.0.2.2", 9099) // Use Firebase Auth emulator
 
     setContent {
       SampleAppTheme {
