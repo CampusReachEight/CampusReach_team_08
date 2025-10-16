@@ -7,6 +7,8 @@ object NavigationTestTags {
   const val GO_BACK_BUTTON = "GoBackButton"
   const val TOP_BAR_TITLE = "TopBarTitle"
 
+  const val TOP_NAVIGATION_BAR = "TopNavigationBar"
+
   const val LOGIN_SCREEN = "LoginScreen"
   const val REQUESTS_SCREEN = "RequestScreen"
   const val ADD_REQUEST_SCREEN = "AddRequestScreen"
@@ -28,6 +30,5 @@ object NavigationTestTags {
         is NavigationTab.Map -> MAP_TAB
         is NavigationTab.Events -> EVENT_TAB
         is NavigationTab.Requests -> REQUEST_TAB
-        is NavigationTab.Profile -> PROFILE_BUTTON
       }
 }

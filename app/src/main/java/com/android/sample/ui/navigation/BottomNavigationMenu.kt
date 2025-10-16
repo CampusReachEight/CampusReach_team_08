@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.Alarm
 import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material.icons.outlined.SyncAlt
@@ -29,12 +28,9 @@ sealed class NavigationTab(val name: String, val icon: ImageVector, val destinat
   object Events : NavigationTab("Events", Icons.Outlined.Alarm, Screen.Events)
 
   object Map : NavigationTab("Map", Icons.Outlined.Place, Screen.Map)
-
-  object Profile : NavigationTab("Profile", Icons.Outlined.AccountCircle, Screen.Profile("TODO"))
 }
 
-private val navigationTabs =
-    listOf(NavigationTab.Requests, NavigationTab.Events, NavigationTab.Map, NavigationTab.Profile)
+private val navigationTabs = listOf(NavigationTab.Requests, NavigationTab.Events, NavigationTab.Map)
 
 @Composable
 fun BottomNavigationMenu(
@@ -70,9 +66,6 @@ fun BottomNavigationMenu(
                   }
                   NavigationTab.Map -> {
                     navigationActions?.navigateTo(Screen.Map)
-                  }
-                  NavigationTab.Profile -> {
-                    navigationActions?.navigateTo(Screen.Profile("TODO"))
                   }
                 }
               },
