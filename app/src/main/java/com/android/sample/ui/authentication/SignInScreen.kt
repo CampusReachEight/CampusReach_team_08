@@ -1,6 +1,5 @@
 package com.android.sample.ui.authentication
 
-import android.app.Activity
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
@@ -81,7 +80,7 @@ fun SignInScreen(
                 .build()
 
         val request = GetCredentialRequest.Builder().addCredentialOption(googleIdOption).build()
-        val result = credentialManager.getCredential(context as Activity, request)
+        val result = credentialManager.getCredential(context, request)
         val credential = result.credential
 
         // Delegate sign-in to ViewModel
@@ -90,7 +89,8 @@ fun SignInScreen(
         // Handle credential exceptions and set appropriate error messages
         when (e) {
           is GetCredentialCancellationException -> viewModel.setError("Connection cancelled")
-          is NoCredentialException -> viewModel.setError("No Google account found")
+          is NoCredentialException ->
+              viewModel.setError("No Google account found: ${e.localizedMessage}")
           else -> viewModel.setError("Connection error: ${e.localizedMessage}")
         }
       }
