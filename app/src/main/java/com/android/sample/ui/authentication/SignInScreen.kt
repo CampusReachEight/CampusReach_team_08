@@ -89,8 +89,7 @@ fun SignInScreen(
         // Handle credential exceptions and set appropriate error messages
         when (e) {
           is GetCredentialCancellationException -> viewModel.setError("Connection cancelled")
-          is NoCredentialException ->
-              viewModel.setError("No Google account found: ${e.localizedMessage}")
+          is NoCredentialException -> viewModel.setError("No Google account found: ${e.message}")
           else -> viewModel.setError("Connection error: ${e.localizedMessage}")
         }
       }
