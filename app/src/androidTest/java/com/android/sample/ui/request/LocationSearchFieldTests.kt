@@ -5,6 +5,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import com.android.sample.model.map.Location
+import com.android.sample.ui.request.edit.LocationSearchField
+import com.android.sample.ui.request.edit.LocationSearchFieldTestTags
 import org.junit.Rule
 import org.junit.Test
 

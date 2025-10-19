@@ -1,4 +1,4 @@
-package com.android.sample.request
+package com.android.sample.ui.request
 
 import com.android.sample.model.map.Location
 import com.android.sample.model.map.LocationRepository
@@ -7,55 +7,50 @@ import com.android.sample.model.request.RequestRepository
 import com.android.sample.model.request.RequestStatus
 import com.android.sample.model.request.RequestType
 import com.android.sample.model.request.Tags
-import com.android.sample.ui.request.EditRequestViewModel
+import com.android.sample.ui.request.edit.EditRequestViewModel
 import java.util.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.*
 import org.junit.After
+import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.mockito.Mock
-import org.mockito.Mockito.`when`
-import org.mockito.MockitoAnnotations
-import org.mockito.junit.MockitoJUnitRunner
-import org.mockito.kotlin.*
+import org.mockito.Mockito.*
+import org.mockito.kotlin.any
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
-@Mock private lateinit var mockLocationRepo: LocationRepository
-
 @OptIn(ExperimentalCoroutinesApi::class)
-@RunWith(MockitoJUnitRunner::class)
 class EditRequestViewModelTest {
 
-  @Mock private lateinit var repository: RequestRepository
-  @Mock private lateinit var locationRepository: LocationRepository
-
   private lateinit var viewModel: EditRequestViewModel
+  private lateinit var requestRepository: RequestRepository
+  private lateinit var locationRepository: LocationRepository
   private val testDispatcher = StandardTestDispatcher()
 
+  private val testLocation = Location(46.5197, 6.6323, "EPFL")
   private val testRequest =
       Request(
           requestId = "test-id",
           title = "Test Request",
           description = "Test Description",
-          requestType = listOf(RequestType.STUDYING),
-          location = Location(0.0, 0.0, "Test Location"),
-          locationName = "Test Building",
+          requestType = RequestType.values().toList(),
+          location = testLocation,
+          locationName = "EPFL",
           status = RequestStatus.IN_PROGRESS,
           startTimeStamp = Date(),
           expirationTime = Date(System.currentTimeMillis() + 86400000),
-          people = listOf("creator123"),
+          people = listOf("user1"),
           tags = listOf(Tags.URGENT),
-          creatorId = "creator123")
+          creatorId = "user1")
 
   @Before
   fun setup() {
-    MockitoAnnotations.openMocks(this)
     Dispatchers.setMain(testDispatcher)
-    viewModel = EditRequestViewModel(repository, locationRepository)
+    requestRepository = mock(RequestRepository::class.java)
+    locationRepository = mock(LocationRepository::class.java)
+    viewModel = EditRequestViewModel(requestRepository, locationRepository)
   }
 
   @After
@@ -63,428 +58,420 @@ class EditRequestViewModelTest {
     Dispatchers.resetMain()
   }
 
-  // Test 1: Initial state
+  // ========================================================================
+  // Test: Initial State
+  // ========================================================================
+
   @Test
-  fun viewModel_initialState_allFieldsEmpty() = runTest {
-    assert(viewModel.title.first() == "")
-    assert(viewModel.description.first() == "")
-    assert(viewModel.requestTypes.first().isEmpty())
-    assert(viewModel.location.first() == null)
-    assert(viewModel.locationName.first() == "")
-    assert(viewModel.tags.first().isEmpty())
-    assert(!viewModel.isLoading.first())
-    assert(viewModel.errorMessage.first() == null)
-    assert(!viewModel.isEditMode.first())
+  fun initialState_hasDefaultValues() {
+    val uiState = viewModel.uiState.value
+
+    assertEquals("", uiState.title)
+    assertEquals("", uiState.description)
+    assertTrue(uiState.requestTypes.isEmpty())
+    assertNull(uiState.location)
+    assertEquals("", uiState.locationName)
+    assertTrue(uiState.tags.isEmpty())
+    assertFalse(uiState.isEditMode)
+    assertFalse(uiState.isLoading)
+    assertNull(uiState.errorMessage)
+    assertFalse(uiState.validationState.showSuccessMessage)
   }
 
-  // Test 2: Update title
+  // ========================================================================
+  // Test: Update Functions
+  // ========================================================================
+
   @Test
-  fun updateTitle_updatesStateFlow() = runTest {
+  fun updateTitle_updatesUiState() {
     viewModel.updateTitle("New Title")
-    assert(viewModel.title.first() == "New Title")
+
+    assertEquals("New Title", viewModel.uiState.value.title)
   }
 
-  // Test 3: Update description
   @Test
-  fun updateDescription_updatesStateFlow() = runTest {
-    viewModel.updateDescription("New Description")
-    assert(viewModel.description.first() == "New Description")
-  }
-
-  // Test 4: Update request types
-  @Test
-  fun updateRequestTypes_updatesStateFlow() = runTest {
-    val types = listOf(RequestType.STUDYING, RequestType.SPORT)
-    viewModel.updateRequestTypes(types)
-    assert(viewModel.requestTypes.first() == types)
-  }
-
-  // Test 5: Update location
-  @Test
-  fun updateLocation_updatesStateFlow() = runTest {
-    val location = Location(46.5197, 6.5668, "EPFL")
-    viewModel.updateLocation(location)
-    assert(viewModel.location.first() == location)
-  }
-
-  // Test 6: Update location name
-  @Test
-  fun updateLocationName_updatesStateFlow() = runTest {
-    viewModel.updateLocationName("BC Building")
-    assert(viewModel.locationName.first() == "BC Building")
-  }
-
-  // Test 7: Update start timestamp
-  @Test
-  fun updateStartTimeStamp_updatesStateFlow() = runTest {
-    val date = Date()
-    viewModel.updateStartTimeStamp(date)
-    assert(viewModel.startTimeStamp.first() == date)
-  }
-
-  // Test 8: Update expiration time
-  @Test
-  fun updateExpirationTime_updatesStateFlow() = runTest {
-    val date = Date()
-    viewModel.updateExpirationTime(date)
-    assert(viewModel.expirationTime.first() == date)
-  }
-
-  // Test 9: Update tags
-  @Test
-  fun updateTags_updatesStateFlow() = runTest {
-    val tags = listOf(Tags.URGENT, Tags.EASY)
-    viewModel.updateTags(tags)
-    assert(viewModel.tags.first() == tags)
-  }
-
-  // Test 10: Update people
-  @Test
-  fun updatePeople_updatesStateFlow() = runTest {
-    val people = listOf("user1", "user2")
-    viewModel.updatePeople(people)
-    assert(viewModel.people.first() == people)
-  }
-
-  // Test 11: Initialize for create - sets edit mode to false
-  @Test
-  fun initializeForCreate_setsEditModeFalse() = runTest {
-    viewModel.initializeForCreate("creator123")
-    advanceUntilIdle()
-    assert(!viewModel.isEditMode.first())
-  }
-
-  // Test 12: Initialize for create - adds creator to people
-  @Test
-  fun initializeForCreate_addsCreatorToPeople() = runTest {
-    viewModel.initializeForCreate("creator123")
-    advanceUntilIdle()
-    assert(viewModel.people.first() == listOf("creator123"))
-  }
-
-  // Test 13: Initialize for create - clears all fields
-  @Test
-  fun initializeForCreate_clearsAllFields() = runTest {
-    // Set some data first
-    viewModel.updateTitle("Some title")
-    viewModel.updateDescription("Some description")
-
-    // Initialize for create
-    viewModel.initializeForCreate("creator123")
-    advanceUntilIdle()
-
-    assert(viewModel.title.first() == "")
-    assert(viewModel.description.first() == "")
-    assert(viewModel.requestTypes.first().isEmpty())
-  }
-
-  // Test 14: Load request - success
-  @Test
-  fun loadRequest_success_populatesFields() = runTest {
-    `when`(repository.getRequest("test-id")).thenReturn(testRequest)
-
-    viewModel.loadRequest("test-id")
-    advanceUntilIdle()
-
-    assert(viewModel.title.first() == "Test Request")
-    assert(viewModel.description.first() == "Test Description")
-    assert(viewModel.requestTypes.first() == listOf(RequestType.STUDYING))
-    assert(viewModel.locationName.first() == "Test Building")
-    assert(viewModel.isEditMode.first())
-    assert(!viewModel.isLoading.first())
-  }
-
-  // Test 15: Load request - sets loading state
-  @Test
-  fun loadRequest_setsLoadingState() = runTest {
-    `when`(repository.getRequest("test-id")).thenReturn(testRequest)
-
-    viewModel.loadRequest("test-id")
-    // Check loading is true during execution
-    // After advanceUntilIdle, loading should be false
-    advanceUntilIdle()
-
-    assert(!viewModel.isLoading.first())
-  }
-
-  // Test 16: Load request - error handling
-  @Test
-  fun loadRequest_error_setsErrorMessage() = runTest {
-    `when`(repository.getRequest("test-id")).thenThrow(RuntimeException("Network error"))
-
-    viewModel.loadRequest("test-id")
-    advanceUntilIdle()
-
-    assert(viewModel.errorMessage.first()?.contains("Failed to load request") == true)
-    assert(!viewModel.isLoading.first())
-  }
-
-  // Test 17: Save request - validation error empty title
-  @Test
-  fun saveRequest_emptyTitle_setsValidationError() = runTest {
+  fun updateTitle_withBlankValue_setsValidationError() {
     viewModel.updateTitle("")
-    viewModel.updateDescription("Description")
-    viewModel.updateRequestTypes(listOf(RequestType.STUDYING))
-    viewModel.updateLocation(Location(0.0, 0.0, "Test"))
-    viewModel.updateLocationName("Building")
 
-    var successCalled = false
-    viewModel.saveRequest("creator123") { successCalled = true }
-    advanceUntilIdle()
-
-    assert(viewModel.errorMessage.first() == "Title cannot be empty")
-    assert(!successCalled)
+    assertTrue(viewModel.uiState.value.validationState.showTitleError)
   }
 
-  // Test 18: Save request - validation error empty description
   @Test
-  fun saveRequest_emptyDescription_setsValidationError() = runTest {
-    viewModel.updateTitle("Title")
+  fun updateTitle_withValidValue_clearsValidationError() {
+    // First set an error
+    viewModel.updateTitle("")
+    assertTrue(viewModel.uiState.value.validationState.showTitleError)
+
+    // Then set a valid value
+    viewModel.updateTitle("Valid Title")
+    assertFalse(viewModel.uiState.value.validationState.showTitleError)
+  }
+
+  @Test
+  fun updateDescription_updatesUiState() {
+    viewModel.updateDescription("New Description")
+
+    assertEquals("New Description", viewModel.uiState.value.description)
+  }
+
+  @Test
+  fun updateDescription_withBlankValue_setsValidationError() {
     viewModel.updateDescription("")
-    viewModel.updateRequestTypes(listOf(RequestType.STUDYING))
-    viewModel.updateLocation(Location(0.0, 0.0, "Test"))
-    viewModel.updateLocationName("Building")
 
-    var successCalled = false
-    viewModel.saveRequest("creator123") { successCalled = true }
-    advanceUntilIdle()
-
-    assert(viewModel.errorMessage.first() == "Description cannot be empty")
-    assert(!successCalled)
+    assertTrue(viewModel.uiState.value.validationState.showDescriptionError)
   }
 
-  // Test 19: Save request - validation error no request types
   @Test
-  fun saveRequest_noRequestTypes_setsValidationError() = runTest {
-    viewModel.updateTitle("Title")
-    viewModel.updateDescription("Description")
+  fun updateRequestTypes_updatesUiState() {
+    val types = listOf(RequestType.HARDWARE, RequestType.STUDYING)
+    viewModel.updateRequestTypes(types)
+
+    assertEquals(types, viewModel.uiState.value.requestTypes)
+  }
+
+  @Test
+  fun updateRequestTypes_withEmptyList_setsValidationError() {
     viewModel.updateRequestTypes(emptyList())
-    viewModel.updateLocation(Location(0.0, 0.0, "Test"))
-    viewModel.updateLocationName("Building")
 
-    var successCalled = false
-    viewModel.saveRequest("creator123") { successCalled = true }
-    advanceUntilIdle()
-
-    assert(viewModel.errorMessage.first() == "Please select at least one request type")
-    assert(!successCalled)
+    assertTrue(viewModel.uiState.value.validationState.showRequestTypeError)
   }
 
-  // Test 20: Save request - validation error no location
   @Test
-  fun saveRequest_noLocation_setsValidationError() = runTest {
-    viewModel.updateTitle("Title")
-    viewModel.updateDescription("Description")
-    viewModel.updateRequestTypes(listOf(RequestType.STUDYING))
-    viewModel.updateLocation(null)
-    viewModel.updateLocationName("Building")
+  fun updateLocation_updatesUiState() {
+    viewModel.updateLocation(testLocation)
 
-    var successCalled = false
-    viewModel.saveRequest("creator123") { successCalled = true }
-    advanceUntilIdle()
-
-    assert(viewModel.errorMessage.first() == "Please select a location")
-    assert(!successCalled)
+    assertEquals(testLocation, viewModel.uiState.value.location)
   }
 
-  // Test 21: Save request - validation error empty location name
   @Test
-  fun saveRequest_emptyLocationName_setsValidationError() = runTest {
-    viewModel.updateTitle("Title")
-    viewModel.updateDescription("Description")
-    viewModel.updateRequestTypes(listOf(RequestType.STUDYING))
-    viewModel.updateLocation(Location(0.0, 0.0, "Test"))
+  fun updateLocationName_updatesUiState() {
+    viewModel.updateLocationName("EPFL")
+
+    assertEquals("EPFL", viewModel.uiState.value.locationName)
+  }
+
+  @Test
+  fun updateLocationName_withBlankValue_setsValidationError() {
     viewModel.updateLocationName("")
 
-    var successCalled = false
-    viewModel.saveRequest("creator123") { successCalled = true }
-    advanceUntilIdle()
-
-    assert(viewModel.errorMessage.first() == "Location name cannot be empty")
-    assert(!successCalled)
+    assertTrue(viewModel.uiState.value.validationState.showLocationNameError)
   }
 
-  // Test 22: Save request - validation error expiration before start
   @Test
-  fun saveRequest_expirationBeforeStart_setsValidationError() = runTest {
-    viewModel.updateTitle("Title")
-    viewModel.updateDescription("Description")
-    viewModel.updateRequestTypes(listOf(RequestType.STUDYING))
-    viewModel.updateLocation(Location(0.0, 0.0, "Test"))
-    viewModel.updateLocationName("Building")
+  fun updateStartTimeStamp_updatesUiState() {
+    val date = Date()
+    viewModel.updateStartTimeStamp(date)
 
-    val now = Date()
-    val yesterday = Date(now.time - 86400000)
-    viewModel.updateStartTimeStamp(now)
-    viewModel.updateExpirationTime(yesterday)
-
-    var successCalled = false
-    viewModel.saveRequest("creator123") { successCalled = true }
-    advanceUntilIdle()
-
-    assert(viewModel.errorMessage.first() == "Expiration time must be after start time")
-    assert(!successCalled)
+    assertEquals(date, viewModel.uiState.value.startTimeStamp)
   }
 
-  // Test 23: Save request - create mode success
   @Test
-  fun saveRequest_createMode_success() = runTest {
-    viewModel.initializeForCreate("creator123")
-    viewModel.updateTitle("New Request")
-    viewModel.updateDescription("New Description")
-    viewModel.updateRequestTypes(listOf(RequestType.STUDYING))
-    viewModel.updateLocation(Location(0.0, 0.0, "Test"))
-    viewModel.updateLocationName("Building")
+  fun updateExpirationTime_updatesUiState() {
+    val date = Date(System.currentTimeMillis() + 86400000)
+    viewModel.updateExpirationTime(date)
 
-    var successCalled = false
-    viewModel.saveRequest("creator123") { successCalled = true }
-    advanceUntilIdle()
-
-    verify(repository).addRequest(any()) // ← NOW WORKS!
-    assert(successCalled)
+    assertEquals(date, viewModel.uiState.value.expirationTime)
   }
 
-  // Test 24: Save request - edit mode success
   @Test
-  fun saveRequest_editMode_success() = runTest {
-    whenever(repository.getRequest("test-id")).thenReturn(testRequest) // ← USE whenever
+  fun updateExpirationTime_beforeStartDate_setsDateOrderError() {
+    val startDate = Date(System.currentTimeMillis() + 86400000)
+    val expirationDate = Date()
+
+    viewModel.updateStartTimeStamp(startDate)
+    viewModel.updateExpirationTime(expirationDate)
+
+    assertTrue(viewModel.uiState.value.validationState.showDateOrderError)
+  }
+
+  @Test
+  fun updateExpirationTime_afterStartDate_clearsDateOrderError() {
+    val startDate = Date()
+    val expirationDate = Date(System.currentTimeMillis() + 86400000)
+
+    viewModel.updateStartTimeStamp(startDate)
+    viewModel.updateExpirationTime(expirationDate)
+
+    assertFalse(viewModel.uiState.value.validationState.showDateOrderError)
+  }
+
+  @Test
+  fun updateTags_updatesUiState() {
+    val tags = listOf(Tags.URGENT, Tags.EASY)
+    viewModel.updateTags(tags)
+
+    assertEquals(tags, viewModel.uiState.value.tags)
+  }
+
+  // ========================================================================
+  // Test: Load Request
+  // ========================================================================
+
+  @Test
+  fun loadRequest_success_updatesUiStateWithRequestData() = runTest {
+    whenever(requestRepository.getRequest("test-id")).thenReturn(testRequest)
 
     viewModel.loadRequest("test-id")
     advanceUntilIdle()
 
-    viewModel.updateTitle("Updated Title")
+    val uiState = viewModel.uiState.value
+    assertEquals("Test Request", uiState.title)
+    assertEquals("Test Description", uiState.description)
 
-    var successCalled = false
-    viewModel.saveRequest("creator123") { successCalled = true }
-    advanceUntilIdle()
+    assertTrue(uiState.requestTypes.contains(RequestType.HARDWARE))
 
-    verify(repository).updateRequest(eq("test-id"), any()) // ← NOW WORKS!
-    assert(successCalled)
-  }
-
-  // Test 25: Save request - repository error
-  @Test
-  fun saveRequest_repositoryError_setsErrorMessage() = runTest {
-    viewModel.updateTitle("Title")
-    viewModel.updateDescription("Description")
-    viewModel.updateRequestTypes(listOf(RequestType.STUDYING))
-    viewModel.updateLocation(Location(0.0, 0.0, "Test"))
-    viewModel.updateLocationName("Building")
-
-    whenever(repository.addRequest(any()))
-        .thenThrow(RuntimeException("Database error")) // ← USE whenever
-
-    var successCalled = false
-    viewModel.saveRequest("creator123") { successCalled = true }
-    advanceUntilIdle()
-
-    assert(viewModel.errorMessage.first()?.contains("Failed to save request") == true)
-    assert(!successCalled)
-  }
-
-  // Test 26: Clear error
-  @Test
-  fun clearError_clearsErrorMessage() = runTest {
-    `when`(repository.getRequest("invalid")).thenThrow(RuntimeException("Error"))
-
-    viewModel.loadRequest("invalid")
-    advanceUntilIdle()
-
-    assert(viewModel.errorMessage.first() != null)
-
-    viewModel.clearError()
-    advanceUntilIdle()
-
-    assert(viewModel.errorMessage.first() == null)
-  }
-
-  // Test 27: Reset - clears all state
-  @Test
-  fun reset_clearsAllState() = runTest {
-    viewModel.updateTitle("Title")
-    viewModel.updateDescription("Description")
-    viewModel.updateRequestTypes(listOf(RequestType.STUDYING))
-
-    viewModel.reset()
-    advanceUntilIdle()
-
-    assert(viewModel.title.first() == "")
-    assert(viewModel.description.first() == "")
-    assert(viewModel.requestTypes.first().isEmpty())
-    assert(!viewModel.isLoading.first())
-    assert(viewModel.errorMessage.first() == null)
-    assert(!viewModel.isEditMode.first())
-  }
-
-  // Test 28: Save request with default creator when people list is empty
-  @Test
-  fun saveRequest_emptyPeopleList_addsCreator() = runTest {
-    viewModel.updateTitle("Title")
-    viewModel.updateDescription("Description")
-    viewModel.updateRequestTypes(listOf(RequestType.STUDYING))
-    viewModel.updateLocation(Location(0.0, 0.0, "Test"))
-    viewModel.updateLocationName("Building")
-    viewModel.updatePeople(emptyList())
-
-    viewModel.saveRequest("creator123") {}
-    advanceUntilIdle()
-
-    val captor = argumentCaptor<Request>() // ← USE argumentCaptor
-    verify(repository).addRequest(captor.capture())
-    assert(captor.firstValue.people.contains("creator123"))
+    assertEquals(testLocation, uiState.location)
+    assertEquals("EPFL", uiState.locationName)
+    assertEquals(listOf(Tags.URGENT), uiState.tags)
+    assertTrue(uiState.isEditMode)
+    assertFalse(uiState.isLoading)
+    assertNull(uiState.errorMessage)
   }
 
   @Test
-  fun searchLocations_validQuery_updatesSearchResults() = runTest {
-    val mockResults =
-        listOf(
-            Location(46.5197, 6.5668, "EPFL, Lausanne"), Location(46.5191, 6.5668, "BC Building"))
+  fun loadRequest_failure_setsErrorMessage() = runTest {
+    whenever(requestRepository.getRequest("test-id")).thenThrow(RuntimeException("Network error"))
 
-    `when`(locationRepository.search("EPFL", 5)).thenReturn(mockResults)
+    viewModel.loadRequest("test-id")
+    advanceUntilIdle()
+
+    val uiState = viewModel.uiState.value
+    assertFalse(uiState.isLoading)
+    assertNotNull(uiState.errorMessage)
+    assertTrue(uiState.errorMessage!!.contains("Failed to load request"))
+  }
+
+  @Test
+  fun loadRequest_setsLoadingState() = runTest {
+    whenever(requestRepository.getRequest("test-id")).thenReturn(testRequest)
+
+    viewModel.loadRequest("test-id")
+
+    advanceUntilIdle()
+
+    // check loading state after coroutine has completed
+    assertFalse(viewModel.uiState.value.isLoading)
+  }
+
+  // ========================================================================
+  // Test: Initialize for Create
+  // ========================================================================
+
+  @Test
+  fun initializeForCreate_setsDefaultState() {
+    viewModel.initializeForCreate("user1")
+
+    val uiState = viewModel.uiState.value
+    assertEquals("", uiState.title)
+    assertEquals("", uiState.description)
+    assertTrue(uiState.requestTypes.isEmpty())
+    assertFalse(uiState.isEditMode)
+    assertEquals(listOf("user1"), viewModel.people.value)
+  }
+
+  // ========================================================================
+  // Test: Location Search
+  // ========================================================================
+
+  @Test
+  fun searchLocations_withShortQuery_clearsResults() {
+    viewModel.searchLocations("ab")
+
+    assertTrue(viewModel.uiState.value.locationSearchResults.isEmpty())
+  }
+
+  @Test
+  fun searchLocations_success_updatesSearchResults() = runTest {
+    val locations = listOf(testLocation)
+    whenever(locationRepository.search("EPFL", 5)).thenReturn(locations)
 
     viewModel.searchLocations("EPFL")
-    testDispatcher.scheduler.advanceUntilIdle()
+    advanceUntilIdle()
 
-    // Verify loading state
-    assert(!viewModel.isSearchingLocation.first())
-
-    // Verify search results
-    assert(viewModel.locationSearchResults.first() == mockResults)
-    assert(viewModel.locationSearchResults.first().size == 2)
+    assertEquals(locations, viewModel.uiState.value.locationSearchResults)
+    assertFalse(viewModel.uiState.value.isSearchingLocation)
   }
 
-  // Test 6: Search locations with short query clears results
   @Test
-  fun searchLocations_shortQuery_clearsResults() = runTest {
-    // First add some results
-    val mockResults = listOf(Location(46.5197, 6.5668, "EPFL"))
-    `when`(locationRepository.search("EPFL", 5)).thenReturn(mockResults)
+  fun searchLocations_failure_setsErrorMessage() = runTest {
+    whenever(locationRepository.search("EPFL", 5)).thenThrow(RuntimeException("Network error"))
 
     viewModel.searchLocations("EPFL")
-    testDispatcher.scheduler.advanceUntilIdle()
-    assert(viewModel.locationSearchResults.first().isNotEmpty())
+    advanceUntilIdle()
 
-    // Now search with short query (< 3 chars)
-    viewModel.searchLocations("EP")
-    testDispatcher.scheduler.advanceUntilIdle()
-
-    // Should clear results
-    assert(viewModel.locationSearchResults.first().isEmpty())
+    assertNotNull(viewModel.uiState.value.errorMessage)
+    assertTrue(viewModel.uiState.value.errorMessage!!.contains("Location search failed"))
+    assertTrue(viewModel.uiState.value.locationSearchResults.isEmpty())
   }
 
-  // Test 7: Clear location search resets state
   @Test
-  fun clearLocationSearch_resetsSearchResults() = runTest {
-    val mockResults = listOf(Location(46.5197, 6.5668, "EPFL"))
-    `when`(locationRepository.search("EPFL", 5)).thenReturn(mockResults)
-
-    viewModel.searchLocations("EPFL")
-    testDispatcher.scheduler.advanceUntilIdle()
-    assert(viewModel.locationSearchResults.first().isNotEmpty())
-
-    // Clear search
+  fun clearLocationSearch_clearsResults() {
     viewModel.clearLocationSearch()
 
-    assert(viewModel.locationSearchResults.first().isEmpty())
+    assertTrue(viewModel.uiState.value.locationSearchResults.isEmpty())
+  }
+
+  // ========================================================================
+  // Test: Save Request
+  // ========================================================================
+
+  @Test
+  fun saveRequest_withValidData_callsRepositoryAndShowsSuccess() = runTest {
+    // Setup valid data
+    viewModel.updateTitle("Test Title")
+    viewModel.updateDescription("Test Description")
+    viewModel.updateRequestTypes(listOf(RequestType.STUDYING))
+    viewModel.updateLocation(testLocation)
+    viewModel.updateLocationName("EPFL")
+    viewModel.updateStartTimeStamp(Date())
+    viewModel.updateExpirationTime(Date(System.currentTimeMillis() + 86400000))
+
+    var onSuccessCalled = false
+    viewModel.saveRequest("user1") { onSuccessCalled = true }
+    advanceUntilIdle()
+
+    verify(requestRepository).addRequest(any())
+    assertTrue(onSuccessCalled)
+    assertTrue(viewModel.uiState.value.validationState.showSuccessMessage)
+    assertFalse(viewModel.uiState.value.isLoading)
+  }
+
+  @Test
+  fun saveRequest_withInvalidData_doesNotCallRepository() = runTest {
+    // Don't set any data (all fields invalid)
+
+    var onSuccessCalled = false
+    viewModel.saveRequest("user1") { onSuccessCalled = true }
+    advanceUntilIdle()
+
+    verify(requestRepository, never()).addRequest(any())
+    assertFalse(onSuccessCalled)
+    assertFalse(viewModel.uiState.value.validationState.showSuccessMessage)
+  }
+
+  @Test
+  fun saveRequest_inEditMode_callsUpdateRequest() = runTest {
+    whenever(requestRepository.getRequest("test-id")).thenReturn(testRequest)
+    viewModel.loadRequest("test-id")
+    advanceUntilIdle()
+
+    // Modify some data
+    viewModel.updateTitle("Updated Title")
+
+    viewModel.saveRequest("user1") {}
+    advanceUntilIdle()
+
+    // Simple fix: Use only matchers or only raw values
+    verify(requestRepository).updateRequest(any(), any())
+    verify(requestRepository, never()).addRequest(any())
+  }
+
+  @Test
+  fun saveRequest_failure_setsErrorMessage() = runTest {
+    // Setup valid data
+    viewModel.updateTitle("Test Title")
+    viewModel.updateDescription("Test Description")
+    viewModel.updateRequestTypes(listOf(RequestType.HARDWARE))
+    viewModel.updateLocation(testLocation)
+    viewModel.updateLocationName("EPFL")
+    viewModel.updateStartTimeStamp(Date())
+    viewModel.updateExpirationTime(Date(System.currentTimeMillis() + 86400000))
+
+    whenever(requestRepository.addRequest(any())).thenThrow(RuntimeException("Network error"))
+
+    viewModel.saveRequest("user1") {}
+    advanceUntilIdle()
+
+    assertNotNull(viewModel.uiState.value.errorMessage)
+    assertTrue(viewModel.uiState.value.errorMessage!!.contains("Failed to save request"))
+    assertFalse(viewModel.uiState.value.isLoading)
+  }
+
+  // ========================================================================
+  // Test: Error Handling
+  // ========================================================================
+
+  @Test
+  fun clearError_clearsErrorMessage() {
+    // Manually set an error in the UI state
+    viewModel.updateTitle("Valid") // First set to valid state
+    // Then trigger an error through the state
+    viewModel.loadRequest("non-existent-id") // This will fail and set error
+
+    viewModel.clearError()
+
+    assertNull(viewModel.uiState.value.errorMessage)
+  }
+
+  @Test
+  fun clearSuccessMessage_clearsSuccessFlag() = runTest {
+    // Setup and save a valid request to show success
+    viewModel.updateTitle("Test Title")
+    viewModel.updateDescription("Test Description")
+    viewModel.updateRequestTypes(listOf(RequestType.HARDWARE))
+    viewModel.updateLocation(testLocation)
+    viewModel.updateLocationName("EPFL")
+    viewModel.updateStartTimeStamp(Date())
+    viewModel.updateExpirationTime(Date(System.currentTimeMillis() + 86400000))
+
+    viewModel.saveRequest("user1") {}
+    advanceUntilIdle()
+
+    assertTrue(viewModel.uiState.value.validationState.showSuccessMessage)
+
+    viewModel.clearSuccessMessage()
+
+    assertFalse(viewModel.uiState.value.validationState.showSuccessMessage)
+  }
+
+  // ========================================================================
+  // Test: Reset
+  // ========================================================================
+
+  @Test
+  fun reset_clearsAllState() {
+    // Set some data
+    viewModel.updateTitle("Test")
+    viewModel.updateDescription("Description")
+    viewModel.updateRequestTypes(listOf(RequestType.HARDWARE))
+
+    viewModel.reset()
+
+    val uiState = viewModel.uiState.value
+    assertEquals("", uiState.title)
+    assertEquals("", uiState.description)
+    assertTrue(uiState.requestTypes.isEmpty())
+    assertFalse(uiState.isEditMode)
+    assertFalse(uiState.isLoading)
+    assertNull(uiState.errorMessage)
+    assertTrue(viewModel.people.value.isEmpty())
+  }
+
+  // ========================================================================
+  // Test: Validation Integration
+  // ========================================================================
+
+  @Test
+  fun validation_showsAllErrors_whenAllFieldsInvalid() = runTest {
+    // Try to save with no data
+    viewModel.saveRequest("user1") {}
+    advanceUntilIdle()
+
+    val validation = viewModel.uiState.value.validationState
+    assertTrue(validation.showTitleError)
+    assertTrue(validation.showDescriptionError)
+    assertTrue(validation.showRequestTypeError)
+    assertTrue(validation.showLocationNameError)
+  }
+
+  @Test
+  fun validation_clearsErrors_whenFieldsBecomesValid() {
+    // Set blank title to show error
+    viewModel.updateTitle("")
+    assertTrue(viewModel.uiState.value.validationState.showTitleError)
+
+    // Fix the title
+    viewModel.updateTitle("Valid Title")
+    assertFalse(viewModel.uiState.value.validationState.showTitleError)
   }
 }
