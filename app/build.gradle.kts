@@ -151,10 +151,11 @@ dependencies {
 
     // Firebase
     implementation(platform("com.google.firebase:firebase-bom:32.8.0"))
-    implementation(libs.firebase.auth)
-    implementation(libs.firebase.firestore)
     implementation(libs.firebase.database.ktx)
+    implementation(libs.firebase.firestore)
+    implementation(libs.firebase.ui.auth)
     implementation(libs.firebase.auth.ktx)
+    implementation(libs.firebase.auth)
 
     // Credential Manager (for Google Sign-In)
     implementation(libs.credentials)
