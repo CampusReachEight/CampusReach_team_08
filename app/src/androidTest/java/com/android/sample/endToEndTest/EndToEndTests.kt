@@ -73,6 +73,7 @@ class EndToEndTests : BaseEmulatorTest() {
 
   @After
   override fun tearDown() {
+      composeTestRule.waitForIdle()
     super.tearDown()
   }
 
