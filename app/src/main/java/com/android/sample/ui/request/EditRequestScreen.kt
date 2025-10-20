@@ -33,6 +33,10 @@ object EditRequestScreenTestTags {
   const val SAVE_BUTTON = "saveButton"
   const val ERROR_MESSAGE = "errorMessage"
   const val LOCATION_SEARCH = "locationSearch"
+
+  fun getTestTagForRequestType(type: RequestType): String = "request_type_${type.name}"
+
+  fun getTestTagForRequestTags(tag: Tags): String = "request_tags_${tag.name}"
 }
 
 /**
@@ -92,9 +96,11 @@ fun EditRequestScreen(
         TopAppBar(
             title = { Text(if (isEditMode) "Edit Request" else "Create Request") },
             navigationIcon = {
-              IconButton(onClick = onNavigateBack) {
-                Icon(Icons.Default.Close, contentDescription = "Cancel")
-              }
+              IconButton(
+                  onClick = onNavigateBack,
+                  modifier = Modifier.testTag(NavigationTestTags.GO_BACK_BUTTON)) {
+                    Icon(Icons.Default.Close, contentDescription = "Cancel")
+                  }
             })
       },
       modifier = Modifier.testTag(navigationTag)) { paddingValues ->
@@ -535,7 +541,8 @@ fun RequestTypeChipGroup(
             onSelectionChanged(newSelection)
           },
           label = { Text(type.name.replace("_", " ")) },
-          enabled = enabled)
+          enabled = enabled,
+          modifier = Modifier.testTag(EditRequestScreenTestTags.getTestTagForRequestType(type)))
     }
   }
 }
@@ -580,7 +587,8 @@ fun TagsChipGroup(
                 onSelectionChanged(newSelection)
               },
               label = { Text(tag.name.replace("_", " ")) },
-              enabled = enabled)
+              enabled = enabled,
+              modifier = Modifier.testTag(EditRequestScreenTestTags.getTestTagForRequestTags(tag)))
         }
       }
 }

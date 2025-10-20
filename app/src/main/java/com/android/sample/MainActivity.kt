@@ -8,12 +8,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.credentials.CredentialManager
 import androidx.navigation.compose.rememberNavController
 import com.android.sample.resources.C
 import com.android.sample.ui.navigation.NavigationActions
@@ -35,13 +35,16 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun AppNavigation() {
+fun AppNavigation(
+    credentialManager: CredentialManager = CredentialManager.create(LocalContext.current)
+) {
   val navController = rememberNavController()
   val navigationActions = NavigationActions(navController = navController)
   NavigationScreen(
       navigationActions = navigationActions,
       navController = navController,
-      modifier = Modifier.fillMaxSize())
+      modifier = Modifier.fillMaxSize(),
+      credentialManager = credentialManager)
 }
 
 @Composable
