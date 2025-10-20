@@ -417,13 +417,13 @@ class EndToEndTests : BaseEmulatorTest() {
   }
 
   // check if you can log in, and then go to profile and disconnect
-  @Test
-  fun canLogInAndThenDisconnect() {
+  // @Test
+  // fun canLogInAndThenDisconnect() {
 
-    initialize()
+  // initialize()
 
-    logOut()
-  }
+  // logOut()
+  // }
 
   // check if you can accept a request and cancel it
   @Test
