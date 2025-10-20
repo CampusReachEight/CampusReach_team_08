@@ -197,6 +197,7 @@ dependencies {
     androidTestImplementation(libs.mockito.core)
     androidTestImplementation(libs.mockito.kotlin)
     androidTestImplementation(libs.mockito.android)
+    testImplementation(kotlin("test"))
 }
 tasks.withType<Test> {
     configure<JacocoTaskExtension> {
