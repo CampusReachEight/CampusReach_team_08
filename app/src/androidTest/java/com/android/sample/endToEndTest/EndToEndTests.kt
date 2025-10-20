@@ -37,6 +37,7 @@ import com.android.sample.utils.FirebaseEmulator
 import com.android.sample.utils.UI_WAIT_TIMEOUT
 import java.util.Calendar
 import java.util.Date
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
@@ -61,7 +62,14 @@ class EndToEndTests : BaseEmulatorTest() {
 
   @Before
   override fun setUp() {
-    super.setUp()
+    db = FirebaseEmulator.firestore
+    auth = FirebaseEmulator.auth
+
+    runTest {
+      FirebaseEmulator.clearAuthEmulator()
+      delay(500)
+    }
+
     titles = "title"
     descriptions = "description"
     locations = "EPFL"
