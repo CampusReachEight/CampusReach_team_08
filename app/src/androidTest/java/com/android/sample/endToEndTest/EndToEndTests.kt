@@ -1,11 +1,12 @@
 package com.android.sample.endToEndTest
 
+import androidx.activity.ComponentActivity
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextContains
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithTag
@@ -43,7 +44,7 @@ import org.junit.Rule
 import org.junit.Test
 
 class EndToEndTests : BaseEmulatorTest() {
-  @get:Rule val composeTestRule = createComposeRule()
+  @get:Rule val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
   private lateinit var titles: String
   private lateinit var anotherTitle: String
@@ -73,8 +74,13 @@ class EndToEndTests : BaseEmulatorTest() {
 
   @After
   override fun tearDown() {
-    composeTestRule.waitForIdle()
+    try {
+      composeTestRule.waitForIdle()
+      Thread.sleep(500)
+    } catch (_: Exception) {}
+
     super.tearDown()
+    Thread.sleep(1000)
   }
 
   // initialize all you want for an end to end test
@@ -82,8 +88,12 @@ class EndToEndTests : BaseEmulatorTest() {
     val fakeGoogleIdToken = FakeJwtGenerator.createFakeGoogleIdToken(name, email)
 
     val fakeCredentialManager = FakeCredentialManager.create(fakeGoogleIdToken)
+    composeTestRule.waitForIdle()
 
     composeTestRule.setContent { AppNavigation(credentialManager = fakeCredentialManager) }
+
+    composeTestRule.waitForIdle()
+    Thread.sleep(1000)
 
     logIn()
   }
