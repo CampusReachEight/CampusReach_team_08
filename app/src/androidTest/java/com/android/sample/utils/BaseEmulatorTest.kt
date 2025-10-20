@@ -14,7 +14,7 @@ import org.junit.Before
  * override [setUp] and [tearDown] if they need additional setup/cleanup, making sure to call
  * super.setUp()/super.tearDown().
  */
-const val UI_WAIT_TIMEOUT = 10_000L
+const val UI_WAIT_TIMEOUT = 5_000L
 
 abstract class BaseEmulatorTest {
 

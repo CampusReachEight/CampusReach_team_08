@@ -141,6 +141,7 @@ class EndToEndTests : BaseEmulatorTest() {
         .assertIsDisplayed()
         .performClick()
 
+    composeTestRule.waitForIdle()
     composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
       composeTestRule
           .onAllNodesWithTag(EditRequestScreenTestTags.INPUT_TITLE)
@@ -187,6 +188,7 @@ class EndToEndTests : BaseEmulatorTest() {
         .assertIsDisplayed()
         .performTextInput(location)
 
+    composeTestRule.waitForIdle()
     composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
       composeTestRule
           .onAllNodes(hasTestTagThatStartsWith(), useUnmergedTree = true)
@@ -245,6 +247,7 @@ class EndToEndTests : BaseEmulatorTest() {
         .assertIsDisplayed()
         .performClick()
 
+    composeTestRule.waitForIdle()
     composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
       val nodes =
           composeTestRule
@@ -264,6 +267,7 @@ class EndToEndTests : BaseEmulatorTest() {
         .assertIsDisplayed()
         .performClick()
 
+    composeTestRule.waitForIdle()
     composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
       composeTestRule
           .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM)
@@ -283,6 +287,7 @@ class EndToEndTests : BaseEmulatorTest() {
         .assertIsDisplayed()
         .performClick()
 
+    composeTestRule.waitForIdle()
     composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
       composeTestRule
           .onAllNodesWithTag(ProfileTestTags.PROFILE_ACTION_LOG_OUT)
@@ -296,6 +301,7 @@ class EndToEndTests : BaseEmulatorTest() {
         .assertIsDisplayed()
         .performClick()
 
+    composeTestRule.waitForIdle()
     composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
       composeTestRule
           .onAllNodesWithTag(ProfileTestTags.LOG_OUT_DIALOG)
@@ -311,6 +317,7 @@ class EndToEndTests : BaseEmulatorTest() {
 
     // check you are on log in page
 
+    composeTestRule.waitForIdle()
     composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
       composeTestRule
           .onAllNodesWithTag(SignInScreenTestTags.LOGIN_BUTTON)
@@ -336,6 +343,7 @@ class EndToEndTests : BaseEmulatorTest() {
         .assertIsDisplayed()
         .performClick()
 
+    composeTestRule.waitForIdle()
     composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
       composeTestRule
           .onAllNodesWithTag(EditRequestScreenTestTags.ERROR_MESSAGE)
@@ -345,6 +353,7 @@ class EndToEndTests : BaseEmulatorTest() {
 
     addElementOfRequest()
 
+    composeTestRule.waitForIdle()
     composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
       composeTestRule
           .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM)
@@ -360,6 +369,7 @@ class EndToEndTests : BaseEmulatorTest() {
         .assertIsDisplayed()
         .performClick()
 
+    composeTestRule.waitForIdle()
     composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
       composeTestRule
           .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM)
@@ -386,6 +396,7 @@ class EndToEndTests : BaseEmulatorTest() {
         .assertIsDisplayed()
         .performClick()
 
+    composeTestRule.waitForIdle()
     // check that the title is the one modified in editScreen
     composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
       val nodes =
@@ -408,6 +419,7 @@ class EndToEndTests : BaseEmulatorTest() {
 
     composeTestRule.onNodeWithTag(NavigationTestTags.MAP_TAB).assertIsDisplayed().performClick()
 
+    composeTestRule.waitForIdle()
     composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
       composeTestRule
           .onAllNodesWithTag(MapTestTags.GOOGLE_MAP_SCREEN)
@@ -417,13 +429,13 @@ class EndToEndTests : BaseEmulatorTest() {
   }
 
   // check if you can log in, and then go to profile and disconnect
-  // @Test
-  // fun canLogInAndThenDisconnect() {
+  @Test
+  fun canLogInAndThenDisconnect() {
 
-  // initialize()
+    initialize()
 
-  // logOut()
-  // }
+    logOut()
+  }
 
   // check if you can accept a request and cancel it
   @Test
@@ -436,6 +448,7 @@ class EndToEndTests : BaseEmulatorTest() {
         .assertIsDisplayed()
         .performClick()
 
+    composeTestRule.waitForIdle()
     composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
       composeTestRule
           .onAllNodesWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)
@@ -453,6 +466,7 @@ class EndToEndTests : BaseEmulatorTest() {
         .assertIsDisplayed()
         .performClick()
 
+    composeTestRule.waitForIdle()
     composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
       composeTestRule
           .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM)
