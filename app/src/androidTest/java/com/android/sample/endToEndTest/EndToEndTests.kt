@@ -57,6 +57,18 @@ class EndToEndTests : BaseEmulatorTest() {
 
   private lateinit var firstEmail: String
 
+  private lateinit var secondName: String
+
+  private lateinit var secondEmail: String
+
+  private lateinit var thirdName: String
+
+  private lateinit var thirdEmail: String
+
+  private lateinit var fourthName: String
+
+  private lateinit var fourthEmail: String
+
   private lateinit var repository: RequestRepositoryFirestore
   private lateinit var request1: Request
 
@@ -77,6 +89,15 @@ class EndToEndTests : BaseEmulatorTest() {
 
     firstName = "53849"
     firstEmail = "anothertest@example.com"
+
+    secondName = "04829"
+    secondEmail = "abcd@example.com"
+
+    thirdName = "43789"
+    thirdEmail = "pdtzf@example.com"
+
+    fourthName = "61611"
+    fourthEmail = "gdhsja@example.com"
     FirebaseEmulator.signOut()
   }
 
@@ -281,7 +302,7 @@ class EndToEndTests : BaseEmulatorTest() {
 
   // log in and check if you are in RequestList
   private fun logIn() {
-    val wasUserLogedIn = auth.currentUser != null
+
     composeTestRule
         .onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON)
         .assertIsDisplayed()
@@ -289,32 +310,16 @@ class EndToEndTests : BaseEmulatorTest() {
 
     composeTestRule.waitForIdle()
 
-    Thread.sleep(UI_WAIT_TIMEOUT)
-    val isUserLoggedIn = auth.currentUser != null
-    if (!(composeTestRule
-        .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM)
-        .fetchSemanticsNodes()
-        .isNotEmpty() ||
-        composeTestRule
-            .onAllNodesWithTag(RequestListTestTags.EMPTY_LIST_MESSAGE)
-            .fetchSemanticsNodes()
-            .isNotEmpty())) {
-      throw AssertionError(
-          "Échec du waitUntil : aucun élément trouvé après $UI_WAIT_TIMEOUT ms.\n" +
-              "État utilisateur : ${if (isUserLoggedIn) "Connecté " else "Non connecté "}," +
-              "Previous utilisateur : ${if (wasUserLogedIn) "WasConnected" else "Wasn't Connected"}")
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule
+          .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM)
+          .fetchSemanticsNodes()
+          .isNotEmpty() ||
+          composeTestRule
+              .onAllNodesWithTag(RequestListTestTags.EMPTY_LIST_MESSAGE)
+              .fetchSemanticsNodes()
+              .isNotEmpty()
     }
-
-    // composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
-    // composeTestRule
-    // .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM)
-    // .fetchSemanticsNodes()
-    // .isNotEmpty() ||
-    // composeTestRule
-    // .onAllNodesWithTag(RequestListTestTags.EMPTY_LIST_MESSAGE)
-    // .fetchSemanticsNodes()
-    // .isNotEmpty()
-
   }
 
   private fun logOut() {
@@ -369,7 +374,7 @@ class EndToEndTests : BaseEmulatorTest() {
   @Test
   fun addRequestAndCanEdit() {
 
-    initialize()
+    initialize(firstName, firstEmail)
 
     goAddRequest()
 
@@ -452,7 +457,7 @@ class EndToEndTests : BaseEmulatorTest() {
   // can log in and go to Map
   @Test
   fun canAccessMap() {
-    initialize()
+    initialize(secondName, secondEmail)
 
     composeTestRule.onNodeWithTag(NavigationTestTags.MAP_TAB).assertIsDisplayed().performClick()
 
@@ -469,7 +474,7 @@ class EndToEndTests : BaseEmulatorTest() {
   @Test
   fun canLogInAndThenDisconnect() {
 
-    initialize()
+    initialize(thirdName, thirdEmail)
 
     logOut()
   }
@@ -478,7 +483,7 @@ class EndToEndTests : BaseEmulatorTest() {
   @Test
   fun canAcceptRequest() {
     hadARequestWithOtherAccount()
-    initialize()
+    initialize(fourthName, fourthEmail)
 
     composeTestRule
         .onNodeWithTag(RequestListTestTags.REQUEST_ITEM)
