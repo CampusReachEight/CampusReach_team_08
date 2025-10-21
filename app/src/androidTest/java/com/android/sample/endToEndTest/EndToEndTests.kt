@@ -281,22 +281,34 @@ class EndToEndTests : BaseEmulatorTest() {
 
   // log in and check if you are in RequestList
   private fun logIn() {
+      val wasUserLogedIn = auth.currentUser != null
     composeTestRule
         .onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON)
         .assertIsDisplayed()
         .performClick()
 
     composeTestRule.waitForIdle()
-    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
-      composeTestRule
-          .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM)
-          .fetchSemanticsNodes()
-          .isNotEmpty() ||
-          composeTestRule
-              .onAllNodesWithTag(RequestListTestTags.EMPTY_LIST_MESSAGE)
-              .fetchSemanticsNodes()
-              .isNotEmpty()
-    }
+      try {
+          composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+              composeTestRule
+                  .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM)
+                  .fetchSemanticsNodes()
+                  .isNotEmpty() ||
+                      composeTestRule
+                          .onAllNodesWithTag(RequestListTestTags.EMPTY_LIST_MESSAGE)
+                          .fetchSemanticsNodes()
+                          .isNotEmpty()
+          }
+      } catch (e: Exception) {
+
+          val isUserLoggedIn = auth.currentUser != null
+          throw AssertionError(
+              "Échec du waitUntil : aucun élément trouvé après $UI_WAIT_TIMEOUT ms.\n" +
+                      "État utilisateur : ${if (isUserLoggedIn) "Connecté " else "Non connecté "}," +
+                      "Previous utilisateur : ${if (wasUserLogedIn) "WasConnected" else "Wasn't Connected"}",
+              e
+          )
+      }
   }
 
   private fun logOut() {
@@ -439,12 +451,20 @@ class EndToEndTests : BaseEmulatorTest() {
     composeTestRule.onNodeWithTag(NavigationTestTags.MAP_TAB).assertIsDisplayed().performClick()
 
     composeTestRule.waitForIdle()
-    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
-      composeTestRule
-          .onAllNodesWithTag(MapTestTags.GOOGLE_MAP_SCREEN)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
+      try {
+          composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+              composeTestRule
+                  .onAllNodesWithTag(MapTestTags.GOOGLE_MAP_SCREEN)
+                  .fetchSemanticsNodes()
+                  .isNotEmpty()
+          }
+      }
+      catch(e: Exception){
+          throw AssertionError(
+              "Can't see the map",
+              e
+          )
+      }
   }
 
   // check if you can log in, and then go to profile and disconnect
