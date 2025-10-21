@@ -288,26 +288,33 @@ class EndToEndTests : BaseEmulatorTest() {
         .performClick()
 
     composeTestRule.waitForIdle()
-    try {
-      composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
-        composeTestRule
-            .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM)
-            .fetchSemanticsNodes()
-            .isNotEmpty() ||
-            composeTestRule
-                .onAllNodesWithTag(RequestListTestTags.EMPTY_LIST_MESSAGE)
-                .fetchSemanticsNodes()
-                .isNotEmpty()
-      }
-    } catch (e: Exception) {
 
-      val isUserLoggedIn = auth.currentUser != null
+    Thread.sleep(UI_WAIT_TIMEOUT)
+    val isUserLoggedIn = auth.currentUser != null
+    if (!(composeTestRule
+        .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM)
+        .fetchSemanticsNodes()
+        .isNotEmpty() ||
+        composeTestRule
+            .onAllNodesWithTag(RequestListTestTags.EMPTY_LIST_MESSAGE)
+            .fetchSemanticsNodes()
+            .isNotEmpty())) {
       throw AssertionError(
           "Échec du waitUntil : aucun élément trouvé après $UI_WAIT_TIMEOUT ms.\n" +
               "État utilisateur : ${if (isUserLoggedIn) "Connecté " else "Non connecté "}," +
-              "Previous utilisateur : ${if (wasUserLogedIn) "WasConnected" else "Wasn't Connected"}",
-          e)
+              "Previous utilisateur : ${if (wasUserLogedIn) "WasConnected" else "Wasn't Connected"}")
     }
+
+    // composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+    // composeTestRule
+    // .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM)
+    // .fetchSemanticsNodes()
+    // .isNotEmpty() ||
+    // composeTestRule
+    // .onAllNodesWithTag(RequestListTestTags.EMPTY_LIST_MESSAGE)
+    // .fetchSemanticsNodes()
+    // .isNotEmpty()
+
   }
 
   private fun logOut() {
@@ -450,15 +457,11 @@ class EndToEndTests : BaseEmulatorTest() {
     composeTestRule.onNodeWithTag(NavigationTestTags.MAP_TAB).assertIsDisplayed().performClick()
 
     composeTestRule.waitForIdle()
-    try {
-      composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
-        composeTestRule
-            .onAllNodesWithTag(MapTestTags.GOOGLE_MAP_SCREEN)
-            .fetchSemanticsNodes()
-            .isNotEmpty()
-      }
-    } catch (e: Exception) {
-      throw AssertionError("Can't see the map", e)
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule
+          .onAllNodesWithTag(MapTestTags.GOOGLE_MAP_SCREEN)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
     }
   }
 
