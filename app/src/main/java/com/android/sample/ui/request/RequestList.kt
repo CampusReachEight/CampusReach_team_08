@@ -81,6 +81,7 @@ private enum class FilterKind {
   Type,
   Status,
   Tags
+  const val REQUEST_ADD_BUTTON = "requestAddButton"
 }
 
 @Composable
@@ -376,7 +377,11 @@ fun RequestListItem(
 
 @Composable
 fun AddButton(navigationActions: NavigationActions?) {
-  FloatingActionButton(onClick = { navigationActions?.navigateTo(Screen.AddRequest) }) { Text("+") }
+  FloatingActionButton(
+      onClick = { navigationActions?.navigateTo(Screen.AddRequest) },
+      modifier = Modifier.testTag(RequestListTestTags.REQUEST_ADD_BUTTON)) {
+        Text("+")
+      }
 }
 
 @Composable

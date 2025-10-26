@@ -10,9 +10,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.credentials.CredentialManager
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -46,7 +48,8 @@ import okhttp3.OkHttpClient
 fun NavigationScreen(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
-    navigationActions: NavigationActions = NavigationActions(navController)
+    navigationActions: NavigationActions = NavigationActions(navController),
+    credentialManager: CredentialManager = CredentialManager.create(LocalContext.current)
 ) {
 
   val user = FirebaseAuth.getInstance().currentUser
@@ -76,7 +79,10 @@ fun NavigationScreen(
   ) {
     navigation(startDestination = Screen.Login.route, route = "login") {
       composable(Screen.Login.route) {
-        SignInScreen(viewModel = signInViewModel, onSignInSuccess = { isSignedIn = true })
+        SignInScreen(
+            viewModel = signInViewModel,
+            onSignInSuccess = { isSignedIn = true },
+            credentialManager = credentialManager)
       }
     }
 

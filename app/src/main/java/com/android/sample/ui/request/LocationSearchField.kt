@@ -23,6 +23,8 @@ object LocationSearchFieldTestTags {
   const val LoadingIndicator = "location_loading_indicator"
   const val ClearButton = "location_clear_button"
   const val SelectedLocationCard = "selected_location_card"
+
+  fun getTestTagForLocation(loc: Location): String = "locationResult_${loc.name}"
 }
 
 /**
@@ -153,7 +155,9 @@ fun LocationSearchField(
                     showDropdown = false // Hide dropdown
                     onClearSearch() // Clear search results
                   },
-                  modifier = Modifier.testTag("locationResult_${searchLocation.name}"))
+                  modifier =
+                      Modifier.testTag(
+                          LocationSearchFieldTestTags.getTestTagForLocation(searchLocation)))
               // Divider between items except after last
               if (searchLocation != searchResults.last()) {
                 HorizontalDivider()
