@@ -55,6 +55,8 @@ object RequestListTestTags {
 
   const val REQUEST_STATUS_FILTER_DROPDOWN_BUTTON = "requestStatusFilterDropdown"
 
+  const val REQUEST_ADD_BUTTON = "requestAddButton"
+
   /**
    * Tags for the search bar of each dropdown menu These allow users to search within the filter
    * options
@@ -81,7 +83,6 @@ private enum class FilterKind {
   Type,
   Status,
   Tags
-  const val REQUEST_ADD_BUTTON = "requestAddButton"
 }
 
 @Composable
