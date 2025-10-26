@@ -324,26 +324,36 @@ class RequestListTests : BaseEmulatorTest() {
 
   @Test
   fun selectingType_updatesSelectedCount_inHeader() {
-    val vm =
-        RequestListViewModel(
-            FakeRequestRepository(emptyList()), FakeUserProfileRepository(createBitmap()))
+    val request =
+        Request(
+            requestId = "req_1",
+            title = "Title 1",
+            description = "Description 1",
+            requestType = listOf(RequestType.OTHER),
+            location = Location(0.0, 0.0, "Loc"),
+            locationName = "LocName",
+            status = RequestStatus.OPEN,
+            startTimeStamp = Date(),
+            expirationTime = Date(System.currentTimeMillis() + 3_600_000),
+            people = emptyList(),
+            tags = listOf(Tags.INDOOR),
+            creatorId = currentUserId)
+    val repository = FakeRequestRepository(listOf(request))
+    val vm = RequestListViewModel(repository)
 
     composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
     composeTestRule.waitForIdle()
 
     val typeTitle = RequestType.toString()
 
-    // Open type menu
     composeTestRule
         .onNodeWithTag(RequestListTestTags.REQUEST_TYPE_FILTER_DROPDOWN_BUTTON)
         .assertExists()
         .performClick()
 
-    // Toggle a known enum value (e.g., OTHER)
     val otherTag = RequestListTestTags.getRequestTypeFilterTag(RequestType.OTHER)
     composeTestRule.onNodeWithTag(otherTag).assertExists().performClick()
 
-    // Header should now read (... (1))
     composeTestRule.onNodeWithText("$typeTitle (1)").assertExists().assertIsDisplayed()
   }
 

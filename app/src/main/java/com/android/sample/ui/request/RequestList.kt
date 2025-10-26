@@ -64,20 +64,17 @@ object RequestListTestTags {
   const val REQUEST_STATUS_FILTER_SEARCH_BAR = "requestStatusFilterSearchBar"
 
   /**
-   * Tags for the filter options within the dropdown menus These are generated dynamically based on
-   * the filter values
+   * Generates a tag for a given filter type and value within dropdown menus. These tags are
+   * dynamically created based on filter values.
    */
-  fun getRequestTypeFilterTag(requestType: RequestType): String {
-    return "requestTypeFilter_${'$'}{requestType.displayString()}"
-  }
+  private fun getFilterTag(type: String, value: String): String = "${type}Filter_$value"
 
-  fun getRequestTagFilterTag(tag: String): String {
-    return "requestTagFilter_${'$'}tag"
-  }
+  fun getRequestTypeFilterTag(requestType: RequestType): String =
+      getFilterTag("requestType", requestType.displayString())
 
-  fun getRequestStatusFilterTag(status: String): String {
-    return "requestStatusFilter_${'$'}status"
-  }
+  fun getRequestTagFilterTag(tag: String): String = getFilterTag("requestTag", tag)
+
+  fun getRequestStatusFilterTag(status: String): String = getFilterTag("requestStatus", status)
 }
 
 private enum class FilterKind {
@@ -281,8 +278,10 @@ private fun <E : Enum<E>> FilterMenuPanel(
                     Spacer(modifier = Modifier.height(ConstantRequestList.PaddingSmall))
 
                     val filteredValues =
-                        remember(localQuery, values) {
-                          values.filter { labelOf(it).contains(localQuery, ignoreCase = true) }
+                        remember(localQuery, values, counts) {
+                          values
+                              .filter { labelOf(it).contains(localQuery, ignoreCase = true) }
+                              .sortedByDescending { counts[it] ?: 0 }
                         }
 
                     Box(modifier = Modifier.heightIn(max = ConstantRequestList.DropdownMaxHeight)) {
