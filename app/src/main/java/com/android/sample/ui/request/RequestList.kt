@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -370,7 +371,9 @@ fun RequestListItem(
         }
         Text(
             request.description,
-            modifier = Modifier.testTag(RequestListTestTags.REQUEST_ITEM_DESCRIPTION))
+            modifier = Modifier.testTag(RequestListTestTags.REQUEST_ITEM_DESCRIPTION),
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis)
       }
     }
   }
@@ -394,144 +397,6 @@ private fun RequestSearchBar(modifier: Modifier = Modifier) {
       modifier = modifier.testTag(RequestListTestTags.REQUEST_SEARCH_BAR),
       singleLine = true,
       placeholder = { Text("Search") })
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun <E : Enum<E>> FilterMenu(
-    title: String,
-    values: Array<E>,
-    selected: Set<E>,
-    counts: Map<E, Int>,
-    labelOf: (E) -> String,
-    onToggle: (E) -> Unit,
-    dropdownButtonTestTag: String,
-    dropdownSearchBarTestTag: String,
-    rowTestTagOf: (E) -> String,
-    modifier: Modifier = Modifier
-) {
-  var expanded by rememberSaveable { mutableStateOf(false) }
-  var localQuery by rememberSaveable { mutableStateOf("") }
-
-  Column(modifier = modifier) {
-    OutlinedButton(
-        onClick = { expanded = !expanded },
-        modifier =
-            Modifier.fillMaxWidth()
-                .height(ConstantRequestList.FilterButtonHeight)
-                .testTag(dropdownButtonTestTag)) {
-          val selCount = selected.size
-          Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
-            Text("${'$'}title (${'$'}selCount)", modifier = Modifier.weight(1f))
-            Icon(imageVector = Icons.Filled.ArrowDropDown, contentDescription = null)
-          }
-        }
-
-    if (expanded) {
-      Spacer(modifier = Modifier.height(ConstantRequestList.PaddingSmall))
-      Surface(shape = MaterialTheme.shapes.medium, tonalElevation = 2.dp, shadowElevation = 2.dp) {
-        Column(modifier = Modifier.fillMaxWidth().padding(ConstantRequestList.PaddingMedium)) {
-          OutlinedTextField(
-              value = localQuery,
-              onValueChange = { localQuery = it },
-              modifier = Modifier.fillMaxWidth().testTag(dropdownSearchBarTestTag),
-              singleLine = true,
-              placeholder = { Text("Search options") })
-
-          Spacer(modifier = Modifier.height(ConstantRequestList.PaddingSmall))
-
-          val filteredValues =
-              remember(localQuery, values) {
-                values.filter { labelOf(it).contains(localQuery, ignoreCase = true) }
-              }
-
-          Box(modifier = Modifier.heightIn(max = ConstantRequestList.DropdownMaxHeight)) {
-            Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
-              filteredValues.forEach { v ->
-                val isChecked = selected.contains(v)
-                val count = counts[v] ?: 0
-
-                Row(
-                    modifier =
-                        Modifier.fillMaxWidth()
-                            .clickable { onToggle(v) }
-                            .padding(horizontal = ConstantRequestList.FilterRowHorizontalPadding)
-                            .testTag(rowTestTagOf(v))
-                            .height(ConstantRequestList.FilterRowHeight),
-                    horizontalArrangement = Arrangement.Start) {
-                      Checkbox(checked = isChecked, onCheckedChange = null)
-                      Spacer(modifier = Modifier.width(ConstantRequestList.RowSpacing))
-                      Text(text = labelOf(v))
-                      Spacer(modifier = Modifier.weight(1f))
-                      Text(text = count.toString())
-                    }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
-@Composable
-private fun RequestTypeFilterMenu(
-    selected: Set<RequestType>,
-    counts: Map<RequestType, Int>,
-    onToggle: (RequestType) -> Unit,
-    modifier: Modifier = Modifier
-) {
-  FilterMenu(
-      title = RequestType.toString(),
-      values = RequestType.entries.toTypedArray(),
-      selected = selected,
-      counts = counts,
-      labelOf = { it.displayString() },
-      onToggle = onToggle,
-      dropdownButtonTestTag = RequestListTestTags.REQUEST_TYPE_FILTER_DROPDOWN_BUTTON,
-      dropdownSearchBarTestTag = RequestListTestTags.REQUEST_TYPE_FILTER_SEARCH_BAR,
-      rowTestTagOf = { RequestListTestTags.getRequestTypeFilterTag(it) },
-      modifier = modifier)
-}
-
-@Composable
-private fun RequestStatusFilterMenu(
-    selected: Set<RequestStatus>,
-    counts: Map<RequestStatus, Int>,
-    onToggle: (RequestStatus) -> Unit,
-    modifier: Modifier = Modifier
-) {
-  FilterMenu(
-      title = RequestStatus.toString(),
-      values = RequestStatus.entries.toTypedArray(),
-      selected = selected,
-      counts = counts,
-      labelOf = { it.displayString() },
-      onToggle = onToggle,
-      dropdownButtonTestTag = RequestListTestTags.REQUEST_STATUS_FILTER_DROPDOWN_BUTTON,
-      dropdownSearchBarTestTag = RequestListTestTags.REQUEST_STATUS_FILTER_SEARCH_BAR,
-      rowTestTagOf = { RequestListTestTags.getRequestStatusFilterTag(it.displayString()) },
-      modifier = modifier)
-}
-
-@Composable
-private fun RequestTagsFilterMenu(
-    selected: Set<Tags>,
-    counts: Map<Tags, Int>,
-    onToggle: (Tags) -> Unit,
-    modifier: Modifier = Modifier
-) {
-  FilterMenu(
-      title = Tags.toString(),
-      values = Tags.entries.toTypedArray(),
-      selected = selected,
-      counts = counts,
-      labelOf = { it.displayString() },
-      onToggle = onToggle,
-      dropdownButtonTestTag = RequestListTestTags.REQUEST_TAG_FILTER_DROPDOWN_BUTTON,
-      dropdownSearchBarTestTag = RequestListTestTags.REQUEST_TAG_FILTER_SEARCH_BAR,
-      rowTestTagOf = { RequestListTestTags.getRequestTagFilterTag(it.displayString()) },
-      modifier = modifier)
 }
 
 @Preview
