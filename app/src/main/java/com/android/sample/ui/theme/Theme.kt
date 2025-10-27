@@ -10,6 +10,7 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
@@ -59,6 +60,14 @@ private val DarkColorScheme = darkColorScheme(
     onError = AppColors.BlackColor
 )
 
+/**
+ * App theme wrapper.
+ *
+ * - Chooses dynamic color schemes on Android 12+ when enabled.
+ * - Falls back to static Light/Dark schemes otherwise.
+ * - Provides a typed `AppPalette` (LightPalette/DarkPalette) via [LocalAppPalette].
+ * - Updates the status bar color to match the color scheme primary color.
+ */
 @Composable
 fun SampleAppTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -76,6 +85,9 @@ fun SampleAppTheme(
             else -> LightColorScheme
         }
 
+    // pick palette object (lightweight project palette)
+    val palette = if (darkTheme) DarkPalette else LightPalette
+
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
@@ -86,5 +98,11 @@ fun SampleAppTheme(
         }
     }
 
-    MaterialTheme(colorScheme = colorScheme, typography = Typography, content = content)
+    CompositionLocalProvider(LocalAppPalette provides palette) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = Typography,
+            content = content
+        )
+    }
 }
