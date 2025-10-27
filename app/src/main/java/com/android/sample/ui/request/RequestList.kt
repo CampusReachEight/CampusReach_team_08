@@ -130,7 +130,7 @@ fun RequestListScreen(
 
           Spacer(modifier = Modifier.height(ConstantRequestList.PaddingMedium))
 
-          // Horizontal filter bar
+          // Horizontal filter bar (Could be improved to a scrollable row if many filters)
           Row(
               modifier =
                   Modifier.fillMaxWidth().padding(horizontal = ConstantRequestList.PaddingLarge),
@@ -260,7 +260,7 @@ private fun <E : Enum<E>> FilterMenuPanel(
     dropdownSearchBarTestTag: String,
     rowTestTagOf: (E) -> String
 ) {
-  // Full-width panel below buttons
+  // Panel appearing under buttons
   Column(
       modifier = Modifier.fillMaxWidth().padding(horizontal = ConstantRequestList.PaddingLarge)) {
         Spacer(modifier = Modifier.height(ConstantRequestList.PaddingSmall))
@@ -269,53 +269,83 @@ private fun <E : Enum<E>> FilterMenuPanel(
               Column(
                   modifier = Modifier.fillMaxWidth().padding(ConstantRequestList.PaddingMedium)) {
                     var localQuery by rememberSaveable { mutableStateOf("") }
-                    OutlinedTextField(
-                        value = localQuery,
-                        onValueChange = { localQuery = it },
-                        modifier = Modifier.fillMaxWidth().testTag(dropdownSearchBarTestTag),
-                        singleLine = true,
-                        placeholder = { Text("Search options") })
+
+                    // Search bar for the filters inside the panel
+                    FilterMenuSearchBar(
+                        query = localQuery,
+                        onQueryChange = { localQuery = it },
+                        dropdownSearchBarTestTag = dropdownSearchBarTestTag)
 
                     Spacer(modifier = Modifier.height(ConstantRequestList.PaddingSmall))
 
-                    val filteredValues =
-                        remember(localQuery, values, counts) {
-                          values
-                              .filter { labelOf(it).contains(localQuery, ignoreCase = true) }
-                              .sortedByDescending { counts[it] ?: 0 }
-                        }
-
-                    Box(modifier = Modifier.heightIn(max = ConstantRequestList.DropdownMaxHeight)) {
-                      Column(
-                          modifier =
-                              Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
-                            filteredValues.forEach { v ->
-                              val isChecked = selected.contains(v)
-                              val count = counts[v] ?: 0
-
-                              Row(
-                                  modifier =
-                                      Modifier.fillMaxWidth()
-                                          .clickable { onToggle(v) }
-                                          .padding(
-                                              horizontal =
-                                                  ConstantRequestList.FilterRowHorizontalPadding)
-                                          .testTag(rowTestTagOf(v))
-                                          .height(ConstantRequestList.FilterRowHeight),
-                                  horizontalArrangement = Arrangement.Start) {
-                                    Checkbox(checked = isChecked, onCheckedChange = null)
-                                    Spacer(
-                                        modifier = Modifier.width(ConstantRequestList.RowSpacing))
-                                    Text(text = labelOf(v))
-                                    Spacer(modifier = Modifier.weight(1f))
-                                    Text(text = count.toString())
-                                  }
-                            }
-                          }
-                    }
+                    // Filters list
+                    FilterMenuValuesList(
+                        values = values,
+                        selected = selected,
+                        counts = counts,
+                        labelOf = labelOf,
+                        onToggle = onToggle,
+                        localQuery = localQuery,
+                        rowTestTagOf = rowTestTagOf)
                   }
             }
       }
+}
+
+@Composable
+private fun FilterMenuSearchBar(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    dropdownSearchBarTestTag: String
+) {
+  OutlinedTextField(
+      value = query,
+      onValueChange = onQueryChange,
+      modifier = Modifier.fillMaxWidth().testTag(dropdownSearchBarTestTag),
+      singleLine = true,
+      placeholder = { Text("Search options") })
+}
+
+@Composable
+private fun <E : Enum<E>> FilterMenuValuesList(
+    values: Array<E>,
+    selected: Set<E>,
+    counts: Map<E, Int>,
+    labelOf: (E) -> String,
+    onToggle: (E) -> Unit,
+    localQuery: String,
+    rowTestTagOf: (E) -> String
+) {
+  val filteredValues =
+      remember(localQuery, values, counts) {
+        values
+            .filter { labelOf(it).contains(localQuery, ignoreCase = true) }
+            .sortedByDescending { counts[it] ?: 0 }
+      }
+
+  Box(modifier = Modifier.heightIn(max = ConstantRequestList.DropdownMaxHeight)) {
+    Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+      filteredValues.forEach { v ->
+        val isChecked = selected.contains(v)
+        val count = counts[v] ?: 0
+
+        Row(
+            modifier =
+                Modifier.fillMaxWidth()
+                    .clickable { onToggle(v) }
+                    .padding(horizontal = ConstantRequestList.FilterRowHorizontalPadding)
+                    .testTag(rowTestTagOf(v))
+                    .height(ConstantRequestList.FilterRowHeight),
+            horizontalArrangement = Arrangement.Start) {
+              Checkbox(checked = isChecked, onCheckedChange = null)
+              Spacer(modifier = Modifier.width(ConstantRequestList.RowSpacing))
+              Text(text = labelOf(v))
+              Spacer(modifier = Modifier.weight(1f))
+              Text(text = count.toString())
+            }
+      }
+    }
+  }
 }
 
 @Composable
@@ -409,7 +439,7 @@ fun RequestListItemPreview() {
           location = Location(0.0, 0.0, "knowhere"),
           locationName = "No where",
           requestType = listOf(),
-          status = com.android.sample.model.request.RequestStatus.OPEN,
+          status = RequestStatus.OPEN,
           startTimeStamp = java.util.Date(),
           expirationTime = java.util.Date(),
           people = listOf(),
