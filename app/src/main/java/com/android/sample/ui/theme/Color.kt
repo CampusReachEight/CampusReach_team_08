@@ -1,23 +1,30 @@
 package com.android.sample.ui.theme
 
 import androidx.compose.ui.graphics.Color
+import com.google.firebase.annotations.concurrent.Background
+import okhttp3.internal.concurrent.TaskRunner
 
 object AppColors {
-    // Semantic, app-wide colors (use these across the app)
-    val Primary = Color(0xFF6650A4)
-    val PrimaryVariant = Color(0xFFD0BCFF)
-    val Secondary = Color(0xFF625B71)
-    val Accent = Color(0xFFEFB8C8)
-    val Background = Color(0xFFFFFFFF)
-    val Surface = Color(0xFFFFFFFF)
+    // Helpful aliases from the Figma palette (kept minimal)
+    val BlackColor = Color(0xFF1F242F)
+    val WhiteColor = Color(0xFFFFFFFF)
 
-    // On-* colors for contrast
-    val OnPrimary = Color(0xFFFFFFFF)
-    val OnBackground = Color(0xFF000000)
-    val OnAccent = Color(0xFF000000) // dark text on the light pink Accent
+    // Light theme palette
+    val PrimaryColor = Color(0xFFF0F4FF)
+    val SecondaryColor = Color(0xFFD8E4FF)
+    val AccentColor = Color(0xFF1247F8)
+    val BackgroundColor = PrimaryColor
+    val SurfaceColor = WhiteColor
+    val ErrorColor = Color(0xFFB22222)
 
-    // Error token (moved out of Theme.kt magic number)
-    val Error = Color(0xFFB00020)
+    // Dark theme palette
+    val PrimaryDark = Color(0xFF2B3650)
+    val SecondaryDark = Color(0xFF4B4F58)
+    val AccentDark = Color(0xFF2D6BFF)
+    val BackgroundDark = Color(0xFF121216)
+    val SurfaceDark = Color(0xFF1E1B1E)
+    val ErrorDark = Color(0xFFFF6B6B)
+
 }
 
 // Legacy/compatibility aliases

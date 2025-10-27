@@ -2,6 +2,7 @@ package com.android.sample.ui.theme
 
 import android.content.res.Configuration
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -10,49 +11,119 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import kotlin.compareTo
+import kotlin.comparisons.then
+import kotlin.text.toDouble
 
 @Composable
-private fun ColorSwatch(name: String, color: Color, onColor: Color) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(88.dp)) {
+private fun ColorSwatch(name: String, color: Color) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.width(110.dp)
+    ) {
         Box(
-            modifier =
-                Modifier
-                    .size(64.dp)
-                    .background(color)
+            modifier = Modifier
+                .size(72.dp)
+                .background(color)
         )
         Spacer(modifier = Modifier.height(6.dp))
         Text(
             text = name,
             style = MaterialTheme.typography.bodySmall,
-            color = onColor,
+            color = AppColors.BlackColor,
             textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth()
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 2.dp)
         )
     }
 }
 
 @Composable
-fun ThemePreviewContent() {
-    val cs = MaterialTheme.colorScheme
+fun ThemePreviewContent(textColor: Color = MaterialTheme.colorScheme.onBackground) {
+    @Composable
+    fun Swatch(name: String, color: Color) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.width(110.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(72.dp)
+                    .background(color)
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = name,
+                style = MaterialTheme.typography.bodySmall,
+                color = textColor,
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 2.dp)
+            )
+        }
+    }
+
     Column(modifier = Modifier.padding(16.dp)) {
+        Text("Utility colors", style = MaterialTheme.typography.titleMedium, color = textColor)
+        Spacer(modifier = Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            ColorSwatch("Primary", cs.primary, cs.onPrimary)
-            ColorSwatch("Secondary", cs.secondary, cs.onSecondary)
-            ColorSwatch("Tertiary", cs.tertiary, cs.onTertiary)
-            ColorSwatch("Background", cs.background, cs.onBackground)
+            Swatch("BlackColor", AppColors.BlackColor)
+            Swatch("WhiteColor", AppColors.WhiteColor)
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        Text("App palette (light)", style = MaterialTheme.typography.titleMedium, color = textColor)
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Swatch("PrimaryColor", AppColors.PrimaryColor)
+            Swatch("SecondaryColor", AppColors.SecondaryColor)
+            Swatch("AccentColor", AppColors.AccentColor)
         }
         Spacer(modifier = Modifier.height(12.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            ColorSwatch("Surface", cs.surface, cs.onSurface)
-            ColorSwatch("Error", cs.error, cs.onError)
+            Swatch("BackgroundColor", AppColors.BackgroundColor)
+            Swatch("SurfaceColor", AppColors.SurfaceColor)
+            Swatch("ErrorColor", AppColors.ErrorColor)
         }
+
         Spacer(modifier = Modifier.height(20.dp))
-        Text("Typography sample", style = MaterialTheme.typography.titleMedium, color = cs.onBackground)
+
+        Text("App palette (dark)", style = MaterialTheme.typography.titleMedium, color = textColor)
         Spacer(modifier = Modifier.height(8.dp))
-        Text("Body / small / caption", style = MaterialTheme.typography.bodyMedium, color = cs.onBackground)
+
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Swatch("PrimaryDark", AppColors.PrimaryDark)
+            Swatch("SecondaryDark", AppColors.SecondaryDark)
+            Swatch("AccentDark", AppColors.AccentDark)
+        }
+        Spacer(modifier = Modifier.height(12.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Swatch("BackgroundDark", AppColors.BackgroundDark)
+            Swatch("SurfaceDark", AppColors.SurfaceDark)
+            Swatch("ErrorDark", AppColors.ErrorDark)
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+        Text("Typography sample", style = MaterialTheme.typography.titleMedium, color = textColor)
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            "Body / small / caption",
+            style = MaterialTheme.typography.bodyMedium,
+            color = textColor
+        )
     }
 }
 
@@ -60,7 +131,12 @@ fun ThemePreviewContent() {
 @Composable
 fun LightThemePreview() {
     SampleAppTheme(darkTheme = false) {
-        Surface { ThemePreviewContent() }
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.background
+        ) {
+            ThemePreviewContent()
+        }
     }
 }
 
@@ -68,6 +144,11 @@ fun LightThemePreview() {
 @Composable
 fun DarkThemePreview() {
     SampleAppTheme(darkTheme = true) {
-        Surface { ThemePreviewContent() }
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.background
+        ) {
+            ThemePreviewContent()
+        }
     }
 }

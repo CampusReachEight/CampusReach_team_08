@@ -15,38 +15,48 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-private val DarkColorScheme = darkColorScheme(
-    primary = AppColors.Primary,
-    onPrimary = AppColors.OnPrimary,
-    primaryContainer = AppColors.PrimaryVariant,
-    onPrimaryContainer = AppColors.OnPrimary,
-    secondary = AppColors.Secondary,
-    onSecondary = AppColors.OnPrimary,
-    tertiary = AppColors.Accent,
-    onTertiary = AppColors.OnAccent,
-    background = AppColors.Background,
-    onBackground = AppColors.OnBackground,
-    surface = AppColors.Surface,
-    onSurface = AppColors.OnBackground,
-    error = AppColors.Error,
-    onError = AppColors.OnPrimary
+private val LightColorScheme = lightColorScheme(
+    primary = AppColors.PrimaryColor,
+    onPrimary = AppColors.BlackColor,
+    primaryContainer = AppColors.PrimaryColor,
+    onPrimaryContainer = AppColors.BlackColor,
+
+    secondary = AppColors.SecondaryColor,
+    onSecondary = AppColors.BlackColor,
+
+    tertiary = AppColors.AccentColor,
+    onTertiary = AppColors.WhiteColor,
+
+    background = AppColors.WhiteColor,
+    onBackground = AppColors.BlackColor,
+
+    surface = AppColors.WhiteColor,
+    onSurface = AppColors.BlackColor,
+
+    error = AppColors.ErrorColor,
+    onError = AppColors.WhiteColor
 )
 
-private val LightColorScheme = lightColorScheme(
-    primary = AppColors.Primary,
-    onPrimary = AppColors.OnPrimary,
-    primaryContainer = AppColors.PrimaryVariant,
-    onPrimaryContainer = AppColors.OnPrimary,
-    secondary = AppColors.Secondary,
-    onSecondary = AppColors.OnPrimary,
-    tertiary = AppColors.Accent,
-    onTertiary = AppColors.OnAccent,
-    background = AppColors.Background,
-    onBackground = AppColors.OnBackground,
-    surface = AppColors.Surface,
-    onSurface = AppColors.OnBackground,
-    error = AppColors.Error,
-    onError = AppColors.OnPrimary
+private val DarkColorScheme = darkColorScheme(
+    primary = AppColors.PrimaryDark,
+    onPrimary = AppColors.WhiteColor,
+    primaryContainer = AppColors.PrimaryDark,
+    onPrimaryContainer = AppColors.WhiteColor,
+
+    secondary = AppColors.SecondaryDark,
+    onSecondary = AppColors.WhiteColor,
+
+    tertiary = AppColors.AccentDark,
+    onTertiary = AppColors.WhiteColor,
+
+    background = AppColors.BackgroundDark,
+    onBackground = AppColors.WhiteColor,
+
+    surface = AppColors.SurfaceDark,
+    onSurface = AppColors.WhiteColor,
+
+    error = AppColors.ErrorDark,
+    onError = AppColors.BlackColor
 )
 
 @Composable
