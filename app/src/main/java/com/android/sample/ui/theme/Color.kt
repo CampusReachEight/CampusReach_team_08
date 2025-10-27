@@ -10,8 +10,14 @@ object AppColors {
     val Accent = Color(0xFFEFB8C8)
     val Background = Color(0xFFFFFFFF)
     val Surface = Color(0xFFFFFFFF)
+
+    // On-* colors for contrast
     val OnPrimary = Color(0xFFFFFFFF)
     val OnBackground = Color(0xFF000000)
+    val OnAccent = Color(0xFF000000) // dark text on the light pink Accent
+
+    // Error token (moved out of Theme.kt magic number)
+    val Error = Color(0xFFB00020)
 }
 
 // Legacy/compatibility aliases
