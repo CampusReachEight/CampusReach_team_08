@@ -165,7 +165,6 @@ fun RequestListScreen(
           when (openMenu) {
             FilterKind.Type -> {
               FilterMenuPanel(
-                  title = RequestType.toString(),
                   values = RequestType.entries.toTypedArray(),
                   selected = selectedTypes,
                   counts = typeCounts,
@@ -176,7 +175,6 @@ fun RequestListScreen(
             }
             FilterKind.Status -> {
               FilterMenuPanel(
-                  title = RequestStatus.toString(),
                   values = RequestStatus.entries.toTypedArray(),
                   selected = selectedStatuses,
                   counts = statusCounts,
@@ -189,7 +187,6 @@ fun RequestListScreen(
             }
             FilterKind.Tags -> {
               FilterMenuPanel(
-                  title = Tags.toString(),
                   values = Tags.entries.toTypedArray(),
                   selected = selectedTags,
                   counts = tagCounts,
@@ -198,13 +195,15 @@ fun RequestListScreen(
                   dropdownSearchBarTestTag = RequestListTestTags.REQUEST_TAG_FILTER_SEARCH_BAR,
                   rowTestTagOf = { RequestListTestTags.getRequestTagFilterTag(it.displayString()) })
             }
-            null -> {}
+            null -> {
+              // No menu / Unsupported menu opened
+            }
           }
 
           Spacer(modifier = Modifier.height(ConstantRequestList.PaddingLarge))
 
           // Content list (filtered)
-          val toShow = if (filtered.isNotEmpty()) filtered else state.requests
+          val toShow = filtered.ifEmpty { state.requests }
           if (!state.isLoading && toShow.isEmpty()) {
             Text(
                 text = "No requests at the moment",
@@ -253,7 +252,6 @@ private fun FilterMenuButton(
 
 @Composable
 private fun <E : Enum<E>> FilterMenuPanel(
-    title: String,
     values: Array<E>,
     selected: Set<E>,
     counts: Map<E, Int>,

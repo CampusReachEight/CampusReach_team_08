@@ -13,7 +13,6 @@ import com.android.sample.model.request.RequestType
 import com.android.sample.model.request.Tags
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -140,7 +139,7 @@ class RequestListViewModel(
 
   fun loadRequests() {
     _state.value = RequestListState(isLoading = true)
-    viewModelScope.launch(Dispatchers.IO) {
+    viewModelScope.launch {
       try {
         val requests = requestRepository.getAllRequests()
         _state.value = _state.value.copy(requests = requests, isLoading = false)
@@ -153,7 +152,7 @@ class RequestListViewModel(
 
   fun loadProfileImage(userId: String) {
     if (_profileIcons.value.containsKey(userId)) return
-    viewModelScope.launch(Dispatchers.IO) {
+    viewModelScope.launch {
       try {
         val profile = profileRepository.getUserProfile(userId)
         val bmp = profile.photo
