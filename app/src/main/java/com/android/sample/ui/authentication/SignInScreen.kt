@@ -49,7 +49,7 @@ object SignInScreenTestTags {
  */
 @Composable
 fun SignInScreen(
-    viewModel: SignInViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
+    viewModel: SignInViewModel,
     onSignInSuccess: () -> Unit = {},
     credentialManager: CredentialManager = CredentialManager.create(LocalContext.current)
 ) {

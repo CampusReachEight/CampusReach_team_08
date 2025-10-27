@@ -1,6 +1,8 @@
 package com.android.sample.ui.request
 
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.sample.model.profile.UserProfileRepository
@@ -10,9 +12,12 @@ import com.android.sample.model.request.RequestRepository
 import com.android.sample.model.request.RequestRepositoryFirestore
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.net.URL
 
 class RequestListViewModel(
     val requestRepository: RequestRepository = RequestRepositoryFirestore(Firebase.firestore),
@@ -43,11 +48,25 @@ class RequestListViewModel(
     viewModelScope.launch {
       try {
         val profile = profileRepository.getUserProfile(userId)
-        val bmp = profile.photo
+        val uri = profile.photo
+        val bmp = if (uri != null) loadBitmapFromUri(uri) else null
         _profileIcons.value = _profileIcons.value + (userId to bmp)
       } catch (e: Exception) {
         _profileIcons.value = _profileIcons.value + (userId to null)
       }
+    }
+  }
+
+  private suspend fun loadBitmapFromUri(uri: Uri): Bitmap? = withContext(Dispatchers.IO) {
+    try {
+      when (uri.scheme?.lowercase()) {
+        "http", "https" -> URL(uri.toString()).openStream().use { input ->
+          BitmapFactory.decodeStream(input)
+        }
+        else -> null // Unsupported without a Context (e.g., content://). Could be extended later.
+      }
+    } catch (_: Exception) {
+      null
     }
   }
 }

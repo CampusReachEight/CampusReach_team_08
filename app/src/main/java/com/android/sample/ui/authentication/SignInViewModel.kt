@@ -4,10 +4,16 @@ import androidx.credentials.Credential
 import androidx.credentials.CustomCredential
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.android.sample.model.profile.Section
+import com.android.sample.model.profile.UserProfile
+import com.android.sample.model.profile.UserProfileRepository
+import com.android.sample.model.profile.UserProfileRepositoryFirestore
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
+import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
+import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -22,7 +28,8 @@ import kotlinx.coroutines.launch
  *
  * @author Thibaud
  */
-class SignInViewModel : ViewModel() {
+class SignInViewModel(val profileRepository: UserProfileRepository = UserProfileRepositoryFirestore(
+  Firebase.firestore)) : ViewModel() {
 
   private val _loading = MutableStateFlow(false)
   val loading = _loading.asStateFlow()
@@ -68,6 +75,7 @@ class SignInViewModel : ViewModel() {
     firebaseAuth.signInWithCredential(firebaseCredential).addOnCompleteListener { task ->
       _loading.value = false
       if (task.isSuccessful) {
+        addUserToDataBase()
         onSuccess()
       } else {
         _errorText.value = "Firebase sign-in failed: ${task.exception?.localizedMessage}"
@@ -86,5 +94,27 @@ class SignInViewModel : ViewModel() {
 
   fun setLoading(isLoading: Boolean) {
     _loading.value = isLoading
+  }
+
+  fun addUserToDataBase() {
+    viewModelScope.launch {
+      try {
+        profileRepository.getUserProfile(firebaseAuth.currentUser!!.uid)
+        return@launch
+      } catch (e: NoSuchElementException) {
+          profileRepository.addUserProfile(
+            UserProfile(
+              id = firebaseAuth.currentUser!!.uid,
+              name = firebaseAuth.currentUser!!.displayName?.split(" ")?.getOrNull(0) ?: "",
+              lastName = firebaseAuth.currentUser!!.displayName?.split(" ")?.getOrNull(1) ?: "",
+              email = firebaseAuth.currentUser!!.email,
+              photo = firebaseAuth.currentUser!!.photoUrl,
+              kudos = 0,
+              section = Section.OTHER,
+              arrivalDate = java.util.Date(),
+            )
+          )
+      }
+    }
   }
 }
