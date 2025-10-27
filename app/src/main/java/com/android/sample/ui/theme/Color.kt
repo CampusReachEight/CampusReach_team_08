@@ -2,6 +2,19 @@ package com.android.sample.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
+object AppColors {
+    // Semantic, app-wide colors (use these across the app)
+    val Primary = Color(0xFF6650A4)
+    val PrimaryVariant = Color(0xFFD0BCFF)
+    val Secondary = Color(0xFF625B71)
+    val Accent = Color(0xFFEFB8C8)
+    val Background = Color(0xFFFFFFFF)
+    val Surface = Color(0xFFFFFFFF)
+    val OnPrimary = Color(0xFFFFFFFF)
+    val OnBackground = Color(0xFF000000)
+}
+
+// Legacy/compatibility aliases
 val Purple80 = Color(0xFFD0BCFF)
 val PurpleGrey80 = Color(0xFFCCC2DC)
 val Pink80 = Color(0xFFEFB8C8)
