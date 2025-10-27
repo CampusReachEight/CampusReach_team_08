@@ -12,12 +12,12 @@ import com.android.sample.model.request.RequestRepository
 import com.android.sample.model.request.RequestRepositoryFirestore
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import java.net.URL
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.net.URL
 
 class RequestListViewModel(
     val requestRepository: RequestRepository = RequestRepositoryFirestore(Firebase.firestore),
@@ -57,18 +57,20 @@ class RequestListViewModel(
     }
   }
 
-  private suspend fun loadBitmapFromUri(uri: Uri): Bitmap? = withContext(Dispatchers.IO) {
-    try {
-      when (uri.scheme?.lowercase()) {
-        "http", "https" -> URL(uri.toString()).openStream().use { input ->
-          BitmapFactory.decodeStream(input)
+  private suspend fun loadBitmapFromUri(uri: Uri): Bitmap? =
+      withContext(Dispatchers.IO) {
+        try {
+          when (uri.scheme?.lowercase()) {
+            "http",
+            "https" ->
+                URL(uri.toString()).openStream().use { input -> BitmapFactory.decodeStream(input) }
+            else ->
+                null // Unsupported without a Context (e.g., content://). Could be extended later.
+          }
+        } catch (_: Exception) {
+          null
         }
-        else -> null // Unsupported without a Context (e.g., content://). Could be extended later.
       }
-    } catch (_: Exception) {
-      null
-    }
-  }
 }
 
 data class RequestListState(

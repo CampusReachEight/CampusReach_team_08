@@ -28,8 +28,10 @@ import kotlinx.coroutines.launch
  *
  * @author Thibaud
  */
-class SignInViewModel(val profileRepository: UserProfileRepository = UserProfileRepositoryFirestore(
-  Firebase.firestore)) : ViewModel() {
+class SignInViewModel(
+    val profileRepository: UserProfileRepository =
+        UserProfileRepositoryFirestore(Firebase.firestore)
+) : ViewModel() {
 
   private val _loading = MutableStateFlow(false)
   val loading = _loading.asStateFlow()
@@ -102,18 +104,17 @@ class SignInViewModel(val profileRepository: UserProfileRepository = UserProfile
         profileRepository.getUserProfile(firebaseAuth.currentUser!!.uid)
         return@launch
       } catch (e: NoSuchElementException) {
-          profileRepository.addUserProfile(
+        profileRepository.addUserProfile(
             UserProfile(
-              id = firebaseAuth.currentUser!!.uid,
-              name = firebaseAuth.currentUser!!.displayName?.split(" ")?.getOrNull(0) ?: "",
-              lastName = firebaseAuth.currentUser!!.displayName?.split(" ")?.getOrNull(1) ?: "",
-              email = firebaseAuth.currentUser!!.email,
-              photo = firebaseAuth.currentUser!!.photoUrl,
-              kudos = 0,
-              section = Section.OTHER,
-              arrivalDate = java.util.Date(),
-            )
-          )
+                id = firebaseAuth.currentUser!!.uid,
+                name = firebaseAuth.currentUser!!.displayName?.split(" ")?.getOrNull(0) ?: "",
+                lastName = firebaseAuth.currentUser!!.displayName?.split(" ")?.getOrNull(1) ?: "",
+                email = firebaseAuth.currentUser!!.email,
+                photo = firebaseAuth.currentUser!!.photoUrl,
+                kudos = 0,
+                section = Section.OTHER,
+                arrivalDate = java.util.Date(),
+            ))
       }
     }
   }
