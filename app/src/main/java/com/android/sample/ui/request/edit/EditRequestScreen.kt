@@ -507,7 +507,8 @@ fun TagsChipGroup(
                 onSelectionChanged(newSelection)
               },
               label = { Text(tag.name.replace("_", " ")) },
-              enabled = enabled)
+              enabled = enabled,
+              modifier = Modifier.testTag("tag_${tag.name}"))
         }
       }
 }
