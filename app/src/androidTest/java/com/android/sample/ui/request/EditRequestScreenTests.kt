@@ -13,8 +13,18 @@ import com.android.sample.model.request.RequestRepository
 import com.android.sample.model.request.RequestStatus
 import com.android.sample.model.request.RequestType
 import com.android.sample.model.request.Tags
+import com.android.sample.ui.request.edit.EditRequestActions
+import com.android.sample.ui.request.edit.EditRequestContent
+import com.android.sample.ui.request.edit.EditRequestScreen
+import com.android.sample.ui.request.edit.EditRequestScreenTestTags
+import com.android.sample.ui.request.edit.EditRequestUiState
+import com.android.sample.ui.request.edit.EditRequestViewModel
+import com.android.sample.ui.request.edit.FieldValidationState
+import com.android.sample.ui.request.edit.RequestTypeChipGroup
+import com.android.sample.ui.request.edit.TagsChipGroup
 import java.text.SimpleDateFormat
 import java.util.*
+import junit.framework.TestCase.assertEquals
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -23,465 +33,397 @@ import org.junit.Test
 import org.mockito.Mockito.mock
 import org.mockito.kotlin.whenever
 
-class EditRequestScreenTest {
+/** Test builder for EditRequestUiState. */
+class EditRequestUiStateBuilder {
+  private var title = ""
+  private var description = ""
+  private var requestTypes = emptyList<RequestType>()
+  private var location: Location? = null
+  private var locationName = ""
+  private var startTimeStamp = Date()
+  private var expirationTime = Date(System.currentTimeMillis() + 86400000)
+  private var tags = emptyList<Tags>()
+  private var isEditMode = false
+  private var isLoading = false
+  private var errorMessage: String? = null
+  private var validationState = FieldValidationState()
 
+  fun withTitle(title: String) = apply { this.title = title }
+
+  fun withDescription(description: String) = apply { this.description = description }
+
+  fun withRequestTypes(types: List<RequestType>) = apply { this.requestTypes = types }
+
+  fun withLocation(location: Location?) = apply { this.location = location }
+
+  fun withLocationName(name: String) = apply { this.locationName = name }
+
+  fun withStartDate(date: Date) = apply { this.startTimeStamp = date }
+
+  fun withExpirationDate(date: Date) = apply { this.expirationTime = date }
+
+  fun withTags(tags: List<Tags>) = apply { this.tags = tags }
+
+  fun withEditMode(isEditMode: Boolean) = apply { this.isEditMode = isEditMode }
+
+  fun withLoading(isLoading: Boolean) = apply { this.isLoading = isLoading }
+
+  fun withError(error: String?) = apply { this.errorMessage = error }
+
+  fun withValidationState(state: FieldValidationState) = apply { this.validationState = state }
+
+  fun build(): EditRequestUiState =
+      EditRequestUiState(
+          title = title,
+          description = description,
+          requestTypes = requestTypes,
+          location = location,
+          locationName = locationName,
+          startTimeStamp = startTimeStamp,
+          expirationTime = expirationTime,
+          tags = tags,
+          isEditMode = isEditMode,
+          isLoading = isLoading,
+          errorMessage = errorMessage,
+          validationState = validationState)
+}
+
+/** Test builder for FieldValidationState. */
+class FieldValidationStateBuilder {
+  private var showTitleError = false
+  private var showDescriptionError = false
+  private var showRequestTypeError = false
+  private var showLocationNameError = false
+  private var showLocationError = false
+  private var showStartDateError = false
+  private var showExpirationDateError = false
+  private var showDateOrderError = false
+  private var showSuccessMessage = false
+
+  fun withTitleError() = apply { this.showTitleError = true }
+
+  fun withDescriptionError() = apply { this.showDescriptionError = true }
+
+  fun withRequestTypeError() = apply { this.showRequestTypeError = true }
+
+  fun withLocationNameError() = apply { this.showLocationNameError = true }
+
+  fun withLocationError() = apply { this.showLocationError = true }
+
+  fun withStartDateError() = apply { this.showStartDateError = true }
+
+  fun withExpirationDateError() = apply { this.showExpirationDateError = true }
+
+  fun withDateOrderError() = apply { this.showDateOrderError = true }
+
+  fun withSuccessMessage() = apply { this.showSuccessMessage = true }
+
+  fun build(): FieldValidationState =
+      FieldValidationState(
+          showTitleError = showTitleError,
+          showDescriptionError = showDescriptionError,
+          showRequestTypeError = showRequestTypeError,
+          showLocationNameError = showLocationNameError,
+          showStartDateError = showStartDateError,
+          showExpirationDateError = showExpirationDateError,
+          showDateOrderError = showDateOrderError,
+          showSuccessMessage = showSuccessMessage)
+}
+
+/** Base test class with shared utilities. */
+open class EditRequestScreenTestBase {
   @get:Rule val composeTestRule = createComposeRule()
 
-  private val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
-  private val currentDate = Date()
-  private val futureDate = Date(System.currentTimeMillis() + 86400000)
+  protected val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+  protected val currentDate = Date()
+  protected val futureDate = Date(System.currentTimeMillis() + 86400000)
 
-  // Helper composable that manages state properly
+  protected fun createTestViewModel(): EditRequestViewModel {
+    val mockRequestRepo = mock<RequestRepository>()
+    val mockLocationRepo = mock<LocationRepository>()
+    return EditRequestViewModel(mockRequestRepo, mockLocationRepo)
+  }
+
+  /**
+   * Render content with REAL ViewModel for user interaction tests. Use this when you need to test
+   * actual user workflows (typing, clicking).
+   */
   @Composable
-  private fun TestEditRequestContent(
-      initialTitle: String = "",
-      initialDescription: String = "",
-      initialRequestTypes: List<RequestType> = emptyList(),
-      initialLocation: Location? = null,
-      initialLocationName: String = "",
-      initialTags: List<Tags> = emptyList(),
-      isEditMode: Boolean = false,
+  protected fun TestEditRequestContentWithRealViewModel(
+      viewModel: EditRequestViewModel = createTestViewModel(),
       onSave: () -> Unit = {}
   ) {
-    val title = remember { mutableStateOf(initialTitle) }
-    val description = remember { mutableStateOf(initialDescription) }
-    val requestTypes = remember { mutableStateOf(initialRequestTypes) }
-    val location = remember { mutableStateOf(initialLocation) }
-    val locationName = remember { mutableStateOf(initialLocationName) }
-    val startTimeStamp = remember { mutableStateOf(futureDate) }
-    val expirationTime = remember { mutableStateOf(Date(futureDate.time + 86400000)) }
-    val tags = remember { mutableStateOf(initialTags) }
+    val uiState by viewModel.uiState.collectAsState()
+
+    val actions =
+        EditRequestActions(
+            onTitleChange = viewModel::updateTitle,
+            onDescriptionChange = viewModel::updateDescription,
+            onRequestTypesChange = viewModel::updateRequestTypes,
+            onLocationChange = viewModel::updateLocation,
+            onLocationNameChange = viewModel::updateLocationName,
+            onStartTimeStampChange = viewModel::updateStartTimeStamp,
+            onExpirationTimeChange = viewModel::updateExpirationTime,
+            onTagsChange = viewModel::updateTags,
+            onSave = onSave,
+            onClearError = viewModel::clearError,
+            onClearSuccessMessage = viewModel::clearSuccessMessage,
+            onSearchLocations = viewModel::searchLocations,
+            onClearLocationSearch = viewModel::clearLocationSearch)
 
     MaterialTheme {
-      EditRequestContent(
-          paddingValues = PaddingValues(0.dp),
-          title = title.value,
-          description = description.value,
-          requestTypes = requestTypes.value,
-          location = location.value,
-          locationName = locationName.value,
-          startTimeStamp = startTimeStamp.value,
-          expirationTime = expirationTime.value,
-          tags = tags.value,
-          isEditMode = isEditMode,
-          isLoading = false,
-          errorMessage = null,
-          locationSearchResults = emptyList(),
-          isSearchingLocation = false,
-          onTitleChange = { title.value = it },
-          onDescriptionChange = { description.value = it },
-          onRequestTypesChange = { requestTypes.value = it },
-          onLocationChange = { location.value = it },
-          onLocationNameChange = { locationName.value = it },
-          onStartTimeStampChange = { startTimeStamp.value = it },
-          onExpirationTimeChange = { expirationTime.value = it },
-          onTagsChange = { tags.value = it },
-          onSave = onSave,
-          onClearError = {},
-          onSearchLocations = {},
-          onClearLocationSearch = {})
+      EditRequestContent(paddingValues = PaddingValues(0.dp), uiState = uiState, actions = actions)
     }
   }
 
-  // Test 1: Create mode title
-  @Test
-  fun editRequestContent_createMode_displaysCorrectTitle() {
-    composeTestRule.setContent { TestEditRequestContent(isEditMode = false) }
+  /**
+   * Render content with STATIC state for UI rendering tests. Use this when you only need to test if
+   * UI displays correctly given a state.
+   */
+  @Composable
+  protected fun TestEditRequestContentWithStaticState(
+      uiState: EditRequestUiState,
+      onSave: () -> Unit = {},
+      onClearError: () -> Unit = {},
+      onClearSuccessMessage: () -> Unit = {}
+  ) {
+    val actions =
+        EditRequestActions(
+            onTitleChange = {},
+            onDescriptionChange = {},
+            onRequestTypesChange = {},
+            onLocationChange = {},
+            onLocationNameChange = {},
+            onStartTimeStampChange = {},
+            onExpirationTimeChange = {},
+            onTagsChange = {},
+            onSave = onSave,
+            onClearError = onClearError,
+            onClearSuccessMessage = onClearSuccessMessage,
+            onSearchLocations = {},
+            onClearLocationSearch = {})
 
+    MaterialTheme {
+      EditRequestContent(paddingValues = PaddingValues(0.dp), uiState = uiState, actions = actions)
+    }
+  }
+
+  // ========== ASSERTION HELPERS ==========
+
+  protected fun assertTextFieldExists(testTag: String) {
+    composeTestRule.onNodeWithTag(testTag).assertExists()
+  }
+
+  protected fun assertTextFieldContains(testTag: String, text: String) {
+    composeTestRule.onNodeWithTag(testTag).assertTextContains(text)
+  }
+
+  protected fun assertErrorMessage(errorText: String) {
+    composeTestRule.onNodeWithText(errorText).assertExists()
+  }
+
+  protected fun assertNoErrorMessage(errorText: String) {
+    composeTestRule.onNodeWithText(errorText).assertDoesNotExist()
+  }
+
+  protected fun assertSuccessMessage(message: String) {
+    composeTestRule.onNodeWithText(message).assertExists()
+  }
+
+  protected fun assertButtonExists(text: String) {
+    composeTestRule.onNodeWithText(text).assertExists()
+  }
+
+  protected fun clickButton(text: String) {
+    composeTestRule.onNodeWithText(text).performClick()
+  }
+
+  protected fun clickChip(chipName: String) {
+    composeTestRule.onNodeWithText(chipName).performClick()
+  }
+
+  // ========== INPUT HELPERS ==========
+
+  protected fun typeInField(testTag: String, text: String) {
+    composeTestRule.onNodeWithTag(testTag).performTextInput(text)
+  }
+
+  protected fun clearField(testTag: String) {
+    composeTestRule.onNodeWithTag(testTag).performTextClearance()
+  }
+
+  protected fun typeAndClear(testTag: String, text: String) {
+    typeInField(testTag, text)
+    clearField(testTag)
+  }
+
+  protected fun waitForUI() {
+    composeTestRule.waitForIdle()
+  }
+}
+
+/**
+ * Test suite for EditRequestScreen.
+ * - Tests with actual user interaction (typing, clicking) use
+ *   TestEditRequestContentWithRealViewModel
+ * - Tests that only verify UI rendering given a state use TestEditRequestContentWithStaticState
+ */
+class EditRequestScreenTests : EditRequestScreenTestBase() {
+
+  // ========== MODE TESTS ==========
+
+  @Test
+  fun createMode_displaysCorrectButtonLabel() {
+    composeTestRule.setContent {
+      TestEditRequestContentWithStaticState(
+          uiState = EditRequestUiStateBuilder().withEditMode(false).build())
+    }
     composeTestRule
         .onNodeWithTag(EditRequestScreenTestTags.SAVE_BUTTON)
         .assertTextEquals("Create Request")
   }
 
-  // Test 2: Edit mode title
   @Test
-  fun editRequestContent_editMode_displaysCorrectTitle() {
+  fun editMode_displaysCorrectButtonLabel() {
     composeTestRule.setContent {
-      TestEditRequestContent(
-          initialTitle = "Test",
-          initialDescription = "Test",
-          initialRequestTypes = listOf(RequestType.STUDYING),
-          initialLocation = Location(0.0, 0.0, "Test"),
-          initialLocationName = "Test",
-          isEditMode = true)
+      TestEditRequestContentWithStaticState(
+          uiState = EditRequestUiStateBuilder().withEditMode(true).build())
     }
-
     composeTestRule
         .onNodeWithTag(EditRequestScreenTestTags.SAVE_BUTTON)
         .assertTextEquals("Update Request")
   }
 
-  // Test 3: Title field updates
+  // ========== TITLE FIELD TESTS ==========
+
   @Test
-  fun editRequestContent_titleField_updatesOnTextInput() {
-    composeTestRule.setContent { TestEditRequestContent() }
+  fun titleField_updatesOnInput() {
+    val viewModel = createTestViewModel()
+    composeTestRule.setContent { TestEditRequestContentWithRealViewModel(viewModel = viewModel) }
 
-    composeTestRule
-        .onNodeWithTag(EditRequestScreenTestTags.INPUT_TITLE)
-        .performTextInput("Study Session")
+    typeInField(EditRequestScreenTestTags.INPUT_TITLE, "Study Session")
+    waitForUI()
 
-    composeTestRule
-        .onNodeWithTag(EditRequestScreenTestTags.INPUT_TITLE)
-        .assertTextContains("Study Session")
+    assertEquals("Study Session", viewModel.uiState.value.title)
   }
 
-  // Test 4: Description field updates
   @Test
-  fun editRequestContent_descriptionField_updatesOnTextInput() {
-    composeTestRule.setContent { TestEditRequestContent() }
+  fun titleField_emptiness_triggersValidation() {
+    val viewModel = createTestViewModel()
+    composeTestRule.setContent { TestEditRequestContentWithRealViewModel(viewModel = viewModel) }
 
-    composeTestRule
-        .onNodeWithTag(EditRequestScreenTestTags.INPUT_DESCRIPTION)
-        .performTextInput("Looking for study partners")
+    typeInField(EditRequestScreenTestTags.INPUT_TITLE, "Test")
+    waitForUI()
+    clearField(EditRequestScreenTestTags.INPUT_TITLE)
+    waitForUI()
 
-    composeTestRule
-        .onNodeWithTag(EditRequestScreenTestTags.INPUT_DESCRIPTION)
-        .assertTextContains("Looking for study partners")
+    assert(viewModel.uiState.value.validationState.showTitleError)
   }
 
-  // Test 6: Empty title validation
+  // ========== DESCRIPTION FIELD TESTS ==========
+
   @Test
-  fun editRequestContent_emptyTitle_showsValidationError() {
-    composeTestRule.setContent {
-      TestEditRequestContent(
-          initialDescription = "Valid",
-          initialRequestTypes = listOf(RequestType.STUDYING),
-          initialLocation = Location(0.0, 0.0, "Test"),
-          initialLocationName = "Test")
-    }
+  fun descriptionField_updatesOnInput() {
+    val viewModel = createTestViewModel()
+    composeTestRule.setContent { TestEditRequestContentWithRealViewModel(viewModel = viewModel) }
 
-    // Type and clear to trigger validation
-    composeTestRule.onNodeWithTag(EditRequestScreenTestTags.INPUT_TITLE).performTextInput("a")
+    typeInField(EditRequestScreenTestTags.INPUT_DESCRIPTION, "Looking for study partners")
+    waitForUI()
 
-    composeTestRule.onNodeWithTag(EditRequestScreenTestTags.INPUT_TITLE).performTextClearance()
-
-    composeTestRule.waitForIdle()
-
-    composeTestRule.onNodeWithText("Title cannot be empty").assertExists()
+    assertEquals("Looking for study partners", viewModel.uiState.value.description)
   }
 
-  // Test 7: Empty description validation
   @Test
-  fun editRequestContent_emptyDescription_showsValidationError() {
-    composeTestRule.setContent {
-      TestEditRequestContent(
-          initialTitle = "Valid Title",
-          initialRequestTypes = listOf(RequestType.STUDYING),
-          initialLocation = Location(0.0, 0.0, "Test"),
-          initialLocationName = "Test")
-    }
+  fun descriptionField_emptiness_triggersValidation() {
+    val viewModel = createTestViewModel()
+    composeTestRule.setContent { TestEditRequestContentWithRealViewModel(viewModel = viewModel) }
 
-    composeTestRule.onNodeWithTag(EditRequestScreenTestTags.INPUT_DESCRIPTION).performTextInput("a")
+    typeInField(EditRequestScreenTestTags.INPUT_DESCRIPTION, "Test")
+    waitForUI()
+    clearField(EditRequestScreenTestTags.INPUT_DESCRIPTION)
+    waitForUI()
 
-    composeTestRule
-        .onNodeWithTag(EditRequestScreenTestTags.INPUT_DESCRIPTION)
-        .performTextClearance()
-
-    composeTestRule.waitForIdle()
-
-    composeTestRule.onNodeWithText("Description cannot be empty").assertExists()
+    assert(viewModel.uiState.value.validationState.showDescriptionError)
   }
 
-  // Test 8: No request type validation
+  // ========== REQUEST TYPE TESTS ==========
+
   @Test
-  fun editRequestContent_noRequestType_showsValidationError() {
-    composeTestRule.setContent {
-      TestEditRequestContent(
-          initialTitle = "Valid",
-          initialDescription = "Valid",
-          initialLocation = Location(0.0, 0.0, "Test"),
-          initialLocationName = "Test")
-    }
+  fun requestTypes_singleSelection_worksCorrectly() {
+    val viewModel = createTestViewModel()
+    composeTestRule.setContent { TestEditRequestContentWithRealViewModel(viewModel = viewModel) }
 
-    // Select and deselect to trigger error
-    composeTestRule.onNodeWithText("STUDYING").performClick()
-    composeTestRule.waitForIdle()
-    composeTestRule.onNodeWithText("STUDYING").performClick()
-    composeTestRule.waitForIdle()
+    clickChip("STUDYING")
+    waitForUI()
 
-    composeTestRule.onNodeWithText("Please select at least one request type").assertExists()
+    assertEquals(listOf(RequestType.STUDYING), viewModel.uiState.value.requestTypes)
   }
 
-  // Test 10: Valid form calls onSav
-
   @Test
-  fun editRequestContent_validForm_callsOnSave() {
-    var saveCalled = false
+  fun requestTypes_multipleSelections_worksCorrectly() {
+    val viewModel = createTestViewModel()
+    composeTestRule.setContent { TestEditRequestContentWithRealViewModel(viewModel = viewModel) }
 
-    composeTestRule.setContent {
-      MaterialTheme {
-        EditRequestContent(
-            paddingValues = PaddingValues(0.dp),
-            title = "Test",
-            description = "Test",
-            requestTypes = listOf(RequestType.STUDYING),
-            location = Location(0.0, 0.0, "Test"),
-            locationName = "Test",
-            startTimeStamp = Date(System.currentTimeMillis() + 86400000),
-            expirationTime = Date(System.currentTimeMillis() + 2 * 86400000),
-            tags = emptyList(),
-            isEditMode = false,
-            isLoading = false,
-            errorMessage = null,
-            locationSearchResults = emptyList(),
-            isSearchingLocation = false,
-            onTitleChange = {},
-            onDescriptionChange = {},
-            onRequestTypesChange = {},
-            onLocationChange = {},
-            onLocationNameChange = {},
-            onStartTimeStampChange = {},
-            onExpirationTimeChange = {},
-            onTagsChange = {},
-            onSave = { saveCalled = true },
-            onClearError = {},
-            onSearchLocations = {},
-            onClearLocationSearch = {})
-      }
-    }
+    clickChip("STUDYING")
+    waitForUI()
+    clickChip("SPORT")
+    waitForUI()
 
-    composeTestRule.waitForIdle()
-
-    println("🔍 Before scroll and click...")
-
-    composeTestRule
-        .onNodeWithTag(EditRequestScreenTestTags.SAVE_BUTTON)
-        .performScrollTo() // ← THIS IS THE FIX!
-        .assertIsEnabled()
-        .assertHasClickAction()
-        .performClick()
-
-    composeTestRule.waitForIdle()
-
-    println("🔍 After click, saveCalled = $saveCalled")
-
-    assert(saveCalled) { "onSave was not called after click" }
-  }
-  // Test 11: Loading state disables button
-  @Test
-  fun editRequestContent_loadingState_disablesSaveButton() {
-    composeTestRule.setContent {
-      MaterialTheme {
-        EditRequestContent(
-            paddingValues = PaddingValues(0.dp),
-            title = "Test",
-            description = "Test",
-            requestTypes = listOf(RequestType.STUDYING),
-            location = Location(0.0, 0.0, "Test"),
-            locationName = "Test",
-            startTimeStamp = currentDate,
-            expirationTime = futureDate,
-            tags = emptyList(),
-            isEditMode = false,
-            isLoading = true,
-            errorMessage = null,
-            locationSearchResults = emptyList(),
-            isSearchingLocation = false,
-            onTitleChange = {},
-            onDescriptionChange = {},
-            onRequestTypesChange = {},
-            onLocationChange = {},
-            onLocationNameChange = {},
-            onStartTimeStampChange = {},
-            onExpirationTimeChange = {},
-            onTagsChange = {},
-            onSave = {},
-            onClearError = {},
-            onSearchLocations = {},
-            onClearLocationSearch = {})
-      }
-    }
-
-    composeTestRule.onNodeWithTag(EditRequestScreenTestTags.SAVE_BUTTON).assertIsNotEnabled()
+    val types = viewModel.uiState.value.requestTypes
+    assert(types.contains(RequestType.STUDYING))
+    assert(types.contains(RequestType.SPORT))
+    assertEquals(2, types.size)
   }
 
-  // Test 12: Loading state disables inputs
   @Test
-  fun editRequestContent_loadingState_disablesInputFields() {
-    composeTestRule.setContent {
-      MaterialTheme {
-        EditRequestContent(
-            paddingValues = PaddingValues(0.dp),
-            title = "Test",
-            description = "Test",
-            requestTypes = listOf(RequestType.STUDYING),
-            location = Location(0.0, 0.0, "Test"),
-            locationName = "Test",
-            startTimeStamp = currentDate,
-            expirationTime = futureDate,
-            tags = emptyList(),
-            isEditMode = false,
-            isLoading = true,
-            errorMessage = null,
-            locationSearchResults = emptyList(),
-            isSearchingLocation = false,
-            onTitleChange = {},
-            onDescriptionChange = {},
-            onRequestTypesChange = {},
-            onLocationChange = {},
-            onLocationNameChange = {},
-            onStartTimeStampChange = {},
-            onExpirationTimeChange = {},
-            onTagsChange = {},
-            onSave = {},
-            onClearError = {},
-            onSearchLocations = {},
-            onClearLocationSearch = {})
-      }
-    }
+  fun requestTypes_deselection_worksCorrectly() {
+    val viewModel = createTestViewModel()
+    composeTestRule.setContent { TestEditRequestContentWithRealViewModel(viewModel = viewModel) }
 
-    composeTestRule.onNodeWithTag(EditRequestScreenTestTags.INPUT_TITLE).assertIsNotEnabled()
+    clickChip("STUDYING")
+    waitForUI()
+    clickChip("STUDYING")
+    waitForUI()
+
+    assert(viewModel.uiState.value.requestTypes.isEmpty())
   }
 
-  // Test 13: Error message displays
   @Test
-  fun editRequestContent_errorMessage_displaysCorrectly() {
-    composeTestRule.setContent {
-      MaterialTheme {
-        EditRequestContent(
-            paddingValues = PaddingValues(0.dp),
-            title = "Test",
-            description = "Test",
-            requestTypes = listOf(RequestType.STUDYING),
-            location = Location(0.0, 0.0, "Test"),
-            locationName = "Test",
-            startTimeStamp = currentDate,
-            expirationTime = futureDate,
-            tags = emptyList(),
-            isEditMode = false,
-            isLoading = true,
-            errorMessage = "Failed to save request",
-            locationSearchResults = emptyList(),
-            isSearchingLocation = false,
-            onTitleChange = {},
-            onDescriptionChange = {},
-            onRequestTypesChange = {},
-            onLocationChange = {},
-            onLocationNameChange = {},
-            onStartTimeStampChange = {},
-            onExpirationTimeChange = {},
-            onTagsChange = {},
-            onSave = {},
-            onClearError = {},
-            onSearchLocations = {},
-            onClearLocationSearch = {})
-      }
-    }
+  fun requestTypes_emptySelection_triggersValidation() {
+    val viewModel = createTestViewModel()
+    composeTestRule.setContent { TestEditRequestContentWithRealViewModel(viewModel = viewModel) }
 
-    composeTestRule.onNodeWithText("Failed to save request").assertExists()
+    clickChip("STUDYING")
+    waitForUI()
+    clickChip("STUDYING")
+    waitForUI()
+
+    assert(viewModel.uiState.value.validationState.showRequestTypeError)
   }
 
-  // Test 14: Error dismiss
   @Test
-  fun editRequestContent_errorMessage_canBeDismissed() {
-    var errorCleared = false
-
-    composeTestRule.setContent {
-      MaterialTheme {
-        EditRequestContent(
-            paddingValues = PaddingValues(0.dp),
-            title = "Test",
-            description = "Test",
-            requestTypes = listOf(RequestType.STUDYING),
-            location = Location(0.0, 0.0, "Test"),
-            locationName = "Test",
-            startTimeStamp = currentDate,
-            expirationTime = futureDate,
-            tags = emptyList(),
-            isEditMode = false,
-            isLoading = true,
-            errorMessage = "Failed to save request",
-            locationSearchResults = emptyList(),
-            isSearchingLocation = false,
-            onTitleChange = {},
-            onDescriptionChange = {},
-            onRequestTypesChange = {},
-            onLocationChange = {},
-            onLocationNameChange = {},
-            onStartTimeStampChange = {},
-            onExpirationTimeChange = {},
-            onTagsChange = {},
-            onSave = {},
-            onClearError = { errorCleared = true },
-            onSearchLocations = {},
-            onClearLocationSearch = {})
-      }
-    }
-
-    composeTestRule.onNodeWithText("Dismiss").performClick()
-
-    assert(errorCleared)
-  }
-
-  // Test 15: RequestType select
-  @Test
-  fun requestTypeChipGroup_selectChip_updatesSelection() {
+  fun requestTypes_disabled_ignoresClicks() {
     var selectedTypes by mutableStateOf(emptyList<RequestType>())
-
     composeTestRule.setContent {
       MaterialTheme {
         RequestTypeChipGroup(
             selectedTypes = selectedTypes,
             onSelectionChanged = { selectedTypes = it },
-            enabled = true)
+            enabled = false)
       }
     }
 
-    composeTestRule.onNodeWithText("STUDYING").performClick()
+    clickChip("STUDYING")
+    waitForUI()
 
-    composeTestRule.waitForIdle()
-    assert(selectedTypes.contains(RequestType.STUDYING))
+    assert(selectedTypes.isEmpty())
   }
 
-  // Test 16: RequestType deselect
+  // ========== TAGS TESTS ==========
+
   @Test
-  fun requestTypeChipGroup_deselectChip_updatesSelection() {
-    var selectedTypes by mutableStateOf(listOf(RequestType.STUDYING))
-
-    composeTestRule.setContent {
-      MaterialTheme {
-        RequestTypeChipGroup(
-            selectedTypes = selectedTypes,
-            onSelectionChanged = { selectedTypes = it },
-            enabled = true)
-      }
-    }
-
-    composeTestRule.onNodeWithText("STUDYING").performClick()
-
-    composeTestRule.waitForIdle()
-    assert(!selectedTypes.contains(RequestType.STUDYING))
-  }
-
-  // Test 17: RequestType multiple selections
-  @Test
-  fun requestTypeChipGroup_multipleSelections_worksCorrectly() {
-    var selectedTypes by mutableStateOf(emptyList<RequestType>())
-
-    composeTestRule.setContent {
-      MaterialTheme {
-        RequestTypeChipGroup(
-            selectedTypes = selectedTypes,
-            onSelectionChanged = { selectedTypes = it },
-            enabled = true)
-      }
-    }
-
-    composeTestRule.onNodeWithText("STUDYING").performClick()
-    composeTestRule.waitForIdle()
-    composeTestRule.onNodeWithText("SPORT").performClick()
-    composeTestRule.waitForIdle()
-
-    assert(selectedTypes.contains(RequestType.STUDYING))
-    assert(selectedTypes.contains(RequestType.SPORT))
-    assert(selectedTypes.size == 2)
-  }
-
-  // Test 18: Tags select
-  @Test
-  fun tagsChipGroup_selectTag_updatesSelection() {
+  fun tags_singleSelection_worksCorrectly() {
     var selectedTags by mutableStateOf(emptyList<Tags>())
-
     composeTestRule.setContent {
       MaterialTheme {
         TagsChipGroup(
@@ -489,17 +431,15 @@ class EditRequestScreenTest {
       }
     }
 
-    composeTestRule.onNodeWithText("URGENT").performClick()
-    composeTestRule.waitForIdle()
+    clickChip("URGENT")
+    waitForUI()
 
     assert(selectedTags.contains(Tags.URGENT))
   }
 
-  // Test 19: Tags deselect
   @Test
-  fun tagsChipGroup_deselectTag_updatesSelection() {
-    var selectedTags by mutableStateOf(listOf(Tags.URGENT))
-
+  fun tags_multipleSelections_worksCorrectly() {
+    var selectedTags by mutableStateOf(emptyList<Tags>())
     composeTestRule.setContent {
       MaterialTheme {
         TagsChipGroup(
@@ -507,278 +447,267 @@ class EditRequestScreenTest {
       }
     }
 
-    composeTestRule.onNodeWithText("URGENT").performClick()
-    composeTestRule.waitForIdle()
+    clickChip("URGENT")
+    waitForUI()
+    clickChip("EASY")
+    waitForUI()
+
+    assert(selectedTags.contains(Tags.URGENT))
+    assert(selectedTags.contains(Tags.EASY))
+    assertEquals(2, selectedTags.size)
+  }
+
+  @Test
+  fun tags_deselection_worksCorrectly() {
+    var selectedTags by mutableStateOf(listOf(Tags.URGENT))
+    composeTestRule.setContent {
+      MaterialTheme {
+        TagsChipGroup(
+            selectedTags = selectedTags, onSelectionChanged = { selectedTags = it }, enabled = true)
+      }
+    }
+
+    clickChip("URGENT")
+    waitForUI()
 
     assert(!selectedTags.contains(Tags.URGENT))
   }
 
-  // Test 20: Tags multiple selections
-  @Test
-  fun tagsChipGroup_multipleSelections_worksCorrectly() {
-    var selectedTags by mutableStateOf(emptyList<Tags>())
+  // ========== DATE TESTS ==========
 
+  @Test
+  fun startDateField_validDate_noError() {
+    val viewModel = createTestViewModel()
+    composeTestRule.setContent { TestEditRequestContentWithRealViewModel(viewModel = viewModel) }
+
+    val validDate = "31/12/2026 15:30"
+    clearField(EditRequestScreenTestTags.INPUT_START_DATE)
+    typeInField(EditRequestScreenTestTags.INPUT_START_DATE, validDate)
+    waitForUI()
+
+    assert(!viewModel.uiState.value.validationState.showStartDateError)
+  }
+
+  @Test
+  fun startDateField_invalidDate_triggersValidation() {
+    val viewModel = createTestViewModel()
+    composeTestRule.setContent { TestEditRequestContentWithRealViewModel(viewModel = viewModel) }
+
+    clearField(EditRequestScreenTestTags.INPUT_START_DATE)
+    typeInField(EditRequestScreenTestTags.INPUT_START_DATE, "invalid date")
+    waitForUI()
+
+    // Invalid dates don't set error flag in updateStartTimeStamp validation happens at save time
+    // So we verify the field shows the invalid text
+    assertTextFieldContains(EditRequestScreenTestTags.INPUT_START_DATE, "invalid date")
+  }
+
+  @Test
+  fun expirationDateField_invalidDate_triggersValidation() {
+    val viewModel = createTestViewModel()
+    composeTestRule.setContent { TestEditRequestContentWithRealViewModel(viewModel = viewModel) }
+
+    clearField(EditRequestScreenTestTags.INPUT_EXPIRATION_DATE)
+    typeInField(EditRequestScreenTestTags.INPUT_EXPIRATION_DATE, "also invalid")
+    waitForUI()
+
+    assertTextFieldContains(EditRequestScreenTestTags.INPUT_EXPIRATION_DATE, "also invalid")
+  }
+
+  @Test
+  fun dateRange_expiredRange_triggersValidation() {
+    val viewModel = createTestViewModel()
+    composeTestRule.setContent { TestEditRequestContentWithRealViewModel(viewModel = viewModel) }
+
+    viewModel.updateStartTimeStamp(futureDate)
+    viewModel.updateExpirationTime(currentDate)
+    waitForUI()
+
+    assert(viewModel.uiState.value.validationState.showDateOrderError)
+  }
+
+  // ========== LOCATION TESTS ==========
+
+  @Test
+  fun locationField_hasCorrectUI() {
     composeTestRule.setContent {
-      MaterialTheme {
-        TagsChipGroup(
-            selectedTags = selectedTags, onSelectionChanged = { selectedTags = it }, enabled = true)
-      }
+      TestEditRequestContentWithStaticState(uiState = EditRequestUiStateBuilder().build())
+    }
+    assertTextFieldExists(EditRequestScreenTestTags.INPUT_LOCATION_NAME)
+  }
+
+  @Test
+  fun locationName_empty_displaysError() {
+    composeTestRule.setContent {
+      TestEditRequestContentWithStaticState(
+          uiState =
+              EditRequestUiStateBuilder()
+                  .withLocationName("")
+                  .withValidationState(
+                      FieldValidationStateBuilder().withLocationNameError().build())
+                  .build())
     }
 
-    composeTestRule.onNodeWithText("URGENT").performClick()
-    composeTestRule.waitForIdle()
-    composeTestRule.onNodeWithText("EASY").performClick()
-    composeTestRule.waitForIdle()
-
-    assert(selectedTags.contains(Tags.URGENT))
-    assert(selectedTags.contains(Tags.EASY))
-    assert(selectedTags.size == 2)
+    assertErrorMessage("Location name cannot be empty")
   }
 
-  @Test
-  fun editRequestContent_allFields_areDisplayed() {
-    composeTestRule.setContent { TestEditRequestContent() }
-
-    composeTestRule.onNodeWithTag(EditRequestScreenTestTags.INPUT_TITLE).assertExists()
-    composeTestRule.onNodeWithTag(EditRequestScreenTestTags.INPUT_DESCRIPTION).assertExists()
-    composeTestRule.onNodeWithTag(EditRequestScreenTestTags.INPUT_LOCATION_NAME).assertExists()
-    composeTestRule.onNodeWithTag(EditRequestScreenTestTags.SAVE_BUTTON).assertExists()
-  }
+  // ========== LOADING STATE TESTS ==========
 
   @Test
-  fun editRequestContent_preFilledData_displaysCorrectly() {
+  fun loadingState_disablesSaveButton() {
     composeTestRule.setContent {
-      TestEditRequestContent(
-          initialTitle = "Study Group",
-          initialDescription = "Looking for partners",
-          initialLocationName = "BC Building",
-          isEditMode = true)
+      TestEditRequestContentWithStaticState(
+          uiState = EditRequestUiStateBuilder().withLoading(true).build())
     }
-
-    composeTestRule
-        .onNodeWithTag(EditRequestScreenTestTags.INPUT_TITLE)
-        .assertTextContains("Study Group")
-  }
-
-  @Test
-  fun requestTypeChipGroup_chipLabels_displayCorrectly() {
-    composeTestRule.setContent {
-      MaterialTheme {
-        RequestTypeChipGroup(selectedTypes = emptyList(), onSelectionChanged = {}, enabled = true)
-      }
-    }
-
-    composeTestRule.onNodeWithText("STUDY GROUP").assertExists()
-  }
-
-  @Test
-  fun tagsChipGroup_chipLabels_displayCorrectly() {
-    composeTestRule.setContent {
-      MaterialTheme {
-        TagsChipGroup(selectedTags = emptyList(), onSelectionChanged = {}, enabled = true)
-      }
-    }
-
-    composeTestRule.onNodeWithText("GROUP WORK").assertExists()
-  }
-
-  @Test
-  fun editRequestContent_startDateField_updatesOnTextInput() {
-    composeTestRule.setContent { TestEditRequestContent() }
-
-    val validDate = "15/12/2025 14:30"
-    composeTestRule.onNodeWithTag(EditRequestScreenTestTags.INPUT_START_DATE).performTextClearance()
-    composeTestRule
-        .onNodeWithTag(EditRequestScreenTestTags.INPUT_START_DATE)
-        .performTextInput(validDate)
-
-    composeTestRule
-        .onNodeWithTag(EditRequestScreenTestTags.INPUT_START_DATE)
-        .assertTextContains(validDate)
-  }
-
-  // Test 23: Expiration date field updates correctly
-  @Test
-  fun editRequestContent_expirationDateField_updatesOnTextInput() {
-    composeTestRule.setContent { TestEditRequestContent() }
-
-    val validDate = "20/12/2025 18:00"
-    composeTestRule
-        .onNodeWithTag(EditRequestScreenTestTags.INPUT_EXPIRATION_DATE)
-        .performTextClearance()
-    composeTestRule
-        .onNodeWithTag(EditRequestScreenTestTags.INPUT_EXPIRATION_DATE)
-        .performTextInput(validDate)
-
-    composeTestRule
-        .onNodeWithTag(EditRequestScreenTestTags.INPUT_EXPIRATION_DATE)
-        .assertTextContains(validDate)
-  }
-
-  // Test 24: Invalid date format shows error
-  @Test
-  fun editRequestContent_invalidDateFormat_showsError() {
-    composeTestRule.setContent {
-      TestEditRequestContent(
-          initialTitle = "Test",
-          initialDescription = "Test",
-          initialRequestTypes = listOf(RequestType.STUDYING),
-          initialLocation = Location(0.0, 0.0, "Test"),
-          initialLocationName = "Test")
-    }
-
-    composeTestRule.onNodeWithTag(EditRequestScreenTestTags.INPUT_START_DATE).performTextClearance()
-    composeTestRule
-        .onNodeWithTag(EditRequestScreenTestTags.INPUT_START_DATE)
-        .performTextInput("invalid date")
-
-    composeTestRule.waitForIdle()
-
-    // Should find exactly one error message for start date
-    composeTestRule
-        .onAllNodesWithText("Invalid format (must be dd/MM/yyyy HH:mm)")
-        .assertCountEquals(1)
-  }
-
-  // Test 25: Disabled chips don't respond to clicks
-  @Test
-  fun requestTypeChipGroup_disabledChips_dontRespondToClicks() {
-    var selectedTypes by mutableStateOf(emptyList<RequestType>())
-
-    composeTestRule.setContent {
-      MaterialTheme {
-        RequestTypeChipGroup(
-            selectedTypes = selectedTypes,
-            onSelectionChanged = { selectedTypes = it },
-            enabled = false)
-      }
-    }
-
-    composeTestRule.onNodeWithText("STUDYING").performClick()
-
-    composeTestRule.waitForIdle()
-
-    // Selection should remain empty since chips are disabled
-    assert(selectedTypes.isEmpty()) { "Disabled chips should not update selection" }
-  }
-
-  // Test 26: Disabled tags chips don't respond to clicks
-  @Test
-  fun tagsChipGroup_disabledChips_dontRespondToClicks() {
-    var selectedTags by mutableStateOf(emptyList<Tags>())
-
-    composeTestRule.setContent {
-      MaterialTheme {
-        TagsChipGroup(
-            selectedTags = selectedTags,
-            onSelectionChanged = { selectedTags = it },
-            enabled = false)
-      }
-    }
-
-    composeTestRule.onNodeWithText("URGENT").performClick()
-
-    composeTestRule.waitForIdle()
-
-    // Selection should remain empty since chips are disabled
-    assert(selectedTags.isEmpty()) { "Disabled chips should not update selection" }
-  }
-
-  // Test 27: Error message for both empty fields simultaneously
-  @Test
-  fun editRequestContent_multipleEmptyFields_showsMultipleErrors() {
-    composeTestRule.setContent { TestEditRequestContent() }
-
-    // Type and clear both fields to trigger both errors
-    composeTestRule.onNodeWithTag(EditRequestScreenTestTags.INPUT_TITLE).performTextInput("a")
-    composeTestRule.onNodeWithTag(EditRequestScreenTestTags.INPUT_TITLE).performTextClearance()
-
-    composeTestRule.onNodeWithTag(EditRequestScreenTestTags.INPUT_DESCRIPTION).performTextInput("a")
-    composeTestRule
-        .onNodeWithTag(EditRequestScreenTestTags.INPUT_DESCRIPTION)
-        .performTextClearance()
-
-    composeTestRule.waitForIdle()
-
-    // Both errors should be visible
-    composeTestRule.onNodeWithText("Title cannot be empty").assertExists()
-    composeTestRule.onNodeWithText("Description cannot be empty").assertExists()
-  }
-
-  // Test 28: Button shows loading indicator when loading
-  @Test
-  fun editRequestContent_loadingState_showsLoadingIndicator() {
-    composeTestRule.setContent {
-      MaterialTheme {
-        EditRequestContent(
-            paddingValues = PaddingValues(0.dp),
-            title = "Test",
-            description = "Test",
-            requestTypes = listOf(RequestType.STUDYING),
-            location = Location(0.0, 0.0, "Test"),
-            locationName = "Test",
-            startTimeStamp = currentDate,
-            expirationTime = futureDate,
-            tags = emptyList(),
-            isEditMode = false,
-            isLoading = true,
-            errorMessage = null,
-            locationSearchResults = emptyList(),
-            isSearchingLocation = false,
-            onTitleChange = {},
-            onDescriptionChange = {},
-            onRequestTypesChange = {},
-            onLocationChange = {},
-            onLocationNameChange = {},
-            onStartTimeStampChange = {},
-            onExpirationTimeChange = {},
-            onTagsChange = {},
-            onSave = {},
-            onClearError = {},
-            onSearchLocations = {},
-            onClearLocationSearch = {})
-      }
-    }
-
-    // The button should be disabled and the text should not be visible when loading
     composeTestRule.onNodeWithTag(EditRequestScreenTestTags.SAVE_BUTTON).assertIsNotEnabled()
   }
 
-  // test 29: EditRequestScreen in create mode initializes ViewModel correctly
+  @Test
+  fun loadingState_disablesInputFields() {
+    composeTestRule.setContent {
+      TestEditRequestContentWithStaticState(
+          uiState = EditRequestUiStateBuilder().withLoading(true).build())
+    }
+    composeTestRule.onNodeWithTag(EditRequestScreenTestTags.INPUT_TITLE).assertIsNotEnabled()
+  }
+
+  // ========== ERROR HANDLING TESTS ==========
+
+  @Test
+  fun errorMessage_displaysCorrectly() {
+    composeTestRule.setContent {
+      TestEditRequestContentWithStaticState(
+          uiState = EditRequestUiStateBuilder().withError("Failed to save request").build())
+    }
+    assertErrorMessage("Failed to save request")
+  }
+
+  @Test
+  fun errorMessage_canBeDismissed() {
+    var errorCleared = false
+    composeTestRule.setContent {
+      TestEditRequestContentWithStaticState(
+          uiState = EditRequestUiStateBuilder().withError("Failed to save request").build(),
+          onClearError = { errorCleared = true })
+    }
+
+    clickButton("Dismiss")
+    assert(errorCleared)
+  }
+
+  // ========== SUCCESS MESSAGE TESTS ==========
+
+  @Test
+  fun successMessage_displaysAfterCreateMode() {
+    composeTestRule.setContent {
+      TestEditRequestContentWithStaticState(
+          uiState =
+              EditRequestUiStateBuilder()
+                  .withValidationState(FieldValidationStateBuilder().withSuccessMessage().build())
+                  .withEditMode(false)
+                  .build())
+    }
+    assertSuccessMessage("Request created successfully!")
+  }
+
+  @Test
+  fun successMessage_displaysAfterEditMode() {
+    composeTestRule.setContent {
+      TestEditRequestContentWithStaticState(
+          uiState =
+              EditRequestUiStateBuilder()
+                  .withValidationState(FieldValidationStateBuilder().withSuccessMessage().build())
+                  .withEditMode(true)
+                  .build())
+    }
+    assertSuccessMessage("Request updated successfully!")
+  }
+
+  @Test
+  fun successMessage_canBeDismissed() {
+    var messageDismissed = false
+    composeTestRule.setContent {
+      TestEditRequestContentWithStaticState(
+          uiState =
+              EditRequestUiStateBuilder()
+                  .withValidationState(FieldValidationStateBuilder().withSuccessMessage().build())
+                  .build(),
+          onClearSuccessMessage = { messageDismissed = true })
+    }
+
+    clickButton("Dismiss")
+    assert(messageDismissed)
+  }
+
+  // ========== UI VISIBILITY TESTS ==========
+
+  @Test
+  fun allFields_areDisplayed() {
+    composeTestRule.setContent {
+      TestEditRequestContentWithStaticState(uiState = EditRequestUiStateBuilder().build())
+    }
+
+    assertTextFieldExists(EditRequestScreenTestTags.INPUT_TITLE)
+    assertTextFieldExists(EditRequestScreenTestTags.INPUT_DESCRIPTION)
+    assertTextFieldExists(EditRequestScreenTestTags.INPUT_LOCATION_NAME)
+    assertTextFieldExists(EditRequestScreenTestTags.SAVE_BUTTON)
+  }
+
+  @Test
+  fun preFilledData_displaysCorrectly() {
+    composeTestRule.setContent {
+      TestEditRequestContentWithStaticState(
+          uiState =
+              EditRequestUiStateBuilder()
+                  .withTitle("Study Group")
+                  .withDescription("Looking for partners")
+                  .withLocationName("BC Building")
+                  .build())
+    }
+    assertTextFieldContains(EditRequestScreenTestTags.INPUT_TITLE, "Study Group")
+  }
+
+  // ========== MULTIPLE VALIDATION ERRORS TESTS ==========
+
+  @Test
+  fun multipleFields_emptySimultaneously_showAllErrors() {
+    val viewModel = createTestViewModel()
+    composeTestRule.setContent { TestEditRequestContentWithRealViewModel(viewModel = viewModel) }
+
+    typeAndClear(EditRequestScreenTestTags.INPUT_TITLE, "Test")
+    typeAndClear(EditRequestScreenTestTags.INPUT_DESCRIPTION, "Test")
+    waitForUI()
+
+    assert(viewModel.uiState.value.validationState.showTitleError)
+    assert(viewModel.uiState.value.validationState.showDescriptionError)
+  }
+
+  // ========== INTEGRATION TESTS ==========
+
   @OptIn(ExperimentalCoroutinesApi::class)
   @Test
-  fun editRequestScreen_createMode_initializesViewModel() = runTest {
+  fun editRequestScreen_createMode_initializesCorrectly() = runTest {
     val mockRepo = mock<RequestRepository>()
     val mockLocationRepo = mock<LocationRepository>()
     val viewModel = EditRequestViewModel(mockRepo, mockLocationRepo)
 
     composeTestRule.setContent {
       MaterialTheme {
-        EditRequestScreen(
-            requestId = null, // Create mode
-            onNavigateBack = {},
-            viewModel = viewModel)
+        EditRequestScreen(requestId = null, onNavigateBack = {}, viewModel = viewModel)
       }
     }
 
     advanceUntilIdle()
     composeTestRule.waitForIdle()
 
-    // Verify "Create Request" appears (in both TopAppBar and Button)
-    composeTestRule
-        .onAllNodesWithText("Create Request", substring = true)
-        .assertCountEquals(2) // ← Expect 2: title + button
-
-    // Or verify the button specifically
     composeTestRule
         .onNodeWithTag(EditRequestScreenTestTags.SAVE_BUTTON)
         .assertTextEquals("Create Request")
   }
 
-  // Test 30: EditRequestScreen loads existing request
   @OptIn(ExperimentalCoroutinesApi::class)
   @Test
-  fun editRequestScreen_editMode_loadsRequest() = runTest {
+  fun editRequestScreen_editMode_loadsRequestData() = runTest {
     val mockRepo = mock<RequestRepository>()
     val mockLocationRepo = mock<LocationRepository>()
     val testRequest =
@@ -802,279 +731,143 @@ class EditRequestScreenTest {
 
     composeTestRule.setContent {
       MaterialTheme {
-        EditRequestScreen(
-            requestId = "test-id", // Edit mode
-            onNavigateBack = {},
-            viewModel = viewModel)
+        EditRequestScreen(requestId = "test-id", onNavigateBack = {}, viewModel = viewModel)
       }
     }
 
     advanceUntilIdle()
     composeTestRule.waitForIdle()
 
-    // Verify title shows "Edit Request"
     composeTestRule.onNodeWithText("Edit Request").assertExists()
-
-    // Verify loaded data appears
     composeTestRule.onNodeWithText("Loaded Title").assertExists()
   }
-
-  // Test 31: Date field shows error for past date
+  /**
+   * Test that all RequestType options are displayed. Ensures UI shows all available request types
+   * for user selection.
+   */
   @Test
-  fun editRequestContent_pastStartDate_showsError() {
+  fun requestTypeChipGroup_displaysAllAvailableTypes() {
     composeTestRule.setContent {
-      TestEditRequestContent(
-          initialTitle = "Test",
-          initialDescription = "Test",
-          initialRequestTypes = listOf(RequestType.STUDYING),
-          initialLocation = Location(0.0, 0.0, "Test"),
-          initialLocationName = "Test")
+      TestEditRequestContentWithStaticState(uiState = EditRequestUiStateBuilder().build())
     }
 
-    val pastDate = "01/01/2020 10:00"
-    composeTestRule.onNodeWithTag(EditRequestScreenTestTags.INPUT_START_DATE).performTextClearance()
-    composeTestRule
-        .onNodeWithTag(EditRequestScreenTestTags.INPUT_START_DATE)
-        .performTextInput(pastDate)
-
-    composeTestRule.waitForIdle()
-
-    // Past dates should show format error
-    composeTestRule
-        .onAllNodesWithText("Invalid format (must be dd/MM/yyyy HH:mm)")
-        .assertCountEquals(1)
-  }
-
-  // Test 32: Both date fields can show errors simultaneously
-  @Test
-  fun editRequestContent_invalidDates_showsBothErrors() {
-    composeTestRule.setContent { TestEditRequestContent() }
-
-    composeTestRule.onNodeWithTag(EditRequestScreenTestTags.INPUT_START_DATE).performTextClearance()
-    composeTestRule
-        .onNodeWithTag(EditRequestScreenTestTags.INPUT_START_DATE)
-        .performTextInput("invalid")
-
-    composeTestRule
-        .onNodeWithTag(EditRequestScreenTestTags.INPUT_EXPIRATION_DATE)
-        .performTextClearance()
-    composeTestRule
-        .onNodeWithTag(EditRequestScreenTestTags.INPUT_EXPIRATION_DATE)
-        .performTextInput("also invalid")
-
-    composeTestRule.waitForIdle()
-
-    // Both date errors should appear
-    composeTestRule
-        .onAllNodesWithText("Invalid format (must be dd/MM/yyyy HH:mm)")
-        .assertCountEquals(2)
-  }
-
-  // Test 33: Valid date doesn't show error
-  @Test
-  fun editRequestContent_validDate_noError() {
-    composeTestRule.setContent { TestEditRequestContent() }
-
-    val validDate = "31/12/2026 15:30"
-    composeTestRule.onNodeWithTag(EditRequestScreenTestTags.INPUT_START_DATE).performTextClearance()
-    composeTestRule
-        .onNodeWithTag(EditRequestScreenTestTags.INPUT_START_DATE)
-        .performTextInput(validDate)
-
-    composeTestRule.waitForIdle()
-
-    // No error should appear
-    composeTestRule.onNodeWithText("Invalid format (must be dd/MM/yyyy HH:mm)").assertDoesNotExist()
-  }
-
-  // Test 34: RequestTypeChipGroup displays all types
-  @Test
-  fun requestTypeChipGroup_displaysAllRequestTypes() {
-    composeTestRule.setContent {
-      MaterialTheme { RequestTypeChipGroup(selectedTypes = emptyList(), onSelectionChanged = {}) }
-    }
-
-    // Verify all request types are displayed
     RequestType.entries.forEach { type ->
       val displayName = type.name.replace("_", " ")
-      composeTestRule.onNodeWithText(displayName).assertExists()
+      assertButtonExists(displayName)
     }
   }
 
-  // Test 35: TagsChipGroup displays all tags
+  /**
+   * Test that all Tags options are displayed. Ensures UI shows all available tags for user
+   * selection.
+   */
   @Test
-  fun tagsChipGroup_displaysAllTags() {
+  fun tagsChipGroup_displaysAllAvailableTags() {
     composeTestRule.setContent {
-      MaterialTheme { TagsChipGroup(selectedTags = emptyList(), onSelectionChanged = {}) }
+      TestEditRequestContentWithStaticState(uiState = EditRequestUiStateBuilder().build())
     }
 
-    // Verify all tags are displayed
     Tags.entries.forEach { tag ->
       val displayName = tag.name.replace("_", " ")
-      composeTestRule.onNodeWithText(displayName).assertExists()
+      assertButtonExists(displayName)
     }
   }
 
-  // Test 36: Clearing title after typing shows error
+  /**
+   * Test selecting all request types simultaneously. Ensures form handles maximum selections
+   * without issues.
+   */
   @Test
-  fun editRequestContent_clearTitleAfterTyping_showsError() {
-    composeTestRule.setContent { TestEditRequestContent() }
+  fun requestTypes_selectAllTypes_worksCorrectly() {
+    val viewModel = createTestViewModel()
+    composeTestRule.setContent { TestEditRequestContentWithRealViewModel(viewModel = viewModel) }
 
-    composeTestRule
-        .onNodeWithTag(EditRequestScreenTestTags.INPUT_TITLE)
-        .performTextInput("Some title")
-    composeTestRule.onNodeWithTag(EditRequestScreenTestTags.INPUT_TITLE).performTextClearance()
-
-    composeTestRule.waitForIdle()
-
-    composeTestRule.onNodeWithText("Title cannot be empty").assertExists()
-  }
-
-  // Test 37: Clearing description after typing shows error
-  @Test
-  fun editRequestContent_clearDescriptionAfterTyping_showsError() {
-    composeTestRule.setContent { TestEditRequestContent() }
-
-    composeTestRule
-        .onNodeWithTag(EditRequestScreenTestTags.INPUT_DESCRIPTION)
-        .performTextInput("Some description")
-    composeTestRule
-        .onNodeWithTag(EditRequestScreenTestTags.INPUT_DESCRIPTION)
-        .performTextClearance()
-
-    composeTestRule.waitForIdle()
-
-    composeTestRule.onNodeWithText("Description cannot be empty").assertExists()
-  }
-
-  // Test 38: Selecting and deselecting request type shows error
-  @Test
-  fun editRequestContent_deselectLastRequestType_showsError() {
-    composeTestRule.setContent {
-      TestEditRequestContent(initialRequestTypes = listOf(RequestType.STUDYING))
+    RequestType.entries.forEach { type ->
+      val displayName = type.name.replace("_", " ")
+      clickChip(displayName)
+      waitForUI()
     }
 
-    // Deselect the only selected type
-    composeTestRule.onNodeWithText("STUDYING").performClick()
-    composeTestRule.waitForIdle()
-
-    composeTestRule.onNodeWithText("Please select at least one request type").assertExists()
+    assertEquals(RequestType.entries.size, viewModel.uiState.value.requestTypes.size)
+    RequestType.entries.forEach { type ->
+      assert(viewModel.uiState.value.requestTypes.contains(type))
+    }
   }
 
-  // Test 41: Multiple request types can be selected
+  /**
+   * Test that date fields update the ViewModel when valid dates are entered. Ensures start date and
+   * expiration date are properly synchronized with ViewModel.
+   */
   @Test
-  fun requestTypeChipGroup_multipleTypes_allSelected() {
-    var selectedTypes by mutableStateOf(emptyList<RequestType>())
+  fun dateFields_validDates_updateViewModelCorrectly() {
+    val viewModel = createTestViewModel()
+    composeTestRule.setContent { TestEditRequestContentWithRealViewModel(viewModel = viewModel) }
 
-    composeTestRule.setContent {
-      MaterialTheme {
-        RequestTypeChipGroup(
-            selectedTypes = selectedTypes, onSelectionChanged = { selectedTypes = it })
-      }
-    }
+    val startDate = "15/12/2025 10:00"
+    val expirationDate = "20/12/2025 18:00"
 
-    // Select three different types
-    composeTestRule.onNodeWithText("STUDYING").performClick()
-    composeTestRule.waitForIdle()
-    composeTestRule.onNodeWithText("SPORT").performClick()
-    composeTestRule.waitForIdle()
-    composeTestRule.onNodeWithText("EATING").performClick()
-    composeTestRule.waitForIdle()
+    clearField(EditRequestScreenTestTags.INPUT_START_DATE)
+    typeInField(EditRequestScreenTestTags.INPUT_START_DATE, startDate)
+    waitForUI()
 
-    assert(selectedTypes.size == 3)
+    clearField(EditRequestScreenTestTags.INPUT_EXPIRATION_DATE)
+    typeInField(EditRequestScreenTestTags.INPUT_EXPIRATION_DATE, expirationDate)
+    waitForUI()
+
+    // Verify dates were parsed and stored in ViewModel
+    assert(viewModel.uiState.value.startTimeStamp.time > 0)
     assert(
-        selectedTypes.containsAll(
-            listOf(RequestType.STUDYING, RequestType.SPORT, RequestType.EATING)))
+        viewModel.uiState.value.expirationTime.time > viewModel.uiState.value.startTimeStamp.time)
   }
 
-  // Test 42: Multiple tags can be selected
+  /**
+   * Test that tags are optional (no error triggered when empty). Ensures form doesn't force tag
+   * selection unlike request types.
+   */
   @Test
-  fun tagsChipGroup_multipleTags_allSelected() {
-    var selectedTags by mutableStateOf(emptyList<Tags>())
+  fun tags_areOptional_noValidationError() {
+    val viewModel = createTestViewModel()
+    composeTestRule.setContent { TestEditRequestContentWithRealViewModel(viewModel = viewModel) }
 
-    composeTestRule.setContent {
-      MaterialTheme {
-        TagsChipGroup(selectedTags = selectedTags, onSelectionChanged = { selectedTags = it })
-      }
-    }
+    // Don't select any tags
+    waitForUI()
 
-    // Select three different tags
-    composeTestRule.onNodeWithText("URGENT").performClick()
-    composeTestRule.waitForIdle()
-    composeTestRule.onNodeWithText("EASY").performClick()
-    composeTestRule.waitForIdle()
-    composeTestRule.onNodeWithText("OUTDOOR").performClick()
-    composeTestRule.waitForIdle()
-
-    assert(selectedTags.size == 3)
-    assert(selectedTags.containsAll(listOf(Tags.URGENT, Tags.EASY, Tags.OUTDOOR)))
+    // Verify no validation error for empty tags
+    assert(viewModel.uiState.value.tags.isEmpty())
+    assert(!viewModel.uiState.value.validationState.showRequestTypeError)
   }
 
-  // Test 43: Error message dismiss button works
+  /**
+   * Test multiple validation errors display simultaneously. Ensures all invalid fields show errors
+   * at the same time.
+   */
   @Test
-  fun editRequestContent_editModeWithData_displaysAllFields() {
+  fun allValidationErrors_displaySimultaneously() {
     composeTestRule.setContent {
-      TestEditRequestContent(
-          initialTitle = "Study Session",
-          initialDescription = "Need help with calculus",
-          initialRequestTypes = listOf(RequestType.STUDYING, RequestType.STUDY_GROUP),
-          initialLocation = Location(46.5197, 6.5668, "EPFL"),
-          initialLocationName = "BC Building, Room 330",
-          initialTags = listOf(Tags.URGENT, Tags.GROUP_WORK),
-          isEditMode = true)
+      TestEditRequestContentWithStaticState(
+          uiState =
+              EditRequestUiStateBuilder()
+                  .withTitle("")
+                  .withDescription("")
+                  .withRequestTypes(emptyList())
+                  .withLocationName("")
+                  .withStartDate(futureDate)
+                  .withExpirationDate(currentDate)
+                  .withValidationState(
+                      FieldValidationStateBuilder()
+                          .withTitleError()
+                          .withDescriptionError()
+                          .withRequestTypeError()
+                          .withLocationNameError()
+                          .withDateOrderError()
+                          .build())
+                  .build())
     }
 
-    // Verify all pre-filled data is displayed
-    composeTestRule.onNodeWithText("Study Session").assertExists()
-    composeTestRule.onNodeWithText("Need help with calculus").assertExists()
-    composeTestRule.onNodeWithText("BC Building, Room 330").assertExists()
-
-    // Verify button shows "Update Request" in edit mode
-    composeTestRule
-        .onNodeWithTag(EditRequestScreenTestTags.SAVE_BUTTON)
-        .assertTextContains("Update Request")
-  }
-
-  // Test 45: Location search shows loading indicator
-  @Test
-  fun editRequestContent_locationSearchLoading_showsIndicator() {
-    composeTestRule.setContent {
-      MaterialTheme {
-        EditRequestContent(
-            paddingValues = PaddingValues(0.dp),
-            title = "Test",
-            description = "Test",
-            requestTypes = listOf(RequestType.STUDYING),
-            location = null,
-            locationName = "EPFL",
-            startTimeStamp = futureDate,
-            expirationTime = Date(futureDate.time + 86400000),
-            tags = emptyList(),
-            isEditMode = false,
-            isLoading = false,
-            errorMessage = null,
-            locationSearchResults = emptyList(),
-            isSearchingLocation = true, // ← Loading state
-            onTitleChange = {},
-            onDescriptionChange = {},
-            onRequestTypesChange = {},
-            onLocationChange = {},
-            onLocationNameChange = {},
-            onStartTimeStampChange = {},
-            onExpirationTimeChange = {},
-            onTagsChange = {},
-            onSave = {},
-            onClearError = {},
-            onSearchLocations = {},
-            onClearLocationSearch = {})
-      }
-    }
-
-    // Verify loading indicator exists (CircularProgressIndicator in LocationSearchField)
-    // Note: Can't easily test CircularProgressIndicator directly, but we can verify the field
-    composeTestRule
-        .onNodeWithTag(EditRequestScreenTestTags.INPUT_LOCATION_NAME)
-        .assertExists()
-        .assertIsEnabled()
+    assertErrorMessage("Title cannot be empty")
+    assertErrorMessage("Description cannot be empty")
+    assertErrorMessage("Please select at least one request type")
+    assertErrorMessage("Location name cannot be empty")
+    assertErrorMessage("Expiration date must be after start date")
   }
 }

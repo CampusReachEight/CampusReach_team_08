@@ -27,9 +27,9 @@ import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.overview.AcceptRequestScreenTestTags
 import com.android.sample.ui.overview.toDisplayString
 import com.android.sample.ui.profile.ProfileTestTags
-import com.android.sample.ui.request.EditRequestScreenTestTags
 import com.android.sample.ui.request.LocationSearchFieldTestTags
 import com.android.sample.ui.request.RequestListTestTags
+import com.android.sample.ui.request.edit.EditRequestScreenTestTags
 import com.android.sample.utils.BaseEmulatorTest
 import com.android.sample.utils.FakeCredentialManager
 import com.android.sample.utils.FakeJwtGenerator
