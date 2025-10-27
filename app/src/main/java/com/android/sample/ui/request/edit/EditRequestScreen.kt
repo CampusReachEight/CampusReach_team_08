@@ -508,7 +508,7 @@ fun TagsChipGroup(
               },
               label = { Text(tag.name.replace("_", " ")) },
               enabled = enabled,
-              modifier = Modifier.testTag("tag_${tag.name}"))
+              modifier = Modifier.testTag(EditRequestScreenTestTags.getTestTagForRequestTags(tag)))
         }
       }
 }
