@@ -9,7 +9,9 @@ object UiDimens {
     val SpacingMd: Dp = 16.dp
     val SpacingLg: Dp = 24.dp
     val SpacingXl: Dp = 32.dp
-    val SpacingXxl: Dp = 142.dp
+    val SpacingXxl: Dp = 48.dp
+
+    val StatCardHeight: Dp = 142.dp
 
     val IconSmall: Dp = 20.dp
     val IconMedium: Dp = 40.dp
