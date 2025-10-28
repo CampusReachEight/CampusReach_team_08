@@ -17,7 +17,6 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.model.request.Request
@@ -464,22 +463,24 @@ private fun List<RequestType>.toCompactLabel(max: Int = 2): String {
   return if (size > max) "$head | ..." else head
 }
 
-@Preview
-@Composable
-fun RequestListItemPreview() {
-  val sampleRequest =
-      Request(
-          requestId = "1",
-          title = "Sample Request",
-          description = "This is a sample request description.",
-          creatorId = "user1",
-          location = com.android.sample.model.map.Location(0.0, 0.0, "knowhere"),
-          locationName = "No where",
-          requestType = listOf(),
-          status = RequestStatus.OPEN,
-          startTimeStamp = java.util.Date(),
-          expirationTime = java.util.Date(),
-          people = listOf(),
-          tags = listOf())
-  RequestListItem(request = sampleRequest, icon = null, onClick = {})
-}
+// Preview for rendering improvements during development
+// @Preview
+// @Composable
+// fun RequestListItemPreview() {
+//  val sampleRequest =
+//      Request(
+//          requestId = "1",
+//          title = "Sample Request",
+//          description = "This is a sample request description.",
+//          creatorId = "user1",
+//          location = com.android.sample.model.map.Location(0.0, 0.0, "knowhere"),
+//          locationName = "No where",
+//          requestType = RequestType.entries, // 2 values should appear and the rest should be
+// truncated
+//          status = RequestStatus.OPEN,
+//          startTimeStamp = java.util.Date(),
+//          expirationTime = java.util.Date(),
+//          people = listOf(),
+//          tags = listOf())
+//  RequestListItem(request = sampleRequest, icon = null, onClick = {})
+// }
