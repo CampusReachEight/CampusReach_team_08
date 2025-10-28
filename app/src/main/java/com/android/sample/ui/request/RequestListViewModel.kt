@@ -48,11 +48,6 @@ class RequestListViewModel(
   private val _profileIcons = MutableStateFlow<Map<String, Bitmap?>>(emptyMap())
   val profileIcons: StateFlow<Map<String, Bitmap?>> = _profileIcons
 
-  // Auth: centralize current user id away from UI
-  private val _currentUserId = MutableStateFlow<String?>(null)
-  /** Currently authenticated Firebase user id (null if signed out). */
-  val currentUserId: StateFlow<String?> = _currentUserId
-
   // Facet selection state
   private val _selectedTypes = MutableStateFlow<Set<RequestType>>(emptySet())
   val selectedTypes: StateFlow<Set<RequestType>> = _selectedTypes
@@ -62,11 +57,6 @@ class RequestListViewModel(
 
   private val _selectedTags = MutableStateFlow<Set<Tags>>(emptySet())
   val selectedTags: StateFlow<Set<Tags>> = _selectedTags
-
-  init {
-    // Snapshot current user id once; a full listener can be added if needed later
-    _currentUserId.value = Firebase.auth.currentUser?.uid
-  }
 
   // Base list as a flow
   private val allRequests = state.map { it.requests }.distinctUntilChanged()
@@ -78,7 +68,7 @@ class RequestListViewModel(
               types,
               statuses,
               tags ->
-            if (requests.isEmpty()) return@combine emptyList<Request>()
+            if (requests.isEmpty()) return@combine emptyList()
             requests.filter { req ->
               val typeOk = types.isEmpty() || req.requestType.any { it in types }
               val statusOk = statuses.isEmpty() || req.status in statuses
@@ -160,9 +150,9 @@ class RequestListViewModel(
 
   /** Clears all active filters. */
   fun clearAllFilters() {
-    _selectedTypes.value = emptySet()
-    _selectedStatuses.value = emptySet()
-    _selectedTags.value = emptySet()
+    _selectedTypes.update { emptySet() }
+    _selectedStatuses.update { emptySet() }
+    _selectedTags.update { emptySet() }
   }
 
   /** Loads all requests and their profile icons. Leaves previous list intact on error. */
