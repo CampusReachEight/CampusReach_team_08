@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.painterResource
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialCancellationException
@@ -102,11 +103,10 @@ fun SignInScreen(
       horizontalAlignment = Alignment.CenterHorizontally,
       verticalArrangement = Arrangement.Center) {
         // App logo icon
-        Icon(
-            imageVector = Icons.Default.AccountCircle,
-            contentDescription = "App Logo",
-            modifier = Modifier.size(80.dp).testTag(SignInScreenTestTags.APP_LOGO),
-            tint = MaterialTheme.colorScheme.primary)
+        Image(
+          	painter = painterResource(R.drawable.campusreach_logo),
+          	contentDescription = "App Logo",
+          	modifier = Modifier.size(80.dp).testTag(SignInScreenTestTags.APP_LOGO))
 
         // Welcome title
         Text(
