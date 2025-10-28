@@ -76,6 +76,36 @@ class EditRequestViewModel(
       }
     }
   }
+
+  fun deleteRequest(requestId: String, onSuccess: () -> Unit) {
+    viewModelScope.launch {
+      _uiState.update { it.copy(isDeleting = true, errorMessage = null) }
+
+      try {
+        requestRepository.deleteRequest(requestId)
+        _uiState.update { it.copy(isDeleting = false, showDeleteConfirmation = false) }
+        onSuccess()
+      } catch (e: Exception) {
+        _uiState.update {
+          it.copy(
+              isDeleting = false,
+              showDeleteConfirmation = false,
+              errorMessage = "Failed to delete request: ${e.localizedMessage}")
+        }
+      }
+    }
+  }
+
+  /** Show delete confirmation dialog */
+  fun confirmDelete() {
+    _uiState.update { it.copy(showDeleteConfirmation = true) }
+  }
+
+  /** Hide delete confirmation dialog */
+  fun cancelDelete() {
+    _uiState.update { it.copy(showDeleteConfirmation = false) }
+  }
+
   /** Clear location search results */
   fun clearLocationSearch() {
     _uiState.update { it.copy(locationSearchResults = emptyList()) }
