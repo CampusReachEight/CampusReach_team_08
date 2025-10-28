@@ -1,6 +1,7 @@
 package com.android.sample.ui.request
 
 import android.graphics.Bitmap
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.sample.model.profile.UserProfileRepository
@@ -11,9 +12,13 @@ import com.android.sample.model.request.RequestRepositoryFirestore
 import com.android.sample.model.request.RequestStatus
 import com.android.sample.model.request.RequestType
 import com.android.sample.model.request.Tags
+import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -22,16 +27,31 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+/**
+ * ViewModel backing the Request List screen.
+ *
+ * Semantics:
+ * - Filters: OR within a facet; AND across facets. Facet counts are self-excluding against other
+ *   active facets.
+ * - Errors: exposed as `errorMessage` and can be cleared with [clearError]. Non-critical image load
+ *   errors are logged only.
+ */
 class RequestListViewModel(
     val requestRepository: RequestRepository = RequestRepositoryFirestore(Firebase.firestore),
     val profileRepository: UserProfileRepository =
         UserProfileRepositoryFirestore(Firebase.firestore),
+    val verboseLogging: Boolean = false
 ) : ViewModel() {
   private val _state = MutableStateFlow(RequestListState())
   val state: StateFlow<RequestListState> = _state
 
   private val _profileIcons = MutableStateFlow<Map<String, Bitmap?>>(emptyMap())
   val profileIcons: StateFlow<Map<String, Bitmap?>> = _profileIcons
+
+  // Auth: centralize current user id away from UI
+  private val _currentUserId = MutableStateFlow<String?>(null)
+  /** Currently authenticated Firebase user id (null if signed out). */
+  val currentUserId: StateFlow<String?> = _currentUserId
 
   // Facet selection state
   private val _selectedTypes = MutableStateFlow<Set<RequestType>>(emptySet())
@@ -43,10 +63,15 @@ class RequestListViewModel(
   private val _selectedTags = MutableStateFlow<Set<Tags>>(emptySet())
   val selectedTags: StateFlow<Set<Tags>> = _selectedTags
 
+  init {
+    // Snapshot current user id once; a full listener can be added if needed later
+    _currentUserId.value = Firebase.auth.currentUser?.uid
+  }
+
   // Base list as a flow
   private val allRequests = state.map { it.requests }.distinctUntilChanged()
 
-  // Filtered list applying AND across facets (OR within facet)
+  /** Filtered list applying AND across facets (OR within each facet). */
   val filteredRequests: StateFlow<List<Request>> =
       combine(allRequests, selectedTypes, selectedStatuses, selectedTags) {
               requests,
@@ -61,11 +86,10 @@ class RequestListViewModel(
               typeOk && statusOk && tagsOk
             }
           }
-          .map { it }
           .distinctUntilChanged()
-          .stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.Eagerly, emptyList())
+          .stateInEager(viewModelScope, emptyList())
 
-  // Facet counts with self-exclusion
+  /** Facet counts with self-exclusion across other active facets. */
   val typeCounts: StateFlow<Map<RequestType, Int>> =
       combine(allRequests, selectedStatuses, selectedTags) { requests, statuses, tags ->
             val base =
@@ -83,7 +107,7 @@ class RequestListViewModel(
             counts.toMap()
           }
           .distinctUntilChanged()
-          .stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.Eagerly, emptyMap())
+          .stateInEager(viewModelScope, emptyMap())
 
   val statusCounts: StateFlow<Map<RequestStatus, Int>> =
       combine(allRequests, selectedTypes, selectedTags) { requests, types, tags ->
@@ -99,7 +123,7 @@ class RequestListViewModel(
             counts.toMap()
           }
           .distinctUntilChanged()
-          .stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.Eagerly, emptyMap())
+          .stateInEager(viewModelScope, emptyMap())
 
   val tagCounts: StateFlow<Map<Tags, Int>> =
       combine(allRequests, selectedTypes, selectedStatuses) { requests, types, statuses ->
@@ -115,41 +139,50 @@ class RequestListViewModel(
             counts.toMap()
           }
           .distinctUntilChanged()
-          .stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.Eagerly, emptyMap())
+          .stateInEager(viewModelScope, emptyMap())
 
+  /** Toggle a request type filter. */
   fun toggleType(type: RequestType) {
     _selectedTypes.update { current -> if (type in current) current - type else current + type }
   }
 
+  /** Toggle a request status filter. */
   fun toggleStatus(status: RequestStatus) {
     _selectedStatuses.update { current ->
       if (status in current) current - status else current + status
     }
   }
 
+  /** Toggle a tag filter. */
   fun toggleTag(tag: Tags) {
     _selectedTags.update { current -> if (tag in current) current - tag else current + tag }
   }
 
+  /** Clears all active filters. */
   fun clearAllFilters() {
     _selectedTypes.value = emptySet()
     _selectedStatuses.value = emptySet()
     _selectedTags.value = emptySet()
   }
 
+  /** Loads all requests and their profile icons. Leaves previous list intact on error. */
   fun loadRequests() {
-    _state.value = RequestListState(isLoading = true)
+    _state.update { it.copy(isLoading = true) }
     viewModelScope.launch {
       try {
         val requests = requestRepository.getAllRequests()
-        _state.value = _state.value.copy(requests = requests, isLoading = false)
+        _state.update { it.copy(requests = requests, isLoading = false, errorMessage = null) }
         requests.forEach { loadProfileImage(it.creatorId) }
       } catch (e: Exception) {
-        _state.value = RequestListState(errorMessage = e.message)
+        if (verboseLogging) Log.e("RequestListViewModel", "Failed to load requests", e)
+        val friendly =
+            e.message?.takeIf { it.isNotBlank() } ?: "Failed to load requests. Please try again."
+        _state.update { it.copy(isLoading = false, errorMessage = friendly) }
       }
     }
   }
 
+  /** Loads a profile image. Failures are non-fatal: logged and stored as null. */
   fun loadProfileImage(userId: String) {
     if (_profileIcons.value.containsKey(userId)) return
     viewModelScope.launch {
@@ -158,14 +191,40 @@ class RequestListViewModel(
         val bmp = profile.photo
         _profileIcons.value = _profileIcons.value + (userId to bmp)
       } catch (e: Exception) {
+        if (verboseLogging) Log.e("RequestListViewModel", "Failed to load profile for $userId", e)
         _profileIcons.value = _profileIcons.value + (userId to null)
       }
     }
   }
+
+  /** Clears the current error message, if any. */
+  fun clearError() {
+    _state.update { it.copy(errorMessage = null) }
+  }
+
+  /** Centralizes navigation decision based on current user id. */
+  fun handleRequestClick(
+      request: Request,
+      onNavigateEdit: (String) -> Unit,
+      onNavigateAccept: (String) -> Unit
+  ) {
+    val id = _currentUserId.value
+    if (id != null && request.creatorId == id) onNavigateEdit(request.requestId)
+    else onNavigateAccept(request.requestId)
+  }
 }
 
+/** UI state for the request list screen. */
 data class RequestListState(
     val requests: List<Request> = emptyList(),
     val isLoading: Boolean = false,
     val errorMessage: String? = null
 )
+
+/**
+ * Collect this Flow eagerly into a StateFlow with the given [scope] and [initial] value.
+ *
+ * This avoids repeating `stateIn(scope, SharingStarted.Eagerly, initial)`.
+ */
+fun <T> Flow<T>.stateInEager(scope: CoroutineScope, initial: T): StateFlow<T> =
+    this.stateIn(scope, SharingStarted.Eagerly, initial)

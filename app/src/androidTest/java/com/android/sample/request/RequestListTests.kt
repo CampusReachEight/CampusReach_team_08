@@ -419,4 +419,40 @@ class RequestListTests : BaseEmulatorTest() {
         .assertExists()
         .assertIsDisplayed()
   }
+
+  @Test
+  fun errorDialog_shown_whenLoadFails() {
+    // Failing repository triggers ViewModel to set errorMessage
+    class FailingRequestRepository : RequestRepository {
+      override fun getNewRequestId(): String = "n/a"
+
+      override suspend fun getAllRequests(): List<Request> {
+        throw RuntimeException("Simulated load failure")
+      }
+
+      override suspend fun getRequest(requestId: String): Request = throw NotImplementedError()
+
+      override suspend fun addRequest(request: Request) = throw NotImplementedError()
+
+      override suspend fun updateRequest(requestId: String, updatedRequest: Request) =
+          throw NotImplementedError()
+
+      override suspend fun deleteRequest(requestId: String) = throw NotImplementedError()
+
+      override fun hasUserAcceptedRequest(request: Request): Boolean = false
+
+      override suspend fun acceptRequest(requestId: String) = throw NotImplementedError()
+
+      override suspend fun cancelAcceptance(requestId: String) = throw NotImplementedError()
+    }
+
+    val vm =
+        RequestListViewModel(FailingRequestRepository(), FakeUserProfileRepository(createBitmap()))
+
+    composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
+
+    // Wait until error is set and ensure the dialog content is shown
+    composeTestRule.waitUntil(5_000) { vm.state.value.errorMessage != null }
+    composeTestRule.onNodeWithTag(RequestListTestTags.ERROR_MESSAGE_DIALOG).assertIsDisplayed()
+  }
 }
