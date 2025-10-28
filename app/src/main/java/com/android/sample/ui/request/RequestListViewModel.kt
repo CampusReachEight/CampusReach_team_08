@@ -208,9 +208,13 @@ class RequestListViewModel(
       onNavigateEdit: (String) -> Unit,
       onNavigateAccept: (String) -> Unit
   ) {
-    val id = _currentUserId.value
-    if (id != null && request.creatorId == id) onNavigateEdit(request.requestId)
-    else onNavigateAccept(request.requestId)
+    Firebase.auth.currentUser?.uid?.let { id ->
+      if (request.creatorId == id) {
+        onNavigateEdit(request.requestId)
+      } else {
+        onNavigateAccept(request.requestId)
+      }
+    }
   }
 }
 
