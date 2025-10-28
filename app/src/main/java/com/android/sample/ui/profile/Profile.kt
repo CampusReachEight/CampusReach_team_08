@@ -28,6 +28,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.ui.navigation.NavigationTestTags
+import com.android.sample.ui.theme.UiDimens
 import com.android.sample.ui.theme.appPalette
 
 object ProfileTestTags {
@@ -49,21 +50,24 @@ object ProfileTestTags {
 }
 
 object ProfileDimens {
-  val Horizontal = 16.dp
-  val Vertical = 8.dp
-  val CardElevation = 4.dp
-  val ProfilePicture = 80.dp
-  val HeaderPadding = 16.dp
-  val HeaderSpacer = 16.dp
-  val StatCardHeight = 150.dp
-  val StatCardVerticalPadding = 20.dp
-  val StatCardHorizontalPadding = 16.dp
-  val StatCardSpacer = 6.dp
-  val InfoCornerRadius = 4.dp
-  val InfoSpacer = 4.dp
-  val ActionVerticalPadding = 10.dp
-  val ActionInternalPadding = 10.dp
-  val IconSize = 40.dp
+    val Horizontal = UiDimens.SpacingMd
+    val Vertical = UiDimens.SpacingSm
+    val CardElevation = UiDimens.CardElevation
+    val ProfilePicture = UiDimens.IconLarge
+    val HeaderPadding = UiDimens.SpacingMd
+    val HeaderSpacer = UiDimens.SpacingMd
+
+    // Stat Card dimensions
+    val StatCardHeight = UiDimens.SpacingXxl
+    val StatCardVerticalPadding = UiDimens.SpacingLg
+    val StatCardHorizontalPadding = UiDimens.SpacingMd
+    val StatCardSpacer = UiDimens.SpacingXs
+
+    val InfoCornerRadius = UiDimens.CornerRadiusSm
+    val InfoSpacer = UiDimens.SpacingSm
+    val ActionVerticalPadding = UiDimens.SpacingSm
+    val ActionInternalPadding = UiDimens.SpacingSm
+    val IconSize = UiDimens.IconMedium
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
