@@ -2,8 +2,6 @@ package com.android.sample.model.profile
 
 import android.graphics.Bitmap
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.google.firebase.Timestamp
-import com.google.firebase.firestore.Blob
 import java.util.Date
 import org.junit.Assert.*
 import org.junit.Test
@@ -74,8 +72,6 @@ class UserProfileTest {
     assertEquals(profile.section, reconstructed.section)
     assertEquals(profile.arrivalDate.time / 1000, reconstructed.arrivalDate.time / 1000)
   }
-
-
 
   @Test
   fun bitmapFromBlob_nullReturnsNull() {
