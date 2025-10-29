@@ -9,16 +9,21 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.sample.model.map.Location
 import com.android.sample.model.profile.Section
 import com.android.sample.model.profile.UserProfile
 import com.android.sample.model.profile.UserProfileRepository
+import com.android.sample.model.profile.UserProfileRepositoryFirestore
 import com.android.sample.model.request.Request
 import com.android.sample.model.request.RequestRepository
+import com.android.sample.model.request.RequestRepositoryFirestore
 import com.android.sample.model.request.RequestStatus
 import com.android.sample.model.request.RequestType
 import com.android.sample.model.request.Tags
+import com.android.sample.model.request.displayString
 import com.android.sample.ui.request.RequestListScreen
 import com.android.sample.ui.request.RequestListTestTags
 import com.android.sample.ui.request.RequestListViewModel
@@ -267,5 +272,187 @@ class RequestListTests : BaseEmulatorTest() {
     composeTestRule
         .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM_ICON, useUnmergedTree = true)
         .assertCountEquals(3)
+  }
+
+  @Test
+  fun filterButtons_showTitles_and_openMenus() {
+    val vm =
+        RequestListViewModel(
+            FakeRequestRepository(emptyList()), FakeUserProfileRepository(createBitmap()))
+
+    composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
+    composeTestRule.waitForIdle()
+
+    val typeTitle = RequestType.toString()
+    val statusTitle = RequestStatus.toString()
+    val tagsTitle = Tags.toString()
+
+    // Titles with (0) selected by default
+    composeTestRule.onNodeWithText("$typeTitle (0)").assertExists().assertIsDisplayed()
+    composeTestRule.onNodeWithText("$statusTitle (0)").assertExists().assertIsDisplayed()
+    composeTestRule.onNodeWithText("$tagsTitle (0)").assertExists().assertIsDisplayed()
+
+    // Open each menu and verify the per-menu search bar appears (no crash on click)
+    composeTestRule
+        .onNodeWithTag(RequestListTestTags.REQUEST_TYPE_FILTER_DROPDOWN_BUTTON)
+        .assertExists()
+        .performClick()
+    composeTestRule.onNodeWithTag(RequestListTestTags.REQUEST_TYPE_FILTER_SEARCH_BAR).assertExists()
+
+    // Close it by clicking again
+    composeTestRule
+        .onNodeWithTag(RequestListTestTags.REQUEST_TYPE_FILTER_DROPDOWN_BUTTON)
+        .performClick()
+
+    composeTestRule
+        .onNodeWithTag(RequestListTestTags.REQUEST_STATUS_FILTER_DROPDOWN_BUTTON)
+        .assertExists()
+        .performClick()
+    composeTestRule
+        .onNodeWithTag(RequestListTestTags.REQUEST_STATUS_FILTER_SEARCH_BAR)
+        .assertExists()
+    composeTestRule
+        .onNodeWithTag(RequestListTestTags.REQUEST_STATUS_FILTER_DROPDOWN_BUTTON)
+        .performClick()
+
+    composeTestRule
+        .onNodeWithTag(RequestListTestTags.REQUEST_TAG_FILTER_DROPDOWN_BUTTON)
+        .assertExists()
+        .performClick()
+    composeTestRule.onNodeWithTag(RequestListTestTags.REQUEST_TAG_FILTER_SEARCH_BAR).assertExists()
+  }
+
+  @Test
+  fun selectingType_updatesSelectedCount_inHeader() {
+    val request =
+        Request(
+            requestId = "req_1",
+            title = "Title 1",
+            description = "Description 1",
+            requestType = listOf(RequestType.OTHER),
+            location = Location(0.0, 0.0, "Loc"),
+            locationName = "LocName",
+            status = RequestStatus.OPEN,
+            startTimeStamp = Date(),
+            expirationTime = Date(System.currentTimeMillis() + 3_600_000),
+            people = emptyList(),
+            tags = listOf(Tags.INDOOR),
+            creatorId = currentUserId)
+    val repository = FakeRequestRepository(listOf(request))
+    val vm = RequestListViewModel(repository)
+
+    composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
+    composeTestRule.waitForIdle()
+
+    val typeTitle = RequestType.toString()
+
+    composeTestRule
+        .onNodeWithTag(RequestListTestTags.REQUEST_TYPE_FILTER_DROPDOWN_BUTTON)
+        .assertExists()
+        .performClick()
+
+    val otherTag = RequestListTestTags.getRequestTypeFilterTag(RequestType.OTHER)
+    composeTestRule.onNodeWithTag(otherTag).assertExists().performClick()
+
+    composeTestRule.onNodeWithText("$typeTitle (1)").assertExists().assertIsDisplayed()
+  }
+
+  @Test
+  fun dropdownSearch_filtersOptions_locally() {
+    val vm =
+        RequestListViewModel(
+            FakeRequestRepository(emptyList()), FakeUserProfileRepository(createBitmap()))
+
+    composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
+    composeTestRule.waitForIdle()
+
+    // Open Tags menu and search for "ind" (should match "Indoor")
+    composeTestRule
+        .onNodeWithTag(RequestListTestTags.REQUEST_TAG_FILTER_DROPDOWN_BUTTON)
+        .performClick()
+    composeTestRule
+        .onNodeWithTag(RequestListTestTags.REQUEST_TAG_FILTER_SEARCH_BAR)
+        .performTextInput("ind")
+
+    val indoorTag = RequestListTestTags.getRequestTagFilterTag(Tags.INDOOR.displayString())
+    val outdoorTag = RequestListTestTags.getRequestTagFilterTag(Tags.OUTDOOR.displayString())
+
+    composeTestRule.onNodeWithTag(indoorTag).assertExists()
+    composeTestRule.onAllNodesWithTag(outdoorTag).assertCountEquals(0)
+  }
+
+  @Test
+  fun filterButtons_openMenus_withFirestoreRepo_noCrash() {
+    val vm =
+        RequestListViewModel(RequestRepositoryFirestore(db), UserProfileRepositoryFirestore(db))
+
+    composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
+    composeTestRule.waitForIdle()
+
+    // Open Type menu and verify search bar appears
+    composeTestRule
+        .onNodeWithTag(RequestListTestTags.REQUEST_TYPE_FILTER_DROPDOWN_BUTTON)
+        .assertExists()
+        .performClick()
+    composeTestRule
+        .onNodeWithTag(RequestListTestTags.REQUEST_TYPE_FILTER_SEARCH_BAR)
+        .assertExists()
+        .assertIsDisplayed()
+
+    // Open Status menu and verify search bar appears
+    composeTestRule
+        .onNodeWithTag(RequestListTestTags.REQUEST_STATUS_FILTER_DROPDOWN_BUTTON)
+        .assertExists()
+        .performClick()
+    composeTestRule
+        .onNodeWithTag(RequestListTestTags.REQUEST_STATUS_FILTER_SEARCH_BAR)
+        .assertExists()
+        .assertIsDisplayed()
+
+    // Open Tags menu and verify search bar appears
+    composeTestRule
+        .onNodeWithTag(RequestListTestTags.REQUEST_TAG_FILTER_DROPDOWN_BUTTON)
+        .assertExists()
+        .performClick()
+    composeTestRule
+        .onNodeWithTag(RequestListTestTags.REQUEST_TAG_FILTER_SEARCH_BAR)
+        .assertExists()
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun errorDialog_shown_whenLoadFails() {
+    // Failing repository triggers ViewModel to set errorMessage
+    class FailingRequestRepository : RequestRepository {
+      override fun getNewRequestId(): String = "n/a"
+
+      override suspend fun getAllRequests(): List<Request> {
+        throw RuntimeException("Simulated load failure")
+      }
+
+      override suspend fun getRequest(requestId: String): Request = throw NotImplementedError()
+
+      override suspend fun addRequest(request: Request) = throw NotImplementedError()
+
+      override suspend fun updateRequest(requestId: String, updatedRequest: Request) =
+          throw NotImplementedError()
+
+      override suspend fun deleteRequest(requestId: String) = throw NotImplementedError()
+
+      override fun hasUserAcceptedRequest(request: Request): Boolean = false
+
+      override suspend fun acceptRequest(requestId: String) = throw NotImplementedError()
+
+      override suspend fun cancelAcceptance(requestId: String) = throw NotImplementedError()
+    }
+
+    val vm =
+        RequestListViewModel(FailingRequestRepository(), FakeUserProfileRepository(createBitmap()))
+
+    composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
+
+    // Wait until error is set and ensure the dialog content is shown
+    composeTestRule.waitUntil(5_000) { vm.state.value.errorMessage != null }
+    composeTestRule.onNodeWithTag(RequestListTestTags.ERROR_MESSAGE_DIALOG).assertIsDisplayed()
   }
 }
