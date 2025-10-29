@@ -10,27 +10,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import kotlin.compareTo
-
-@Composable
-private fun ColorSwatch(name: String, color: Color) {
-  Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(110.dp)) {
-    Box(modifier = Modifier.size(72.dp).background(color))
-    Spacer(modifier = Modifier.height(6.dp))
-    Text(
-        text = name,
-        style = MaterialTheme.typography.bodySmall,
-        color = AppColors.BlackColor,
-        textAlign = TextAlign.Center,
-        maxLines = 2,
-        overflow = TextOverflow.Ellipsis,
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 2.dp))
-  }
-}
 
 @Composable
 fun ThemePreviewContent(textColor: Color = MaterialTheme.colorScheme.onBackground) {
@@ -46,12 +30,21 @@ fun ThemePreviewContent(textColor: Color = MaterialTheme.colorScheme.onBackgroun
           textAlign = TextAlign.Center,
           maxLines = 2,
           overflow = TextOverflow.Ellipsis,
-          modifier = Modifier.fillMaxWidth().padding(horizontal = 2.dp))
+          modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 2.dp)
+            .testTag("swatch_$name")
+      )
     }
   }
 
   Column(modifier = Modifier.padding(16.dp)) {
-    Text("Utility colors", style = MaterialTheme.typography.titleMedium, color = textColor)
+    Text(
+      "Utility colors",
+      style = MaterialTheme.typography.titleMedium,
+      color = textColor,
+      modifier = Modifier.testTag("heading_utility_colors")
+    )
     Spacer(modifier = Modifier.height(8.dp))
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
       Swatch("BlackColor", AppColors.BlackColor)
@@ -60,7 +53,12 @@ fun ThemePreviewContent(textColor: Color = MaterialTheme.colorScheme.onBackgroun
 
     Spacer(modifier = Modifier.height(20.dp))
 
-    Text("App palette (light)", style = MaterialTheme.typography.titleMedium, color = textColor)
+    Text(
+      "App palette (light)",
+      style = MaterialTheme.typography.titleMedium,
+      color = textColor,
+      modifier = Modifier.testTag("heading_app_palette_light")
+    )
     Spacer(modifier = Modifier.height(8.dp))
 
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -77,7 +75,12 @@ fun ThemePreviewContent(textColor: Color = MaterialTheme.colorScheme.onBackgroun
 
     Spacer(modifier = Modifier.height(20.dp))
 
-    Text("App palette (dark)", style = MaterialTheme.typography.titleMedium, color = textColor)
+    Text(
+      "App palette (dark)",
+      style = MaterialTheme.typography.titleMedium,
+      color = textColor,
+      modifier = Modifier.testTag("heading_app_palette_dark")
+    )
     Spacer(modifier = Modifier.height(8.dp))
 
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -93,9 +96,19 @@ fun ThemePreviewContent(textColor: Color = MaterialTheme.colorScheme.onBackgroun
     }
 
     Spacer(modifier = Modifier.height(20.dp))
-    Text("Typography sample", style = MaterialTheme.typography.titleMedium, color = textColor)
+    Text(
+      "Typography sample",
+      style = MaterialTheme.typography.titleMedium,
+      color = textColor,
+      modifier = Modifier.testTag("heading_typography_sample")
+    )
     Spacer(modifier = Modifier.height(8.dp))
-    Text("Body / small / caption", style = MaterialTheme.typography.bodyMedium, color = textColor)
+    Text(
+      "Body / small / caption",
+      style = MaterialTheme.typography.bodyMedium,
+      color = textColor,
+      modifier = Modifier.testTag("typography_sample_text")
+    )
   }
 }
 
