@@ -141,7 +141,6 @@ class RequestListTests : BaseEmulatorTest() {
     }
   }
 
-
   @Test
   fun cacheDoesNotReloadTwice() = runBlocking {
     val user = "userX"
