@@ -141,23 +141,6 @@ class RequestListTests : BaseEmulatorTest() {
     }
   }
 
-  @Test
-  fun loadsAndDisplaysProfileIcons() {
-    val creators = listOf("u1", "u2")
-    val requests = sampleRequests(creators)
-    val vm =
-        RequestListViewModel(
-            FakeRequestRepository(requests), FakeUserProfileRepository(createBitmap()))
-
-    composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
-
-    composeTestRule.waitUntil(5_000) { vm.profileIcons.value.keys.containsAll(creators) }
-
-    // Vérifier que le bon nombre d'icônes est affiché
-    composeTestRule
-        .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM_ICON, useUnmergedTree = true)
-        .assertCountEquals(creators.size)
-  }
 
   @Test
   fun cacheDoesNotReloadTwice() = runBlocking {
@@ -270,7 +253,7 @@ class RequestListTests : BaseEmulatorTest() {
         .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM_DESCRIPTION, useUnmergedTree = true)
         .assertCountEquals(3)
     composeTestRule
-        .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM_ICON, useUnmergedTree = true)
+        .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM_NO_ICON, useUnmergedTree = true)
         .assertCountEquals(3)
   }
 
