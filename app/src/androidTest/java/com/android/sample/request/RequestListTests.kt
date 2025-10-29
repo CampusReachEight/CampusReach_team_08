@@ -82,7 +82,7 @@ class RequestListTests : BaseEmulatorTest() {
           name = "John",
           lastName = "Doe",
           email = null,
-          photo = bitmap,
+          photo = null,
           kudos = 0,
           section = Section.OTHER,
           arrivalDate = Date())
