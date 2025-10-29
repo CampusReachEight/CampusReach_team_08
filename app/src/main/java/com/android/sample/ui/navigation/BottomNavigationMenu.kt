@@ -79,25 +79,3 @@ fun BottomNavigationMenu(
       },
   )
 }
-
-@Preview(name = "Light", showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_NO)
-@Composable
-fun BottomNavigationMenuPreview() {
-  SampleAppTheme(darkTheme = false) {
-    BottomNavigationMenu(
-        selectedNavigationTab = NavigationTab.Requests,
-        navigationActions = null,
-    )
-  }
-}
-
-@Preview(name = "Dark", showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
-@Composable
-fun BottomNavigationMenuDarkPreview() {
-  SampleAppTheme(darkTheme = true) {
-    BottomNavigationMenu(
-        selectedNavigationTab = NavigationTab.Requests,
-        navigationActions = null,
-    )
-  }
-}
