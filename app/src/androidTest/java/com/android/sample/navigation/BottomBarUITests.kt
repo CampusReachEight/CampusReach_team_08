@@ -1,14 +1,15 @@
 package com.github.se.bootcamp.ui.navigation
 
 import androidx.activity.ComponentActivity
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.sample.ui.navigation.NavigationTestTags
-import com.android.sample.ui.theme.BottomNavigationMenu
-import com.android.sample.ui.theme.NavigationTab
+import com.android.sample.ui.navigation.BottomNavigationMenu
+import com.android.sample.ui.navigation.NavigationTab
 import junit.framework.TestCase
 import org.junit.Before
 import org.junit.Rule
@@ -26,7 +27,7 @@ class BottomBarUITests : TestCase() {
       BottomNavigationMenu(
           selectedNavigationTab = NavigationTab.Requests,
           navigationActions = null,
-          modifier = androidx.compose.ui.Modifier,
+          modifier = Modifier,
       )
     }
   }
