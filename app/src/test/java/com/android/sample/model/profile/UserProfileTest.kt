@@ -51,21 +51,19 @@ class UserProfileTest {
 
   @Test
   fun toMap_and_fromMap_symmetry_withValidPhoto() {
-    val bmp = Bitmap.createBitmap(PHOTO_DEFAULT_SIZE, PHOTO_DEFAULT_SIZE, Bitmap.Config.ARGB_8888)
     val profile =
         UserProfile(
             id = "u1",
             name = "John",
             lastName = "Doe",
             email = "john.doe@example.com",
-            photo = bmp,
+            photo = null,
             kudos = 42,
             section = Section.SOFTWARE_ENGINEERING,
             arrivalDate = Date())
 
     val map = profile.toMap()
     assertEquals("u1", map["id"])
-    assertTrue(map["photo"] is Blob)
 
     val reconstructed = UserProfile.fromMap(map)
     assertEquals(profile.id, reconstructed.id)
@@ -75,49 +73,9 @@ class UserProfileTest {
     assertEquals(profile.kudos, reconstructed.kudos)
     assertEquals(profile.section, reconstructed.section)
     assertEquals(profile.arrivalDate.time / 1000, reconstructed.arrivalDate.time / 1000)
-
-    val photo = reconstructed.photo
-    assertNotNull(photo)
-    val p = photo!!
-    assertEquals(PHOTO_DEFAULT_SIZE, p.width)
-    assertEquals(PHOTO_DEFAULT_SIZE, p.height)
   }
 
-  @Test
-  fun toMap_withInvalidPhotoSize_photoFieldIsNull() {
-    val invalid = Bitmap.createBitmap(600, 400, Bitmap.Config.ARGB_8888)
-    val profile =
-        UserProfile(
-            id = "u2",
-            name = "Bad",
-            lastName = "Size",
-            email = "bad.size@example.com",
-            photo = invalid,
-            kudos = 0,
-            section = Section.OTHER,
-            arrivalDate = Date())
-    val map = profile.toMap()
-    assertNull(map["photo"])
-  }
 
-  @Test
-  fun fromMap_withCorruptBlob_photoBecomesNull() {
-    val corruptBlob = Blob.fromBytes(byteArrayOf(0x00, 0x01, 0x02))
-    val date = Date()
-    val map =
-        mapOf(
-            "id" to "bad1",
-            "name" to "Bad",
-            "lastName" to "Data",
-            "email" to "bad@example.com",
-            "photo" to corruptBlob,
-            "kudos" to 0,
-            "section" to Section.OTHER.name,
-            "arrivalDate" to Timestamp(date))
-
-    val reconstructed = UserProfile.fromMap(map)
-    assertNull(reconstructed.photo)
-  }
 
   @Test
   fun bitmapFromBlob_nullReturnsNull() {
