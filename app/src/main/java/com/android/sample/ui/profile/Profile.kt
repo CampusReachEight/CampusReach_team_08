@@ -20,12 +20,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.theme.UiDimens
@@ -50,24 +48,24 @@ object ProfileTestTags {
 }
 
 object ProfileDimens {
-    val Horizontal = UiDimens.SpacingMd
-    val Vertical = UiDimens.SpacingSm
-    val CardElevation = UiDimens.CardElevation
-    val ProfilePicture = UiDimens.IconLarge
-    val HeaderPadding = UiDimens.SpacingMd
-    val HeaderSpacer = UiDimens.SpacingMd
+  val Horizontal = UiDimens.SpacingMd
+  val Vertical = UiDimens.SpacingSm
+  val CardElevation = UiDimens.CardElevation
+  val ProfilePicture = UiDimens.IconLarge
+  val HeaderPadding = UiDimens.SpacingMd
+  val HeaderSpacer = UiDimens.SpacingMd
 
-    // Stat Card dimensions
-    val StatCardHeight = UiDimens.StatCardHeight
-    val StatCardVerticalPadding = UiDimens.SpacingLg
-    val StatCardHorizontalPadding = UiDimens.SpacingMd
-    val StatCardSpacer = UiDimens.SpacingXs
+  // Stat Card dimensions
+  val StatCardHeight = UiDimens.StatCardHeight
+  val StatCardVerticalPadding = UiDimens.SpacingLg
+  val StatCardHorizontalPadding = UiDimens.SpacingMd
+  val StatCardSpacer = UiDimens.SpacingXs
 
-    val InfoCornerRadius = UiDimens.CornerRadiusSm
-    val InfoSpacer = UiDimens.SpacingSm
-    val ActionVerticalPadding = UiDimens.SpacingSm
-    val ActionInternalPadding = UiDimens.SpacingSm
-    val IconSize = UiDimens.IconMedium
+  val InfoCornerRadius = UiDimens.CornerRadiusSm
+  val InfoSpacer = UiDimens.SpacingSm
+  val ActionVerticalPadding = UiDimens.SpacingSm
+  val ActionInternalPadding = UiDimens.SpacingSm
+  val IconSize = UiDimens.IconMedium
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -356,7 +354,10 @@ fun ActionItem(
                   modifier = Modifier.padding(end = ProfileDimens.Horizontal),
                   tint = appPalette().accent)
               Column(modifier = Modifier.weight(1f)) {
-                Text(text = title, style = MaterialTheme.typography.bodyLarge, color = appPalette().text)
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = appPalette().text)
                 Text(
                     text = subtitle,
                     style = MaterialTheme.typography.bodySmall,

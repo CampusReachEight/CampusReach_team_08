@@ -51,8 +51,7 @@ fun TopNavigationBar(
             }
       },
       colors =
-          TopAppBarDefaults.centerAlignedTopAppBarColors(
-              containerColor = appPalette().surface))
+          TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = appPalette().surface))
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

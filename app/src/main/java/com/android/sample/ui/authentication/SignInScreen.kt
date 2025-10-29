@@ -10,7 +10,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.unit.dp
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialCancellationException
@@ -100,7 +99,10 @@ fun SignInScreen(
 
   // Main UI layout
   Column(
-      modifier = Modifier.fillMaxSize().padding(UiDimens.SpacingXl).testTag(NavigationTestTags.LOGIN_SCREEN),
+      modifier =
+          Modifier.fillMaxSize()
+              .padding(UiDimens.SpacingXl)
+              .testTag(NavigationTestTags.LOGIN_SCREEN),
       horizontalAlignment = Alignment.CenterHorizontally,
       verticalArrangement = Arrangement.Center) {
         // App logo icon
@@ -114,25 +116,26 @@ fun SignInScreen(
         Text(
             text = "Welcome",
             style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(bottom = UiDimens.SpacingLg).testTag(SignInScreenTestTags.LOGIN_TITLE))
+            modifier =
+                Modifier.padding(bottom = UiDimens.SpacingLg)
+                    .testTag(SignInScreenTestTags.LOGIN_TITLE))
 
         // Google sign-in button
         Button(
             onClick = { startGoogleLogin() },
             enabled = !isLoading,
             modifier =
-                Modifier.fillMaxWidth().height(UiDimens.ButtonHeight).testTag(SignInScreenTestTags.LOGIN_BUTTON),
+                Modifier.fillMaxWidth()
+                    .height(UiDimens.ButtonHeight)
+                    .testTag(SignInScreenTestTags.LOGIN_BUTTON),
             colors =
                 ButtonDefaults.buttonColors(
                     containerColor = appPalette().accent,
-                    disabledContainerColor = appPalette().secondary
-                )
-        ) {
+                    disabledContainerColor = appPalette().secondary)) {
               if (isLoading) {
                 // Show loading indicator while signing in
                 CircularProgressIndicator(
-                    modifier = Modifier.size(UiDimens.ProgressSize),
-                    color = appPalette().accent)
+                    modifier = Modifier.size(UiDimens.ProgressSize), color = appPalette().accent)
               } else {
                 // Button content: Google icon and text
                 Row(
@@ -141,8 +144,7 @@ fun SignInScreen(
                       Icon(
                           imageVector = Icons.Default.AccountCircle,
                           contentDescription = "Google",
-                          modifier = Modifier.size(UiDimens.ProgressSize)
-                      )
+                          modifier = Modifier.size(UiDimens.ProgressSize))
                       Spacer(modifier = Modifier.width(UiDimens.SpacingSm))
                       Text("Sign in with Google")
                     }
@@ -153,10 +155,9 @@ fun SignInScreen(
         if (errorText != null) {
           Spacer(modifier = Modifier.height(UiDimens.SpacingMd))
           Text(
-            text = errorText!!,
-            modifier = Modifier.padding(UiDimens.SpacingMd),
-            color = appPalette().error
-          )
+              text = errorText!!,
+              modifier = Modifier.padding(UiDimens.SpacingMd),
+              color = appPalette().error)
         }
       }
 }

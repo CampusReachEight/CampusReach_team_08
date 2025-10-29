@@ -7,9 +7,9 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.navigation.BottomNavigationMenu
 import com.android.sample.ui.navigation.NavigationTab
+import com.android.sample.ui.navigation.NavigationTestTags
 import junit.framework.TestCase
 import org.junit.Before
 import org.junit.Rule
