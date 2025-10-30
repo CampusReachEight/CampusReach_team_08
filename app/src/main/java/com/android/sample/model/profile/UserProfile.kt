@@ -2,6 +2,7 @@ package com.android.sample.model.profile
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.net.Uri
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.Blob
 import java.io.ByteArrayOutputStream
@@ -41,7 +42,7 @@ data class UserProfile(
     val lastName: String,
     val email:
         String?, // User (or default settings) can choose to not share email with others -> nullable
-    val photo: Bitmap?, // Nullable Bitmap for user photo in case user hasn't set one
+    val photo: Uri?, // Nullable Bitmap for user photo in case user hasn't set one
     val kudos: Int,
     val section: Section,
     val arrivalDate: Date,
@@ -54,13 +55,12 @@ data class UserProfile(
   companion object {
     // Allows for deserialization from Firestore document data
     fun fromMap(data: Map<String, Any?>): UserProfile {
-      val blob = data["photo"] as Blob?
       return UserProfile(
           id = data["id"] as String,
           name = data["name"] as String,
           lastName = data["lastName"] as String,
           email = data["email"] as String?,
-          photo = bitmapFromBlob(blob),
+          photo = data["photo"]?.let { uriString -> Uri.parse(uriString as String) },
           kudos = (data["kudos"] as Number).toInt(),
           section = Section.valueOf(data["section"] as String),
           arrivalDate = (data["arrivalDate"] as Timestamp).toDate(),
@@ -116,7 +116,7 @@ data class UserProfile(
           "name" to name,
           "lastName" to lastName,
           "email" to email,
-          "photo" to bitmapToBlob(photo),
+          "photo" to photo,
           "kudos" to kudos,
           "section" to section.name,
           "arrivalDate" to Timestamp(arrivalDate),

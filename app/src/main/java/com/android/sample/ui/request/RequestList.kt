@@ -42,6 +42,7 @@ object RequestListTestTags {
   const val REQUEST_ITEM_TITLE = "requestItemTitle"
   const val REQUEST_ITEM_DESCRIPTION = "requestItemDescription"
   const val REQUEST_ITEM_ICON = "requestItemIcon"
+  const val REQUEST_ITEM_NO_ICON = "requestItemNoIcon"
   const val EMPTY_LIST_MESSAGE = "emptyListMessage"
 
   const val REQUEST_SEARCH_BAR = "requestSearchBar"
@@ -392,7 +393,9 @@ fun RequestListItem(
                 Modifier.size(ConstantRequestList.RequestItemIconSize)
                     .testTag(RequestListTestTags.REQUEST_ITEM_ICON))
       } else {
-        Box(Modifier.size(ConstantRequestList.RequestItemIconSize))
+        Box(
+            Modifier.size(ConstantRequestList.RequestItemIconSize)
+                .testTag(RequestListTestTags.REQUEST_ITEM_NO_ICON))
       }
       Spacer(Modifier.width(ConstantRequestList.RowSpacing))
       Column(Modifier.fillMaxWidth()) {
