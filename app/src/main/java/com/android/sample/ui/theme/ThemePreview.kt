@@ -30,21 +30,16 @@ fun ThemePreviewContent(textColor: Color = MaterialTheme.colorScheme.onBackgroun
           textAlign = TextAlign.Center,
           maxLines = 2,
           overflow = TextOverflow.Ellipsis,
-          modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 2.dp)
-            .testTag("swatch_$name")
-      )
+          modifier = Modifier.fillMaxWidth().padding(horizontal = 2.dp).testTag("swatch_$name"))
     }
   }
 
   Column(modifier = Modifier.padding(16.dp)) {
     Text(
-      "Utility colors",
-      style = MaterialTheme.typography.titleMedium,
-      color = textColor,
-      modifier = Modifier.testTag("heading_utility_colors")
-    )
+        "Utility colors",
+        style = MaterialTheme.typography.titleMedium,
+        color = textColor,
+        modifier = Modifier.testTag("heading_utility_colors"))
     Spacer(modifier = Modifier.height(8.dp))
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
       Swatch("BlackColor", AppColors.BlackColor)
@@ -54,11 +49,10 @@ fun ThemePreviewContent(textColor: Color = MaterialTheme.colorScheme.onBackgroun
     Spacer(modifier = Modifier.height(20.dp))
 
     Text(
-      "App palette (light)",
-      style = MaterialTheme.typography.titleMedium,
-      color = textColor,
-      modifier = Modifier.testTag("heading_app_palette_light")
-    )
+        "App palette (light)",
+        style = MaterialTheme.typography.titleMedium,
+        color = textColor,
+        modifier = Modifier.testTag("heading_app_palette_light"))
     Spacer(modifier = Modifier.height(8.dp))
 
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -76,11 +70,10 @@ fun ThemePreviewContent(textColor: Color = MaterialTheme.colorScheme.onBackgroun
     Spacer(modifier = Modifier.height(20.dp))
 
     Text(
-      "App palette (dark)",
-      style = MaterialTheme.typography.titleMedium,
-      color = textColor,
-      modifier = Modifier.testTag("heading_app_palette_dark")
-    )
+        "App palette (dark)",
+        style = MaterialTheme.typography.titleMedium,
+        color = textColor,
+        modifier = Modifier.testTag("heading_app_palette_dark"))
     Spacer(modifier = Modifier.height(8.dp))
 
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -97,18 +90,16 @@ fun ThemePreviewContent(textColor: Color = MaterialTheme.colorScheme.onBackgroun
 
     Spacer(modifier = Modifier.height(20.dp))
     Text(
-      "Typography sample",
-      style = MaterialTheme.typography.titleMedium,
-      color = textColor,
-      modifier = Modifier.testTag("heading_typography_sample")
-    )
+        "Typography sample",
+        style = MaterialTheme.typography.titleMedium,
+        color = textColor,
+        modifier = Modifier.testTag("heading_typography_sample"))
     Spacer(modifier = Modifier.height(8.dp))
     Text(
-      "Body / small / caption",
-      style = MaterialTheme.typography.bodyMedium,
-      color = textColor,
-      modifier = Modifier.testTag("typography_sample_text")
-    )
+        "Body / small / caption",
+        style = MaterialTheme.typography.bodyMedium,
+        color = textColor,
+        modifier = Modifier.testTag("typography_sample_text"))
   }
 }
 
