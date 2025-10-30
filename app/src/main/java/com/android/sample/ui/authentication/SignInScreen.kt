@@ -10,7 +10,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.unit.dp
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialCancellationException
@@ -18,6 +17,8 @@ import androidx.credentials.exceptions.GetCredentialException
 import androidx.credentials.exceptions.NoCredentialException
 import com.android.sample.R
 import com.android.sample.ui.navigation.NavigationTestTags
+import com.android.sample.ui.theme.UiDimens
+import com.android.sample.ui.theme.appPalette
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import kotlinx.coroutines.launch
 
@@ -98,34 +99,43 @@ fun SignInScreen(
 
   // Main UI layout
   Column(
-      modifier = Modifier.fillMaxSize().padding(32.dp).testTag(NavigationTestTags.LOGIN_SCREEN),
+      modifier =
+          Modifier.fillMaxSize()
+              .padding(UiDimens.SpacingXl)
+              .testTag(NavigationTestTags.LOGIN_SCREEN),
       horizontalAlignment = Alignment.CenterHorizontally,
       verticalArrangement = Arrangement.Center) {
         // App logo icon
         Icon(
             imageVector = Icons.Default.AccountCircle,
             contentDescription = "App Logo",
-            modifier = Modifier.size(80.dp).testTag(SignInScreenTestTags.APP_LOGO),
-            tint = MaterialTheme.colorScheme.primary)
+            modifier = Modifier.size(UiDimens.IconLarge).testTag(SignInScreenTestTags.APP_LOGO),
+            tint = appPalette().accent)
 
         // Welcome title
         Text(
             text = "Welcome",
             style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(bottom = 24.dp).testTag(SignInScreenTestTags.LOGIN_TITLE))
+            modifier =
+                Modifier.padding(bottom = UiDimens.SpacingLg)
+                    .testTag(SignInScreenTestTags.LOGIN_TITLE))
 
         // Google sign-in button
         Button(
             onClick = { startGoogleLogin() },
             enabled = !isLoading,
             modifier =
-                Modifier.fillMaxWidth().height(56.dp).testTag(SignInScreenTestTags.LOGIN_BUTTON),
+                Modifier.fillMaxWidth()
+                    .height(UiDimens.ButtonHeight)
+                    .testTag(SignInScreenTestTags.LOGIN_BUTTON),
             colors =
-                ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)) {
+                ButtonDefaults.buttonColors(
+                    containerColor = appPalette().accent,
+                    disabledContainerColor = appPalette().secondary)) {
               if (isLoading) {
                 // Show loading indicator while signing in
                 CircularProgressIndicator(
-                    modifier = Modifier.size(20.dp), color = MaterialTheme.colorScheme.onPrimary)
+                    modifier = Modifier.size(UiDimens.ProgressSize), color = appPalette().accent)
               } else {
                 // Button content: Google icon and text
                 Row(
@@ -134,8 +144,8 @@ fun SignInScreen(
                       Icon(
                           imageVector = Icons.Default.AccountCircle,
                           contentDescription = "Google",
-                          modifier = Modifier.size(20.dp))
-                      Spacer(modifier = Modifier.width(8.dp))
+                          modifier = Modifier.size(UiDimens.ProgressSize))
+                      Spacer(modifier = Modifier.width(UiDimens.SpacingSm))
                       Text("Sign in with Google")
                     }
               }
@@ -143,16 +153,11 @@ fun SignInScreen(
 
         // Display error message if present
         if (errorText != null) {
-          Spacer(modifier = Modifier.height(16.dp))
-          Card(
-              colors =
-                  CardDefaults.cardColors(
-                      containerColor = MaterialTheme.colorScheme.errorContainer)) {
-                Text(
-                    text = errorText!!,
-                    modifier = Modifier.padding(16.dp),
-                    color = MaterialTheme.colorScheme.onErrorContainer)
-              }
+          Spacer(modifier = Modifier.height(UiDimens.SpacingMd))
+          Text(
+              text = errorText!!,
+              modifier = Modifier.padding(UiDimens.SpacingMd),
+              color = appPalette().error)
         }
       }
 }

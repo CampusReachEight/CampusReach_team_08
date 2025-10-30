@@ -24,11 +24,11 @@ import com.android.sample.model.request.RequestStatus
 import com.android.sample.model.request.RequestType
 import com.android.sample.model.request.Tags
 import com.android.sample.model.request.displayString
+import com.android.sample.ui.navigation.BottomNavigationMenu
 import com.android.sample.ui.navigation.NavigationActions
+import com.android.sample.ui.navigation.NavigationTab
 import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.navigation.Screen
-import com.android.sample.ui.theme.BottomNavigationMenu
-import com.android.sample.ui.theme.NavigationTab
 import com.android.sample.ui.theme.TopNavigationBar
 
 // removed local magic number vals; use ConstantRequestList instead

@@ -24,14 +24,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.android.sample.ui.navigation.BottomNavigationMenu
 import com.android.sample.ui.navigation.NavigationActions
+import com.android.sample.ui.navigation.NavigationTab
 import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.navigation.Screen
-import com.android.sample.ui.theme.BottomNavigationMenu
-import com.android.sample.ui.theme.NavigationTab
 import com.android.sample.ui.theme.TopNavigationBar
+import com.android.sample.ui.theme.UiDimens
+import com.android.sample.ui.theme.appPalette
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -128,7 +131,7 @@ fun MapScreen(viewModel: MapViewModel = viewModel(), navigationActions: Navigati
 
           // Zoom controls
           Column(
-              modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
+              modifier = Modifier.align(Alignment.BottomEnd).padding(UiDimens.SpacingMd),
               horizontalAlignment = Alignment.CenterHorizontally) {
                 FloatingActionButton(
                     onClick = {
@@ -136,8 +139,16 @@ fun MapScreen(viewModel: MapViewModel = viewModel(), navigationActions: Navigati
                         cameraPositionState.animate(CameraUpdateFactory.zoomIn())
                       }
                     },
-                    modifier = Modifier.testTag(MapTestTags.ZOOM_IN_BUTTON).size(48.dp)) {
-                      Icon(imageVector = Icons.Default.Add, contentDescription = "Zoom In")
+                    modifier =
+                        Modifier.testTag(MapTestTags.ZOOM_IN_BUTTON)
+                            .size(UiDimens.SpacingXxl)
+                            .padding(UiDimens.SpacingXs),
+                    containerColor = appPalette().accent,
+                    contentColor = appPalette().surface) {
+                      Icon(
+                          imageVector = Icons.Default.Add,
+                          contentDescription = "Zoom In",
+                          tint = appPalette().surface)
                     }
 
                 FloatingActionButton(
@@ -148,8 +159,10 @@ fun MapScreen(viewModel: MapViewModel = viewModel(), navigationActions: Navigati
                     },
                     modifier =
                         Modifier.testTag(MapTestTags.ZOOM_OUT_BUTTON)
-                            .size(48.dp)
-                            .padding(top = 8.dp)) {
+                            .size(UiDimens.SpacingXxl)
+                            .padding(UiDimens.SpacingXs),
+                    containerColor = appPalette().accent,
+                    contentColor = appPalette().surface) {
                       Icon(imageVector = Icons.Default.Remove, contentDescription = "Zoom Out")
                     }
               }
@@ -171,4 +184,10 @@ fun MapScreen(viewModel: MapViewModel = viewModel(), navigationActions: Navigati
           }
         }
       })
+}
+
+@Preview(showBackground = true)
+@Composable
+fun MapPreview() {
+  MapScreen()
 }

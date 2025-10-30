@@ -9,30 +9,54 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-private val DarkColorScheme =
-    darkColorScheme(primary = Purple80, secondary = PurpleGrey80, tertiary = Pink80)
-
 private val LightColorScheme =
     lightColorScheme(
-        primary = Purple40, secondary = PurpleGrey40, tertiary = Pink40
+        primary = AppColors.PrimaryColor,
+        onPrimary = AppColors.BlackColor,
+        primaryContainer = AppColors.PrimaryColor,
+        onPrimaryContainer = AppColors.BlackColor,
+        secondary = AppColors.SecondaryColor,
+        onSecondary = AppColors.BlackColor,
+        tertiary = AppColors.AccentColor,
+        onTertiary = AppColors.WhiteColor,
+        background = AppColors.WhiteColor,
+        onBackground = AppColors.BlackColor,
+        surface = AppColors.WhiteColor,
+        onSurface = AppColors.BlackColor,
+        error = AppColors.ErrorColor,
+        onError = AppColors.WhiteColor)
 
-        /* Other default colors to override
-        background = Color(0xFFFFFBFE),
-        surface = Color(0xFFFFFBFE),
-        onPrimary = Color.White,
-        onSecondary = Color.White,
-        onTertiary = Color.White,
-        onBackground = Color(0xFF1C1B1F),
-        onSurface = Color(0xFF1C1B1F),
-        */
-        )
+private val DarkColorScheme =
+    darkColorScheme(
+        primary = AppColors.PrimaryDark,
+        onPrimary = AppColors.WhiteColor,
+        primaryContainer = AppColors.PrimaryDark,
+        onPrimaryContainer = AppColors.WhiteColor,
+        secondary = AppColors.SecondaryDark,
+        onSecondary = AppColors.WhiteColor,
+        tertiary = AppColors.AccentDark,
+        onTertiary = AppColors.WhiteColor,
+        background = AppColors.BackgroundDark,
+        onBackground = AppColors.WhiteColor,
+        surface = AppColors.SurfaceDark,
+        onSurface = AppColors.WhiteColor,
+        error = AppColors.ErrorDark,
+        onError = AppColors.BlackColor)
 
+/**
+ * App theme wrapper.
+ * - Chooses dynamic color schemes on Android 12+ when enabled.
+ * - Falls back to static Light/Dark schemes otherwise.
+ * - Provides a typed `AppPalette` (LightPalette/DarkPalette) via [LocalAppPalette].
+ * - Updates the status bar color to match the color scheme primary color.
+ */
 @Composable
 fun SampleAppTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -49,14 +73,21 @@ fun SampleAppTheme(
         darkTheme -> DarkColorScheme
         else -> LightColorScheme
       }
+
+  // pick palette object (lightweight project palette)
+  val palette = if (darkTheme) DarkPalette else LightPalette
+
   val view = LocalView.current
   if (!view.isInEditMode) {
     SideEffect {
       val window = (view.context as Activity).window
       window.statusBarColor = colorScheme.primary.toArgb()
-      WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = darkTheme
+      // light theme -> dark status bar icons, dark theme -> light icons
+      WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
     }
   }
 
-  MaterialTheme(colorScheme = colorScheme, typography = Typography, content = content)
+  CompositionLocalProvider(LocalAppPalette provides palette) {
+    MaterialTheme(colorScheme = colorScheme, typography = Typography, content = content)
+  }
 }

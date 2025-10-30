@@ -20,14 +20,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.ui.navigation.NavigationTestTags
+import com.android.sample.ui.theme.UiDimens
+import com.android.sample.ui.theme.appPalette
 
 object ProfileTestTags {
   const val PROFILE_HEADER = "profile_header"
@@ -47,28 +47,25 @@ object ProfileTestTags {
   const val LOG_OUT_DIALOG_CANCEL = "log_out_dialog_cancel"
 }
 
-val PrimaryColor = Color(0xFFF0F4FF)
-val SecondaryColor = Color(0xFFD8E4FF)
-val AccentColor = Color(0xFF1247F8)
-val BlackColor = Color(0xFF1F242F)
-val WhiteColor = Color(0xFFFFFFFF)
-
 object ProfileDimens {
-  val Horizontal = 16.dp
-  val Vertical = 8.dp
-  val CardElevation = 4.dp
-  val ProfilePicture = 80.dp
-  val HeaderPadding = 16.dp
-  val HeaderSpacer = 16.dp
-  val StatCardHeight = 150.dp
-  val StatCardVerticalPadding = 20.dp
-  val StatCardHorizontalPadding = 16.dp
-  val StatCardSpacer = 6.dp
-  val InfoCornerRadius = 4.dp
-  val InfoSpacer = 4.dp
-  val ActionVerticalPadding = 10.dp
-  val ActionInternalPadding = 10.dp
-  val IconSize = 40.dp
+  val Horizontal = UiDimens.SpacingMd
+  val Vertical = UiDimens.SpacingSm
+  val CardElevation = UiDimens.CardElevation
+  val ProfilePicture = UiDimens.IconLarge
+  val HeaderPadding = UiDimens.SpacingMd
+  val HeaderSpacer = UiDimens.SpacingMd
+
+  // Stat Card dimensions
+  val StatCardHeight = UiDimens.StatCardHeight
+  val StatCardVerticalPadding = UiDimens.SpacingLg
+  val StatCardHorizontalPadding = UiDimens.SpacingMd
+  val StatCardSpacer = UiDimens.SpacingXs
+
+  val InfoCornerRadius = UiDimens.CornerRadiusSm
+  val InfoSpacer = UiDimens.SpacingSm
+  val ActionVerticalPadding = UiDimens.SpacingSm
+  val ActionInternalPadding = UiDimens.SpacingSm
+  val IconSize = UiDimens.IconMedium
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -78,7 +75,7 @@ fun ProfileScreen(viewModel: ProfileViewModel = viewModel(), onBackClick: () -> 
 
   Scaffold(
       modifier = Modifier.testTag(NavigationTestTags.PROFILE_SCREEN),
-      containerColor = PrimaryColor,
+      containerColor = appPalette().primary,
       topBar = {
         TopAppBar(
             title = { Text("Profile") },
@@ -151,7 +148,7 @@ fun ProfileHeader(state: ProfileState, onEditClick: () -> Unit = {}) {
           Modifier.fillMaxWidth()
               .padding(ProfileDimens.HeaderPadding)
               .testTag(ProfileTestTags.PROFILE_HEADER),
-      colors = CardDefaults.cardColors(containerColor = AccentColor),
+      colors = CardDefaults.cardColors(containerColor = appPalette().accent),
       elevation = CardDefaults.cardElevation(defaultElevation = ProfileDimens.CardElevation)) {
         Box(modifier = Modifier.padding(ProfileDimens.HeaderPadding)) {
           Row(verticalAlignment = Alignment.CenterVertically) {
@@ -161,24 +158,24 @@ fun ProfileHeader(state: ProfileState, onEditClick: () -> Unit = {}) {
                 modifier =
                     Modifier.size(ProfileDimens.ProfilePicture)
                         .clip(CircleShape)
-                        .background(WhiteColor),
-                tint = AccentColor)
+                        .background(appPalette().surface),
+                tint = appPalette().accent)
             Spacer(modifier = Modifier.width(ProfileDimens.HeaderSpacer))
             Column {
               Text(
                   text = state.userName,
                   style = MaterialTheme.typography.titleMedium,
-                  color = WhiteColor,
+                  color = appPalette().surface,
                   modifier = Modifier.testTag(ProfileTestTags.PROFILE_HEADER_NAME))
               Text(
                   text = state.userEmail,
                   style = MaterialTheme.typography.bodyMedium,
-                  color = WhiteColor,
+                  color = appPalette().surface,
                   modifier = Modifier.testTag(ProfileTestTags.PROFILE_HEADER_EMAIL))
             }
             Spacer(modifier = Modifier.weight(1f))
             IconButton(onClick = onEditClick) {
-              Icon(Icons.Default.Edit, contentDescription = "Edit", tint = WhiteColor)
+              Icon(Icons.Default.Edit, contentDescription = "Edit", tint = appPalette().surface)
             }
           }
         }
@@ -197,7 +194,7 @@ fun StatGroupCard(
 ) {
   Card(
       modifier = modifier.height(ProfileDimens.StatCardHeight),
-      colors = CardDefaults.cardColors(containerColor = SecondaryColor),
+      colors = CardDefaults.cardColors(containerColor = appPalette().secondary),
       elevation = CardDefaults.cardElevation(defaultElevation = ProfileDimens.CardElevation)) {
         Column(
             modifier =
@@ -210,28 +207,28 @@ fun StatGroupCard(
               Text(
                   text = labelTop,
                   style = MaterialTheme.typography.bodySmall,
-                  color = BlackColor,
+                  color = appPalette().text,
                   textAlign = TextAlign.Center)
               Spacer(modifier = Modifier.height(ProfileDimens.StatCardSpacer))
               Text(
                   text = topValue.toString(),
                   style = MaterialTheme.typography.titleLarge,
                   fontWeight = FontWeight.Bold,
-                  color = AccentColor,
+                  color = appPalette().accent,
                   textAlign = TextAlign.Center,
                   modifier = Modifier.testTag(topTag))
               Spacer(modifier = Modifier.height(ProfileDimens.StatCardSpacer))
               Text(
                   text = labelBottom,
                   style = MaterialTheme.typography.bodySmall,
-                  color = BlackColor,
+                  color = appPalette().text,
                   textAlign = TextAlign.Center)
               Spacer(modifier = Modifier.height(ProfileDimens.StatCardSpacer))
               Text(
                   text = bottomValue.toString(),
                   style = MaterialTheme.typography.titleLarge,
                   fontWeight = FontWeight.Bold,
-                  color = AccentColor,
+                  color = appPalette().accent,
                   textAlign = TextAlign.Center,
                   modifier = Modifier.testTag(bottomTag))
             }
@@ -271,15 +268,15 @@ fun InfoRow(label: String, value: String) {
       modifier =
           Modifier.fillMaxWidth()
               .clip(RoundedCornerShape(ProfileDimens.InfoCornerRadius))
-              .background(WhiteColor)
+              .background(appPalette().surface)
               .padding(
                   vertical = ProfileDimens.CardElevation, horizontal = ProfileDimens.Horizontal)) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-          Text(text = label, style = MaterialTheme.typography.bodyMedium, color = BlackColor)
+          Text(text = label, style = MaterialTheme.typography.bodyMedium, color = appPalette().text)
           Text(
               text = value,
               style = MaterialTheme.typography.bodyMedium,
-              color = AccentColor,
+              color = appPalette().accent,
               modifier = Modifier.testTag("profile_info_${label.replace(" ", "_").lowercase()}"))
         }
       }
@@ -294,7 +291,7 @@ fun ProfileInformation(state: ProfileState) {
         Text(
             text = "Information",
             style = MaterialTheme.typography.titleMedium,
-            color = BlackColor,
+            color = appPalette().text,
             modifier = Modifier.padding(bottom = ProfileDimens.Vertical))
         InfoRow(label = "Name", value = state.userName)
         Spacer(modifier = Modifier.height(ProfileDimens.InfoSpacer))
@@ -317,7 +314,7 @@ fun ProfileActions(onLogoutClick: () -> Unit = {}) {
         Text(
             text = "Actions",
             style = MaterialTheme.typography.titleMedium,
-            color = BlackColor,
+            color = appPalette().text,
             modifier = Modifier.padding(bottom = ProfileDimens.Vertical))
         ActionItem(
             icon = Icons.Default.Logout,
@@ -347,7 +344,7 @@ fun ActionItem(
               .padding(vertical = ProfileDimens.ActionVerticalPadding)
               .testTag(tag)
               .clickable { onClick() },
-      colors = CardDefaults.cardColors(containerColor = WhiteColor)) {
+      colors = CardDefaults.cardColors(containerColor = appPalette().surface)) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(ProfileDimens.ActionInternalPadding),
             verticalAlignment = Alignment.CenterVertically) {
@@ -355,13 +352,16 @@ fun ActionItem(
                   imageVector = icon,
                   contentDescription = null,
                   modifier = Modifier.padding(end = ProfileDimens.Horizontal),
-                  tint = AccentColor)
+                  tint = appPalette().accent)
               Column(modifier = Modifier.weight(1f)) {
-                Text(text = title, style = MaterialTheme.typography.bodyLarge, color = BlackColor)
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = appPalette().text)
                 Text(
                     text = subtitle,
                     style = MaterialTheme.typography.bodySmall,
-                    color = AccentColor.copy(alpha = 0.6f))
+                    color = appPalette().accent.copy(alpha = 0.6f))
               }
             }
       }
