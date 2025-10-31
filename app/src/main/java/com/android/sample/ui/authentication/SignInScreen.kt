@@ -68,7 +68,7 @@ fun SignInScreen(
    */
   fun startGoogleLogin() {
     val clientId = context.getString(R.string.default_web_client_id)
-    viewModel.setLoading(true) // Add this method to ViewModel
+    viewModel.setLoading(true)
     viewModel.clearError()
 
     scope.launch {
@@ -77,20 +77,18 @@ fun SignInScreen(
             GetGoogleIdOption.Builder()
                 .setServerClientId(clientId)
                 .setFilterByAuthorizedAccounts(true)
-                .setAutoSelectEnabled(false)
+                .setAutoSelectEnabled(true)
                 .build()
 
         val request = GetCredentialRequest.Builder().addCredentialOption(googleIdOption).build()
-        val result = credentialManager.getCredential(context as Activity, request)
-        val credential = result.credential
 
-        // Delegate sign-in to ViewModel
-        viewModel.signInWithGoogle(credential, onSignInSuccess)
+        val result = credentialManager.getCredential(context as Activity, request)
+        viewModel.signInWithGoogle(result.credential, onSignInSuccess)
+      } catch (e: NoCredentialException) {
+        viewModel.setError("No Google account found")
       } catch (e: GetCredentialException) {
-        // Handle credential exceptions and set appropriate error messages
         when (e) {
           is GetCredentialCancellationException -> viewModel.setError("Connection cancelled")
-          is NoCredentialException -> viewModel.setError("No Google account found")
           else -> viewModel.setError("Connection error: ${e.localizedMessage}")
         }
       }
