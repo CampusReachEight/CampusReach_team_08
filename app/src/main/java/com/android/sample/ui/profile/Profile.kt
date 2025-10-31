@@ -1,5 +1,7 @@
 package com.android.sample.ui.profile
 
+import ProfileActions
+import ProfileInformation
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -26,26 +28,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.ui.navigation.NavigationTestTags
+import com.android.sample.ui.profile.composables.ProfileHeader
+import com.android.sample.ui.profile.composables.ProfileStats
 import com.android.sample.ui.theme.UiDimens
 import com.android.sample.ui.theme.appPalette
-
-object ProfileTestTags {
-  const val PROFILE_HEADER = "profile_header"
-  const val PROFILE_STATS = "profile_stats"
-  const val PROFILE_INFORMATION = "profile_information"
-  const val PROFILE_ACTIONS = "profile_actions"
-  const val PROFILE_HEADER_NAME = "profile_header_name"
-  const val PROFILE_HEADER_EMAIL = "profile_header_email"
-  const val PROFILE_STAT_TOP_KUDOS = "profile_stat_top_kudos"
-  const val PROFILE_STAT_BOTTOM_HELP_RECEIVED = "profile_stat_bottom_help_received"
-  const val PROFILE_STAT_TOP_FOLLOWERS = "profile_stat_top_followers"
-  const val PROFILE_STAT_BOTTOM_FOLLOWING = "profile_stat_bottom_following"
-  const val PROFILE_ACTION_LOG_OUT = "profile_action_log_out"
-  const val PROFILE_ACTION_ABOUT_APP = "profile_action_about_app"
-  const val LOG_OUT_DIALOG = "log_out_dialog"
-  const val LOG_OUT_DIALOG_CONFIRM = "log_out_dialog_confirm"
-  const val LOG_OUT_DIALOG_CANCEL = "log_out_dialog_cancel"
-}
 
 object ProfileDimens {
   val Horizontal = UiDimens.SpacingMd
@@ -67,6 +53,8 @@ object ProfileDimens {
   val ActionInternalPadding = UiDimens.SpacingSm
   val IconSize = UiDimens.IconMedium
 }
+
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -138,232 +126,6 @@ fun ProfileScreen(viewModel: ProfileViewModel = viewModel(), onBackClick: () -> 
             }
           }
         }
-      }
-}
-
-@Composable
-fun ProfileHeader(state: ProfileState, onEditClick: () -> Unit = {}) {
-  Card(
-      modifier =
-          Modifier.fillMaxWidth()
-              .padding(ProfileDimens.HeaderPadding)
-              .testTag(ProfileTestTags.PROFILE_HEADER),
-      colors = CardDefaults.cardColors(containerColor = appPalette().accent),
-      elevation = CardDefaults.cardElevation(defaultElevation = ProfileDimens.CardElevation)) {
-        Box(modifier = Modifier.padding(ProfileDimens.HeaderPadding)) {
-          Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                Icons.Default.Person,
-                contentDescription = "Profile Picture",
-                modifier =
-                    Modifier.size(ProfileDimens.ProfilePicture)
-                        .clip(CircleShape)
-                        .background(appPalette().surface),
-                tint = appPalette().accent)
-            Spacer(modifier = Modifier.width(ProfileDimens.HeaderSpacer))
-            Column {
-              Text(
-                  text = state.userName,
-                  style = MaterialTheme.typography.titleMedium,
-                  color = appPalette().surface,
-                  modifier = Modifier.testTag(ProfileTestTags.PROFILE_HEADER_NAME))
-              Text(
-                  text = state.userEmail,
-                  style = MaterialTheme.typography.bodyMedium,
-                  color = appPalette().surface,
-                  modifier = Modifier.testTag(ProfileTestTags.PROFILE_HEADER_EMAIL))
-            }
-            Spacer(modifier = Modifier.weight(1f))
-            IconButton(onClick = onEditClick) {
-              Icon(Icons.Default.Edit, contentDescription = "Edit", tint = appPalette().surface)
-            }
-          }
-        }
-      }
-}
-
-@Composable
-fun StatGroupCard(
-    labelTop: String,
-    topValue: Int,
-    labelBottom: String,
-    bottomValue: Int,
-    modifier: Modifier = Modifier,
-    topTag: String,
-    bottomTag: String
-) {
-  Card(
-      modifier = modifier.height(ProfileDimens.StatCardHeight),
-      colors = CardDefaults.cardColors(containerColor = appPalette().secondary),
-      elevation = CardDefaults.cardElevation(defaultElevation = ProfileDimens.CardElevation)) {
-        Column(
-            modifier =
-                Modifier.fillMaxWidth()
-                    .padding(
-                        vertical = ProfileDimens.StatCardVerticalPadding,
-                        horizontal = ProfileDimens.StatCardHorizontalPadding),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center) {
-              Text(
-                  text = labelTop,
-                  style = MaterialTheme.typography.bodySmall,
-                  color = appPalette().text,
-                  textAlign = TextAlign.Center)
-              Spacer(modifier = Modifier.height(ProfileDimens.StatCardSpacer))
-              Text(
-                  text = topValue.toString(),
-                  style = MaterialTheme.typography.titleLarge,
-                  fontWeight = FontWeight.Bold,
-                  color = appPalette().accent,
-                  textAlign = TextAlign.Center,
-                  modifier = Modifier.testTag(topTag))
-              Spacer(modifier = Modifier.height(ProfileDimens.StatCardSpacer))
-              Text(
-                  text = labelBottom,
-                  style = MaterialTheme.typography.bodySmall,
-                  color = appPalette().text,
-                  textAlign = TextAlign.Center)
-              Spacer(modifier = Modifier.height(ProfileDimens.StatCardSpacer))
-              Text(
-                  text = bottomValue.toString(),
-                  style = MaterialTheme.typography.titleLarge,
-                  fontWeight = FontWeight.Bold,
-                  color = appPalette().accent,
-                  textAlign = TextAlign.Center,
-                  modifier = Modifier.testTag(bottomTag))
-            }
-      }
-}
-
-@Composable
-fun ProfileStats(state: ProfileState) {
-  Row(
-      modifier =
-          Modifier.fillMaxWidth()
-              .padding(start = ProfileDimens.ProfilePicture, end = ProfileDimens.ProfilePicture)
-              .testTag(ProfileTestTags.PROFILE_STATS),
-      horizontalArrangement = Arrangement.spacedBy(ProfileDimens.Horizontal)) {
-        StatGroupCard(
-            labelTop = "Kudos",
-            topValue = state.kudosReceived,
-            labelBottom = "Help Received",
-            bottomValue = state.helpReceived,
-            modifier = Modifier.weight(1f),
-            topTag = ProfileTestTags.PROFILE_STAT_TOP_KUDOS,
-            bottomTag = ProfileTestTags.PROFILE_STAT_BOTTOM_HELP_RECEIVED)
-        StatGroupCard(
-            labelTop = "Followers",
-            topValue = state.followers,
-            labelBottom = "Following",
-            bottomValue = state.following,
-            modifier = Modifier.weight(1f),
-            topTag = ProfileTestTags.PROFILE_STAT_TOP_FOLLOWERS,
-            bottomTag = ProfileTestTags.PROFILE_STAT_BOTTOM_FOLLOWING)
-      }
-}
-
-@Composable
-fun InfoRow(label: String, value: String) {
-  Box(
-      modifier =
-          Modifier.fillMaxWidth()
-              .clip(RoundedCornerShape(ProfileDimens.InfoCornerRadius))
-              .background(appPalette().surface)
-              .padding(
-                  vertical = ProfileDimens.CardElevation, horizontal = ProfileDimens.Horizontal)) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-          Text(text = label, style = MaterialTheme.typography.bodyMedium, color = appPalette().text)
-          Text(
-              text = value,
-              style = MaterialTheme.typography.bodyMedium,
-              color = appPalette().accent,
-              modifier = Modifier.testTag("profile_info_${label.replace(" ", "_").lowercase()}"))
-        }
-      }
-}
-
-@Composable
-fun ProfileInformation(state: ProfileState) {
-  Column(
-      modifier =
-          Modifier.padding(horizontal = ProfileDimens.Horizontal)
-              .testTag(ProfileTestTags.PROFILE_INFORMATION)) {
-        Text(
-            text = "Information",
-            style = MaterialTheme.typography.titleMedium,
-            color = appPalette().text,
-            modifier = Modifier.padding(bottom = ProfileDimens.Vertical))
-        InfoRow(label = "Name", value = state.userName)
-        Spacer(modifier = Modifier.height(ProfileDimens.InfoSpacer))
-        InfoRow(label = "Profile Id", value = state.profileId)
-        Spacer(modifier = Modifier.height(ProfileDimens.InfoSpacer))
-        InfoRow(label = "Arrival date", value = state.arrivalDate)
-        Spacer(modifier = Modifier.height(ProfileDimens.InfoSpacer))
-        InfoRow(label = "Section", value = state.section)
-        Spacer(modifier = Modifier.height(ProfileDimens.InfoSpacer))
-        InfoRow(label = "Email", value = state.userEmail)
-      }
-}
-
-@Composable
-fun ProfileActions(onLogoutClick: () -> Unit = {}) {
-  Column(
-      modifier =
-          Modifier.padding(horizontal = ProfileDimens.Horizontal)
-              .testTag(ProfileTestTags.PROFILE_ACTIONS)) {
-        Text(
-            text = "Actions",
-            style = MaterialTheme.typography.titleMedium,
-            color = appPalette().text,
-            modifier = Modifier.padding(bottom = ProfileDimens.Vertical))
-        ActionItem(
-            icon = Icons.Default.Logout,
-            title = "Log out",
-            subtitle = "Further secure your account for safety",
-            tag = ProfileTestTags.PROFILE_ACTION_LOG_OUT,
-            onClick = onLogoutClick)
-        ActionItem(
-            icon = Icons.Default.Info,
-            title = "About App",
-            subtitle = "Find out more about CampusReach",
-            tag = ProfileTestTags.PROFILE_ACTION_ABOUT_APP)
-      }
-}
-
-@Composable
-fun ActionItem(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    title: String,
-    subtitle: String,
-    tag: String,
-    onClick: () -> Unit = {}
-) {
-  Card(
-      modifier =
-          Modifier.fillMaxWidth()
-              .padding(vertical = ProfileDimens.ActionVerticalPadding)
-              .testTag(tag)
-              .clickable { onClick() },
-      colors = CardDefaults.cardColors(containerColor = appPalette().surface)) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(ProfileDimens.ActionInternalPadding),
-            verticalAlignment = Alignment.CenterVertically) {
-              Icon(
-                  imageVector = icon,
-                  contentDescription = null,
-                  modifier = Modifier.padding(end = ProfileDimens.Horizontal),
-                  tint = appPalette().accent)
-              Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = appPalette().text)
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = appPalette().accent.copy(alpha = 0.6f))
-              }
-            }
       }
 }
 
