@@ -30,5 +30,7 @@ data class EditRequestUiState(
 
     // Location search
     val locationSearchResults: List<Location> = emptyList(),
-    val isSearchingLocation: Boolean = false
+    val isSearchingLocation: Boolean = false,
+    val showDeleteConfirmation: Boolean = false,
+    val isDeleting: Boolean = false
 )

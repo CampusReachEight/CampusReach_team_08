@@ -474,4 +474,84 @@ class EditRequestViewModelTest {
     viewModel.updateTitle("Valid Title")
     assertFalse(viewModel.uiState.value.validationState.showTitleError)
   }
+  // ========================================================================
+  // Test: Delete Request
+  // ========================================================================
+
+  @Test
+  fun confirmDelete_setsShowDeleteConfirmationTrue() {
+    viewModel.confirmDelete()
+
+    assertTrue(viewModel.uiState.value.showDeleteConfirmation)
+    assertFalse(viewModel.uiState.value.isDeleting)
+  }
+
+  @Test
+  fun cancelDelete_setsShowDeleteConfirmationFalse() {
+    viewModel.confirmDelete()
+    assertTrue(viewModel.uiState.value.showDeleteConfirmation)
+
+    viewModel.cancelDelete()
+
+    assertFalse(viewModel.uiState.value.showDeleteConfirmation)
+  }
+
+  @Test
+  fun deleteRequest_success_callsRepositoryAndShowsSuccess() = runTest {
+    whenever(requestRepository.deleteRequest("test-id")).thenReturn(Unit)
+    var onSuccessCalled = false
+
+    viewModel.confirmDelete()
+    assertTrue(viewModel.uiState.value.showDeleteConfirmation)
+
+    viewModel.deleteRequest("test-id") { onSuccessCalled = true }
+    advanceUntilIdle()
+
+    verify(requestRepository).deleteRequest("test-id")
+    assertTrue(onSuccessCalled)
+    assertFalse(viewModel.uiState.value.showDeleteConfirmation)
+    assertFalse(viewModel.uiState.value.isDeleting)
+    assertNull(viewModel.uiState.value.errorMessage)
+  }
+
+  @Test
+  fun deleteRequest_setsLoadingStateDuringDeletion() = runTest {
+    whenever(requestRepository.deleteRequest("test-id")).thenReturn(Unit)
+
+    viewModel.deleteRequest("test-id") {}
+    advanceUntilIdle()
+
+    // Should be done loading after completion
+    assertFalse(viewModel.uiState.value.isDeleting)
+  }
+
+  @Test
+  fun deleteRequest_failure_setsErrorMessage() = runTest {
+    whenever(requestRepository.deleteRequest("test-id"))
+        .thenThrow(RuntimeException("Network error"))
+    var onSuccessCalled = false
+
+    viewModel.deleteRequest("test-id") { onSuccessCalled = true }
+    advanceUntilIdle()
+
+    assertFalse(onSuccessCalled)
+    assertNotNull(viewModel.uiState.value.errorMessage)
+    assertTrue(viewModel.uiState.value.errorMessage!!.contains("Failed to delete request"))
+    assertFalse(viewModel.uiState.value.showDeleteConfirmation)
+    assertFalse(viewModel.uiState.value.isDeleting)
+  }
+
+  @Test
+  fun deleteRequest_failure_clearsConfirmationDialog() = runTest {
+    whenever(requestRepository.deleteRequest("test-id"))
+        .thenThrow(RuntimeException("Delete failed"))
+
+    viewModel.confirmDelete()
+    assertTrue(viewModel.uiState.value.showDeleteConfirmation)
+
+    viewModel.deleteRequest("test-id") {}
+    advanceUntilIdle()
+
+    assertFalse(viewModel.uiState.value.showDeleteConfirmation)
+  }
 }
