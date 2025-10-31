@@ -18,7 +18,7 @@ import androidx.credentials.exceptions.GetCredentialException
 import androidx.credentials.exceptions.NoCredentialException
 import com.android.sample.R
 import com.android.sample.ui.navigation.NavigationTestTags
-import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import kotlinx.coroutines.launch
 
 /**
@@ -73,14 +73,9 @@ fun SignInScreen(
 
     scope.launch {
       try {
-        val googleIdOption =
-            GetGoogleIdOption.Builder()
-                .setServerClientId(clientId)
-                .setFilterByAuthorizedAccounts(true)
-                .setAutoSelectEnabled(true)
-                .build()
+        val signInOption = GetSignInWithGoogleOption.Builder(serverClientId = clientId).build()
 
-        val request = GetCredentialRequest.Builder().addCredentialOption(googleIdOption).build()
+        val request = GetCredentialRequest.Builder().addCredentialOption(signInOption).build()
 
         val result = credentialManager.getCredential(context as Activity, request)
         viewModel.signInWithGoogle(result.credential, onSignInSuccess)
