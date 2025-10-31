@@ -44,6 +44,30 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      - name: Cache or generate keystore
+        id: keystore
+        run: |
+          KEYSTORE_PATH="$HOME/.android/ci-debug.keystore"
+          mkdir -p "$HOME/.android"
+          
+          if [ ! -f "$KEYSTORE_PATH" ]; then
+            echo "Generating new keystore..."
+            keytool -genkey -v -keystore "$KEYSTORE_PATH" \
+              -alias androiddebugkey \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -storepass android \
+              -keypass android \
+              -dname "CN=Android Debug,O=Android,C=US"
+          else
+            echo "Using cached keystore"
+          fi
+          
+          # Make keystore available to Gradle
+          mkdir -p keystore
+          cp "$KEYSTORE_PATH" keystore/ci-debug.keystore
+
       - name: Build debug APK
         run: ./gradlew assembleDebug
         
