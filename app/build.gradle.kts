@@ -12,7 +12,7 @@ plugins {
 }
 android {
     namespace = "com.android.sample"
-    compileSdk = 34
+    compileSdk = 36
     // Load the API key from local.properties
     val localProperties = Properties()
     val localPropertiesFile = rootProject.file("local.properties")
@@ -23,7 +23,7 @@ android {
     defaultConfig {
         applicationId = "com.android.sample"
         minSdk = 28
-        targetSdk = 34
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
         testInstrumentationRunner = "com.android.sample.utils.EmulatorTestRunner"
