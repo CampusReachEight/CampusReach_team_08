@@ -76,7 +76,8 @@ fun SignInScreen(
         val googleIdOption =
             GetGoogleIdOption.Builder()
                 .setServerClientId(clientId)
-                .setFilterByAuthorizedAccounts(false)
+                .setFilterByAuthorizedAccounts(true)
+                .setAutoSelectEnabled(false)
                 .build()
 
         val request = GetCredentialRequest.Builder().addCredentialOption(googleIdOption).build()
