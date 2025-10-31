@@ -9,8 +9,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialCancellationException
@@ -111,7 +113,7 @@ fun SignInScreen(
             painter = painterResource(R.drawable.campusreach_logo),
             contentDescription = "App Logo",
             modifier = Modifier.size(UiDimens.IconLarge).testTag(SignInScreenTestTags.APP_LOGO),
-            tint = appPalette().accent)
+            colorFilter = ColorFilter.tint(appPalette().accent))
 
         // Welcome title
         Text(
