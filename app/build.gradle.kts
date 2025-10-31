@@ -32,6 +32,22 @@ android {
         }
         manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
     }
+
+    signingConfigs {
+        create("release") {
+            storeFile = file("../keystore/ci-debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+        getByName("debug") {
+            storeFile = file("../keystore/ci-debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true  // Enable obfuscation
@@ -40,10 +56,12 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("release")
         }
         debug {
             enableUnitTestCoverage = true
             enableAndroidTestCoverage = true
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
 
