@@ -1,5 +1,6 @@
 package com.android.sample.ui.theme
 
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -13,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
+import com.android.sample.ui.navigation.NavigationTab
 import com.android.sample.ui.navigation.NavigationTestTags
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -35,7 +37,7 @@ fun TopNavigationBar(
         Text(
             text = title,
             style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onSurface)
+            color = appPalette().onSurface)
       },
       actions = {
         IconButton(
@@ -44,12 +46,12 @@ fun TopNavigationBar(
               Icon(
                   imageVector = Icons.Filled.AccountCircle,
                   contentDescription = "Profile",
-                  tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                  modifier = Modifier.size(UiDimens.IconMedium),
+                  tint = appPalette().accent)
             }
       },
       colors =
-          TopAppBarDefaults.centerAlignedTopAppBarColors(
-              containerColor = MaterialTheme.colorScheme.surface))
+          TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = appPalette().surface))
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

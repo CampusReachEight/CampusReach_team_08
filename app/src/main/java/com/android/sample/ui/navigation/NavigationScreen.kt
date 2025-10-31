@@ -1,5 +1,6 @@
 package com.android.sample.ui.navigation
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -36,14 +37,13 @@ import com.android.sample.ui.request.RequestListViewModel
 import com.android.sample.ui.request.edit.EditRequestScreen
 import com.android.sample.ui.request.edit.EditRequestViewModel
 import com.android.sample.ui.request.edit.EditRequestViewModelFactory
-import com.android.sample.ui.theme.BottomNavigationMenu
-import com.android.sample.ui.theme.NavigationTab
 import com.android.sample.ui.theme.TopNavigationBar
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.firestore
 import okhttp3.OkHttpClient
 
+@SuppressLint("ViewModelConstructorInComposable")
 @Composable
 fun NavigationScreen(
     modifier: Modifier = Modifier,

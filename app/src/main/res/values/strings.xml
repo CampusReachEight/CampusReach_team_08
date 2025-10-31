@@ -9,4 +9,14 @@
     <string name="location_selected_title">Selected Location</string>
     <string name="location_coordinates_format">Lat: %1$s, Lng: %2$s</string>
     <string name="location_field_name_simple">Location</string>
+    <string name="delete_request_button_delete_request">Delete Request</string>
+    <string name="delete_request_button_delete_request_question">Delete Request?</string>
+    <string name="delete_request_button_are_you_sure">This action cannot be undone. The request will be permanently deleted.</string>
+    <string name="delete_request_button_delete">Delete</string>
+    <string name="delete_request_button_cancel">Cancel</string>
+
+
+
+
+
 </resources>

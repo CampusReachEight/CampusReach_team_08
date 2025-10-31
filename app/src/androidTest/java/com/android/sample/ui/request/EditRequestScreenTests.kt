@@ -741,6 +741,7 @@ class EditRequestScreenTests : EditRequestScreenTestBase() {
     composeTestRule.onNodeWithText("Edit Request").assertExists()
     composeTestRule.onNodeWithText("Loaded Title").assertExists()
   }
+
   /**
    * Test that all RequestType options are displayed. Ensures UI shows all available request types
    * for user selection.
@@ -869,5 +870,60 @@ class EditRequestScreenTests : EditRequestScreenTestBase() {
     assertErrorMessage("Please select at least one request type")
     assertErrorMessage("Location name cannot be empty")
     assertErrorMessage("Expiration date must be after start date")
+  }
+
+  /**
+   * Test that delete button only appears in edit mode. This is a SCREEN-level integration test, not
+   * a button unit test.
+   */
+  @Test
+  fun deleteButton_onlyVisibleInEditMode() {
+    composeTestRule.setContent {
+      TestEditRequestContentWithStaticState(
+          uiState =
+              EditRequestUiStateBuilder()
+                  .withEditMode(false) // Create mode
+                  .build())
+    }
+    composeTestRule.onNodeWithText("Delete Request").assertDoesNotExist()
+  }
+
+  /**
+   * Test that delete confirmation dialog appears when delete button is clicked. Tests the full
+   * flow: button click → dialog shows. Stays in EditRequestScreenTest.
+   */
+  @Test
+  fun deleteButton_showsConfirmationDialogOnClick() {
+    val viewModel = createTestViewModel()
+    composeTestRule.setContent { TestEditRequestContentWithRealViewModel(viewModel = viewModel) }
+
+    viewModel.updateRequestTypes(listOf(RequestType.STUDYING))
+    viewModel.updateLocation(Location(0.0, 0.0, "Test"))
+    viewModel.updateLocationName("Test Location")
+    waitForUI()
+
+    viewModel.confirmDelete()
+    waitForUI()
+
+    composeTestRule.onNodeWithText("Delete Request?").assertExists()
+  }
+
+  /**
+   * Test that canceling delete closes the confirmation dialog. Tests ViewModel state management
+   * (could also go in ViewModel tests).
+   */
+  @Test
+  fun deleteConfirmation_cancelClosesDialog() {
+    val viewModel = createTestViewModel()
+    composeTestRule.setContent { TestEditRequestContentWithRealViewModel(viewModel = viewModel) }
+
+    viewModel.confirmDelete()
+    waitForUI()
+    assert(viewModel.uiState.value.showDeleteConfirmation)
+
+    viewModel.cancelDelete()
+    waitForUI()
+
+    assert(!viewModel.uiState.value.showDeleteConfirmation)
   }
 }

@@ -85,7 +85,13 @@ enum class RequestStatus {
   IN_PROGRESS,
   ARCHIVED,
   COMPLETED,
-  CANCELLED
+  CANCELLED;
+
+  companion object {
+    override fun toString(): String {
+      return "Status"
+    }
+  }
 }
 
 enum class RequestType {
@@ -96,7 +102,13 @@ enum class RequestType {
   SPORT,
   HARDWARE,
   LOST_AND_FOUND,
-  OTHER
+  OTHER;
+
+  companion object {
+    override fun toString(): String {
+      return "Type"
+    }
+  }
 }
 
 enum class Tags {
@@ -105,7 +117,13 @@ enum class Tags {
   GROUP_WORK,
   SOLO_WORK,
   OUTDOOR,
-  INDOOR
+  INDOOR;
+
+  companion object {
+    override fun toString(): String {
+      return "Tags"
+    }
+  }
 }
 
 fun RequestStatus.displayString(): String =
