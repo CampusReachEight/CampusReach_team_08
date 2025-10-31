@@ -130,19 +130,12 @@ jobs:
       - name: KTFmt Check
         run: ./gradlew ktfmtCheck
 
-      # Step 11: Assemble the app and run static analysis
-      # - Builds a Debug APK
-      # - Runs Android lint checks
-      # - Uses parallel execution and build cache to speed up builds
-      - name: Assemble
-        run: ./gradlew assembleDebug lint --parallel --build-cache
-
-      # Step 12: Run unit tests and verification tasks
+      # Step 11: Run unit tests and verification tasks
       # Executes tests defined in the Gradle check task (includes unit tests, lint, etc.).
       - name: Run tests
         run: ./gradlew check --parallel --build-cache
 
-      # Step 13: Start Firebase emulators (Auth + Firestore)
+      # Step 12: Start Firebase emulators (Auth + Firestore)
       # Runs in the background to support instrumentation tests.
       - name: Start Firebase emulators
         run: |
@@ -154,7 +147,7 @@ jobs:
             echo "Firebase emulators not configured, skipping emulator startup..."
           fi
 
-      # Step 14: Enable KVM for hardware acceleration
+      # Step 13: Enable KVM for hardware acceleration
       # Required for Android emulator to run efficiently on Linux
       - name: Enable KVM group perms
         run: |
@@ -162,16 +155,16 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      # Step 15: Run instrumentation tests on an Android emulator
+      # Step 14: Run instrumentation tests on an Android emulator
       # - Uses ReactiveCircus runner which handles SDK setup automatically
-      # - Spins up an Android emulator (API 34, x86_64, Google APIs)
+      # - Spins up an Android emulator (API 36, x86_64, Google APIs)
       # - Disables UI (no-window) and animations for faster CI execution
       # - Runs connectedCheck (integration/instrumentation tests)
       - name: Run instrumentation tests
         timeout-minutes: 25
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 34
+          api-level: 36
           target: google_apis
           arch: x86_64
           avd-name: github
