@@ -24,11 +24,11 @@ import com.android.sample.model.request.RequestStatus
 import com.android.sample.model.request.RequestType
 import com.android.sample.model.request.Tags
 import com.android.sample.model.request.displayString
+import com.android.sample.ui.navigation.BottomNavigationMenu
 import com.android.sample.ui.navigation.NavigationActions
+import com.android.sample.ui.navigation.NavigationTab
 import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.navigation.Screen
-import com.android.sample.ui.theme.BottomNavigationMenu
-import com.android.sample.ui.theme.NavigationTab
 import com.android.sample.ui.theme.TopNavigationBar
 
 // removed local magic number vals; use ConstantRequestList instead
@@ -42,6 +42,7 @@ object RequestListTestTags {
   const val REQUEST_ITEM_TITLE = "requestItemTitle"
   const val REQUEST_ITEM_DESCRIPTION = "requestItemDescription"
   const val REQUEST_ITEM_ICON = "requestItemIcon"
+  const val REQUEST_ITEM_NO_ICON = "requestItemNoIcon"
   const val EMPTY_LIST_MESSAGE = "emptyListMessage"
 
   const val REQUEST_SEARCH_BAR = "requestSearchBar"
@@ -392,7 +393,9 @@ fun RequestListItem(
                 Modifier.size(ConstantRequestList.RequestItemIconSize)
                     .testTag(RequestListTestTags.REQUEST_ITEM_ICON))
       } else {
-        Box(Modifier.size(ConstantRequestList.RequestItemIconSize))
+        Box(
+            Modifier.size(ConstantRequestList.RequestItemIconSize)
+                .testTag(RequestListTestTags.REQUEST_ITEM_NO_ICON))
       }
       Spacer(Modifier.width(ConstantRequestList.RowSpacing))
       Column(Modifier.fillMaxWidth()) {

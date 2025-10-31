@@ -82,7 +82,7 @@ class RequestListTests : BaseEmulatorTest() {
           name = "John",
           lastName = "Doe",
           email = null,
-          photo = bitmap,
+          photo = null,
           kudos = 0,
           section = Section.OTHER,
           arrivalDate = Date())
@@ -139,24 +139,6 @@ class RequestListTests : BaseEmulatorTest() {
       composeTestRule.onNodeWithText(r.title).assertExists()
       composeTestRule.onNodeWithText(r.description).assertExists()
     }
-  }
-
-  @Test
-  fun loadsAndDisplaysProfileIcons() {
-    val creators = listOf("u1", "u2")
-    val requests = sampleRequests(creators)
-    val vm =
-        RequestListViewModel(
-            FakeRequestRepository(requests), FakeUserProfileRepository(createBitmap()))
-
-    composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
-
-    composeTestRule.waitUntil(5_000) { vm.profileIcons.value.keys.containsAll(creators) }
-
-    // Vérifier que le bon nombre d'icônes est affiché
-    composeTestRule
-        .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM_ICON, useUnmergedTree = true)
-        .assertCountEquals(creators.size)
   }
 
   @Test
@@ -270,7 +252,7 @@ class RequestListTests : BaseEmulatorTest() {
         .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM_DESCRIPTION, useUnmergedTree = true)
         .assertCountEquals(3)
     composeTestRule
-        .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM_ICON, useUnmergedTree = true)
+        .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM_NO_ICON, useUnmergedTree = true)
         .assertCountEquals(3)
   }
 

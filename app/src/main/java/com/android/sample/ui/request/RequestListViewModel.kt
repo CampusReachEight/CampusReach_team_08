@@ -1,6 +1,8 @@
 package com.android.sample.ui.request
 
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -15,7 +17,9 @@ import com.android.sample.model.request.Tags
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import java.net.URL
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -26,6 +30,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * ViewModel backing the Request List screen.
@@ -178,7 +183,8 @@ class RequestListViewModel(
     viewModelScope.launch {
       try {
         val profile = profileRepository.getUserProfile(userId)
-        val bmp = profile.photo
+        val uri = profile.photo
+        val bmp = if (uri != null) loadBitmapFromUri(uri) else null
         _profileIcons.value = _profileIcons.value + (userId to bmp)
       } catch (e: Exception) {
         if (verboseLogging) Log.e("RequestListViewModel", "Failed to load profile for $userId", e)
@@ -187,6 +193,20 @@ class RequestListViewModel(
     }
   }
 
+  private suspend fun loadBitmapFromUri(uri: Uri): Bitmap? =
+      withContext(Dispatchers.IO) {
+        try {
+          when (uri.scheme?.lowercase()) {
+            "http",
+            "https" ->
+                URL(uri.toString()).openStream().use { input -> BitmapFactory.decodeStream(input) }
+            else ->
+                null // Unsupported without a Context (e.g., content://). Could be extended later.
+          }
+        } catch (_: Exception) {
+          null
+        }
+      }
   /** Clears the current error message, if any. */
   fun clearError() {
     _state.update { it.copy(errorMessage = null) }

@@ -1,7 +1,5 @@
 package com.android.sample.ui.navigation
 
-import com.android.sample.ui.theme.NavigationTab
-
 object NavigationTestTags {
   const val BOTTOM_NAVIGATION_MENU = "BottomNavigationMenu"
   const val GO_BACK_BUTTON = "GoBackButton"

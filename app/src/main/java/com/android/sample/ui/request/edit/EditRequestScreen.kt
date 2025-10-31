@@ -104,7 +104,10 @@ fun EditRequestScreen(
           onClearError = viewModel::clearError,
           onClearSuccessMessage = viewModel::clearSuccessMessage,
           onSearchLocations = viewModel::searchLocations,
-          onClearLocationSearch = viewModel::clearLocationSearch)
+          onClearLocationSearch = viewModel::clearLocationSearch,
+          onDeleteClick = viewModel::confirmDelete,
+          onConfirmDelete = { viewModel.deleteRequest(requestId ?: "") { onNavigateBack() } },
+          onCancelDelete = viewModel::cancelDelete)
 
   Scaffold(
       topBar = {
@@ -222,6 +225,14 @@ fun EditRequestContent(
 
         SaveButton(
             isEditMode = uiState.isEditMode, isLoading = uiState.isLoading, onSave = actions.onSave)
+        if (uiState.isEditMode) {
+          DeleteButton(isDeleting = uiState.isDeleting, onDeleteClick = actions.onDeleteClick)
+        }
+        DeleteConfirmationDialog(
+            showDialog = uiState.showDeleteConfirmation,
+            isDeleting = uiState.isDeleting,
+            onConfirmDelete = actions.onConfirmDelete,
+            onCancelDelete = actions.onCancelDelete)
       }
 }
 
