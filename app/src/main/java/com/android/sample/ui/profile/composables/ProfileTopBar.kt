@@ -12,12 +12,11 @@ import androidx.compose.runtime.Composable
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileTopBar(onBackClick: () -> Unit) {
-    TopAppBar(
-        title = { Text("Profile") },
-        navigationIcon = {
-            IconButton(onClick = onBackClick) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-            }
+  TopAppBar(
+      title = { Text("Profile") },
+      navigationIcon = {
+        IconButton(onClick = onBackClick) {
+          Icon(Icons.Default.ArrowBack, contentDescription = "Back")
         }
-    )
+      })
 }

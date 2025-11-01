@@ -13,18 +13,14 @@ import com.android.sample.ui.profile.ProfileDimens
 
 @Composable
 fun LoadingIndicator(modifier: Modifier = Modifier) {
-    CircularProgressIndicator(modifier = modifier)
+  CircularProgressIndicator(modifier = modifier)
 }
 
 @Composable
 fun ErrorBanner(message: String, modifier: Modifier = Modifier) {
-    Text(
-        text = message,
-        color = MaterialTheme.colorScheme.error,
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(ProfileDimens.Horizontal)
-            .testTag("profile_error"),
-        textAlign = TextAlign.Center
-    )
+  Text(
+      text = message,
+      color = MaterialTheme.colorScheme.error,
+      modifier = modifier.fillMaxWidth().padding(ProfileDimens.Horizontal).testTag("profile_error"),
+      textAlign = TextAlign.Center)
 }

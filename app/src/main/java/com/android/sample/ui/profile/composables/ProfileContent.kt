@@ -21,21 +21,18 @@ fun ProfileContent(
     onLogoutRequested: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(
-        modifier = modifier
-            .verticalScroll(rememberScrollState())
-    ) {
-        state.errorMessage?.let {
-            ErrorBanner(it)
-            Spacer(modifier = Modifier.height(ProfileDimens.Vertical))
-        }
-
-        ProfileHeader(state = state)
-        Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
-        ProfileStats(state = state)
-        Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
-        ProfileInformation(state = state)
-        Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
-        ProfileActions(onLogoutClick = onLogoutRequested)
+  Column(modifier = modifier.verticalScroll(rememberScrollState())) {
+    state.errorMessage?.let {
+      ErrorBanner(it)
+      Spacer(modifier = Modifier.height(ProfileDimens.Vertical))
     }
+
+    ProfileHeader(state = state)
+    Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
+    ProfileStats(state = state)
+    Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
+    ProfileInformation(state = state)
+    Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
+    ProfileActions(onLogoutClick = onLogoutRequested)
+  }
 }

@@ -25,49 +25,46 @@ fun ProfileHeader(
     onEditClick: () -> Unit = {},
     palette: AppPalette = appPalette()
 ) {
-    val accent = palette.accent
-    val surface = palette.surface
-    val textColor = palette.text
+  val accent = palette.accent
+  val surface = palette.surface
+  val textColor = palette.text
 
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(ProfileDimens.HeaderPadding)
-            .testTag(ProfileTestTags.PROFILE_HEADER),
-        colors = CardDefaults.cardColors(containerColor = accent),
-        elevation = CardDefaults.cardElevation(defaultElevation = ProfileDimens.CardElevation)
-    ) {
+  Card(
+      modifier =
+          modifier
+              .fillMaxWidth()
+              .padding(ProfileDimens.HeaderPadding)
+              .testTag(ProfileTestTags.PROFILE_HEADER),
+      colors = CardDefaults.cardColors(containerColor = accent),
+      elevation = CardDefaults.cardElevation(defaultElevation = ProfileDimens.CardElevation)) {
         Box(modifier = Modifier.padding(ProfileDimens.HeaderPadding)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    Icons.Default.Person,
-                    contentDescription = "Profile Picture",
-                    modifier = Modifier
-                        .size(ProfileDimens.ProfilePicture)
+          Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                Icons.Default.Person,
+                contentDescription = "Profile Picture",
+                modifier =
+                    Modifier.size(ProfileDimens.ProfilePicture)
                         .clip(CircleShape)
                         .background(surface),
-                    tint = accent
-                )
-                Spacer(modifier = Modifier.width(ProfileDimens.HeaderSpacer))
-                Column {
-                    Text(
-                        text = state.userName,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = textColor,
-                        modifier = Modifier.testTag(ProfileTestTags.PROFILE_HEADER_NAME)
-                    )
-                    Text(
-                        text = state.userEmail,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = textColor,
-                        modifier = Modifier.testTag(ProfileTestTags.PROFILE_HEADER_EMAIL)
-                    )
-                }
-                Spacer(modifier = Modifier.weight(1f))
-                IconButton(onClick = onEditClick) {
-                    Icon(Icons.Default.Edit, contentDescription = "Edit", tint = surface)
-                }
+                tint = accent)
+            Spacer(modifier = Modifier.width(ProfileDimens.HeaderSpacer))
+            Column {
+              Text(
+                  text = state.userName,
+                  style = MaterialTheme.typography.titleMedium,
+                  color = textColor,
+                  modifier = Modifier.testTag(ProfileTestTags.PROFILE_HEADER_NAME))
+              Text(
+                  text = state.userEmail,
+                  style = MaterialTheme.typography.bodyMedium,
+                  color = textColor,
+                  modifier = Modifier.testTag(ProfileTestTags.PROFILE_HEADER_EMAIL))
             }
+            Spacer(modifier = Modifier.weight(1f))
+            IconButton(onClick = onEditClick) {
+              Icon(Icons.Default.Edit, contentDescription = "Edit", tint = surface)
+            }
+          }
         }
-    }
+      }
 }

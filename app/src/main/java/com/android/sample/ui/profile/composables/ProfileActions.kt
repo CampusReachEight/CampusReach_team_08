@@ -27,19 +27,15 @@ import com.android.sample.ui.theme.appPalette
  * A composable function that displays a list of profile-related actions in the form of buttons.
  *
  * @param onLogoutClick A lambda function to handle the logout action. Defaults to an empty lambda.
- * @param palette An instance of [AppPalette] to define the color palette for the UI. Defaults to the global `appPalette()`.
+ * @param palette An instance of [AppPalette] to define the color palette for the UI. Defaults to
+ *   the global `appPalette()`.
  */
 @Composable
-fun ProfileActions(
-    onLogoutClick: () -> Unit = {},
-    palette: AppPalette = appPalette()
-) {
-    Column(
-        modifier =
-            Modifier
-                .padding(horizontal = ProfileDimens.Horizontal)
-                .testTag(ProfileTestTags.PROFILE_ACTIONS)
-    ) {
+fun ProfileActions(onLogoutClick: () -> Unit = {}, palette: AppPalette = appPalette()) {
+  Column(
+      modifier =
+          Modifier.padding(horizontal = ProfileDimens.Horizontal)
+              .testTag(ProfileTestTags.PROFILE_ACTIONS)) {
         // Header text for the actions section
         Text(
             text = "Actions",
@@ -52,16 +48,14 @@ fun ProfileActions(
             title = "Log out",
             subtitle = "Further secure your account for safety",
             tag = ProfileTestTags.PROFILE_ACTION_LOG_OUT,
-            onClick = onLogoutClick
-        )
+            onClick = onLogoutClick)
         // About app button
         ActionItem(
             icon = Icons.Default.Info,
             title = "About App",
             subtitle = "Find out more about CampusReach",
-            tag = ProfileTestTags.PROFILE_ACTION_ABOUT_APP
-        )
-    }
+            tag = ProfileTestTags.PROFILE_ACTION_ABOUT_APP)
+      }
 }
 
 /**
@@ -71,7 +65,8 @@ fun ProfileActions(
  * @param title The title of the action.
  * @param subtitle A brief description of the action.
  * @param tag A unique test tag for UI testing purposes.
- * @param onClick A lambda function to handle the click event for the action. Defaults to an empty lambda.
+ * @param onClick A lambda function to handle the click event for the action. Defaults to an empty
+ *   lambda.
  */
 @Composable
 fun ActionItem(
@@ -82,31 +77,28 @@ fun ActionItem(
     onClick: () -> Unit = {},
     palette: AppPalette = appPalette()
 ) {
-    Card(
-        modifier =
-            Modifier.fillMaxWidth()
-                .padding(vertical = ProfileDimens.ActionVerticalPadding)
-                .testTag(tag)
-                .clickable { onClick() },
-        colors = CardDefaults.cardColors(containerColor = appPalette().surface)) {
+  Card(
+      modifier =
+          Modifier.fillMaxWidth()
+              .padding(vertical = ProfileDimens.ActionVerticalPadding)
+              .testTag(tag)
+              .clickable { onClick() },
+      colors = CardDefaults.cardColors(containerColor = appPalette().surface)) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(ProfileDimens.ActionInternalPadding),
             verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                modifier = Modifier.padding(end = ProfileDimens.Horizontal),
-                tint = appPalette().accent)
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = palette.text)
+              Icon(
+                  imageVector = icon,
+                  contentDescription = null,
+                  modifier = Modifier.padding(end = ProfileDimens.Horizontal),
+                  tint = appPalette().accent)
+              Column(modifier = Modifier.weight(1f)) {
+                Text(text = title, style = MaterialTheme.typography.bodyLarge, color = palette.text)
                 Text(
                     text = subtitle,
                     style = MaterialTheme.typography.bodySmall,
                     color = palette.accent.copy(alpha = 0.6f))
+              }
             }
-        }
-    }
+      }
 }
