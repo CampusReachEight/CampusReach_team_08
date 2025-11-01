@@ -50,6 +50,8 @@ object ProfileTestTags {
 
   // Logout dialog
   const val LOG_OUT_DIALOG = "log_out_dialog"
+  const val LOG_OUT_DIALOG_TITLE = "log_out_dialog_title"
+  const val LOG_OUT_DIALOG_MESSAGE = "log_out_dialog_message"
   const val LOG_OUT_DIALOG_CONFIRM = "log_out_dialog_confirm"
   const val LOG_OUT_DIALOG_CANCEL = "log_out_dialog_cancel"
 

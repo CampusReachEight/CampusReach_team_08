@@ -19,8 +19,14 @@ fun LogoutDialog(visible: Boolean, onConfirm: () -> Unit, onDismiss: () -> Unit)
   AlertDialog(
       modifier = Modifier.testTag(ProfileTestTags.LOG_OUT_DIALOG),
       onDismissRequest = onDismiss,
-      title = { Text("Log out") },
-      text = { Text("Are you sure you want to log out?") },
+      title = {
+        Text(text = "Log out", modifier = Modifier.testTag(ProfileTestTags.LOG_OUT_DIALOG_TITLE))
+      },
+      text = {
+        Text(
+            text = "Are you sure you want to log out?",
+            modifier = Modifier.testTag(ProfileTestTags.LOG_OUT_DIALOG_MESSAGE))
+      },
       confirmButton = {
         TextButton(
             onClick = onConfirm,

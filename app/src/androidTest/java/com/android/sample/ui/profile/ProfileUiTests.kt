@@ -467,14 +467,13 @@ class ProfileUiTests {
 
     // exactly one dialog instance
     composeTestRule.onAllNodesWithTag(ProfileTestTags.LOG_OUT_DIALOG).assertCountEquals(1)
-
-    // buttons present
+    composeTestRule
+        .onNodeWithTag(ProfileTestTags.LOG_OUT_DIALOG_TITLE)
+        .assertIsDisplayed()
+        .assertTextEquals("Log out")
+    // buttons present (use test tags to avoid ambiguous text matches)
     composeTestRule.onNodeWithTag(ProfileTestTags.LOG_OUT_DIALOG_CONFIRM).assertIsDisplayed()
     composeTestRule.onNodeWithTag(ProfileTestTags.LOG_OUT_DIALOG_CANCEL).assertIsDisplayed()
-
-    // expected texts (title + buttons)
-    composeTestRule.onNodeWithText("Log out").assertIsDisplayed()
-    composeTestRule.onNodeWithText("Cancel").assertIsDisplayed()
   }
 
   // ----- Loading & Error -----
