@@ -23,29 +23,6 @@ import com.android.sample.ui.profile.composables.ProfileStats
 import com.android.sample.ui.theme.UiDimens
 import com.android.sample.ui.theme.appPalette
 
-object ProfileDimens {
-  val Horizontal = UiDimens.SpacingMd
-  val Vertical = UiDimens.SpacingSm
-  val CardElevation = UiDimens.CardElevation
-  val ProfilePicture = UiDimens.IconLarge
-  val HeaderPadding = UiDimens.SpacingMd
-  val HeaderSpacer = UiDimens.SpacingMd
-
-  // Stat Card dimensions
-  val StatCardHeight = UiDimens.StatCardHeight
-  val StatCardVerticalPadding = UiDimens.SpacingLg
-  val StatCardHorizontalPadding = UiDimens.SpacingMd
-  val StatCardSpacer = UiDimens.SpacingXs
-
-  val InfoCornerRadius = UiDimens.CornerRadiusSm
-  val InfoSpacer = UiDimens.SpacingSm
-  val ActionVerticalPadding = UiDimens.SpacingSm
-  val ActionInternalPadding = UiDimens.SpacingSm
-  val IconSize = UiDimens.IconMedium
-}
-
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(viewModel: ProfileViewModel = viewModel(), onBackClick: () -> Unit = {}) {
