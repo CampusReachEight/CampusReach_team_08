@@ -20,6 +20,7 @@ import androidx.compose.ui.text.style.TextAlign
 import com.android.sample.ui.profile.ProfileDimens
 import com.android.sample.ui.profile.ProfileState
 import com.android.sample.ui.profile.ProfileTestTags
+import com.android.sample.ui.theme.AppPalette
 import com.android.sample.ui.theme.appPalette
 
 @Composable
@@ -30,59 +31,69 @@ fun StatGroupCard(
     bottomValue: Int,
     modifier: Modifier = Modifier,
     topTag: String,
-    bottomTag: String
+    bottomTag: String,
+    palette: AppPalette = appPalette()
 ) {
     Card(
         modifier = modifier.height(ProfileDimens.StatCardHeight),
-        colors = CardDefaults.cardColors(containerColor = appPalette().secondary),
-        elevation = CardDefaults.cardElevation(defaultElevation = ProfileDimens.CardElevation)) {
+        colors = CardDefaults.cardColors(containerColor = palette.secondary),
+        elevation = CardDefaults.cardElevation(defaultElevation = ProfileDimens.CardElevation)
+    ) {
         Column(
             modifier =
                 Modifier.fillMaxWidth()
                     .padding(
                         vertical = ProfileDimens.StatCardVerticalPadding,
-                        horizontal = ProfileDimens.StatCardHorizontalPadding),
+                        horizontal = ProfileDimens.StatCardHorizontalPadding
+                    ),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center) {
+            verticalArrangement = Arrangement.Center
+        ) {
             Text(
                 text = labelTop,
                 style = MaterialTheme.typography.bodySmall,
-                color = appPalette().text,
-                textAlign = TextAlign.Center)
+                color = palette.text,
+                textAlign = TextAlign.Center
+            )
             Spacer(modifier = Modifier.height(ProfileDimens.StatCardSpacer))
             Text(
                 text = topValue.toString(),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
-                color = appPalette().accent,
+                color = palette.accent,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.testTag(topTag))
+                modifier = Modifier.testTag(topTag)
+            )
             Spacer(modifier = Modifier.height(ProfileDimens.StatCardSpacer))
             Text(
                 text = labelBottom,
                 style = MaterialTheme.typography.bodySmall,
-                color = appPalette().text,
-                textAlign = TextAlign.Center)
+                color = palette.text,
+                textAlign = TextAlign.Center
+            )
             Spacer(modifier = Modifier.height(ProfileDimens.StatCardSpacer))
             Text(
                 text = bottomValue.toString(),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
-                color = appPalette().accent,
+                color = palette.accent,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.testTag(bottomTag))
+                modifier = Modifier.testTag(bottomTag)
+            )
         }
     }
 }
 
 @Composable
-fun ProfileStats(state: ProfileState) {
+fun ProfileStats(state: ProfileState, palette: AppPalette = appPalette()) {
     Row(
         modifier =
-            Modifier.fillMaxWidth()
+            Modifier
+                .fillMaxWidth()
                 .padding(start = ProfileDimens.ProfilePicture, end = ProfileDimens.ProfilePicture)
                 .testTag(ProfileTestTags.PROFILE_STATS),
-        horizontalArrangement = Arrangement.spacedBy(ProfileDimens.Horizontal)) {
+        horizontalArrangement = Arrangement.spacedBy(ProfileDimens.Horizontal)
+    ) {
         StatGroupCard(
             labelTop = "Kudos",
             topValue = state.kudosReceived,
@@ -90,7 +101,9 @@ fun ProfileStats(state: ProfileState) {
             bottomValue = state.helpReceived,
             modifier = Modifier.weight(1f),
             topTag = ProfileTestTags.PROFILE_STAT_TOP_KUDOS,
-            bottomTag = ProfileTestTags.PROFILE_STAT_BOTTOM_HELP_RECEIVED)
+            bottomTag = ProfileTestTags.PROFILE_STAT_BOTTOM_HELP_RECEIVED,
+            palette = palette
+        )
         StatGroupCard(
             labelTop = "Followers",
             topValue = state.followers,
@@ -98,6 +111,8 @@ fun ProfileStats(state: ProfileState) {
             bottomValue = state.following,
             modifier = Modifier.weight(1f),
             topTag = ProfileTestTags.PROFILE_STAT_TOP_FOLLOWERS,
-            bottomTag = ProfileTestTags.PROFILE_STAT_BOTTOM_FOLLOWING)
+            bottomTag = ProfileTestTags.PROFILE_STAT_BOTTOM_FOLLOWING,
+            palette = palette
+        )
     }
 }

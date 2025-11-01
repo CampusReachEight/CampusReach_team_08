@@ -76,7 +76,8 @@ fun ActionItem(
     title: String,
     subtitle: String,
     tag: String,
-    onClick: () -> Unit = {}
+    onClick: () -> Unit = {},
+    palette: AppPalette = appPalette()
 ) {
     Card(
         modifier =

@@ -17,47 +17,53 @@ import androidx.compose.ui.platform.testTag
 import com.android.sample.ui.profile.ProfileDimens
 import com.android.sample.ui.profile.ProfileState
 import com.android.sample.ui.profile.ProfileTestTags
+import com.android.sample.ui.theme.AppPalette
 import com.android.sample.ui.theme.appPalette
 
 @Composable
-fun InfoRow(label: String, value: String) {
+fun InfoRow(label: String, value: String, palette: AppPalette = appPalette()) {
     Box(
         modifier =
-            Modifier.fillMaxWidth()
+            Modifier
+                .fillMaxWidth()
                 .clip(RoundedCornerShape(ProfileDimens.InfoCornerRadius))
-                .background(appPalette().surface)
-                .padding(
-                    vertical = ProfileDimens.CardElevation, horizontal = ProfileDimens.Horizontal)) {
+                .background(palette.surface)
+                .padding(vertical = ProfileDimens.CardElevation, horizontal = ProfileDimens.Horizontal)
+    ) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(text = label, style = MaterialTheme.typography.bodyMedium, color = appPalette().text)
+            Text(text = label, style = MaterialTheme.typography.bodyMedium, color = palette.text)
             Text(
                 text = value,
                 style = MaterialTheme.typography.bodyMedium,
-                color = appPalette().accent,
-                modifier = Modifier.testTag("profile_info_${label.replace(" ", "_").lowercase()}"))
+                color = palette.accent,
+                modifier = Modifier.testTag("profile_info_${label.replace(" ", "_").lowercase()}")
+            )
         }
     }
 }
 
 @Composable
-fun ProfileInformation(state: ProfileState) {
+fun ProfileInformation(state: ProfileState, palette: AppPalette = appPalette()) {
     Column(
         modifier =
-            Modifier.padding(horizontal = ProfileDimens.Horizontal)
-                .testTag(ProfileTestTags.PROFILE_INFORMATION)) {
+            Modifier
+                .padding(horizontal = ProfileDimens.Horizontal)
+                .testTag(ProfileTestTags.PROFILE_INFORMATION)
+    ) {
         Text(
             text = "Information",
             style = MaterialTheme.typography.titleMedium,
-            color = appPalette().text,
-            modifier = Modifier.padding(bottom = ProfileDimens.Vertical))
-        InfoRow(label = "Name", value = state.userName)
+            color = palette.text,
+            modifier = Modifier.padding(bottom = ProfileDimens.Vertical)
+        )
+        InfoRow(label = "Name", value = state.userName, palette = palette)
         Spacer(modifier = Modifier.height(ProfileDimens.InfoSpacer))
-        InfoRow(label = "Profile Id", value = state.profileId)
+        InfoRow(label = "Profile Id", value = state.profileId, palette = palette)
         Spacer(modifier = Modifier.height(ProfileDimens.InfoSpacer))
-        InfoRow(label = "Arrival date", value = state.arrivalDate)
+        InfoRow(label = "Arrival date", value = state.arrivalDate, palette = palette)
         Spacer(modifier = Modifier.height(ProfileDimens.InfoSpacer))
-        InfoRow(label = "Section", value = state.section)
+        InfoRow(label = "Section", value = state.section, palette = palette)
         Spacer(modifier = Modifier.height(ProfileDimens.InfoSpacer))
-        InfoRow(label = "Email", value = state.userEmail)
+        InfoRow(label = "Email", value = state.userEmail, palette = palette)
     }
 }

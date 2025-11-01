@@ -16,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import com.android.sample.ui.profile.ProfileDimens
 import com.android.sample.ui.profile.ProfileState
 import com.android.sample.ui.profile.ProfileTestTags
+import com.android.sample.ui.theme.AppPalette
 import com.android.sample.ui.theme.appPalette
 
 @Composable
@@ -23,11 +24,11 @@ fun ProfileHeader(
     state: ProfileState,
     modifier: Modifier = Modifier,
     onEditClick: () -> Unit = {},
-    palette: com.android.sample.ui.theme.AppPalette = appPalette()
+    palette: AppPalette = appPalette()
 ) {
     val accent = palette.accent
     val surface = palette.surface
-    val textColor = palette.surface
+    val textColor = palette.text
 
     Card(
         modifier = modifier
