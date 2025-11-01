@@ -40,7 +40,7 @@ fun ProfileActions(onLogoutClick: () -> Unit = {}, palette: AppPalette = appPale
         Text(
             text = "Actions",
             style = MaterialTheme.typography.titleMedium,
-            color = appPalette().text,
+            color = palette.text,
             modifier = Modifier.padding(bottom = ProfileDimens.Vertical))
         // Logout action item
         ActionItem(
@@ -83,7 +83,7 @@ fun ActionItem(
               .padding(vertical = ProfileDimens.ActionVerticalPadding)
               .testTag(tag)
               .clickable { onClick() },
-      colors = CardDefaults.cardColors(containerColor = appPalette().surface)) {
+      colors = CardDefaults.cardColors(containerColor = palette.surface)) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(ProfileDimens.ActionInternalPadding),
             verticalAlignment = Alignment.CenterVertically) {
@@ -91,7 +91,7 @@ fun ActionItem(
                   imageVector = icon,
                   contentDescription = null,
                   modifier = Modifier.padding(end = ProfileDimens.Horizontal),
-                  tint = appPalette().accent)
+                  tint = palette.accent)
               Column(modifier = Modifier.weight(1f)) {
                 Text(text = title, style = MaterialTheme.typography.bodyLarge, color = palette.text)
                 Text(

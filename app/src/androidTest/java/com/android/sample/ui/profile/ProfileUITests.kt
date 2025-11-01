@@ -1,5 +1,6 @@
 package com.android.sample.ui.profile
 
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHasClickAction
@@ -12,6 +13,8 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import com.android.sample.ui.profile.composables.ErrorBanner
+import com.android.sample.ui.profile.composables.InfoRow
 import com.android.sample.ui.profile.composables.LoadingIndicator
 import com.android.sample.ui.profile.composables.LogoutDialog
 import com.android.sample.ui.profile.composables.ProfileActions
@@ -19,6 +22,7 @@ import com.android.sample.ui.profile.composables.ProfileContent
 import com.android.sample.ui.profile.composables.ProfileHeader
 import com.android.sample.ui.profile.composables.ProfileInformation
 import com.android.sample.ui.profile.composables.ProfileStats
+import com.android.sample.ui.profile.composables.ProfileTopBar
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -76,6 +80,24 @@ class ProfileUiTests {
   }
 
   @Test
+  fun topBar_displaysTitle_and_backButton() {
+    composeTestRule.setContent { ProfileTopBar(onBackClick = {}) }
+
+    composeTestRule.onNodeWithText("Profile").assertIsDisplayed()
+    composeTestRule.onNodeWithContentDescription("Back").assertIsDisplayed()
+  }
+
+  @Test
+  fun topBar_backButton_invokesCallback() {
+    var clicked = false
+    composeTestRule.setContent { ProfileTopBar(onBackClick = { clicked = true }) }
+
+    composeTestRule.onNodeWithContentDescription("Back").assertHasClickAction()
+    composeTestRule.onNodeWithContentDescription("Back").performClick()
+    composeTestRule.runOnIdle { assertTrue(clicked) }
+  }
+
+  @Test
   fun profileHeader_editButton_invokesCallback() {
     var clicked = false
     val state = ProfileState.default()
@@ -84,6 +106,48 @@ class ProfileUiTests {
     composeTestRule.onNodeWithContentDescription("Edit").assertHasClickAction()
     composeTestRule.onNodeWithContentDescription("Edit").performClick()
     composeTestRule.runOnIdle { assertTrue(clicked) }
+  }
+
+  @Test
+  fun profileHeader_displaysEmptyValues_whenNoNameOrEmail() {
+    val emptyState = ProfileState.default().copy(userName = "", userEmail = "")
+    composeTestRule.setContent { ProfileHeader(state = emptyState) }
+
+    composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_HEADER_NAME).assertTextEquals("")
+    composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_HEADER_EMAIL).assertTextEquals("")
+  }
+
+  @Test
+  fun profileHeader_updates_whenStateChanges() {
+    val state =
+        mutableStateOf(ProfileState.default().copy(userName = "Initial", userEmail = "init@ex.com"))
+    composeTestRule.setContent { ProfileHeader(state = state.value) }
+
+    composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_HEADER_NAME).assertTextEquals("Initial")
+    composeTestRule
+        .onNodeWithTag(ProfileTestTags.PROFILE_HEADER_EMAIL)
+        .assertTextEquals("init@ex.com")
+
+    composeTestRule.runOnIdle {
+      state.value = state.value.copy(userName = "Updated Name", userEmail = "updated@ex.com")
+    }
+
+    composeTestRule
+        .onNodeWithTag(ProfileTestTags.PROFILE_HEADER_NAME)
+        .assertTextEquals("Updated Name")
+    composeTestRule
+        .onNodeWithTag(ProfileTestTags.PROFILE_HEADER_EMAIL)
+        .assertTextEquals("updated@ex.com")
+  }
+
+  @Test
+  fun profileHeader_preservesLongName_andEmail_withoutTruncation() {
+    val longText = "L".repeat(256)
+    val longState = ProfileState.default().copy(userName = longText, userEmail = longText)
+    composeTestRule.setContent { ProfileHeader(state = longState) }
+
+    composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_HEADER_NAME).assertTextEquals(longText)
+    composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_HEADER_EMAIL).assertTextEquals(longText)
   }
 
   // ----- Stats -----
@@ -116,6 +180,74 @@ class ProfileUiTests {
     composeTestRule.onNodeWithText("66").assertIsDisplayed()
   }
 
+  @Test
+  fun statGroupCard_displaysTopAndBottom_values_and_tags_directly() {
+    composeTestRule.setContent {
+      com.android.sample.ui.profile.composables.StatGroupCard(
+          labelTop = "Top",
+          topValue = 7,
+          labelBottom = "Bottom",
+          bottomValue = 3,
+          topTag = "top_test_tag",
+          bottomTag = "bottom_test_tag")
+    }
+
+    composeTestRule.onNodeWithTag("top_test_tag").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("bottom_test_tag").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("top_test_tag").assertTextEquals("7")
+    composeTestRule.onNodeWithTag("bottom_test_tag").assertTextEquals("3")
+  }
+
+  @Test
+  fun profileStats_providesUnique_statTags_forEachCard() {
+    val s = ProfileState(kudosReceived = 1, helpReceived = 2, followers = 3, following = 4)
+    composeTestRule.setContent { ProfileStats(state = s) }
+
+    // each tag should appear exactly once
+    composeTestRule.onAllNodesWithTag(ProfileTestTags.PROFILE_STAT_TOP_KUDOS).assertCountEquals(1)
+    composeTestRule
+        .onAllNodesWithTag(ProfileTestTags.PROFILE_STAT_BOTTOM_HELP_RECEIVED)
+        .assertCountEquals(1)
+    composeTestRule
+        .onAllNodesWithTag(ProfileTestTags.PROFILE_STAT_TOP_FOLLOWERS)
+        .assertCountEquals(1)
+    composeTestRule
+        .onAllNodesWithTag(ProfileTestTags.PROFILE_STAT_BOTTOM_FOLLOWING)
+        .assertCountEquals(1)
+
+    // values visible
+    composeTestRule.onNodeWithText("1").assertIsDisplayed()
+    composeTestRule.onNodeWithText("2").assertIsDisplayed()
+    composeTestRule.onNodeWithText("3").assertIsDisplayed()
+    composeTestRule.onNodeWithText("4").assertIsDisplayed()
+  }
+
+  @Test
+  fun profileStats_updatesValues_whenStateChanges() {
+    val state =
+        mutableStateOf(
+            ProfileState.default()
+                .copy(kudosReceived = 5, helpReceived = 6, followers = 7, following = 8))
+    composeTestRule.setContent { ProfileStats(state = state.value) }
+
+    // initial values
+    composeTestRule.onNodeWithText("5").assertIsDisplayed()
+    composeTestRule.onNodeWithText("6").assertIsDisplayed()
+    composeTestRule.onNodeWithText("7").assertIsDisplayed()
+    composeTestRule.onNodeWithText("8").assertIsDisplayed()
+
+    // update the backing state and verify the UI updates
+    composeTestRule.runOnIdle {
+      state.value =
+          state.value.copy(kudosReceived = 50, helpReceived = 60, followers = 70, following = 80)
+    }
+
+    composeTestRule.onNodeWithText("50").assertIsDisplayed()
+    composeTestRule.onNodeWithText("60").assertIsDisplayed()
+    composeTestRule.onNodeWithText("70").assertIsDisplayed()
+    composeTestRule.onNodeWithText("80").assertIsDisplayed()
+  }
+
   // ----- Information -----
   @Test
   fun infoRows_displayAllLabels_and_values() {
@@ -138,6 +270,56 @@ class ProfileUiTests {
     composeTestRule.onNodeWithTag("profile_info_email").assertTextEquals("alice@ex.com")
   }
 
+  @Test
+  fun infoRow_generatesTag_fromLabel_withSpacesAndCase() {
+    composeTestRule.setContent { InfoRow(label = "Arrival date", value = "01/01/2020") }
+
+    // InfoRow creates tag: profile_info_arrival_date
+    composeTestRule.onNodeWithTag("profile_info_arrival_date").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("profile_info_arrival_date").assertTextEquals("01/01/2020")
+  }
+
+  @Test
+  fun profileInformation_showsLabels_and_handlesEmptyValues() {
+    val emptyState =
+        ProfileState.default()
+            .copy(userName = "", userEmail = "", profileId = "", arrivalDate = "", section = "")
+
+    composeTestRule.setContent { ProfileInformation(state = emptyState) }
+
+    // Header label remains visible
+    composeTestRule.onNodeWithText("Information").assertIsDisplayed()
+
+    // Each info value exists and is an empty string
+    composeTestRule.onNodeWithTag("profile_info_name").assertTextEquals("")
+    composeTestRule.onNodeWithTag("profile_info_profile_id").assertTextEquals("")
+    composeTestRule.onNodeWithTag("profile_info_arrival_date").assertTextEquals("")
+    composeTestRule.onNodeWithTag("profile_info_section").assertTextEquals("")
+    composeTestRule.onNodeWithTag("profile_info_email").assertTextEquals("")
+  }
+
+  @Test
+  fun profileInformation_preservesLongValues_withoutTruncation() {
+    val longText = "L".repeat(256)
+    val stateWithLongs =
+        ProfileState.default()
+            .copy(
+                userName = longText,
+                userEmail = longText,
+                profileId = longText,
+                arrivalDate = longText,
+                section = longText)
+
+    composeTestRule.setContent { ProfileInformation(state = stateWithLongs) }
+
+    // Verify the full long text is set on each value node
+    composeTestRule.onNodeWithTag("profile_info_name").assertTextEquals(longText)
+    composeTestRule.onNodeWithTag("profile_info_profile_id").assertTextEquals(longText)
+    composeTestRule.onNodeWithTag("profile_info_arrival_date").assertTextEquals(longText)
+    composeTestRule.onNodeWithTag("profile_info_section").assertTextEquals(longText)
+    composeTestRule.onNodeWithTag("profile_info_email").assertTextEquals(longText)
+  }
+
   // ----- Actions -----
   @Test
   fun profileActions_displaysItems_and_titles() {
@@ -157,6 +339,53 @@ class ProfileUiTests {
     composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_ACTION_LOG_OUT).assertHasClickAction()
     composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_ACTION_LOG_OUT).performClick()
     composeTestRule.runOnIdle { assertTrue(triggered) }
+  }
+
+  @Test
+  fun actionItem_direct_displaysTitleSubtitle_and_invokesOnClick() {
+    var clicked = false
+    composeTestRule.setContent {
+      com.android.sample.ui.profile.composables.ActionItem(
+          icon = androidx.compose.material.icons.Icons.Default.Info,
+          title = "Test Action",
+          subtitle = "Do something",
+          tag = "test_action_item",
+          onClick = { clicked = true },
+          palette = com.android.sample.ui.theme.appPalette())
+    }
+
+    composeTestRule.onNodeWithTag("test_action_item").assertIsDisplayed()
+    composeTestRule.onNodeWithText("Test Action").assertIsDisplayed()
+    composeTestRule.onNodeWithText("Do something").assertIsDisplayed()
+
+    composeTestRule.onNodeWithTag("test_action_item").performClick()
+    composeTestRule.runOnIdle { assertTrue(clicked) }
+  }
+
+  @Test
+  fun profileActions_containsBothActions_uniqueTags_and_areClickable() {
+    composeTestRule.setContent { ProfileActions() }
+
+    // container visible
+    composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_ACTIONS).assertIsDisplayed()
+
+    // ensure each action appears exactly once and is clickable
+    composeTestRule.onAllNodesWithTag(ProfileTestTags.PROFILE_ACTION_LOG_OUT).assertCountEquals(1)
+    composeTestRule.onAllNodesWithTag(ProfileTestTags.PROFILE_ACTION_ABOUT_APP).assertCountEquals(1)
+
+    composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_ACTION_LOG_OUT).assertHasClickAction()
+    composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_ACTION_ABOUT_APP).assertHasClickAction()
+
+    // titles still visible
+    composeTestRule.onNodeWithText("Log out").assertIsDisplayed()
+    composeTestRule.onNodeWithText("About App").assertIsDisplayed()
+  }
+
+  @Test
+  fun profileActions_aboutApp_item_isClickable_whenComposed() {
+    composeTestRule.setContent { ProfileActions() }
+    // About App should be present and have a click action
+    composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_ACTION_ABOUT_APP).assertHasClickAction()
   }
 
   // ----- Dialogues -----
@@ -204,11 +433,62 @@ class ProfileUiTests {
     composeTestRule.onAllNodesWithTag(ProfileTestTags.LOG_OUT_DIALOG).assertCountEquals(0)
   }
 
+  @Test
+  fun logoutDialog_notVisible_whenVisibleFalse() {
+    composeTestRule.setContent { LogoutDialog(visible = false, onConfirm = {}, onDismiss = {}) }
+    composeTestRule.onAllNodesWithTag(ProfileTestTags.LOG_OUT_DIALOG).assertCountEquals(0)
+  }
+
+  @Test
+  fun logoutDialog_confirmButton_callsOnConfirm_and_hidesWhenStateCleared() {
+    var confirmed = false
+    val visibleState = mutableStateOf(true)
+
+    composeTestRule.setContent {
+      LogoutDialog(
+          visible = visibleState.value,
+          onConfirm = {
+            confirmed = true
+            visibleState.value = false
+          },
+          onDismiss = {})
+    }
+
+    composeTestRule.onNodeWithTag(ProfileTestTags.LOG_OUT_DIALOG_CONFIRM).assertHasClickAction()
+    composeTestRule.onNodeWithTag(ProfileTestTags.LOG_OUT_DIALOG_CONFIRM).performClick()
+
+    composeTestRule.runOnIdle { assertTrue(confirmed) }
+    composeTestRule.onAllNodesWithTag(ProfileTestTags.LOG_OUT_DIALOG).assertCountEquals(0)
+  }
+
+  @Test
+  fun logoutDialog_buttons_and_title_present_and_singleInstance() {
+    composeTestRule.setContent { LogoutDialog(visible = true, onConfirm = {}, onDismiss = {}) }
+
+    // exactly one dialog instance
+    composeTestRule.onAllNodesWithTag(ProfileTestTags.LOG_OUT_DIALOG).assertCountEquals(1)
+
+    // buttons present
+    composeTestRule.onNodeWithTag(ProfileTestTags.LOG_OUT_DIALOG_CONFIRM).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(ProfileTestTags.LOG_OUT_DIALOG_CANCEL).assertIsDisplayed()
+
+    // expected texts (title + buttons)
+    composeTestRule.onNodeWithText("Log out").assertIsDisplayed()
+    composeTestRule.onNodeWithText("Cancel").assertIsDisplayed()
+  }
+
   // ----- Loading & Error -----
   @Test
   fun loadingIndicator_displaysWhenComposed() {
     composeTestRule.setContent { LoadingIndicator() }
     composeTestRule.onNodeWithTag(ProfileTestTags.LOADING_INDICATOR).assertIsDisplayed()
+  }
+
+  @Test
+  fun loadingIndicator_notPresent_whenNotComposed() {
+    // Compose an empty UI and assert no loading indicator nodes exist
+    composeTestRule.setContent { /* intentionally empty */}
+    composeTestRule.onAllNodesWithTag(ProfileTestTags.LOADING_INDICATOR).assertCountEquals(0)
   }
 
   @Test
@@ -238,6 +518,36 @@ class ProfileUiTests {
     // clear the error via the viewModel (no second setContent)
     composeTestRule.runOnIdle { vm.setError(null) }
     composeTestRule.onAllNodesWithTag("profile_error").assertCountEquals(0)
+  }
+
+  @Test
+  fun errorBanner_displaysProvidedMessage_whenComposedDirectly() {
+    composeTestRule.setContent { ErrorBanner("Test error") }
+    composeTestRule.onNodeWithTag("profile_error").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("profile_error").assertTextEquals("Test error")
+  }
+
+  @Test
+  fun profileContent_showsErrorBanner_and_disappears_whenStateCleared() {
+    val state = mutableStateOf(ProfileState.withError())
+    composeTestRule.setContent { ProfileContent(state = state.value, onLogoutRequested = {}) }
+
+    // initially present
+    composeTestRule.onAllNodesWithTag("profile_error").assertCountEquals(1)
+    composeTestRule.onNodeWithTag("profile_error").assertTextEquals("Failed to load profile data")
+
+    // clear the error via state and ensure banner is removed
+    composeTestRule.runOnIdle { state.value = state.value.copy(errorMessage = null) }
+    composeTestRule.onAllNodesWithTag("profile_error").assertCountEquals(0)
+  }
+
+  @Test
+  fun errorBanner_singleInstance_inProfileContent() {
+    val state = ProfileState.withError()
+    composeTestRule.setContent { ProfileContent(state = state, onLogoutRequested = {}) }
+
+    // ensure exactly one error banner node is present
+    composeTestRule.onAllNodesWithTag("profile_error").assertCountEquals(1)
   }
 
   // ----- ProfileContent integration -----
