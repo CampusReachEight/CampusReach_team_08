@@ -22,7 +22,7 @@ import com.android.sample.R
 import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.theme.UiDimens
 import com.android.sample.ui.theme.appPalette
-import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import kotlinx.coroutines.launch
 
 /**
@@ -72,30 +72,26 @@ fun SignInScreen(
    */
   fun startGoogleLogin() {
     val clientId = context.getString(R.string.default_web_client_id)
-    viewModel.setLoading(true) // Add this method to ViewModel
+    viewModel.setLoading(true)
     viewModel.clearError()
 
     scope.launch {
       try {
-        val googleIdOption =
-            GetGoogleIdOption.Builder()
-                .setServerClientId(clientId)
-                .setFilterByAuthorizedAccounts(false)
-                .build()
+        val signInOption = GetSignInWithGoogleOption.Builder(serverClientId = clientId).build()
 
-        val request = GetCredentialRequest.Builder().addCredentialOption(googleIdOption).build()
+        val request = GetCredentialRequest.Builder().addCredentialOption(signInOption).build()
+
         val result = credentialManager.getCredential(context as Activity, request)
-        val credential = result.credential
-
-        // Delegate sign-in to ViewModel
-        viewModel.signInWithGoogle(credential, onSignInSuccess)
+        viewModel.signInWithGoogle(result.credential, onSignInSuccess)
+      } catch (e: NoCredentialException) {
+        viewModel.setError("No Google account found")
       } catch (e: GetCredentialException) {
-        // Handle credential exceptions and set appropriate error messages
         when (e) {
           is GetCredentialCancellationException -> viewModel.setError("Connection cancelled")
-          is NoCredentialException -> viewModel.setError("No Google account found")
           else -> viewModel.setError("Connection error: ${e.localizedMessage}")
         }
+      } catch (e: Exception) {
+        viewModel.setError("Unexpected error: ${e.localizedMessage}")
       }
     }
   }
