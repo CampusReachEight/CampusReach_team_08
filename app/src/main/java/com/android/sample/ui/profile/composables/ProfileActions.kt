@@ -1,3 +1,5 @@
+package com.android.sample.ui.profile.composables
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import com.android.sample.ui.profile.ProfileDimens
 import com.android.sample.ui.profile.ProfileTestTags
@@ -72,7 +75,7 @@ fun ProfileActions(
  */
 @Composable
 fun ActionItem(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     title: String,
     subtitle: String,
     tag: String,
@@ -98,11 +101,11 @@ fun ActionItem(
                 Text(
                     text = title,
                     style = MaterialTheme.typography.bodyLarge,
-                    color = appPalette().text)
+                    color = palette.text)
                 Text(
                     text = subtitle,
                     style = MaterialTheme.typography.bodySmall,
-                    color = appPalette().accent.copy(alpha = 0.6f))
+                    color = palette.accent.copy(alpha = 0.6f))
             }
         }
     }
