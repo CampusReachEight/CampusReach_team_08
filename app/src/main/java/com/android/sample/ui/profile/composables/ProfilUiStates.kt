@@ -10,10 +10,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import com.android.sample.ui.profile.ProfileDimens
+import com.android.sample.ui.profile.ProfileTestTags
 
 @Composable
 fun LoadingIndicator(modifier: Modifier = Modifier) {
-  CircularProgressIndicator(modifier = modifier)
+  CircularProgressIndicator(modifier = modifier.testTag(ProfileTestTags.LOADING_INDICATOR))
 }
 
 @Composable
