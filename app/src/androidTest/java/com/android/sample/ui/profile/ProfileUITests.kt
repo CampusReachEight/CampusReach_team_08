@@ -1,15 +1,17 @@
 package com.android.sample.ui.profile
 
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import com.android.sample.ui.profile.composables.ErrorBanner
 import com.android.sample.ui.profile.composables.LoadingIndicator
 import com.android.sample.ui.profile.composables.LogoutDialog
 import com.android.sample.ui.profile.composables.ProfileActions
@@ -160,12 +162,13 @@ class ProfileUiTests {
   // ----- Dialogues -----
   @Test
   fun logoutDialog_showsTitle_message_and_buttons_whenVisible() {
+    // Compose once and assert the dialog and its key parts (avoid ambiguous onNodeWithText("Log
+    // out"))
     composeTestRule.setContent { LogoutDialog(visible = true, onConfirm = {}, onDismiss = {}) }
 
     composeTestRule.onNodeWithTag(ProfileTestTags.LOG_OUT_DIALOG).assertIsDisplayed()
     composeTestRule.onNodeWithTag(ProfileTestTags.LOG_OUT_DIALOG_CONFIRM).assertIsDisplayed()
     composeTestRule.onNodeWithTag(ProfileTestTags.LOG_OUT_DIALOG_CANCEL).assertIsDisplayed()
-    composeTestRule.onNodeWithText("Log out").assertIsDisplayed()
     composeTestRule.onNodeWithText("Are you sure you want to log out?").assertIsDisplayed()
   }
 
@@ -182,14 +185,23 @@ class ProfileUiTests {
   @Test
   fun logoutDialog_cancelButton_callsOnDismiss_and_hiddenWhenNotVisible() {
     var dismissed = false
+    val visibleState = mutableStateOf(true)
     composeTestRule.setContent {
-      LogoutDialog(visible = true, onConfirm = {}, onDismiss = { dismissed = true })
+      // pass mutable state so the dialog can be removed without re-calling setContent from test
+      LogoutDialog(
+          visible = visibleState.value,
+          onConfirm = {},
+          onDismiss = {
+            dismissed = true
+            visibleState.value = false
+          })
     }
+
     composeTestRule.onNodeWithTag(ProfileTestTags.LOG_OUT_DIALOG_CANCEL).performClick()
     composeTestRule.runOnIdle { assertTrue(dismissed) }
 
-    composeTestRule.setContent { LogoutDialog(visible = false, onConfirm = {}, onDismiss = {}) }
-    composeTestRule.onNodeWithTag(ProfileTestTags.LOG_OUT_DIALOG).assertIsNotDisplayed()
+    // dialog should have been removed from the tree
+    composeTestRule.onAllNodesWithTag(ProfileTestTags.LOG_OUT_DIALOG).assertCountEquals(0)
   }
 
   // ----- Loading & Error -----
@@ -202,28 +214,30 @@ class ProfileUiTests {
   @Test
   fun profileScreen_loadingState_showsLoadingIndicator_and_disappearsWhenNotLoading() {
     val loadingState = ProfileState.loading()
-    composeTestRule.setContent { ProfileScreen(viewModel = ProfileViewModel(loadingState)) }
+    val vm = ProfileViewModel(loadingState)
+    composeTestRule.setContent { ProfileScreen(viewModel = vm) }
+
+    // initially loading
     composeTestRule.onNodeWithTag("profile_loading").assertIsDisplayed()
 
-    val normal = ProfileState.default().copy(isLoading = false, errorMessage = null)
-    composeTestRule.setContent { ProfileScreen(viewModel = ProfileViewModel(normal)) }
+    // flip loading off via the viewModel (no second setContent)
+    composeTestRule.runOnIdle { vm.setLoading(false) }
     composeTestRule.onNodeWithTag("profile_loading").assertIsNotDisplayed()
   }
 
   @Test
   fun errorBanner_and_profileScreen_errorState_showsMessage_and_disappears() {
-    composeTestRule.setContent { ErrorBanner(message = "Network failed") }
-    composeTestRule.onNodeWithTag("profile_error").assertIsDisplayed()
-    composeTestRule.onNodeWithText("Network failed").assertIsDisplayed()
-
+    // Start with a ProfileViewModel that has an error and compose once
     val errorState = ProfileState.withError()
-    composeTestRule.setContent { ProfileScreen(viewModel = ProfileViewModel(errorState)) }
+    val vm = ProfileViewModel(errorState)
+    composeTestRule.setContent { ProfileScreen(viewModel = vm) }
+
     composeTestRule.onNodeWithTag("profile_error").assertIsDisplayed()
     composeTestRule.onNodeWithTag("profile_error").assertTextEquals("Failed to load profile data")
 
-    val noError = ProfileState.default().copy(errorMessage = null)
-    composeTestRule.setContent { ProfileScreen(viewModel = ProfileViewModel(noError)) }
-    composeTestRule.onNodeWithTag("profile_error").assertIsNotDisplayed()
+    // clear the error via the viewModel (no second setContent)
+    composeTestRule.runOnIdle { vm.setError(null) }
+    composeTestRule.onAllNodesWithTag("profile_error").assertCountEquals(0)
   }
 
   // ----- ProfileContent integration -----
