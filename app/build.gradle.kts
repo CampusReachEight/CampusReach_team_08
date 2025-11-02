@@ -12,7 +12,7 @@ plugins {
 }
 android {
     namespace = "com.android.sample"
-    compileSdk = 34
+    compileSdk = 36
     // Load the API key from local.properties
     val localProperties = Properties()
     val localPropertiesFile = rootProject.file("local.properties")
@@ -23,7 +23,7 @@ android {
     defaultConfig {
         applicationId = "com.android.sample"
         minSdk = 28
-        targetSdk = 34
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
         testInstrumentationRunner = "com.android.sample.utils.EmulatorTestRunner"
@@ -32,6 +32,22 @@ android {
         }
         manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
     }
+
+    signingConfigs {
+        create("release") {
+            storeFile = file("../keystore/ci-debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+        getByName("debug") {
+            storeFile = file("../keystore/ci-debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true  // Enable obfuscation
@@ -40,10 +56,12 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("release")
         }
         debug {
             enableUnitTestCoverage = true
             enableAndroidTestCoverage = true
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
 
