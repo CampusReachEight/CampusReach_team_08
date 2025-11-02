@@ -25,7 +25,9 @@ import kotlinx.coroutines.launch
 data class MapUIState(
     val target: LatLng = LatLng(0.0, 0.0),
     val request: List<Request> = emptyList(),
-    val errorMsg: String? = null
+    val errorMsg: String? = null,
+    var currentRequest: Request? = null,
+    var isOwner: Boolean = false
 )
 
 /**
@@ -68,6 +70,30 @@ class MapViewModel(
     fetchAcceptedRequest()
   }
 
+  /** Refreshes the UI by updating the current request */
+  fun updateCurrentRequest(request: Request?) {
+    _uiState.value = _uiState.value.copy(currentRequest = request)
+    isHisRequest()
+  }
+
+  /** Refreshes the UI by updating the isOwner */
+  fun isHisRequest() {
+    viewModelScope.launch {
+      try {
+        if (_uiState.value.currentRequest == null) {
+          _uiState.value = _uiState.value.copy(isOwner = false)
+        } else {
+          _uiState.value =
+              _uiState.value.copy(
+                  isOwner = requestRepository.isOwnerOfRequest(_uiState.value.currentRequest!!))
+        }
+      } catch (e: Exception) {
+        setErrorMsg("Failed to get current user: ${e.message}")
+        _uiState.value = _uiState.value.copy(isOwner = false)
+      }
+    }
+  }
+
   /**
    * Fetches all accepted requests and updates the MapUIState. Sets the target location to the first
    * request with a valid location, or to EPFL if no request has a valid address.
@@ -76,7 +102,23 @@ class MapViewModel(
     viewModelScope.launch {
       try {
         val requests = requestRepository.getAllRequests()
-        val loc = requests.firstOrNull()?.location ?: EPFL_LOCATION
+
+        val current = _uiState.value.currentRequest
+        // if the currentRequest has been deleted
+        if (current == null || requests.none { it.requestId == current.requestId }) {
+          _uiState.value = _uiState.value.copy(currentRequest = null, isOwner = false)
+        }
+        // reassigned the updated request to current request
+        else {
+          val updatedCurrent = requests.find { it.requestId == current.requestId }
+          _uiState.value =
+              _uiState.value.copy(currentRequest = updatedCurrent, isOwner = _uiState.value.isOwner)
+        }
+
+        val loc =
+            _uiState.value.currentRequest?.location
+                ?: requests.firstOrNull()?.location
+                ?: EPFL_LOCATION
         _uiState.value =
             MapUIState(target = LatLng(loc.latitude, loc.longitude), request = requests)
       } catch (e: Exception) {

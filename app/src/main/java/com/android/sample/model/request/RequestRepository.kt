@@ -65,6 +65,15 @@ interface RequestRepository {
    * @param requestId The unique identifier of the request to cancel.
    */
   suspend fun cancelAcceptance(requestId: String)
+
+  /**
+   * Is the current user the owner of the request
+   *
+   * @param request The request to check.
+   * @return true if the current user is the owner of the request
+   * @throws Exception if there is no current user
+   */
+  suspend fun isOwnerOfRequest(request: Request): Boolean
 }
 
 // Commented out mockup for testing purposes

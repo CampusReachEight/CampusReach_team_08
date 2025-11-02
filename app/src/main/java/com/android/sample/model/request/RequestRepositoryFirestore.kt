@@ -106,4 +106,9 @@ class RequestRepositoryFirestore(
     val list = request.people - currentUserId
     collectionRef.document(requestId).update("people", list).await()
   }
+
+  override suspend fun isOwnerOfRequest(request: Request): Boolean {
+    val currentUserId = Firebase.auth.currentUser?.uid ?: notAuthenticated()
+    return currentUserId == request.creatorId
+  }
 }
