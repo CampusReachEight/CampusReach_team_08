@@ -3,7 +3,6 @@ package com.android.sample.model.map
 import android.annotation.SuppressLint
 import android.content.Context
 import android.location.Location as AndroidLocation
-import android.util.Log
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
@@ -51,32 +50,36 @@ class FusedLocationProvider(
       val freshLocation = requestFreshLocation()
 
       if (freshLocation != null) {
-        Log.d(
-            "FusedLocationProvider",
-            "Got fresh location: ${freshLocation.latitude}, ${freshLocation.longitude}")
+        /**
+         * Log.d( "FusedLocationProvider", "Got fresh location: ${freshLocation.latitude},
+         * ${freshLocation.longitude}")
+         */
         Location(
             latitude = freshLocation.latitude,
             longitude = freshLocation.longitude,
             name = "Current Location (${freshLocation.latitude}, ${freshLocation.longitude})")
       } else {
-        Log.d("FusedLocationProvider", "Fresh location unavailable, trying last known location")
+        /**
+         * Log.d("FusedLocationProvider", "Fresh location unavailable, trying last known location")
+         */
         val lastLocation = fusedLocationClient.lastLocation.await()
 
         if (lastLocation != null && isLocationValid(lastLocation)) {
-          Log.d(
-              "FusedLocationProvider",
-              "Got last known location: ${lastLocation.latitude}, ${lastLocation.longitude}")
+          /**
+           * Log.d( "FusedLocationProvider", "Got last known location: ${lastLocation.latitude},
+           * ${lastLocation.longitude}")
+           */
           Location(
               latitude = lastLocation.latitude,
               longitude = lastLocation.longitude,
               name = "Last Known Location (${lastLocation.latitude}, ${lastLocation.longitude})")
         } else {
-          Log.d("FusedLocationProvider", "No valid location available")
+          /** Log.d("FusedLocationProvider", "No valid location available") */
           null
         }
       }
     } catch (e: Exception) {
-      Log.e("FusedLocationProvider", "Error getting current location", e)
+      /** Log.e("FusedLocationProvider", "Error getting current location", e) */
       null
     }
   }
@@ -106,23 +109,19 @@ class FusedLocationProvider(
             override fun onLocationResult(locationResult: LocationResult) {
               val location = locationResult.locations.firstOrNull()
               if (location != null && isLocationValid(location)) {
-                Log.d(
-                    "FusedLocationProvider",
-                    "Fresh location received with accuracy: ${location.accuracy}m")
+                /**
+                 * Log.d( "FusedLocationProvider", "Fresh location received with accuracy:
+                 * ${location.accuracy}m")
+                 */
                 locationCallback?.let { fusedLocationClient.removeLocationUpdates(it) }
                 continuation.resume(location)
-              } else if (location != null) {
-                Log.d("FusedLocationProvider", "Location received but failed validation")
               }
             }
           }
 
       try {
-        fusedLocationClient.requestLocationUpdates(
-            locationRequest, locationCallback, null // Use default looper
-            )
+        fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, null)
       } catch (e: Exception) {
-        Log.e("FusedLocationProvider", "Error requesting fresh location updates", e)
         continuation.resume(null)
       }
 
@@ -143,24 +142,27 @@ class FusedLocationProvider(
   private fun isLocationValid(location: AndroidLocation): Boolean {
     // Check accuracy - ignore locations with poor accuracy
     if (location.accuracy > MIN_ACCEPTABLE_ACCURACY) {
-      Log.d(
-          "FusedLocationProvider",
-          "Location accuracy too low: ${location.accuracy}m (threshold: ${MIN_ACCEPTABLE_ACCURACY}m)")
+      /**
+       * Log.d( "FusedLocationProvider", "Location accuracy too low: ${location.accuracy}m
+       * (threshold: ${MIN_ACCEPTABLE_ACCURACY}m)")
+       */
       return false
     }
 
     // Check age - ignore very old locations
     val locationAge = System.currentTimeMillis() - location.time
     if (locationAge > MAX_LOCATION_AGE_MS) {
-      Log.d(
-          "FusedLocationProvider",
-          "Location too stale: ${locationAge}ms old (threshold: ${MAX_LOCATION_AGE_MS}ms)")
+      /**
+       * Log.d( "FusedLocationProvider", "Location too stale: ${locationAge}ms old (threshold:
+       * ${MAX_LOCATION_AGE_MS}ms)")
+       */
       return false
     }
 
-    Log.d(
-        "FusedLocationProvider",
-        "Location validation passed - accuracy: ${location.accuracy}m, age: ${locationAge}ms")
+    /**
+     * Log.d( "FusedLocationProvider", "Location validation passed - accuracy:
+     * ${location.accuracy}m, age: ${locationAge}ms")
+     */
     return true
   }
 }
