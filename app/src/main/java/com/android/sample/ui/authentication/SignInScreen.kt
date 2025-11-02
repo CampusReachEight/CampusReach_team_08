@@ -22,6 +22,7 @@ import com.android.sample.R
 import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.theme.UiDimens
 import com.android.sample.ui.theme.appPalette
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import kotlinx.coroutines.launch
 
@@ -77,6 +78,7 @@ fun SignInScreen(
 
     scope.launch {
       try {
+        // Android 15+ Credential Manager Google Sign-In option
         val signInOption = GetSignInWithGoogleOption.Builder(serverClientId = clientId).build()
 
         val request = GetCredentialRequest.Builder().addCredentialOption(signInOption).build()
@@ -87,7 +89,27 @@ fun SignInScreen(
         viewModel.setError("No Google account found")
       } catch (e: GetCredentialException) {
         when (e) {
-          is GetCredentialCancellationException -> viewModel.setError("Connection cancelled")
+          is GetCredentialCancellationException -> {
+            try {
+              // Android 14 and below Google Sign-In fallback
+              val googleIdOption =
+                  GetGoogleIdOption.Builder()
+                      .setServerClientId(clientId)
+                      .setFilterByAuthorizedAccounts(false)
+                      .build()
+
+              val request =
+                  GetCredentialRequest.Builder().addCredentialOption(googleIdOption).build()
+              val result = credentialManager.getCredential(context as Activity, request)
+              val credential = result.credential
+
+              viewModel.signInWithGoogle(credential, onSignInSuccess)
+            } catch (e: NoCredentialException) {
+              viewModel.setError("No Google account found")
+            } catch (e: GetCredentialException) {
+              viewModel.setError("Google Sign-In cancelled")
+            }
+          }
           else -> viewModel.setError("Connection error: ${e.localizedMessage}")
         }
       } catch (e: Exception) {
