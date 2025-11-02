@@ -156,6 +156,11 @@ dependencies {
     implementation(libs.firebase.database.ktx)
     implementation(libs.firebase.auth.ktx)
 
+    // Apache Lucene for offline full-text search (v9.8.0 - latest stable, Nov 2024)
+    implementation("org.apache.lucene:lucene-core:9.8.0")
+    implementation("org.apache.lucene:lucene-queryparser:9.8.0")
+    implementation("org.apache.lucene:lucene-analysis-common:9.8.0")
+
     // Credential Manager (for Google Sign-In)
     implementation(libs.credentials)
     implementation(libs.credentials.play.services.auth)
