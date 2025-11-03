@@ -14,7 +14,7 @@ data class ProfileState(
 
     // Information section
     val arrivalDate: String = "00/00/0000",
-    val section: String = "None",
+    val userSection: String = "None",
 
     // UI States
     val isLoading: Boolean = false,
@@ -43,7 +43,7 @@ data class ProfileState(
             followers = 3,
             following = 7,
             arrivalDate = "01/09/2025",
-            section = "Computer Science")
+            userSection = "Computer Science")
 
     // State with loading state
     fun loading() = default().copy(isLoading = true)
