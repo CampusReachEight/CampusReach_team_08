@@ -14,11 +14,35 @@
     <string name="delete_request_button_are_you_sure">This action cannot be undone. The request will be permanently deleted.</string>
     <string name="delete_request_button_delete">Delete</string>
     <string name="delete_request_button_cancel">Cancel</string>
-    <string name="Edit_request_viewmodel_set_location_error">Location permission is required to use current location</string>
-
-
-
-
-
+    <string name="edit_request_title">Edit Request</string>
+    <string name="create_request_title">Create Request</string>
+    <string name="title_field_label">Title</string>
+    <string name="title_field_placeholder">Name your request</string>
+    <string name="title_error_empty">Title cannot be empty</string>
+    <string name="description_field_label">Description</string>
+    <string name="description_field_placeholder">Describe your request</string>
+    <string name="description_error_empty">Description cannot be empty</string>
+    <string name="request_types_label">Request Types *</string>
+    <string name="request_types_error_empty">Please select at least one request type</string>
+    <string name="use_current_location_button">Use Current Location</string>
+    <string name="start_date_field_label">Start Date and Time</string>
+    <string name="expiration_date_field_label">Expiration Date and Time</string>
+    <string name="date_format_error">Invalid format (must be %s)</string>
+    <string name="date_order_error">Expiration date must be after start date</string>
+    <string name="tags_label">Tags (Optional)</string>
+    <string name="success_message_edit">Request updated successfully!</string>
+    <string name="success_message_create">Request created successfully!</string>
+    <string name="dismiss_button">Dismiss</string>
+    <string name="save_button_edit">Update Request</string>
+    <string name="save_button_create">Create Request</string>
+    <string name="delete_button">Delete Request</string>
+    <string name="delete_confirmation_title">Delete Request?</string>
+    <string name="delete_confirmation_message">This action cannot be undone. The request will be permanently deleted.</string>
+    <string name="delete_confirm_button">Delete</string>
+    <string name="cancel_button">Cancel</string>
+    <string name="location_permission_error">Location permission is required to use current location</string>
+    <string name="gps_disabled_error">Please enable GPS in your device settings</string>
+    <string name="location_fetch_error">Failed to get current location: %s</string>
+    <string name="location_error_empty">Location name cannot be empty%s</string>
 
 </resources>

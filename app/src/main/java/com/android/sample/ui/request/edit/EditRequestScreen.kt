@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.location.LocationManager
 import android.util.Log
+import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
@@ -17,9 +18,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.android.sample.R
 import com.android.sample.model.map.FusedLocationProvider
 import com.android.sample.model.map.NominatimLocationRepository
 import com.android.sample.model.request.RequestType
@@ -31,6 +34,12 @@ import com.google.firebase.auth.auth
 import java.text.SimpleDateFormat
 import java.util.*
 import okhttp3.OkHttpClient
+
+private val SCREEN_CONTENT_PADDING = 16.dp
+private val CARD_CONTENT_PADDING = 12.dp
+private val SPACING = 8.dp
+private val CIRCULAR_PROGRESS_INDICATOR = 20.dp
+private val SAVE_BUTTON_PADDING = 24.dp
 
 /** Test tags for UI elements in EditRequestScreen. */
 object EditRequestScreenTestTags {
@@ -44,6 +53,7 @@ object EditRequestScreenTestTags {
   const val LOCATION_SEARCH = "locationSearch"
   const val LOCATION_LOADING_SPINNER = "locationLoadingSpinner"
   const val USE_CURRENT_LOCATION_BUTTON = "useCurrentLocationButton"
+
   /**
    * Returns a stable test tag for the given [RequestType] to be used in UI tests.
    *
@@ -79,7 +89,7 @@ fun EditRequestScreen(
                     locationProvider = FusedLocationProvider(LocalContext.current)))
 ) {
   val context = LocalContext.current
-
+  // Permission launcher for location permissions
   val permissionLauncher =
       rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
           permissions ->
@@ -97,9 +107,7 @@ fun EditRequestScreen(
           }
         }
       }
-
   val isEditMode = requestId != null
-
   LaunchedEffect(requestId) {
     if (requestId != null) {
       viewModel.loadRequest(requestId)
@@ -107,17 +115,14 @@ fun EditRequestScreen(
       viewModel.initializeForCreate(Firebase.auth.currentUser?.uid ?: "")
     }
   }
-
   val navigationTag: String =
       if (isEditMode) {
         NavigationTestTags.EDIT_REQUEST_SCREEN
       } else {
         NavigationTestTags.ADD_REQUEST_SCREEN
       }
-
   // Collect UI state from ViewModel
   val uiState by viewModel.uiState.collectAsState()
-
   // Create actions object
   val actions =
       EditRequestActions(
@@ -139,44 +144,25 @@ fun EditRequestScreen(
           onDeleteClick = viewModel::confirmDelete,
           onConfirmDelete = { viewModel.deleteRequest(requestId ?: "") { onNavigateBack() } },
           onCancelDelete = viewModel::cancelDelete,
-          // we need to ask for location permission and get current location
           onUseCurrentLocation = {
-            // Check permission first
-            val hasFineLocation =
-                ContextCompat.checkSelfPermission(
-                    context, Manifest.permission.ACCESS_FINE_LOCATION) ==
-                    PackageManager.PERMISSION_GRANTED
-
-            val hasCoarseLocation =
-                ContextCompat.checkSelfPermission(
-                    context, Manifest.permission.ACCESS_COARSE_LOCATION) ==
-                    PackageManager.PERMISSION_GRANTED
-
-            if (hasFineLocation || hasCoarseLocation) {
-              // Permission already granted - check if GPS is enabled
-              if (isLocationEnabled(context)) {
-                viewModel.getCurrentLocation()
-              } else {
-                viewModel.setLocationPermissionError()
-              }
-            } else {
-              // Request permissions
-              permissionLauncher.launch(
-                  arrayOf(
-                      Manifest.permission.ACCESS_FINE_LOCATION,
-                      Manifest.permission.ACCESS_COARSE_LOCATION))
-            }
+            handleLocationPermissionCheck(context, viewModel, permissionLauncher)
           })
-
   Scaffold(
       topBar = {
         TopAppBar(
-            title = { Text(if (isEditMode) "Edit Request" else "Create Request") },
+            title = {
+              Text(
+                  stringResource(
+                      if (isEditMode) R.string.edit_request_title
+                      else R.string.create_request_title))
+            },
             navigationIcon = {
               IconButton(
                   onClick = onNavigateBack,
                   modifier = Modifier.testTag(NavigationTestTags.GO_BACK_BUTTON)) {
-                    Icon(Icons.Default.Close, contentDescription = "Cancel")
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = stringResource(R.string.cancel_button))
                   }
             })
       },
@@ -195,38 +181,32 @@ fun EditRequestContent(
 ) {
   val dateFormat = remember { SimpleDateFormat(DateFormats.DATE_TIME_FORMAT, Locale.getDefault()) }
   val dateValidator = remember(dateFormat) { DateValidator(dateFormat) }
-
   val startDateString =
       remember(uiState.startTimeStamp) { mutableStateOf(dateFormat.format(uiState.startTimeStamp)) }
   val expirationDateString =
       remember(uiState.expirationTime) { mutableStateOf(dateFormat.format(uiState.expirationTime)) }
-
   Column(
       modifier =
           Modifier.fillMaxSize()
               .padding(paddingValues)
-              .padding(16.dp)
+              .padding(SCREEN_CONTENT_PADDING)
               .verticalScroll(rememberScrollState()),
-      verticalArrangement = Arrangement.spacedBy(16.dp)) {
+      verticalArrangement = Arrangement.spacedBy(SCREEN_CONTENT_PADDING)) {
         ErrorMessageCard(uiState.errorMessage, actions.onClearError)
-
         SuccessMessageCard(
             uiState.validationState.showSuccessMessage,
             uiState.isEditMode,
             actions.onClearSuccessMessage)
-
         TitleField(
             title = uiState.title,
             showError = uiState.validationState.showTitleError,
             isLoading = uiState.isLoading,
             onTitleChange = actions.onTitleChange)
-
         DescriptionField(
             description = uiState.description,
             showError = uiState.validationState.showDescriptionError,
             isLoading = uiState.isLoading,
             onDescriptionChange = actions.onDescriptionChange)
-
         RequestTypeSection(
             requestTypes = uiState.requestTypes,
             showError = uiState.validationState.showRequestTypeError,
@@ -242,10 +222,10 @@ fun EditRequestContent(
               if (uiState.isSearchingLocation) {
                 CircularProgressIndicator(
                     modifier =
-                        Modifier.size(20.dp)
+                        Modifier.size(CIRCULAR_PROGRESS_INDICATOR)
                             .testTag(EditRequestScreenTestTags.LOCATION_LOADING_SPINNER))
               } else {
-                Text("Use Current Location")
+                Text(stringResource(R.string.use_current_location_button))
               }
             }
         LocationSearchField(
@@ -262,9 +242,7 @@ fun EditRequestContent(
             onClearSearch = actions.onClearLocationSearch,
             modifier =
                 Modifier.fillMaxWidth().testTag(EditRequestScreenTestTags.INPUT_LOCATION_NAME))
-
-        Spacer(modifier = Modifier.height(16.dp))
-
+        Spacer(modifier = Modifier.height(SCREEN_CONTENT_PADDING))
         StartDateField(
             dateString = startDateString.value,
             showError = uiState.validationState.showStartDateError,
@@ -275,7 +253,6 @@ fun EditRequestContent(
               handleStartDateChange(
                   newDateString, dateValidator, actions.onStartTimeStampChange, verbose)
             })
-
         ExpirationDateField(
             dateString = expirationDateString.value,
             showError = uiState.validationState.showExpirationDateError,
@@ -291,12 +268,9 @@ fun EditRequestContent(
                   dateValidator,
                   actions.onExpirationTimeChange)
             })
-
         TagsSection(
             tags = uiState.tags, isLoading = uiState.isLoading, onTagsChange = actions.onTagsChange)
-
-        Spacer(modifier = Modifier.height(8.dp))
-
+        Spacer(modifier = Modifier.height(SPACING))
         SaveButton(
             isEditMode = uiState.isEditMode, isLoading = uiState.isLoading, onSave = actions.onSave)
         if (uiState.isEditMode) {
@@ -318,7 +292,6 @@ private fun handleStartDateChange(
     verbose: Boolean
 ) {
   val isValid = dateValidator.isValidFormat(dateString)
-
   if (isValid) {
     dateValidator.parseDate(dateString)?.let { parsedDate -> onStartTimeStampChange(parsedDate) }
         ?: run {
@@ -336,7 +309,6 @@ private fun handleExpirationDateChange(
     onExpirationTimeChange: (Date) -> Unit
 ) {
   val isValid = dateValidator.isValidFormat(dateString, allowPast = true)
-
   if (isValid) {
     dateValidator.parseDate(dateString)?.let { parsedDate -> onExpirationTimeChange(parsedDate) }
   }
@@ -350,14 +322,14 @@ private fun ErrorMessageCard(errorMessage: String?, onClearError: () -> Unit) {
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
         modifier = Modifier.fillMaxWidth()) {
           Row(
-              modifier = Modifier.fillMaxWidth().padding(12.dp),
+              modifier = Modifier.fillMaxWidth().padding(CARD_CONTENT_PADDING),
               horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(
                     text = error,
                     color = MaterialTheme.colorScheme.onErrorContainer,
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.weight(1f))
-                TextButton(onClick = onClearError) { Text("Dismiss") }
+                TextButton(onClick = onClearError) { Text(stringResource(R.string.dismiss_button)) }
               }
         }
   }
@@ -371,16 +343,17 @@ private fun SuccessMessageCard(showSuccess: Boolean, isEditMode: Boolean, onDism
             CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
         modifier = Modifier.fillMaxWidth()) {
           Row(
-              modifier = Modifier.fillMaxWidth().padding(12.dp),
+              modifier = Modifier.fillMaxWidth().padding(CARD_CONTENT_PADDING),
               horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(
                     text =
-                        if (isEditMode) "Request updated successfully!"
-                        else "Request created successfully!",
+                        stringResource(
+                            if (isEditMode) R.string.success_message_edit
+                            else R.string.success_message_create),
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.weight(1f))
-                TextButton(onClick = onDismiss) { Text("Dismiss") }
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.dismiss_button)) }
               }
         }
   }
@@ -396,13 +369,13 @@ private fun TitleField(
   OutlinedTextField(
       value = title,
       onValueChange = onTitleChange,
-      label = { Text("Title") },
-      placeholder = { Text("Name your request") },
+      label = { Text(stringResource(R.string.title_field_label)) },
+      placeholder = { Text(stringResource(R.string.title_field_placeholder)) },
       isError = showError,
       supportingText = {
         if (showError) {
           Text(
-              text = "Title cannot be empty",
+              text = stringResource(R.string.title_error_empty),
               color = MaterialTheme.colorScheme.error,
               modifier = Modifier.testTag(EditRequestScreenTestTags.ERROR_MESSAGE))
         }
@@ -421,13 +394,13 @@ private fun DescriptionField(
   OutlinedTextField(
       value = description,
       onValueChange = onDescriptionChange,
-      label = { Text("Description") },
-      placeholder = { Text("Describe your request") },
+      label = { Text(stringResource(R.string.description_field_label)) },
+      placeholder = { Text(stringResource(R.string.description_field_placeholder)) },
       isError = showError,
       supportingText = {
         if (showError) {
           Text(
-              text = "Description cannot be empty",
+              text = stringResource(R.string.description_error_empty),
               color = MaterialTheme.colorScheme.error,
               modifier = Modifier.testTag(EditRequestScreenTestTags.ERROR_MESSAGE))
         }
@@ -444,25 +417,72 @@ private fun RequestTypeSection(
     isLoading: Boolean,
     onRequestTypesChange: (List<RequestType>) -> Unit
 ) {
-  Text("Request Types *", style = MaterialTheme.typography.labelLarge)
+  Text(stringResource(R.string.request_types_label), style = MaterialTheme.typography.labelLarge)
   RequestTypeChipGroup(
       selectedTypes = requestTypes, onSelectionChanged = onRequestTypesChange, enabled = !isLoading)
   if (showError) {
     Text(
-        text = "Please select at least one request type",
+        text = stringResource(R.string.request_types_error_empty),
         color = MaterialTheme.colorScheme.error,
         style = MaterialTheme.typography.bodySmall,
         modifier = Modifier.testTag(EditRequestScreenTestTags.ERROR_MESSAGE))
   }
 }
 
-private fun isLocationEnabled(context: Context): Boolean {
+/**
+ * Checks if location services are enabled on the device.
+ *
+ * @param context The context to access system services.
+ * @return True if location services are enabled, false otherwise.
+ */
+internal fun isLocationEnabled(context: Context): Boolean {
   val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
   return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
       locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
 }
 
+/**
+ * Handles location permission check and requests current location if granted.
+ *
+ * @param context The context to access system services.
+ * @param viewModel The EditRequestViewModel to update location state.
+ * @param permissionLauncher The launcher to request location permissions.
+ */
+private fun handleLocationPermissionCheck(
+    context: Context,
+    viewModel: EditRequestViewModel,
+    permissionLauncher: ManagedActivityResultLauncher<Array<String>, Map<String, Boolean>>
+) {
+  val hasFineLocation =
+      ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) ==
+          PackageManager.PERMISSION_GRANTED
+  val hasCoarseLocation =
+      ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) ==
+          PackageManager.PERMISSION_GRANTED
+  if (hasFineLocation || hasCoarseLocation) {
+    if (isLocationEnabled(context)) {
+      viewModel.getCurrentLocation()
+    } else {
+      viewModel.setLocationPermissionError()
+    }
+  } else {
+    permissionLauncher.launch(
+        arrayOf(
+            Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+  }
+}
+
 @Composable
+/**
+ * Start date field with format error handling.
+ *
+ * @param dateString The current start date string.
+ * @param showError Whether to show a format error.
+ * @param isLoading Whether the field is in a loading state.
+ * @param dateValidator The date validator to use.
+ * @param onDateChange Callback for when the date string changes. returns The StartDateField
+ *   composable.
+ */
 private fun StartDateField(
     dateString: String,
     showError: Boolean,
@@ -473,13 +493,13 @@ private fun StartDateField(
   OutlinedTextField(
       value = dateString,
       onValueChange = onDateChange,
-      label = { Text("Start Date & Time") },
+      label = { Text(stringResource(R.string.start_date_field_label)) },
       placeholder = { Text(DateFormats.DATE_TIME_FORMAT) },
       isError = showError,
       supportingText = {
         if (showError) {
           Text(
-              text = "Invalid format (must be ${DateFormats.DATE_TIME_FORMAT})",
+              text = stringResource(R.string.date_format_error, DateFormats.DATE_TIME_FORMAT),
               color = MaterialTheme.colorScheme.error,
               modifier = Modifier.testTag(EditRequestScreenTestTags.ERROR_MESSAGE))
         }
@@ -489,6 +509,18 @@ private fun StartDateField(
 }
 
 @Composable
+/**
+ * Expiration date field with additional date order error handling.
+ *
+ * @param dateString The current expiration date string.
+ * @param showError Whether to show a format error.
+ * @param showDateOrderError Whether to show a date order error.
+ * @param isLoading Whether the field is in a loading state.
+ * @param dateValidator The date validator to use.
+ * @param startTimeStamp The start date to compare against.
+ * @param onDateChange Callback for when the date string changes. returns The ExpirationDateField
+ *   composable.
+ */
 private fun ExpirationDateField(
     dateString: String,
     showError: Boolean,
@@ -501,20 +533,20 @@ private fun ExpirationDateField(
   OutlinedTextField(
       value = dateString,
       onValueChange = onDateChange,
-      label = { Text("Expiration Date & Time") },
+      label = { Text(stringResource(R.string.expiration_date_field_label)) },
       placeholder = { Text(DateFormats.DATE_TIME_FORMAT) },
       isError = showError || showDateOrderError,
       supportingText = {
         when {
           showError -> {
             Text(
-                text = "Invalid format (must be ${DateFormats.DATE_TIME_FORMAT})",
+                text = stringResource(R.string.date_format_error, DateFormats.DATE_TIME_FORMAT),
                 color = MaterialTheme.colorScheme.error,
                 modifier = Modifier.testTag(EditRequestScreenTestTags.ERROR_MESSAGE))
           }
           showDateOrderError -> {
             Text(
-                text = "Expiration date must be after start date",
+                text = stringResource(R.string.date_order_error),
                 color = MaterialTheme.colorScheme.error,
                 modifier = Modifier.testTag(EditRequestScreenTestTags.ERROR_MESSAGE))
           }
@@ -526,7 +558,7 @@ private fun ExpirationDateField(
 
 @Composable
 private fun TagsSection(tags: List<Tags>, isLoading: Boolean, onTagsChange: (List<Tags>) -> Unit) {
-  Text("Tags (Optional)", style = MaterialTheme.typography.labelLarge)
+  Text(stringResource(R.string.tags_label), style = MaterialTheme.typography.labelLarge)
   TagsChipGroup(selectedTags = tags, onSelectionChanged = onTagsChange, enabled = !isLoading)
 }
 
@@ -538,9 +570,12 @@ private fun SaveButton(isEditMode: Boolean, isLoading: Boolean, onSave: () -> Un
       enabled = !isLoading) {
         if (isLoading) {
           CircularProgressIndicator(
-              modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary)
+              modifier = Modifier.size(SAVE_BUTTON_PADDING),
+              color = MaterialTheme.colorScheme.onPrimary)
         } else {
-          Text(if (isEditMode) "Update Request" else "Create Request")
+          Text(
+              stringResource(
+                  if (isEditMode) R.string.save_button_edit else R.string.save_button_create))
         }
       }
 }
@@ -553,24 +588,25 @@ fun RequestTypeChipGroup(
     onSelectionChanged: (List<RequestType>) -> Unit,
     enabled: Boolean = true
 ) {
-  FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-    RequestType.entries.forEach { type ->
-      FilterChip(
-          selected = selectedTypes.contains(type),
-          onClick = {
-            val newSelection =
-                if (selectedTypes.contains(type)) {
-                  selectedTypes - type
-                } else {
-                  selectedTypes + type
-                }
-            onSelectionChanged(newSelection)
-          },
-          label = { Text(type.name.replace("_", " ")) },
-          enabled = enabled,
-          modifier = Modifier.testTag(EditRequestScreenTestTags.getTestTagForRequestType(type)))
-    }
-  }
+  FlowRow(
+      horizontalArrangement = Arrangement.spacedBy(SPACING), modifier = Modifier.fillMaxWidth()) {
+        RequestType.entries.forEach { type ->
+          FilterChip(
+              selected = selectedTypes.contains(type),
+              onClick = {
+                val newSelection =
+                    if (selectedTypes.contains(type)) {
+                      selectedTypes - type
+                    } else {
+                      selectedTypes + type
+                    }
+                onSelectionChanged(newSelection)
+              },
+              label = { Text(type.name.replace("_", " ")) },
+              enabled = enabled,
+              modifier = Modifier.testTag(EditRequestScreenTestTags.getTestTagForRequestType(type)))
+        }
+      }
 }
 
 /** Multi-select chip group for Tags. */
@@ -582,8 +618,8 @@ fun TagsChipGroup(
     enabled: Boolean = true
 ) {
   FlowRow(
-      horizontalArrangement = Arrangement.spacedBy(8.dp),
-      verticalArrangement = Arrangement.spacedBy(8.dp),
+      horizontalArrangement = Arrangement.spacedBy(SPACING),
+      verticalArrangement = Arrangement.spacedBy(SPACING),
       modifier = Modifier.fillMaxWidth()) {
         Tags.entries.forEach { tag ->
           FilterChip(

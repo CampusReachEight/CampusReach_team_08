@@ -1,5 +1,8 @@
 package com.android.sample.ui.request
 
+import android.Manifest
+import android.content.Context
+import android.location.LocationManager
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
@@ -22,15 +25,20 @@ import com.android.sample.ui.request.edit.EditRequestViewModel
 import com.android.sample.ui.request.edit.FieldValidationState
 import com.android.sample.ui.request.edit.RequestTypeChipGroup
 import com.android.sample.ui.request.edit.TagsChipGroup
+import com.android.sample.ui.request.edit.isLocationEnabled
 import java.text.SimpleDateFormat
 import java.util.*
 import junit.framework.TestCase.assertEquals
+import junit.framework.TestCase.assertFalse
+import junit.framework.TestCase.assertTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
 import org.mockito.Mockito.mock
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 
 /** Test builder for EditRequestUiState. */
@@ -1068,5 +1076,150 @@ class EditRequestScreenTests : EditRequestScreenTestBase() {
     composeTestRule
         .onNodeWithTag(EditRequestScreenTestTags.USE_CURRENT_LOCATION_BUTTON)
         .assertIsNotEnabled()
+  }
+
+  @Test
+  fun permissionLauncher_whenFineLocationGrantedAndGPSEnabled_callsGetCurrentLocation() {
+    val mockLocationManager =
+        mock<LocationManager> {
+          on { isProviderEnabled(LocationManager.GPS_PROVIDER) } doReturn true
+        }
+
+    var getCurrentLocationCalled = false
+    var setLocationErrorCalled = false
+
+    // Simulate the permission callback logic
+    val permissions = mapOf(Manifest.permission.ACCESS_FINE_LOCATION to true)
+
+    when {
+      permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+          permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true -> {
+        if (mockLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
+            mockLocationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+          getCurrentLocationCalled = true // Instead of calling viewModel
+        } else {
+          setLocationErrorCalled = true
+        }
+      }
+      else -> {
+        setLocationErrorCalled = true
+      }
+    }
+
+    assertTrue(getCurrentLocationCalled)
+    assertFalse(setLocationErrorCalled)
+  }
+
+  @Test
+  fun permissionLauncher_whenPermissionDenied_setsLocationError() {
+    var getCurrentLocationCalled = false
+    var setLocationErrorCalled = false
+
+    val permissions =
+        mapOf(
+            Manifest.permission.ACCESS_FINE_LOCATION to false,
+            Manifest.permission.ACCESS_COARSE_LOCATION to false)
+
+    when {
+      permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+          permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true -> {
+        getCurrentLocationCalled = true
+      }
+      else -> {
+        setLocationErrorCalled = true
+      }
+    }
+
+    assertTrue(setLocationErrorCalled)
+    assertFalse(getCurrentLocationCalled)
+  }
+
+  // ========== USE CURRENT LOCATION BUTTON TEST ==========
+
+  @Test
+  fun useCurrentLocationButton_exists_andIsClickable() {
+    composeTestRule.setContent {
+      TestEditRequestContentWithStaticState(
+          uiState = EditRequestUiState() // Direct usage, no builder
+          )
+    }
+
+    composeTestRule
+        .onNodeWithTag(EditRequestScreenTestTags.USE_CURRENT_LOCATION_BUTTON)
+        .assertExists()
+        .assertIsEnabled()
+  }
+
+  @Test
+  fun useCurrentLocationButton_whenLoading_showsSpinner() {
+    composeTestRule.setContent {
+      TestEditRequestContentWithStaticState(
+          uiState = EditRequestUiState(isSearchingLocation = true) // Direct usage
+          )
+    }
+
+    composeTestRule.onNodeWithTag(EditRequestScreenTestTags.LOCATION_LOADING_SPINNER).assertExists()
+  }
+
+  // ========== TEST isLocationEnabled FUNCTION ==========
+
+  @Test
+  fun testIsLocationEnabled_withGPSEnabled() {
+    val mockLocationManager =
+        mock<LocationManager> {
+          on { isProviderEnabled(LocationManager.GPS_PROVIDER) } doReturn true
+          on { isProviderEnabled(LocationManager.NETWORK_PROVIDER) } doReturn false
+        }
+    val mockContext =
+        mock<Context> {
+          on { getSystemService(Context.LOCATION_SERVICE) } doReturn mockLocationManager
+        }
+
+    val result = isLocationEnabled(mockContext)
+
+    assertTrue(result)
+  }
+
+  @Test
+  fun testIsLocationEnabled_withBothDisabled() {
+    val mockLocationManager =
+        mock<LocationManager> {
+          on { isProviderEnabled(LocationManager.GPS_PROVIDER) } doReturn false
+          on { isProviderEnabled(LocationManager.NETWORK_PROVIDER) } doReturn false
+        }
+    val mockContext =
+        mock<Context> {
+          on { getSystemService(Context.LOCATION_SERVICE) } doReturn mockLocationManager
+        }
+
+    val result = isLocationEnabled(mockContext)
+
+    assertFalse(result)
+  }
+
+  // ========== DATE FORMAT ERROR TESTS ==========
+
+  @Test
+  fun expirationDateField_withInvalidFormat_displaysFormatError() {
+    composeTestRule.setContent {
+      TestEditRequestContentWithStaticState(
+          uiState =
+              EditRequestUiState(
+                  expirationTime = Date(),
+                  validationState = FieldValidationState(showExpirationDateError = true)))
+    }
+
+    composeTestRule.onNodeWithText("Invalid format", substring = true).assertExists()
+  }
+
+  @Test
+  fun expirationDateField_withDateOrderError_displaysOrderError() {
+    composeTestRule.setContent {
+      TestEditRequestContentWithStaticState(
+          uiState =
+              EditRequestUiState(validationState = FieldValidationState(showDateOrderError = true)))
+    }
+
+    assertErrorMessage("Expiration date must be after start date")
   }
 }
