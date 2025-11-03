@@ -1,5 +1,5 @@
 package com.android.sample.model.map
 
-interface LocationProvider {
+fun interface LocationProvider {
   suspend fun getCurrentLocation(): Location?
 }
