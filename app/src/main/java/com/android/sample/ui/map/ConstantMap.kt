@@ -5,6 +5,7 @@ import androidx.compose.ui.unit.dp
 object ConstantMap {
   const val TEXT_SEE_DETAILS = "See details"
   const val TEXT_EDIT = "Edit your request"
+  const val PROBLEM_OCCUR = "A problem occur"
 
   const val DETAILS = "Details"
 

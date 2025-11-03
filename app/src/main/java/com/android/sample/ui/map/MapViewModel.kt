@@ -9,6 +9,7 @@ import com.android.sample.model.request.RequestRepositoryFirestore
 import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,7 +28,7 @@ data class MapUIState(
     val request: List<Request> = emptyList(),
     val errorMsg: String? = null,
     var currentRequest: Request? = null,
-    var isOwner: Boolean = false
+    var isOwner: Boolean? = null
 )
 
 /**
@@ -46,6 +47,8 @@ class MapViewModel(
 
   private val _uiState = MutableStateFlow(MapUIState())
   val uiState: StateFlow<MapUIState> = _uiState.asStateFlow()
+
+  private var isHisRequestJob: Job? = null
 
   init {
     fetchAcceptedRequest()
@@ -73,25 +76,26 @@ class MapViewModel(
   /** Refreshes the UI by updating the current request */
   fun updateCurrentRequest(request: Request?) {
     _uiState.value = _uiState.value.copy(currentRequest = request)
-    isHisRequest()
+    isHisRequest(request)
   }
 
   /** Refreshes the UI by updating the isOwner */
-  fun isHisRequest() {
-    viewModelScope.launch {
-      try {
-        if (_uiState.value.currentRequest == null) {
-          _uiState.value = _uiState.value.copy(isOwner = false)
-        } else {
-          _uiState.value =
-              _uiState.value.copy(
-                  isOwner = requestRepository.isOwnerOfRequest(_uiState.value.currentRequest!!))
+  fun isHisRequest(request: Request?) {
+    isHisRequestJob?.cancel()
+    isHisRequestJob =
+        viewModelScope.launch {
+          try {
+            if (request == null) {
+              _uiState.value = _uiState.value.copy(isOwner = null)
+            } else {
+              val isOwner = requestRepository.isOwnerOfRequest(request)
+              _uiState.value = _uiState.value.copy(isOwner = isOwner)
+            }
+          } catch (e: Exception) {
+            setErrorMsg("Failed to get current user: ${e.message}")
+            _uiState.value = _uiState.value.copy(isOwner = null)
+          }
         }
-      } catch (e: Exception) {
-        setErrorMsg("Failed to get current user: ${e.message}")
-        _uiState.value = _uiState.value.copy(isOwner = false)
-      }
-    }
   }
 
   /**
@@ -104,13 +108,13 @@ class MapViewModel(
         val requests = requestRepository.getAllRequests()
 
         val current = _uiState.value.currentRequest
-        // if the currentRequest has been deleted
-        if (current == null || requests.none { it.requestId == current.requestId }) {
-          _uiState.value = _uiState.value.copy(currentRequest = null, isOwner = false)
-        }
-        // reassigned the updated request to current request
-        else {
-          val updatedCurrent = requests.find { it.requestId == current.requestId }
+        val updatedCurrent = current?.let { requests.find { it.requestId == current.requestId } }
+
+        if (current == null || updatedCurrent == null) {
+          // currentRequest has been deleted
+          _uiState.value = _uiState.value.copy(currentRequest = null, isOwner = null)
+        } else {
+          // currentRequest found and up to date
           _uiState.value =
               _uiState.value.copy(currentRequest = updatedCurrent, isOwner = _uiState.value.isOwner)
         }

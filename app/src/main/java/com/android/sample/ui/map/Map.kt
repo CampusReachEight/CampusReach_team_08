@@ -61,6 +61,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.android.sample.model.request.Request
 import com.android.sample.ui.navigation.BottomNavigationMenu
 import com.android.sample.ui.navigation.NavigationActions
 import com.android.sample.ui.navigation.NavigationTab
@@ -175,7 +176,6 @@ fun MapScreen(viewModel: MapViewModel = viewModel(), navigationActions: Navigati
                       state = markerState,
                       onClick = {
                         viewModel.updateCurrentRequest(request)
-                        viewModel.isHisRequest()
                         true
                       })
                 }
@@ -490,28 +490,8 @@ fun MapScreen(viewModel: MapViewModel = viewModel(), navigationActions: Navigati
                                         modifier =
                                             Modifier.height(ConstantMap.SPACER_HEIGHT_MEDIUM))
 
-                                    Button(
-                                        onClick = {
-                                          if (uiState.isOwner) {
-                                            navigationActions?.navigateTo(
-                                                Screen.EditRequest(req.requestId))
-                                          } else {
-                                            navigationActions?.navigateTo(
-                                                Screen.RequestAccept(req.requestId))
-                                          }
-                                        },
-                                        colors =
-                                            ButtonDefaults.buttonColors(
-                                                containerColor = MaterialTheme.colorScheme.primary,
-                                                contentColor = MaterialTheme.colorScheme.onPrimary),
-                                        modifier =
-                                            Modifier.fillMaxWidth()
-                                                .padding(bottom = ConstantMap.SPACER_HEIGHT_LARGE)
-                                                .testTag(MapTestTags.BUTTON_DETAILS)) {
-                                          Text(
-                                              if (uiState.isOwner) ConstantMap.TEXT_EDIT
-                                              else ConstantMap.TEXT_SEE_DETAILS)
-                                        }
+                                    ButtonDetails(
+                                        uiState.isOwner, navigationActions, req, viewModel)
                                   }
                                   1 -> { // Profile
                                     Text(
@@ -583,6 +563,53 @@ fun MapScreen(viewModel: MapViewModel = viewModel(), navigationActions: Navigati
           }
         }
       })
+}
+
+/**
+ * The button where you can go to EditScreen/AcceptScreen
+ *
+ * @param isOwner is the current user the owner of the request, can be null if a problem has
+ *   occurred
+ * @param navigationActions the actions of navigation
+ * @param request the current request
+ * @param mapViewModel the viewModel
+ */
+@Composable
+fun ButtonDetails(
+    isOwner: Boolean?,
+    navigationActions: NavigationActions?,
+    request: Request,
+    mapViewModel: MapViewModel
+) {
+  Button(
+      onClick = {
+        when (isOwner) {
+          true -> {
+            navigationActions?.navigateTo(Screen.EditRequest(request.requestId))
+          }
+          false -> {
+            navigationActions?.navigateTo(Screen.RequestAccept(request.requestId))
+          }
+          else -> {
+            mapViewModel.isHisRequest(request)
+          }
+        }
+      },
+      colors =
+          ButtonDefaults.buttonColors(
+              containerColor = MaterialTheme.colorScheme.primary,
+              contentColor = MaterialTheme.colorScheme.onPrimary),
+      modifier =
+          Modifier.fillMaxWidth()
+              .padding(bottom = ConstantMap.SPACER_HEIGHT_LARGE)
+              .testTag(MapTestTags.BUTTON_DETAILS)) {
+        Text(
+            when (isOwner) {
+              true -> ConstantMap.TEXT_EDIT
+              false -> ConstantMap.TEXT_SEE_DETAILS
+              else -> ConstantMap.PROBLEM_OCCUR
+            })
+      }
 }
 
 @Preview(showBackground = true)

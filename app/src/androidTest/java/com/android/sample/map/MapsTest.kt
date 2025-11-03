@@ -42,6 +42,15 @@ class MapsTest : BaseEmulatorTest() {
   private lateinit var mapsUtil: MapsUtil
   private lateinit var request1: Request
   private lateinit var request2: Request
+  private val location1: Location = Location(26.5191, 6.5668, "IDK place")
+  private val location2: Location = Location(46.5191, 6.5668, "EPFL")
+
+  private val requestId1 = "request1"
+  private val requestId2 = "request2"
+  private val title1 = "Here is a good title"
+  private val title2 = "Another one"
+  private val description2 = "Very good description"
+  private val description1 = "In here we will do a lot of things, like being good persons"
 
   @Before
   override fun setUp() {
@@ -52,22 +61,28 @@ class MapsTest : BaseEmulatorTest() {
 
     runTest {
       val calendar = Calendar.getInstance()
-      calendar.set(2024, Calendar.MARCH, 15, 14, 30, 0)
-      calendar.set(Calendar.MILLISECOND, 0)
+      calendar.set(
+          MapsTestConst.RANDOM_YEAR,
+          MapsTestConst.RANDOM_MONTH,
+          MapsTestConst.RANDOM_DATE,
+          MapsTestConst.RANDOM_HOUR,
+          MapsTestConst.RANDOM_MINUTE,
+          MapsTestConst.RANDOM_SECOND)
+      calendar.set(Calendar.MILLISECOND, MapsTestConst.ZERO_MILLISECONDS)
       val date = Date(calendar.timeInMillis)
-      val datePlusOneHour = Date(calendar.timeInMillis + 3_600_000)
+      val datePlusOneHour = Date(calendar.timeInMillis + MapsTestConst.ONE_HOUR)
 
       request2 =
           Request(
-              "request2",
-              "Another one",
-              "Very good decription",
+              requestId2,
+              title2,
+              description2,
               emptyList(),
-              Location(26.5191, 6.5668, "IDK place"),
-              "EPFL",
+              location1,
+              location1.name,
               RequestStatus.ARCHIVED,
-              Date(),
-              Date(System.currentTimeMillis() + 3_600_000),
+              date,
+              datePlusOneHour,
               listOf(),
               emptyList(),
               currentUserId)
@@ -77,12 +92,12 @@ class MapsTest : BaseEmulatorTest() {
       signInUser(SECOND_USER_EMAIL, SECOND_USER_PASSWORD)
       request1 =
           Request(
-              "request1",
-              "Here is a good title",
-              "In here we will do a lot of things, like beeing good persons",
+              requestId1,
+              title1,
+              description1,
               listOf(RequestType.STUDYING, RequestType.STUDY_GROUP, RequestType.SPORT),
-              Location(46.5191, 6.5668, "EPFL"),
-              "EPFL",
+              location2,
+              location2.name,
               RequestStatus.OPEN,
               date,
               datePlusOneHour,
