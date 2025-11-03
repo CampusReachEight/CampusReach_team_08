@@ -22,6 +22,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navigation
+import com.android.sample.model.map.FusedLocationProvider
 import com.android.sample.model.map.NominatimLocationRepository
 import com.android.sample.model.request.RequestRepositoryFirestore
 import com.android.sample.ui.authentication.SignInScreen
@@ -55,10 +56,10 @@ fun NavigationScreen(
   val user = FirebaseAuth.getInstance().currentUser
   var isSignedIn by rememberSaveable { mutableStateOf(user != null) }
   val startDestination = if (!isSignedIn) "login" else "requests"
-
   // repositories
   val requestRepository = RequestRepositoryFirestore(Firebase.firestore)
   val locationRepository = NominatimLocationRepository(client = OkHttpClient())
+  val fusedLocationProvider = FusedLocationProvider(LocalContext.current)
 
   // ViewModels
   val signInViewModel: SignInViewModel = viewModel()
@@ -69,7 +70,9 @@ fun NavigationScreen(
       viewModel(
           factory =
               EditRequestViewModelFactory(
-                  requestRepository = requestRepository, locationRepository = locationRepository))
+                  requestRepository = requestRepository,
+                  locationRepository = locationRepository,
+                  locationProvider = fusedLocationProvider))
   val acceptRequestViewModel: AcceptRequestViewModel = viewModel()
 
   NavHost(

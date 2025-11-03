@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.android.sample.model.map.Location
+import com.android.sample.model.map.LocationProvider
 import com.android.sample.model.map.LocationRepository
 import com.android.sample.model.request.Request
 import com.android.sample.model.request.RequestRepository
@@ -28,7 +29,8 @@ import kotlinx.coroutines.launch
  */
 class EditRequestViewModel(
     private val requestRepository: RequestRepository = RequestRepositoryProvider.repository,
-    private val locationRepository: LocationRepository
+    private val locationRepository: LocationRepository,
+    private val locationProvider: LocationProvider
 ) : ViewModel() {
 
   // Date formatter for validation
@@ -312,6 +314,39 @@ class EditRequestViewModel(
     }
   }
 
+  /** Get current location and update location fields */
+  fun getCurrentLocation() {
+    // Use location provider to get current location
+    viewModelScope.launch {
+      _uiState.update { it.copy(isSearchingLocation = true) }
+      try {
+        // Get current location
+        val location = locationProvider.getCurrentLocation()
+        if (location != null) {
+          updateLocation(location)
+          updateLocationName(location.name)
+        }
+        // Update UI state
+        _uiState.update { it.copy(isSearchingLocation = false) }
+      } catch (e: Exception) {
+        _uiState.update {
+          it.copy(
+              errorMessage = "Failed to get current location: ${e.message}",
+              isSearchingLocation = false)
+        }
+      }
+    }
+  }
+
+  /** Set location permission error message */
+  fun setLocationPermissionError() {
+    _uiState.update {
+      it.copy(
+          errorMessage = "Location permission is required to use current location",
+          isSearchingLocation = false)
+    }
+  }
+
   /** Clear error message */
   fun clearError() {
     _uiState.update { it.copy(errorMessage = null) }
@@ -335,12 +370,13 @@ class EditRequestViewModel(
 /** Factory for creating EditRequestViewModel with dependencies. */
 class EditRequestViewModelFactory(
     private val requestRepository: RequestRepository = RequestRepositoryProvider.repository,
-    private val locationRepository: LocationRepository
+    private val locationRepository: LocationRepository,
+    private val locationProvider: LocationProvider
 ) : ViewModelProvider.Factory {
   @Suppress("UNCHECKED_CAST")
   override fun <T : ViewModel> create(modelClass: Class<T>): T {
     if (modelClass.isAssignableFrom(EditRequestViewModel::class.java)) {
-      return EditRequestViewModel(requestRepository, locationRepository) as T
+      return EditRequestViewModel(requestRepository, locationRepository, locationProvider) as T
     }
     throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
   }

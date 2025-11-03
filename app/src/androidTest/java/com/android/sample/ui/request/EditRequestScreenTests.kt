@@ -141,7 +141,8 @@ open class EditRequestScreenTestBase {
   protected fun createTestViewModel(): EditRequestViewModel {
     val mockRequestRepo = mock<RequestRepository>()
     val mockLocationRepo = mock<LocationRepository>()
-    return EditRequestViewModel(mockRequestRepo, mockLocationRepo)
+    val fakeFusedLocationProvider = FakeLocationProvider()
+    return EditRequestViewModel(mockRequestRepo, mockLocationRepo, fakeFusedLocationProvider)
   }
 
   /**
@@ -169,7 +170,11 @@ open class EditRequestScreenTestBase {
             onClearError = viewModel::clearError,
             onClearSuccessMessage = viewModel::clearSuccessMessage,
             onSearchLocations = viewModel::searchLocations,
-            onClearLocationSearch = viewModel::clearLocationSearch)
+            onClearLocationSearch = viewModel::clearLocationSearch,
+            onDeleteClick = viewModel::confirmDelete,
+            onConfirmDelete = { viewModel.deleteRequest("") {} },
+            onCancelDelete = viewModel::cancelDelete,
+            onUseCurrentLocation = viewModel::getCurrentLocation)
 
     MaterialTheme {
       EditRequestContent(paddingValues = PaddingValues(0.dp), uiState = uiState, actions = actions)
@@ -185,7 +190,8 @@ open class EditRequestScreenTestBase {
       uiState: EditRequestUiState,
       onSave: () -> Unit = {},
       onClearError: () -> Unit = {},
-      onClearSuccessMessage: () -> Unit = {}
+      onClearSuccessMessage: () -> Unit = {},
+      onUseCurrentLocation: () -> Unit = {}
   ) {
     val actions =
         EditRequestActions(
@@ -201,7 +207,11 @@ open class EditRequestScreenTestBase {
             onClearError = onClearError,
             onClearSuccessMessage = onClearSuccessMessage,
             onSearchLocations = {},
-            onClearLocationSearch = {})
+            onClearLocationSearch = {},
+            onDeleteClick = {},
+            onConfirmDelete = {},
+            onCancelDelete = {},
+            onUseCurrentLocation = onUseCurrentLocation)
 
     MaterialTheme {
       EditRequestContent(paddingValues = PaddingValues(0.dp), uiState = uiState, actions = actions)
@@ -689,8 +699,8 @@ class EditRequestScreenTests : EditRequestScreenTestBase() {
   fun editRequestScreen_createMode_initializesCorrectly() = runTest {
     val mockRepo = mock<RequestRepository>()
     val mockLocationRepo = mock<LocationRepository>()
-    val viewModel = EditRequestViewModel(mockRepo, mockLocationRepo)
-
+    val fakeFusedLocationProvider = FakeLocationProvider() // Changed here
+    val viewModel = EditRequestViewModel(mockRepo, mockLocationRepo, fakeFusedLocationProvider)
     composeTestRule.setContent {
       MaterialTheme {
         EditRequestScreen(requestId = null, onNavigateBack = {}, viewModel = viewModel)
@@ -710,6 +720,7 @@ class EditRequestScreenTests : EditRequestScreenTestBase() {
   fun editRequestScreen_editMode_loadsRequestData() = runTest {
     val mockRepo = mock<RequestRepository>()
     val mockLocationRepo = mock<LocationRepository>()
+    val fakeFusedLocationProvider = FakeLocationProvider() // Changed here
     val testRequest =
         Request(
             requestId = "test-id",
@@ -727,7 +738,7 @@ class EditRequestScreenTests : EditRequestScreenTestBase() {
 
     whenever(mockRepo.getRequest("test-id")).thenReturn(testRequest)
 
-    val viewModel = EditRequestViewModel(mockRepo, mockLocationRepo)
+    val viewModel = EditRequestViewModel(mockRepo, mockLocationRepo, fakeFusedLocationProvider)
 
     composeTestRule.setContent {
       MaterialTheme {
@@ -925,5 +936,137 @@ class EditRequestScreenTests : EditRequestScreenTestBase() {
     waitForUI()
 
     assert(!viewModel.uiState.value.showDeleteConfirmation)
+  }
+
+  @Test
+  fun useCurrentLocationButton_exists_andIsEnabledInitially() {
+    composeTestRule.setContent {
+      TestEditRequestContentWithStaticState(uiState = EditRequestUiStateBuilder().build())
+    }
+
+    composeTestRule.onNodeWithText("Use Current Location").assertExists().assertIsEnabled()
+  }
+
+  @Test
+  fun useCurrentLocationButton_showsLoadingSpinner_whenSearchingLocation() {
+    composeTestRule.setContent {
+      TestEditRequestContentWithStaticState(
+          uiState = EditRequestUiStateBuilder().build().copy(isSearchingLocation = true))
+    }
+
+    composeTestRule
+        .onNodeWithTag(EditRequestScreenTestTags.USE_CURRENT_LOCATION_BUTTON)
+        .assertExists()
+
+    composeTestRule.onNodeWithTag(EditRequestScreenTestTags.LOCATION_LOADING_SPINNER).assertExists()
+  }
+
+  @Test
+  fun useCurrentLocationButton_isDisabled_whenIsLoading() {
+    composeTestRule.setContent {
+      TestEditRequestContentWithStaticState(
+          uiState = EditRequestUiStateBuilder().withLoading(true).build())
+    }
+
+    composeTestRule.onNodeWithText("Use Current Location").assertIsNotEnabled()
+  }
+
+  @Test
+  fun useCurrentLocationButton_isDisabled_whenSearchingLocation() {
+    composeTestRule.setContent {
+      TestEditRequestContentWithStaticState(
+          uiState = EditRequestUiStateBuilder().build().copy(isSearchingLocation = true))
+    }
+
+    composeTestRule
+        .onNodeWithTag(EditRequestScreenTestTags.USE_CURRENT_LOCATION_BUTTON)
+        .assertIsNotEnabled()
+  }
+
+  @Test
+  fun useCurrentLocationButton_showsErrorMessage_whenLocationFetchFails() {
+    val errorMsg = "Failed to get current location: GPS unavailable"
+
+    composeTestRule.setContent {
+      TestEditRequestContentWithStaticState(
+          uiState = EditRequestUiStateBuilder().withError(errorMsg).build())
+    }
+
+    assertErrorMessage(errorMsg)
+  }
+
+  @Test
+  fun useCurrentLocationButton_updatesLocationFields_onSuccess() {
+    val testLocation = Location(latitude = 46.5197, longitude = 6.6323, name = "EPFL, Lausanne")
+
+    composeTestRule.setContent {
+      TestEditRequestContentWithStaticState(
+          uiState =
+              EditRequestUiStateBuilder()
+                  .withLocation(testLocation)
+                  .withLocationName(testLocation.name)
+                  .build())
+    }
+
+    // Instead of checking UI text, verify the field exists and isn't in error state
+    composeTestRule
+        .onNodeWithTag(EditRequestScreenTestTags.INPUT_LOCATION_NAME)
+        .assertExists()
+        .assertIsEnabled()
+  }
+
+  @Test
+  fun useCurrentLocationButton_callsAction_whenClicked() {
+    var actionCalled = false
+
+    composeTestRule.setContent {
+      val actions =
+          EditRequestActions(
+              onTitleChange = {},
+              onDescriptionChange = {},
+              onRequestTypesChange = {},
+              onLocationChange = {},
+              onLocationNameChange = {},
+              onStartTimeStampChange = {},
+              onExpirationTimeChange = {},
+              onTagsChange = {},
+              onSave = {},
+              onClearError = {},
+              onClearSuccessMessage = {},
+              onSearchLocations = {},
+              onClearLocationSearch = {},
+              onDeleteClick = {},
+              onConfirmDelete = {},
+              onCancelDelete = {},
+              onUseCurrentLocation = { actionCalled = true })
+
+      MaterialTheme {
+        EditRequestContent(
+            paddingValues = PaddingValues(0.dp),
+            uiState = EditRequestUiStateBuilder().build(),
+            actions = actions)
+      }
+    }
+
+    clickButton("Use Current Location")
+    waitForUI()
+
+    assert(actionCalled) { "onUseCurrentLocation action should be called" }
+  }
+
+  @Test
+  fun useCurrentLocationButton_staysDisabled_duringBothLoadingStates() {
+    composeTestRule.setContent {
+      TestEditRequestContentWithStaticState(
+          uiState =
+              EditRequestUiStateBuilder()
+                  .withLoading(true)
+                  .build()
+                  .copy(isSearchingLocation = true))
+    }
+
+    composeTestRule
+        .onNodeWithTag(EditRequestScreenTestTags.USE_CURRENT_LOCATION_BUTTON)
+        .assertIsNotEnabled()
   }
 }

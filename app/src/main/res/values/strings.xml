@@ -14,6 +14,8 @@
     <string name="delete_request_button_are_you_sure">This action cannot be undone. The request will be permanently deleted.</string>
     <string name="delete_request_button_delete">Delete</string>
     <string name="delete_request_button_cancel">Cancel</string>
+    <string name="Edit_request_viewmodel_set_location_error">Location permission is required to use current location</string>
+
 
 
 

@@ -1,6 +1,12 @@
 package com.android.sample.ui.request.edit
 
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import android.location.LocationManager
 import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -9,9 +15,12 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.android.sample.model.map.FusedLocationProvider
 import com.android.sample.model.map.NominatimLocationRepository
 import com.android.sample.model.request.RequestType
 import com.android.sample.model.request.Tags
@@ -33,6 +42,8 @@ object EditRequestScreenTestTags {
   const val SAVE_BUTTON = "saveButton"
   const val ERROR_MESSAGE = "errorMessage"
   const val LOCATION_SEARCH = "locationSearch"
+  const val LOCATION_LOADING_SPINNER = "locationLoadingSpinner"
+  const val USE_CURRENT_LOCATION_BUTTON = "useCurrentLocationButton"
   /**
    * Returns a stable test tag for the given [RequestType] to be used in UI tests.
    *
@@ -64,11 +75,31 @@ fun EditRequestScreen(
         viewModel(
             factory =
                 EditRequestViewModelFactory(
-                    locationRepository = NominatimLocationRepository(OkHttpClient())))
+                    locationRepository = NominatimLocationRepository(OkHttpClient()),
+                    locationProvider = FusedLocationProvider(LocalContext.current)))
 ) {
+  val context = LocalContext.current
+
+  val permissionLauncher =
+      rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+          permissions ->
+        when {
+          permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+              permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true -> {
+            if (isLocationEnabled(context)) {
+              viewModel.getCurrentLocation()
+            } else {
+              viewModel.setLocationPermissionError()
+            }
+          }
+          else -> {
+            viewModel.setLocationPermissionError()
+          }
+        }
+      }
+
   val isEditMode = requestId != null
 
-  // Load request data or initialize for creation
   LaunchedEffect(requestId) {
     if (requestId != null) {
       viewModel.loadRequest(requestId)
@@ -107,7 +138,35 @@ fun EditRequestScreen(
           onClearLocationSearch = viewModel::clearLocationSearch,
           onDeleteClick = viewModel::confirmDelete,
           onConfirmDelete = { viewModel.deleteRequest(requestId ?: "") { onNavigateBack() } },
-          onCancelDelete = viewModel::cancelDelete)
+          onCancelDelete = viewModel::cancelDelete,
+          // we need to ask for location permission and get current location
+          onUseCurrentLocation = {
+            // Check permission first
+            val hasFineLocation =
+                ContextCompat.checkSelfPermission(
+                    context, Manifest.permission.ACCESS_FINE_LOCATION) ==
+                    PackageManager.PERMISSION_GRANTED
+
+            val hasCoarseLocation =
+                ContextCompat.checkSelfPermission(
+                    context, Manifest.permission.ACCESS_COARSE_LOCATION) ==
+                    PackageManager.PERMISSION_GRANTED
+
+            if (hasFineLocation || hasCoarseLocation) {
+              // Permission already granted - check if GPS is enabled
+              if (isLocationEnabled(context)) {
+                viewModel.getCurrentLocation()
+              } else {
+                viewModel.setLocationPermissionError()
+              }
+            } else {
+              // Request permissions
+              permissionLauncher.launch(
+                  arrayOf(
+                      Manifest.permission.ACCESS_FINE_LOCATION,
+                      Manifest.permission.ACCESS_COARSE_LOCATION))
+            }
+          })
 
   Scaffold(
       topBar = {
@@ -173,7 +232,22 @@ fun EditRequestContent(
             showError = uiState.validationState.showRequestTypeError,
             isLoading = uiState.isLoading,
             onRequestTypesChange = actions.onRequestTypesChange)
-
+        // this is the your current location button
+        Button(
+            onClick = actions.onUseCurrentLocation,
+            modifier =
+                Modifier.fillMaxWidth()
+                    .testTag(EditRequestScreenTestTags.USE_CURRENT_LOCATION_BUTTON),
+            enabled = !uiState.isLoading && !uiState.isSearchingLocation) {
+              if (uiState.isSearchingLocation) {
+                CircularProgressIndicator(
+                    modifier =
+                        Modifier.size(20.dp)
+                            .testTag(EditRequestScreenTestTags.LOCATION_LOADING_SPINNER))
+              } else {
+                Text("Use Current Location")
+              }
+            }
         LocationSearchField(
             locationName = uiState.locationName,
             location = uiState.location,
@@ -380,6 +454,12 @@ private fun RequestTypeSection(
         style = MaterialTheme.typography.bodySmall,
         modifier = Modifier.testTag(EditRequestScreenTestTags.ERROR_MESSAGE))
   }
+}
+
+private fun isLocationEnabled(context: Context): Boolean {
+  val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+  return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
+      locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
 }
 
 @Composable
