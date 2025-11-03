@@ -107,7 +107,7 @@ fun SignInScreen(
             } catch (e: NoCredentialException) {
               viewModel.setError("No Google account found")
             } catch (e: GetCredentialException) {
-              viewModel.setError("Google Sign-In cancelled")
+              viewModel.setError("Connection cancelled")
             }
           }
           else -> viewModel.setError("Connection error: ${e.localizedMessage}")
