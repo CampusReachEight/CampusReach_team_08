@@ -60,6 +60,8 @@ class RequestListTests : BaseEmulatorTest() {
     override suspend fun acceptRequest(requestId: String) {}
 
     override suspend fun cancelAcceptance(requestId: String) {}
+
+    override suspend fun isOwnerOfRequest(request: Request): Boolean = false
   }
 
   // Fake UserProfileRepository avec comptage
@@ -426,6 +428,8 @@ class RequestListTests : BaseEmulatorTest() {
       override suspend fun acceptRequest(requestId: String) = throw NotImplementedError()
 
       override suspend fun cancelAcceptance(requestId: String) = throw NotImplementedError()
+
+      override suspend fun isOwnerOfRequest(request: Request): Boolean = false
     }
 
     val vm =

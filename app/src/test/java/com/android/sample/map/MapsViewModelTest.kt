@@ -85,6 +85,8 @@ class MapsViewModelTest {
     override suspend fun acceptRequest(requestId: String) {}
 
     override suspend fun cancelAcceptance(requestId: String) {}
+
+    override suspend fun isOwnerOfRequest(request: Request): Boolean = false
   }
 
   private lateinit var fakeRepository: FakeRequestRepository

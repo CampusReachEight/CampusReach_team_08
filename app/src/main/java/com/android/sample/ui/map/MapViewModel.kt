@@ -9,6 +9,7 @@ import com.android.sample.model.request.RequestRepositoryFirestore
 import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,7 +26,9 @@ import kotlinx.coroutines.launch
 data class MapUIState(
     val target: LatLng = LatLng(0.0, 0.0),
     val request: List<Request> = emptyList(),
-    val errorMsg: String? = null
+    val errorMsg: String? = null,
+    var currentRequest: Request? = null,
+    var isOwner: Boolean? = null
 )
 
 /**
@@ -44,6 +47,8 @@ class MapViewModel(
 
   private val _uiState = MutableStateFlow(MapUIState())
   val uiState: StateFlow<MapUIState> = _uiState.asStateFlow()
+
+  private var isHisRequestJob: Job? = null
 
   init {
     fetchAcceptedRequest()
@@ -68,6 +73,31 @@ class MapViewModel(
     fetchAcceptedRequest()
   }
 
+  /** Refreshes the UI by updating the current request */
+  fun updateCurrentRequest(request: Request?) {
+    _uiState.value = _uiState.value.copy(currentRequest = request)
+    isHisRequest(request)
+  }
+
+  /** Refreshes the UI by updating the isOwner */
+  fun isHisRequest(request: Request?) {
+    isHisRequestJob?.cancel()
+    isHisRequestJob =
+        viewModelScope.launch {
+          try {
+            if (request == null) {
+              _uiState.value = _uiState.value.copy(isOwner = null)
+            } else {
+              val isOwner = requestRepository.isOwnerOfRequest(request)
+              _uiState.value = _uiState.value.copy(isOwner = isOwner)
+            }
+          } catch (e: Exception) {
+            setErrorMsg("Failed to get current user: ${e.message}")
+            _uiState.value = _uiState.value.copy(isOwner = null)
+          }
+        }
+  }
+
   /**
    * Fetches all accepted requests and updates the MapUIState. Sets the target location to the first
    * request with a valid location, or to EPFL if no request has a valid address.
@@ -76,7 +106,23 @@ class MapViewModel(
     viewModelScope.launch {
       try {
         val requests = requestRepository.getAllRequests()
-        val loc = requests.firstOrNull()?.location ?: EPFL_LOCATION
+
+        val current = _uiState.value.currentRequest
+        val updatedCurrent = current?.let { requests.find { it.requestId == current.requestId } }
+
+        if (current == null || updatedCurrent == null) {
+          // currentRequest has been deleted
+          _uiState.value = _uiState.value.copy(currentRequest = null, isOwner = null)
+        } else {
+          // currentRequest found and up to date
+          _uiState.value =
+              _uiState.value.copy(currentRequest = updatedCurrent, isOwner = _uiState.value.isOwner)
+        }
+
+        val loc =
+            _uiState.value.currentRequest?.location
+                ?: requests.firstOrNull()?.location
+                ?: EPFL_LOCATION
         _uiState.value =
             MapUIState(target = LatLng(loc.latitude, loc.longitude), request = requests)
       } catch (e: Exception) {
