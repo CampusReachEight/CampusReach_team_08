@@ -11,8 +11,12 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.resume
+import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withTimeoutOrNull
 
 class FusedLocationProvider(
     private val context: Context,
@@ -29,6 +33,10 @@ class FusedLocationProvider(
 
     // Timeout for requesting fresh location (15 seconds)
     private const val FRESH_LOCATION_TIMEOUT_MS = 15000L
+    private const val TAG = "FusedLocationProvider"
+
+    private const val CURRENT_LOCATION_PREFIX = "Current Location"
+    private const val LAST_KNOWN_LOCATION_PREFIX = "Last Known Location"
   }
 
   /**
@@ -47,39 +55,40 @@ class FusedLocationProvider(
   @SuppressLint("MissingPermission")
   override suspend fun getCurrentLocation(): Location? {
     return try {
-      val freshLocation = requestFreshLocation()
+      coroutineScope {
+        // New add : Fetch lastLocation in parallel to avoid race condition
+        val lastLocationDeferred = async {
+          try {
+            fusedLocationClient.lastLocation.await()
+          } catch (e: Exception) {
+            null
+          }
+        }
 
-      if (freshLocation != null) {
-        /**
-         * Log.d( "FusedLocationProvider", "Got fresh location: ${freshLocation.latitude},
-         * ${freshLocation.longitude}")
-         */
-        Location(
-            latitude = freshLocation.latitude,
-            longitude = freshLocation.longitude,
-            name = "Current Location (${freshLocation.latitude}, ${freshLocation.longitude})")
-      } else {
-        /**
-         * Log.d("FusedLocationProvider", "Fresh location unavailable, trying last known location")
-         */
-        val lastLocation = fusedLocationClient.lastLocation.await()
+        // Request fresh location with built-in timeout
+        val freshLocation = requestFreshLocation()
 
-        if (lastLocation != null && isLocationValid(lastLocation)) {
-          /**
-           * Log.d( "FusedLocationProvider", "Got last known location: ${lastLocation.latitude},
-           * ${lastLocation.longitude}")
-           */
+        if (freshLocation != null) {
           Location(
-              latitude = lastLocation.latitude,
-              longitude = lastLocation.longitude,
-              name = "Last Known Location (${lastLocation.latitude}, ${lastLocation.longitude})")
+              latitude = freshLocation.latitude,
+              longitude = freshLocation.longitude,
+              name =
+                  "$CURRENT_LOCATION_PREFIX (${freshLocation.latitude}, ${freshLocation.longitude})")
         } else {
-          /** Log.d("FusedLocationProvider", "No valid location available") */
-          null
+          // Use last location fetched in parallel (no race condition)
+          val lastLocation = lastLocationDeferred.await()
+          if (lastLocation != null && isLocationValid(lastLocation)) {
+            Location(
+                latitude = lastLocation.latitude,
+                longitude = lastLocation.longitude,
+                name =
+                    "$LAST_KNOWN_LOCATION_PREFIX (${lastLocation.latitude}, ${lastLocation.longitude})")
+          } else {
+            null
+          }
         }
       }
     } catch (e: Exception) {
-      /** Log.e("FusedLocationProvider", "Error getting current location", e) */
       null
     }
   }
@@ -93,41 +102,41 @@ class FusedLocationProvider(
    */
   @SuppressLint("MissingPermission")
   private suspend fun requestFreshLocation(): AndroidLocation? {
-    return suspendCancellableCoroutine { continuation ->
-      val locationRequest =
-          LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000)
-              .apply {
-                setMaxUpdates(1)
-                setDurationMillis(FRESH_LOCATION_TIMEOUT_MS)
-              }
-              .build()
+    return withTimeoutOrNull(FRESH_LOCATION_TIMEOUT_MS.milliseconds) {
+      suspendCancellableCoroutine { continuation ->
+        val locationRequest =
+            LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000)
+                .apply {
+                  setMaxUpdates(1)
+                  setDurationMillis(FRESH_LOCATION_TIMEOUT_MS)
+                }
+                .build()
 
-      var locationCallback: LocationCallback? = null
+        var locationCallback: LocationCallback? = null
 
-      locationCallback =
-          object : LocationCallback() {
-            override fun onLocationResult(locationResult: LocationResult) {
-              val location = locationResult.locations.firstOrNull()
-              if (location != null && isLocationValid(location)) {
-                /**
-                 * Log.d( "FusedLocationProvider", "Fresh location received with accuracy:
-                 * ${location.accuracy}m")
-                 */
+        locationCallback =
+            object : LocationCallback() {
+              override fun onLocationResult(locationResult: LocationResult) {
+                val location = locationResult.locations.firstOrNull()
                 locationCallback?.let { fusedLocationClient.removeLocationUpdates(it) }
-                continuation.resume(location)
+
+                if (location != null && isLocationValid(location)) {
+                  continuation.resume(location)
+                } else {
+                  continuation.resume(null)
+                }
               }
             }
-          }
 
-      try {
-        fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, null)
-      } catch (e: Exception) {
-        continuation.resume(null)
-      }
+        try {
+          fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, null)
+        } catch (e: Exception) {
+          continuation.resume(null)
+        }
 
-      // Handle cancellation - clean up location updates
-      continuation.invokeOnCancellation {
-        locationCallback?.let { fusedLocationClient.removeLocationUpdates(it) }
+        continuation.invokeOnCancellation {
+          locationCallback?.let { fusedLocationClient.removeLocationUpdates(it) }
+        }
       }
     }
   }

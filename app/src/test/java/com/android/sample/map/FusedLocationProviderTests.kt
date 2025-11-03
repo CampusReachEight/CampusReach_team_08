@@ -20,6 +20,91 @@ class FusedLocationProviderTest {
   private lateinit var mockFusedClient: FusedLocationProviderClient
   private lateinit var provider: FusedLocationProvider
 
+  companion object {
+    // ===== COORDINATES =====
+    // San Francisco
+    private const val SF_LATITUDE = 37.7749
+    private const val SF_LONGITUDE = -122.4194
+
+    // New York
+    private const val NY_LATITUDE = 40.7128
+    private const val NY_LONGITUDE = -74.0060
+
+    // Tokyo
+    private const val TOKYO_LATITUDE = 35.6762
+    private const val TOKYO_LONGITUDE = 139.6503
+
+    // Sydney
+    private const val SYDNEY_LATITUDE = -33.8688
+    private const val SYDNEY_LONGITUDE = 151.2093
+
+    // Berlin
+    private const val BERLIN_LATITUDE = 52.5200
+    private const val BERLIN_LONGITUDE = 13.4050
+
+    // Seattle
+    private const val SEATTLE_LATITUDE = 47.6062
+    private const val SEATTLE_LONGITUDE = -122.3321
+
+    // Portland
+    private const val PORTLAND_LATITUDE = 45.5017
+    private const val PORTLAND_LONGITUDE = -122.6750
+
+    // São Paulo
+    private const val SAO_PAULO_LATITUDE = -23.5505
+    private const val SAO_PAULO_LONGITUDE = -46.6333
+
+    // Mumbai
+    private const val MUMBAI_LATITUDE = 19.0760
+    private const val MUMBAI_LONGITUDE = 72.8777
+
+    // Mumbai alternate
+    private const val MUMBAI_LATITUDE_ALT = 19.0761
+    private const val MUMBAI_LONGITUDE_ALT = 72.8778
+
+    // Singapore (high precision)
+    private const val SINGAPORE_LATITUDE = 1.352083
+    private const val SINGAPORE_LONGITUDE = 103.819836
+
+    // Generic test coordinates
+    private const val TEST_LATITUDE_1 = 10.0
+    private const val TEST_LONGITUDE_1 = 20.0
+    private const val TEST_LATITUDE_2 = 50.0
+    private const val TEST_LONGITUDE_2 = 60.0
+
+    // Zero/Null Island
+    private const val ZERO_COORDINATE = 0.0
+
+    // ===== ACCURACY VALUES =====
+    private const val EXCELLENT_ACCURACY = 5f
+    private const val VERY_GOOD_ACCURACY = 10f
+    private const val GOOD_ACCURACY = 30f
+    private const val ACCEPTABLE_ACCURACY = 40f
+    private const val MODERATE_ACCURACY = 45f
+    private const val BOUNDARY_ACCURACY = 50f
+    private const val THRESHOLD_ACCURACY = 100f
+
+    // ===== ASSERTION DELTAS =====
+    private const val DELTA_STANDARD = 0.01
+    private const val DELTA_HIGH_PRECISION = 0.001
+
+    // ===== TIME VALUES =====
+    private const val TEN_SECONDS_MS = 10L
+
+    // ===== FALLBACK VALUES =====
+    private const val FALLBACK_COORDINATE = -1.0
+
+    // ===== STRING CONSTANTS =====
+    private const val ERROR_MESSAGE_GPS = "GPS Error"
+    private const val KEYWORD_LOCATION = "Location"
+    private const val COORDINATE_PREFIX = "40"
+    private const val PORTLAND_LAT_STRING = "45.5017"
+    private const val PORTLAND_LON_STRING = "-122.675"
+
+    // ===== TIMEOUT VALUES =====
+    private const val TEST_TIMEOUT_MS = 5000L
+  }
+
   @Before
   fun setup() {
     mockContext = mockk()
@@ -32,9 +117,9 @@ class FusedLocationProviderTest {
   @Test
   fun testReturnsLocation() = runTest {
     val mockLocation = mockk<AndroidLocation>()
-    every { mockLocation.latitude } returns 37.7749
-    every { mockLocation.longitude } returns -122.4194
-    every { mockLocation.accuracy } returns 50f
+    every { mockLocation.latitude } returns SF_LATITUDE
+    every { mockLocation.longitude } returns SF_LONGITUDE
+    every { mockLocation.accuracy } returns BOUNDARY_ACCURACY
     every { mockLocation.time } returns System.currentTimeMillis()
 
     val mockLocationResult = mockk<LocationResult>()
@@ -51,15 +136,15 @@ class FusedLocationProviderTest {
     val result = provider.getCurrentLocation()
 
     assertNotNull(result)
-    assertEquals(37.7749, result?.latitude ?: 0.0, 0.01)
-    assertEquals(-122.4194, result?.longitude ?: 0.0, 0.01)
+    assertEquals(SF_LATITUDE, result?.latitude ?: ZERO_COORDINATE, DELTA_STANDARD)
+    assertEquals(SF_LONGITUDE, result?.longitude ?: ZERO_COORDINATE, DELTA_STANDARD)
   }
 
-  @Test(timeout = 5000)
+  @Test(timeout = TEST_TIMEOUT_MS)
   fun testReturnsNullOnException() = runTest {
     every { mockFusedClient.requestLocationUpdates(any(), any<LocationCallback>(), null) } throws
-        RuntimeException("GPS Error")
-    every { mockFusedClient.lastLocation } throws RuntimeException("GPS Error")
+        RuntimeException(ERROR_MESSAGE_GPS)
+    every { mockFusedClient.lastLocation } throws RuntimeException(ERROR_MESSAGE_GPS)
 
     val result = provider.getCurrentLocation()
 
@@ -69,9 +154,9 @@ class FusedLocationProviderTest {
   @Test
   fun testLocationNameFormatCurrent() = runTest {
     val mockLocation = mockk<AndroidLocation>()
-    every { mockLocation.latitude } returns 40.7128
-    every { mockLocation.longitude } returns -74.0060
-    every { mockLocation.accuracy } returns 50f
+    every { mockLocation.latitude } returns NY_LATITUDE
+    every { mockLocation.longitude } returns NY_LONGITUDE
+    every { mockLocation.accuracy } returns BOUNDARY_ACCURACY
     every { mockLocation.time } returns System.currentTimeMillis()
 
     val mockLocationResult = mockk<LocationResult>()
@@ -88,16 +173,16 @@ class FusedLocationProviderTest {
     val result = provider.getCurrentLocation()
 
     assertNotNull(result)
-    assertTrue(result?.name?.contains("Location") == true)
-    assertTrue(result?.name?.contains("40") == true)
+    assertTrue(result?.name?.contains(KEYWORD_LOCATION) == true)
+    assertTrue(result?.name?.contains(COORDINATE_PREFIX) == true)
   }
 
   @Test
   fun testHighAccuracyLocation() = runTest {
     val mockLocation = mockk<AndroidLocation>()
-    every { mockLocation.latitude } returns 35.6762
-    every { mockLocation.longitude } returns 139.6503
-    every { mockLocation.accuracy } returns 10f // Very good accuracy
+    every { mockLocation.latitude } returns TOKYO_LATITUDE
+    every { mockLocation.longitude } returns TOKYO_LONGITUDE
+    every { mockLocation.accuracy } returns VERY_GOOD_ACCURACY
     every { mockLocation.time } returns System.currentTimeMillis()
 
     val mockLocationResult = mockk<LocationResult>()
@@ -114,20 +199,20 @@ class FusedLocationProviderTest {
     val result = provider.getCurrentLocation()
 
     assertNotNull(result)
-    assertEquals(35.6762, result?.latitude ?: 0.0, 0.01)
+    assertEquals(TOKYO_LATITUDE, result?.latitude ?: ZERO_COORDINATE, DELTA_STANDARD)
   }
 
   @Test
   fun testUsesFirstLocationFromMultiple() = runTest {
     val firstLocation = mockk<AndroidLocation>()
-    every { firstLocation.latitude } returns 10.0
-    every { firstLocation.longitude } returns 20.0
-    every { firstLocation.accuracy } returns 30f
+    every { firstLocation.latitude } returns TEST_LATITUDE_1
+    every { firstLocation.longitude } returns TEST_LONGITUDE_1
+    every { firstLocation.accuracy } returns GOOD_ACCURACY
     every { firstLocation.time } returns System.currentTimeMillis()
 
     val secondLocation = mockk<AndroidLocation>()
-    every { secondLocation.latitude } returns 50.0
-    every { secondLocation.longitude } returns 60.0
+    every { secondLocation.latitude } returns TEST_LATITUDE_2
+    every { secondLocation.longitude } returns TEST_LONGITUDE_2
 
     val mockLocationResult = mockk<LocationResult>()
     every { mockLocationResult.locations } returns listOf(firstLocation, secondLocation)
@@ -143,16 +228,16 @@ class FusedLocationProviderTest {
     val result = provider.getCurrentLocation()
 
     assertNotNull(result)
-    assertEquals(10.0, result?.latitude ?: 0.0, 0.01)
-    assertEquals(20.0, result?.longitude ?: 0.0, 0.01)
+    assertEquals(TEST_LATITUDE_1, result?.latitude ?: ZERO_COORDINATE, DELTA_STANDARD)
+    assertEquals(TEST_LONGITUDE_1, result?.longitude ?: ZERO_COORDINATE, DELTA_STANDARD)
   }
 
   @Test
   fun testDifferentCoordinates() = runTest {
     val mockLocation = mockk<AndroidLocation>()
-    every { mockLocation.latitude } returns -33.8688
-    every { mockLocation.longitude } returns 151.2093
-    every { mockLocation.accuracy } returns 45f
+    every { mockLocation.latitude } returns SYDNEY_LATITUDE
+    every { mockLocation.longitude } returns SYDNEY_LONGITUDE
+    every { mockLocation.accuracy } returns MODERATE_ACCURACY
     every { mockLocation.time } returns System.currentTimeMillis()
 
     val mockLocationResult = mockk<LocationResult>()
@@ -169,8 +254,8 @@ class FusedLocationProviderTest {
     val result = provider.getCurrentLocation()
 
     assertNotNull(result)
-    assertEquals(-33.8688, result?.latitude ?: 0.0, 0.01)
-    assertEquals(151.2093, result?.longitude ?: 0.0, 0.01)
+    assertEquals(SYDNEY_LATITUDE, result?.latitude ?: ZERO_COORDINATE, DELTA_STANDARD)
+    assertEquals(SYDNEY_LONGITUDE, result?.longitude ?: ZERO_COORDINATE, DELTA_STANDARD)
   }
 
   // ===================== EMPTY/NULL LOCATION TESTS =====================
@@ -180,9 +265,9 @@ class FusedLocationProviderTest {
   @Test
   fun testAcceptsLocationAtAccuracyBoundary() = runTest {
     val mockLocation = mockk<AndroidLocation>()
-    every { mockLocation.latitude } returns 52.5200
-    every { mockLocation.longitude } returns 13.4050
-    every { mockLocation.accuracy } returns 100f // Exactly at threshold
+    every { mockLocation.latitude } returns BERLIN_LATITUDE
+    every { mockLocation.longitude } returns BERLIN_LONGITUDE
+    every { mockLocation.accuracy } returns THRESHOLD_ACCURACY
     every { mockLocation.time } returns System.currentTimeMillis()
 
     val mockLocationResult = mockk<LocationResult>()
@@ -199,7 +284,7 @@ class FusedLocationProviderTest {
     val result = provider.getCurrentLocation()
 
     assertNotNull(result)
-    assertEquals(52.5200, result?.latitude ?: 0.0, 0.01)
+    assertEquals(BERLIN_LATITUDE, result?.latitude ?: ZERO_COORDINATE, DELTA_STANDARD)
   }
 
   // ===================== AGE/STALENESS VALIDATION TESTS =====================
@@ -207,11 +292,11 @@ class FusedLocationProviderTest {
   @Test
   fun testAcceptsRecentLocation() = runTest {
     val mockLocation = mockk<AndroidLocation>()
-    every { mockLocation.latitude } returns 47.6062
-    every { mockLocation.longitude } returns -122.3321
-    every { mockLocation.accuracy } returns 30f
-    // Location is only 10 seconds old
-    every { mockLocation.time } returns System.currentTimeMillis() - TimeUnit.SECONDS.toMillis(10)
+    every { mockLocation.latitude } returns SEATTLE_LATITUDE
+    every { mockLocation.longitude } returns SEATTLE_LONGITUDE
+    every { mockLocation.accuracy } returns GOOD_ACCURACY
+    every { mockLocation.time } returns
+        System.currentTimeMillis() - TimeUnit.SECONDS.toMillis(TEN_SECONDS_MS)
 
     val mockLocationResult = mockk<LocationResult>()
     every { mockLocationResult.locations } returns listOf(mockLocation)
@@ -227,7 +312,7 @@ class FusedLocationProviderTest {
     val result = provider.getCurrentLocation()
 
     assertNotNull(result)
-    assertEquals(47.6062, result?.latitude ?: 0.0, 0.01)
+    assertEquals(SEATTLE_LATITUDE, result?.latitude ?: ZERO_COORDINATE, DELTA_STANDARD)
   }
 
   // ===================== EDGE CASE TESTS =====================
@@ -235,9 +320,9 @@ class FusedLocationProviderTest {
   @Test
   fun testLocationNameIncludesCoordinates() = runTest {
     val mockLocation = mockk<AndroidLocation>()
-    every { mockLocation.latitude } returns 45.5017
-    every { mockLocation.longitude } returns -122.6750
-    every { mockLocation.accuracy } returns 50f
+    every { mockLocation.latitude } returns PORTLAND_LATITUDE
+    every { mockLocation.longitude } returns PORTLAND_LONGITUDE
+    every { mockLocation.accuracy } returns BOUNDARY_ACCURACY
     every { mockLocation.time } returns System.currentTimeMillis()
 
     val mockLocationResult = mockk<LocationResult>()
@@ -254,16 +339,16 @@ class FusedLocationProviderTest {
     val result = provider.getCurrentLocation()
 
     assertNotNull(result)
-    assertTrue(result?.name?.contains("45.5017") == true)
-    assertTrue(result?.name?.contains("-122.675") == true)
+    assertTrue(result?.name?.contains(PORTLAND_LAT_STRING) == true)
+    assertTrue(result?.name?.contains(PORTLAND_LON_STRING) == true)
   }
 
   @Test
   fun testNegativeCoordinates() = runTest {
     val mockLocation = mockk<AndroidLocation>()
-    every { mockLocation.latitude } returns -23.5505
-    every { mockLocation.longitude } returns -46.6333
-    every { mockLocation.accuracy } returns 50f
+    every { mockLocation.latitude } returns SAO_PAULO_LATITUDE
+    every { mockLocation.longitude } returns SAO_PAULO_LONGITUDE
+    every { mockLocation.accuracy } returns BOUNDARY_ACCURACY
     every { mockLocation.time } returns System.currentTimeMillis()
 
     val mockLocationResult = mockk<LocationResult>()
@@ -280,16 +365,16 @@ class FusedLocationProviderTest {
     val result = provider.getCurrentLocation()
 
     assertNotNull(result)
-    assertEquals(-23.5505, result?.latitude ?: 0.0, 0.01)
-    assertEquals(-46.6333, result?.longitude ?: 0.0, 0.01)
+    assertEquals(SAO_PAULO_LATITUDE, result?.latitude ?: ZERO_COORDINATE, DELTA_STANDARD)
+    assertEquals(SAO_PAULO_LONGITUDE, result?.longitude ?: ZERO_COORDINATE, DELTA_STANDARD)
   }
 
   @Test
   fun testZeroCoordinates() = runTest {
     val mockLocation = mockk<AndroidLocation>()
-    every { mockLocation.latitude } returns 0.0
-    every { mockLocation.longitude } returns 0.0
-    every { mockLocation.accuracy } returns 50f
+    every { mockLocation.latitude } returns ZERO_COORDINATE
+    every { mockLocation.longitude } returns ZERO_COORDINATE
+    every { mockLocation.accuracy } returns BOUNDARY_ACCURACY
     every { mockLocation.time } returns System.currentTimeMillis()
 
     val mockLocationResult = mockk<LocationResult>()
@@ -306,8 +391,8 @@ class FusedLocationProviderTest {
     val result = provider.getCurrentLocation()
 
     assertNotNull(result)
-    assertEquals(0.0, result?.latitude ?: -1.0, 0.01)
-    assertEquals(0.0, result?.longitude ?: -1.0, 0.01)
+    assertEquals(ZERO_COORDINATE, result?.latitude ?: FALLBACK_COORDINATE, DELTA_STANDARD)
+    assertEquals(ZERO_COORDINATE, result?.longitude ?: FALLBACK_COORDINATE, DELTA_STANDARD)
   }
 
   // ===================== MULTIPLE CALLBACKS TESTS =====================
@@ -315,15 +400,15 @@ class FusedLocationProviderTest {
   @Test
   fun testHandlesMultipleLocationCallbacks() = runTest {
     val firstLocation = mockk<AndroidLocation>()
-    every { firstLocation.latitude } returns 19.0760
-    every { firstLocation.longitude } returns 72.8777
-    every { firstLocation.accuracy } returns 40f
+    every { firstLocation.latitude } returns MUMBAI_LATITUDE
+    every { firstLocation.longitude } returns MUMBAI_LONGITUDE
+    every { firstLocation.accuracy } returns ACCEPTABLE_ACCURACY
     every { firstLocation.time } returns System.currentTimeMillis()
 
     val secondLocation = mockk<AndroidLocation>()
-    every { secondLocation.latitude } returns 19.0761
-    every { secondLocation.longitude } returns 72.8778
-    every { secondLocation.accuracy } returns 30f
+    every { secondLocation.latitude } returns MUMBAI_LATITUDE_ALT
+    every { secondLocation.longitude } returns MUMBAI_LONGITUDE_ALT
+    every { secondLocation.accuracy } returns GOOD_ACCURACY
     every { secondLocation.time } returns System.currentTimeMillis()
 
     var callbackCount = 0
@@ -343,7 +428,7 @@ class FusedLocationProviderTest {
 
     assertNotNull(result)
     // Should use first location
-    assertEquals(19.0760, result?.latitude ?: 0.0, 0.01)
+    assertEquals(MUMBAI_LATITUDE, result?.latitude ?: ZERO_COORDINATE, DELTA_STANDARD)
   }
 
   // ===================== VERY HIGH PRECISION TESTS =====================
@@ -351,9 +436,9 @@ class FusedLocationProviderTest {
   @Test
   fun testVeryHighPrecisionLocation() = runTest {
     val mockLocation = mockk<AndroidLocation>()
-    every { mockLocation.latitude } returns 1.352083
-    every { mockLocation.longitude } returns 103.819836
-    every { mockLocation.accuracy } returns 5f
+    every { mockLocation.latitude } returns SINGAPORE_LATITUDE
+    every { mockLocation.longitude } returns SINGAPORE_LONGITUDE
+    every { mockLocation.accuracy } returns EXCELLENT_ACCURACY
     every { mockLocation.time } returns System.currentTimeMillis()
 
     val mockLocationResult = mockk<LocationResult>()
@@ -370,7 +455,109 @@ class FusedLocationProviderTest {
     val result = provider.getCurrentLocation()
 
     assertNotNull(result)
-    assertEquals(1.352083, result?.latitude ?: 0.0, 0.001)
-    assertEquals(103.819836, result?.longitude ?: 0.0, 0.001)
+    assertEquals(SINGAPORE_LATITUDE, result?.latitude ?: ZERO_COORDINATE, DELTA_HIGH_PRECISION)
+    assertEquals(SINGAPORE_LONGITUDE, result?.longitude ?: ZERO_COORDINATE, DELTA_HIGH_PRECISION)
+  }
+
+  @Test
+  fun testRejectsPoorAccuracyFreshLocationAndFallsBackToNull() = runTest {
+    // Fresh location with accuracy > 100m
+    val poorAccuracyLocation = mockk<AndroidLocation>()
+    every { poorAccuracyLocation.latitude } returns SF_LATITUDE
+    every { poorAccuracyLocation.longitude } returns SF_LONGITUDE
+    every { poorAccuracyLocation.accuracy } returns 150f // Poor accuracy
+    every { poorAccuracyLocation.time } returns System.currentTimeMillis()
+
+    val mockLocationResult = mockk<LocationResult>()
+    every { mockLocationResult.locations } returns listOf(poorAccuracyLocation)
+
+    val callbackSlot = slot<LocationCallback>()
+    every { mockFusedClient.requestLocationUpdates(any(), capture(callbackSlot), null) } answers
+        {
+          callbackSlot.captured.onLocationResult(mockLocationResult)
+          mockk()
+        }
+    every { mockFusedClient.removeLocationUpdates(any<LocationCallback>()) } returns mockk()
+
+    // Last location also has poor accuracy
+    every { mockFusedClient.lastLocation } throws RuntimeException("No last location")
+
+    val result = provider.getCurrentLocation()
+
+    assertNull(result)
+  }
+
+  @Test
+  fun testRejectsStaleLocationAndReturnsNull() = runTest {
+    // Location that's over 2 minutes old
+    val staleLocation = mockk<AndroidLocation>()
+    every { staleLocation.latitude } returns TOKYO_LATITUDE
+    every { staleLocation.longitude } returns TOKYO_LONGITUDE
+    every { staleLocation.accuracy } returns GOOD_ACCURACY
+    every { staleLocation.time } returns
+        System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(5) // 5 minutes old
+
+    val mockLocationResult = mockk<LocationResult>()
+    every { mockLocationResult.locations } returns listOf(staleLocation)
+
+    val callbackSlot = slot<LocationCallback>()
+    every { mockFusedClient.requestLocationUpdates(any(), capture(callbackSlot), null) } answers
+        {
+          callbackSlot.captured.onLocationResult(mockLocationResult)
+          mockk()
+        }
+    every { mockFusedClient.removeLocationUpdates(any<LocationCallback>()) } returns mockk()
+    every { mockFusedClient.lastLocation } throws RuntimeException("No last location")
+
+    val result = provider.getCurrentLocation()
+
+    assertNull(result)
+  }
+
+  @Test
+  fun testHandlesEmptyLocationListFromCallback() = runTest {
+    val mockLocationResult = mockk<LocationResult>()
+    every { mockLocationResult.locations } returns emptyList() // Empty list
+
+    val callbackSlot = slot<LocationCallback>()
+    every { mockFusedClient.requestLocationUpdates(any(), capture(callbackSlot), null) } answers
+        {
+          callbackSlot.captured.onLocationResult(mockLocationResult)
+          mockk()
+        }
+    every { mockFusedClient.removeLocationUpdates(any<LocationCallback>()) } returns mockk()
+    every { mockFusedClient.lastLocation } throws RuntimeException("No last location")
+
+    val result = provider.getCurrentLocation()
+
+    assertNull(result)
+  }
+
+  @Test
+  fun testFallsBackToLastKnownLocationWhenFreshLocationFails() = runTest {
+    every { mockFusedClient.requestLocationUpdates(any(), any<LocationCallback>(), null) } throws
+        SecurityException("Location permission denied")
+
+    val lastKnownLocation = mockk<AndroidLocation>()
+    every { lastKnownLocation.latitude } returns NY_LATITUDE
+    every { lastKnownLocation.longitude } returns NY_LONGITUDE
+    every { lastKnownLocation.accuracy } returns GOOD_ACCURACY
+    every { lastKnownLocation.time } returns
+        System.currentTimeMillis() - TimeUnit.SECONDS.toMillis(30)
+
+    val mockTask = mockk<com.google.android.gms.tasks.Task<AndroidLocation?>>(relaxed = true)
+    every { mockTask.isComplete } returns true
+    every { mockTask.isSuccessful } returns true
+    every { mockTask.result } returns lastKnownLocation
+    every { mockTask.isCanceled } returns false
+    every { mockTask.exception } returns null
+    every { mockFusedClient.lastLocation } returns mockTask
+
+    val result = provider.getCurrentLocation()
+
+    assertNotNull(result)
+    assertEquals(NY_LATITUDE, result?.latitude ?: ZERO_COORDINATE, DELTA_STANDARD)
+    assertEquals(NY_LONGITUDE, result?.longitude ?: ZERO_COORDINATE, DELTA_STANDARD)
+    assertTrue(result?.name?.startsWith("Last Known Location") == true)
   }
 }
