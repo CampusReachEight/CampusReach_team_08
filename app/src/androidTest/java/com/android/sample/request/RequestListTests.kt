@@ -24,6 +24,7 @@ import com.android.sample.model.request.RequestStatus
 import com.android.sample.model.request.RequestType
 import com.android.sample.model.request.Tags
 import com.android.sample.model.request.displayString
+import com.android.sample.ui.profile.ProfilePictureTestTags
 import com.android.sample.ui.request.RequestListScreen
 import com.android.sample.ui.request.RequestListTestTags
 import com.android.sample.ui.request.RequestListViewModel
@@ -194,8 +195,8 @@ class RequestListTests : BaseEmulatorTest() {
     composeTestRule.waitUntil(5_000) { vm.profileIcons.value.containsKey(fail) }
 
     composeTestRule
-        .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM_ICON, useUnmergedTree = true)
-        .assertCountEquals(0)
+        .onAllNodesWithTag(ProfilePictureTestTags.PROFILE_PICTURE_DEFAULT, useUnmergedTree = true)
+        .assertCountEquals(1)
   }
 
   @Test
@@ -254,7 +255,7 @@ class RequestListTests : BaseEmulatorTest() {
         .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM_DESCRIPTION, useUnmergedTree = true)
         .assertCountEquals(3)
     composeTestRule
-        .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM_NO_ICON, useUnmergedTree = true)
+        .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM_ICON, useUnmergedTree = true)
         .assertCountEquals(3)
   }
 
