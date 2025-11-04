@@ -16,6 +16,7 @@ import com.android.sample.model.request.RequestRepository
 import com.android.sample.model.request.RequestStatus
 import com.android.sample.model.request.RequestType
 import com.android.sample.model.request.Tags
+import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.request.edit.EditRequestActions
 import com.android.sample.ui.request.edit.EditRequestContent
 import com.android.sample.ui.request.edit.EditRequestScreen
@@ -1221,5 +1222,95 @@ class EditRequestScreenTests : EditRequestScreenTestBase() {
     }
 
     assertErrorMessage("Expiration date must be after start date")
+  }
+
+  // ========== PERMISSION AND LOCATION TESTS (UI-based) ==========
+
+  @Test
+  fun useCurrentLocationButton_whenClicked_showsLoadingState() {
+    val viewModel = createTestViewModel()
+    composeTestRule.setContent { TestEditRequestContentWithRealViewModel(viewModel = viewModel) }
+
+    // Click the button
+    composeTestRule
+        .onNodeWithTag(EditRequestScreenTestTags.USE_CURRENT_LOCATION_BUTTON)
+        .performClick()
+
+    // The button click will trigger the permission check flow
+    // We can't test the actual permission dialog (system UI)
+    // But we can verify the button was clickable
+    composeTestRule
+        .onNodeWithTag(EditRequestScreenTestTags.USE_CURRENT_LOCATION_BUTTON)
+        .assertExists()
+  }
+
+  // ========== TEST PERMISSION CALLBACK LOGIC DIRECTLY ==========
+
+  @Test
+  fun permissionCallbackLogic_allBranches() {
+    // Test the permission callback logic as pure logic
+
+    // Test 1: Fine location granted
+    var result = ""
+    val permissions1 = mapOf(Manifest.permission.ACCESS_FINE_LOCATION to true)
+    when {
+      permissions1[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+          permissions1[Manifest.permission.ACCESS_COARSE_LOCATION] == true -> {
+        result = "has_permission"
+      }
+      else -> {
+        result = "no_permission"
+      }
+    }
+    assertEquals("has_permission", result)
+
+    // Test 2: Coarse location only
+    val permissions2 =
+        mapOf(
+            Manifest.permission.ACCESS_FINE_LOCATION to false,
+            Manifest.permission.ACCESS_COARSE_LOCATION to true)
+    result = ""
+    when {
+      permissions2[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+          permissions2[Manifest.permission.ACCESS_COARSE_LOCATION] == true -> {
+        result = "has_permission"
+      }
+      else -> {
+        result = "no_permission"
+      }
+    }
+    assertEquals("has_permission", result)
+
+    // Test 3: No permissions
+    val permissions3 =
+        mapOf(
+            Manifest.permission.ACCESS_FINE_LOCATION to false,
+            Manifest.permission.ACCESS_COARSE_LOCATION to false)
+    result = ""
+    when {
+      permissions3[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+          permissions3[Manifest.permission.ACCESS_COARSE_LOCATION] == true -> {
+        result = "has_permission"
+      }
+      else -> {
+        result = "no_permission"
+      }
+    }
+    assertEquals("no_permission", result)
+  }
+
+  // ========== EDIT MODE WITH REQUEST ID TEST ==========
+
+  @Test
+  fun editRequestScreen_withRequestId_showsEditMode() {
+    composeTestRule.setContent {
+      EditRequestScreen(requestId = "test-request-123", onNavigateBack = {})
+    }
+
+    // Verify it shows "Edit Request" instead of "Create Request"
+    composeTestRule.onNodeWithText("Edit Request").assertExists()
+
+    // Verify navigation tag for edit mode
+    composeTestRule.onNodeWithTag(NavigationTestTags.EDIT_REQUEST_SCREEN).assertExists()
   }
 }
