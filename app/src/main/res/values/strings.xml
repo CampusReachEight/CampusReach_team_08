@@ -35,14 +35,6 @@
     <string name="dismiss_button">Dismiss</string>
     <string name="save_button_edit">Update Request</string>
     <string name="save_button_create">Create Request</string>
-    <string name="delete_button">Delete Request</string>
-    <string name="delete_confirmation_title">Delete Request?</string>
-    <string name="delete_confirmation_message">This action cannot be undone. The request will be permanently deleted.</string>
-    <string name="delete_confirm_button">Delete</string>
     <string name="cancel_button">Cancel</string>
-    <string name="location_permission_error">Location permission is required to use current location</string>
-    <string name="gps_disabled_error">Please enable GPS in your device settings</string>
-    <string name="location_fetch_error">Failed to get current location: %s</string>
-    <string name="location_error_empty">Location name cannot be empty%s</string>
 
 </resources>
