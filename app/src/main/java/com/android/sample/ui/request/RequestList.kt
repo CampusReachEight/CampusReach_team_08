@@ -94,11 +94,24 @@ fun RequestListScreen(
     requestListViewModel: RequestListViewModel = viewModel(),
     navigationActions: NavigationActions? = null,
 ) {
+  val searchFilterViewModel: RequestSearchFilterViewModel = viewModel()
+
   LaunchedEffect(Unit) { requestListViewModel.loadRequests() }
 
   val icons by requestListViewModel.profileIcons.collectAsState()
-  val filtered by requestListViewModel.filteredRequests.collectAsState()
   val state by requestListViewModel.state.collectAsState()
+
+  // Keep Lucene index in sync with loaded requests
+  LaunchedEffect(state.requests) {
+    if (state.requests.isNotEmpty()) {
+      searchFilterViewModel.initializeWithRequests(state.requests)
+    }
+  }
+
+  // Collect search/filter state
+  val displayed by searchFilterViewModel.displayedRequests.collectAsState()
+  val searchQuery by searchFilterViewModel.searchQuery.collectAsState()
+  val isSearching by searchFilterViewModel.isSearching.collectAsState()
 
   Scaffold(
       modifier = modifier.fillMaxSize().testTag(NavigationTestTags.REQUESTS_SCREEN),
@@ -120,12 +133,17 @@ fun RequestListScreen(
         }
 
         Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
-          FiltersSection(requestListViewModel = requestListViewModel)
+          FiltersSection(
+              searchFilterViewModel = searchFilterViewModel,
+              query = searchQuery,
+              isSearching = isSearching,
+              onQueryChange = { searchFilterViewModel.updateSearchQuery(it) },
+              onClearQuery = { searchFilterViewModel.clearSearch() })
 
           Spacer(modifier = Modifier.height(ConstantRequestList.PaddingLarge))
 
           // Content list (filtered or base)
-          val toShow = filtered.ifEmpty { state.requests }
+          val toShow = displayed.ifEmpty { state.requests }
           if (!state.isLoading && toShow.isEmpty()) {
             Text(
                 text = "No requests at the moment",
@@ -158,19 +176,29 @@ fun RequestListScreen(
  * Groups the search bar, filter buttons, and one active filter panel to reduce screen complexity.
  */
 @Composable
-private fun FiltersSection(requestListViewModel: RequestListViewModel) {
+private fun FiltersSection(
+    searchFilterViewModel: RequestSearchFilterViewModel,
+    query: String,
+    isSearching: Boolean,
+    onQueryChange: (String) -> Unit,
+    onClearQuery: () -> Unit
+) {
   // Collect facet state and counts
-  val selectedTypes by requestListViewModel.selectedTypes.collectAsState()
-  val selectedStatuses by requestListViewModel.selectedStatuses.collectAsState()
-  val selectedTags by requestListViewModel.selectedTags.collectAsState()
-  val typeCounts by requestListViewModel.typeCounts.collectAsState()
-  val statusCounts by requestListViewModel.statusCounts.collectAsState()
-  val tagCounts by requestListViewModel.tagCounts.collectAsState()
+  val selectedTypes by searchFilterViewModel.selectedTypes.collectAsState()
+  val selectedStatuses by searchFilterViewModel.selectedStatuses.collectAsState()
+  val selectedTags by searchFilterViewModel.selectedTags.collectAsState()
+  val typeCounts by searchFilterViewModel.typeCounts.collectAsState()
+  val statusCounts by searchFilterViewModel.statusCounts.collectAsState()
+  val tagCounts by searchFilterViewModel.tagCounts.collectAsState()
 
   var openMenu by rememberSaveable { mutableStateOf<FilterKind?>(null) }
 
-  // Global search bar (UI only)
+  // Global search bar
   RequestSearchBar(
+      query = query,
+      onQueryChange = onQueryChange,
+      onClear = onClearQuery,
+      isSearching = isSearching,
       modifier = Modifier.fillMaxWidth().padding(horizontal = ConstantRequestList.PaddingLarge))
 
   Spacer(modifier = Modifier.height(ConstantRequestList.PaddingMedium))
@@ -207,7 +235,7 @@ private fun FiltersSection(requestListViewModel: RequestListViewModel) {
           selected = selectedTypes,
           counts = typeCounts,
           labelOf = { it.displayString() },
-          onToggle = { requestListViewModel.toggleType(it) },
+          onToggle = { searchFilterViewModel.toggleType(it) },
           dropdownSearchBarTestTag = RequestListTestTags.REQUEST_TYPE_FILTER_SEARCH_BAR,
           rowTestTagOf = { RequestListTestTags.getRequestTypeFilterTag(it) })
     }
@@ -217,7 +245,7 @@ private fun FiltersSection(requestListViewModel: RequestListViewModel) {
           selected = selectedStatuses,
           counts = statusCounts,
           labelOf = { it.displayString() },
-          onToggle = { requestListViewModel.toggleStatus(it) },
+          onToggle = { searchFilterViewModel.toggleStatus(it) },
           dropdownSearchBarTestTag = RequestListTestTags.REQUEST_STATUS_FILTER_SEARCH_BAR,
           rowTestTagOf = { RequestListTestTags.getRequestStatusFilterTag(it.displayString()) })
     }
@@ -227,7 +255,7 @@ private fun FiltersSection(requestListViewModel: RequestListViewModel) {
           selected = selectedTags,
           counts = tagCounts,
           labelOf = { it.displayString() },
-          onToggle = { requestListViewModel.toggleTag(it) },
+          onToggle = { searchFilterViewModel.toggleTag(it) },
           dropdownSearchBarTestTag = RequestListTestTags.REQUEST_TAG_FILTER_SEARCH_BAR,
           rowTestTagOf = { RequestListTestTags.getRequestTagFilterTag(it.displayString()) })
     }
@@ -429,16 +457,28 @@ fun AddButton(navigationActions: NavigationActions?) {
       }
 }
 
-/** Global search bar placeholder for future full-text search. */
+/** Global search bar bound to SearchFilterViewModel's state. */
 @Composable
-private fun RequestSearchBar(modifier: Modifier = Modifier) {
-  var query by rememberSaveable { mutableStateOf("") }
+private fun RequestSearchBar(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    onClear: () -> Unit,
+    isSearching: Boolean,
+    modifier: Modifier = Modifier
+) {
   OutlinedTextField(
       value = query,
-      onValueChange = { query = it },
+      onValueChange = onQueryChange,
       modifier = modifier.testTag(RequestListTestTags.REQUEST_SEARCH_BAR),
       singleLine = true,
-      placeholder = { Text("Search") })
+      placeholder = { Text("Search") },
+      trailingIcon = {
+        if (query.isNotEmpty()) {
+          TextButton(onClick = onClear) { Text("Clear") }
+        } else if (isSearching) {
+          CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+        }
+      })
 }
 
 /** Simple alert dialog to surface user-facing errors. */

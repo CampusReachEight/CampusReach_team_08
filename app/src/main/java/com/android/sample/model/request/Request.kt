@@ -78,6 +78,81 @@ data class Request(
           "people" to people,
           "tags" to tags.map { it.name },
           "creatorId" to creatorId)
+
+  // Build a robust searchable text derived from toMap, including display variants for enums
+  fun toSearchText(): String {
+    val map = this.toMap()
+
+    fun String.withDisplayVariantIfNeeded(): String =
+        if (this.any { it == '_' }) this + " " + this.replace('_', ' ') else this
+
+    fun Any?.flattenToText(sb: StringBuilder) {
+      when (this) {
+        null -> Unit
+        is String -> {
+          val t = this.trim()
+          if (t.isNotEmpty()) {
+            sb.append(t.withDisplayVariantIfNeeded())
+            sb.append('\n')
+          }
+        }
+        is Number,
+        is Boolean -> {
+          sb.append(this.toString())
+          sb.append('\n')
+        }
+        is Map<*, *> -> this.values.forEach { it.flattenToText(sb) }
+        is Iterable<*> -> this.forEach { it.flattenToText(sb) }
+        else -> {
+          val t = this.toString().trim()
+          if (t.isNotEmpty()) {
+            sb.append(t.withDisplayVariantIfNeeded())
+            sb.append('\n')
+          }
+        }
+      }
+    }
+
+    return buildString {
+      // Prioritize commonly searched fields first
+      listOf(
+              "title",
+              "description",
+              "locationName",
+              "requestType",
+              "tags",
+              "status",
+              "people",
+              "creatorId",
+              "location",
+              "requestId",
+              "startTimeStamp",
+              "expirationTime",
+          )
+          .forEach { key -> map[key].flattenToText(this) }
+
+      // Include any other fields that may be added in the future
+      map.keys
+          .filterNot {
+            it in
+                setOf(
+                    "title",
+                    "description",
+                    "locationName",
+                    "requestType",
+                    "tags",
+                    "status",
+                    "people",
+                    "creatorId",
+                    "location",
+                    "requestId",
+                    "startTimeStamp",
+                    "expirationTime")
+          }
+          .sorted()
+          .forEach { key -> map[key].flattenToText(this) }
+    }
+  }
 }
 
 enum class RequestStatus {
