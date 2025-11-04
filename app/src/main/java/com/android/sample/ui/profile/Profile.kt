@@ -14,6 +14,7 @@ import com.android.sample.ui.profile.composables.LogoutDialog
 import com.android.sample.ui.profile.composables.ProfileContent
 import com.android.sample.ui.profile.composables.ProfileTopBar
 import com.android.sample.ui.theme.appPalette
+import com.android.sample.ui.profile.composables.EditProfileDialog
 
 /**
  * Screen entry point for the Profile feature.
@@ -45,6 +46,19 @@ fun ProfileScreen(viewModel: ProfileViewModel = viewModel(), onBackClick: () -> 
               visible = state.isLoggingOut,
               onConfirm = { viewModel.logout() },
               onDismiss = { viewModel.hideLogoutDialog() })
+
+          // Edit flow dialogs
+          EditProfileDialog(
+                visible = state.isEditMode,
+                initialName = state.userName,
+                initialSection = state.userSection,
+                onSave = { newName, newSection ->
+                    viewModel.updateUserName(newName)
+                    viewModel.updateSection(newSection)
+                    viewModel.setEditMode(false)
+                },
+                onCancel = { viewModel.setEditMode(false) }
+          )
         }
       }
 }
