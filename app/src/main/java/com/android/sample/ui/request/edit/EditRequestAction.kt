@@ -25,5 +25,6 @@ data class EditRequestActions(
     val onClearLocationSearch: () -> Unit,
     val onDeleteClick: () -> Unit = {},
     val onConfirmDelete: () -> Unit = {},
-    val onCancelDelete: () -> Unit = {}
+    val onCancelDelete: () -> Unit = {},
+    val onUseCurrentLocation: () -> Unit = {}
 )
