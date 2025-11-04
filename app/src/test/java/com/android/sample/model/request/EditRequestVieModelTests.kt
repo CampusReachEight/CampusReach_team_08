@@ -1,5 +1,6 @@
 package com.android.sample.ui.request
 
+import com.android.sample.model.map.FusedLocationProvider
 import com.android.sample.model.map.Location
 import com.android.sample.model.map.LocationRepository
 import com.android.sample.model.request.Request
@@ -28,6 +29,7 @@ class EditRequestViewModelTest {
   private lateinit var requestRepository: RequestRepository
   private lateinit var locationRepository: LocationRepository
   private val testDispatcher = StandardTestDispatcher()
+  private lateinit var fusedLocationProvider: FusedLocationProvider
 
   private val testLocation = Location(46.5197, 6.6323, "EPFL")
   private val testRequest =
@@ -48,9 +50,10 @@ class EditRequestViewModelTest {
   @Before
   fun setup() {
     Dispatchers.setMain(testDispatcher)
+    fusedLocationProvider = mock(FusedLocationProvider::class.java)
     requestRepository = mock(RequestRepository::class.java)
     locationRepository = mock(LocationRepository::class.java)
-    viewModel = EditRequestViewModel(requestRepository, locationRepository)
+    viewModel = EditRequestViewModel(requestRepository, locationRepository, fusedLocationProvider)
   }
 
   @After
@@ -553,5 +556,161 @@ class EditRequestViewModelTest {
     advanceUntilIdle()
 
     assertFalse(viewModel.uiState.value.showDeleteConfirmation)
+  }
+
+  @Test
+  fun getCurrentLocation_setsIsSearchingLocationTrueAndThenFalse() = runTest {
+    // Arrange
+    whenever(fusedLocationProvider.getCurrentLocation()).thenReturn(testLocation)
+
+    // Act
+    viewModel.getCurrentLocation()
+    advanceUntilIdle()
+
+    // Assert - after completion, should be false
+    assertFalse(viewModel.uiState.value.isSearchingLocation)
+    verify(fusedLocationProvider, times(1)).getCurrentLocation()
+  }
+
+  @Test
+  fun getCurrentLocation_updatesLocationAndName_whenLocationIsReturned() = runTest {
+    // Arrange
+    val expectedLocation = Location(46.5197, 6.6323, "Current Location (46.5197, 6.6323)")
+    whenever(fusedLocationProvider.getCurrentLocation()).thenReturn(expectedLocation)
+
+    // Act
+    viewModel.getCurrentLocation()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Assert
+    val uiState = viewModel.uiState.value
+    assertEquals(expectedLocation, uiState.location)
+    assertEquals(expectedLocation.name, uiState.locationName)
+    assertFalse(uiState.isSearchingLocation)
+    assertNull(uiState.errorMessage)
+  }
+
+  @Test
+  fun getCurrentLocation_doesNotUpdateLocation_whenLocationIsNull() = runTest {
+    // Arrange
+    whenever(fusedLocationProvider.getCurrentLocation()).thenReturn(null)
+
+    // Act
+    viewModel.getCurrentLocation()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Assert
+    val uiState = viewModel.uiState.value
+    assertNull(uiState.location)
+    assertEquals("", uiState.locationName)
+    assertFalse(uiState.isSearchingLocation)
+    assertNull(uiState.errorMessage)
+  }
+
+  @Test
+  fun getCurrentLocation_setsIsSearchingLocation_toFalse_afterSuccess() = runTest {
+    // Arrange
+    val testLocation = Location(46.5197, 6.6323, "EPFL")
+    whenever(fusedLocationProvider.getCurrentLocation()).thenReturn(testLocation)
+
+    // Act
+    viewModel.getCurrentLocation()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Assert
+    assertFalse(viewModel.uiState.value.isSearchingLocation)
+  }
+
+  @Test
+  fun getCurrentLocation_setsErrorMessage_whenExceptionIsThrown() = runTest {
+    // Arrange
+    val errorMessage = "GPS unavailable"
+    whenever(fusedLocationProvider.getCurrentLocation()).thenThrow(RuntimeException(errorMessage))
+
+    // Act
+    viewModel.getCurrentLocation()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Assert
+    val uiState = viewModel.uiState.value
+    assertNotNull(uiState.errorMessage)
+    assertTrue(uiState.errorMessage!!.contains(errorMessage))
+    assertTrue(uiState.errorMessage!!.contains("Failed to get current location"))
+    assertFalse(uiState.isSearchingLocation)
+  }
+
+  @Test
+  fun getCurrentLocation_resetsIsSearchingLocation_evenWhenExceptionOccurs() = runTest {
+    // Arrange
+    whenever(fusedLocationProvider.getCurrentLocation()).thenThrow(RuntimeException("GPS error"))
+
+    // Act
+    viewModel.getCurrentLocation()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Assert
+    assertFalse(viewModel.uiState.value.isSearchingLocation)
+  }
+
+  @Test
+  fun getCurrentLocation_doesNotOverwriteExistingLocation_whenNewLocationIsNull() = runTest {
+    // Arrange
+    val initialLocation = Location(46.5197, 6.6323, "Initial Location")
+    viewModel.updateLocation(initialLocation)
+    viewModel.updateLocationName("Initial Location")
+
+    whenever(fusedLocationProvider.getCurrentLocation()).thenReturn(null)
+
+    // Act
+    viewModel.getCurrentLocation()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Assert
+    val uiState = viewModel.uiState.value
+    assertEquals(initialLocation, uiState.location)
+    assertEquals("Initial Location", uiState.locationName)
+  }
+
+  @Test
+  fun getCurrentLocation_callsFusedLocationProvider_exactly_once() = runTest {
+    // Arrange
+    whenever(fusedLocationProvider.getCurrentLocation()).thenReturn(testLocation)
+
+    // Act
+    viewModel.getCurrentLocation()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Assert
+    verify(fusedLocationProvider, times(1)).getCurrentLocation()
+  }
+
+  @Test
+  fun getCurrentLocation_handlesSecurityException_gracefully() = runTest {
+    // Arrange
+    whenever(fusedLocationProvider.getCurrentLocation())
+        .thenThrow(SecurityException("Location permission denied"))
+
+    // Act
+    viewModel.getCurrentLocation()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Assert
+    val uiState = viewModel.uiState.value
+    assertNotNull(uiState.errorMessage)
+    assertTrue(uiState.errorMessage!!.contains("Location permission denied"))
+    assertFalse(uiState.isSearchingLocation)
+    assertNull(uiState.location)
+  }
+
+  @Test
+  fun setLocationPermissionError_updatesUiState_correctly() = runTest {
+    // Act
+    viewModel.setLocationPermissionError()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Assert
+    val uiState = viewModel.uiState.value
+    assertEquals("Location permission is required to use current location", uiState.errorMessage)
+    assertFalse(uiState.isSearchingLocation)
   }
 }
