@@ -29,8 +29,11 @@ import kotlinx.coroutines.launch
  * - Expose counts and the final displayedRequests
  */
 class RequestSearchFilterViewModel(
-    private val engine: LuceneRequestSearchEngine = LuceneRequestSearchEngine()
+    private val engineFactory: () -> LuceneRequestSearchEngine = { LuceneRequestSearchEngine() }
 ) : ViewModel() {
+
+  // Lazily-created Lucene engine to avoid classloading or initialization issues
+  private var engine: LuceneRequestSearchEngine? = null
 
   // Replace overloaded helpers with a single inline reified version to avoid JVM clash
   private inline fun <reified T> kotlinx.coroutines.flow.Flow<T>.stateInEager(): StateFlow<T> {
@@ -78,8 +81,9 @@ class RequestSearchFilterViewModel(
                   if (q.isBlank()) return@map emptyList<SearchResult<Request>>()
                   _isSearching.update { true }
                   try {
-                    if (!hasIndex) {
-                      // Fallback simple search while index isn't ready
+                    // If engine isn't ready, fallback to substring search
+                    val localEngine = engine
+                    if (!hasIndex || localEngine == null) {
                       val lower = q.lowercase()
                       return@map base
                           .filter { req ->
@@ -88,8 +92,9 @@ class RequestSearchFilterViewModel(
                           }
                           .map { SearchResult(item = it, score = 100, matchedFields = emptyList()) }
                     }
-                    engine.search(base, q)
-                  } catch (_: Exception) {
+                    localEngine.search(base, q)
+                  } catch (_: Throwable) {
+                    // Any Lucene failure should not crash; return empty to be safe
                     emptyList()
                   } finally {
                     _isSearching.update { false }
@@ -236,10 +241,12 @@ class RequestSearchFilterViewModel(
     // Index in background tied to the ViewModel scope dispatcher (test dispatcher in tests)
     viewModelScope.launch {
       try {
-        engine.indexRequests(requests)
+        if (engine == null) engine = engineFactory()
+        engine?.indexRequests(requests)
         hasIndex = true
-      } catch (_: Exception) {
+      } catch (_: Throwable) {
         hasIndex = false
+        engine = null
       }
     }
   }
@@ -247,7 +254,7 @@ class RequestSearchFilterViewModel(
   override fun onCleared() {
     super.onCleared()
     try {
-      engine.close()
+      engine?.close()
     } catch (_: Exception) {}
   }
 }
