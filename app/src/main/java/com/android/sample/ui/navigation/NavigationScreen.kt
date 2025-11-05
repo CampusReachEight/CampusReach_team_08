@@ -152,7 +152,8 @@ fun NavigationScreen(
                         popUpTo(0) // Clears the back stack
                       }
                     }),
-            onBackClick = { navigationActions.goBack() })
+            onBackClick = { navigationActions.goBack() },
+            navigationActions = navigationActions)
       }
         composable(Screen.MyRequest.route) {
             MyRequestsScreen(
