@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.android.sample.ui.navigation.NavigationActions
 import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.profile.composables.LoadingIndicator
 import com.android.sample.ui.profile.composables.LogoutDialog
@@ -22,7 +23,7 @@ import com.android.sample.ui.theme.appPalette
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileScreen(viewModel: ProfileViewModel = viewModel(), onBackClick: () -> Unit = {}) {
+fun ProfileScreen(viewModel: ProfileViewModel = viewModel(), onBackClick: () -> Unit = {}, navigationActions: NavigationActions? = null) {
   val state by viewModel.state.collectAsState()
 
   Scaffold(
@@ -37,6 +38,7 @@ fun ProfileScreen(viewModel: ProfileViewModel = viewModel(), onBackClick: () -> 
                 ProfileContent(
                     state = state,
                     onLogoutRequested = { viewModel.showLogoutDialog() },
+                    onMyRequestAction = { viewModel.onMyRequestsClick(navigationActions) },
                     modifier = Modifier.fillMaxSize())
           }
 

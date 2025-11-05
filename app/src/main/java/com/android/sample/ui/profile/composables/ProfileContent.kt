@@ -19,6 +19,7 @@ import com.android.sample.ui.profile.ProfileState
 fun ProfileContent(
     state: ProfileState,
     onLogoutRequested: () -> Unit,
+    onMyRequestAction: () -> Unit,
     modifier: Modifier = Modifier
 ) {
   Column(modifier = modifier.verticalScroll(rememberScrollState())) {
@@ -33,6 +34,6 @@ fun ProfileContent(
     Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
     ProfileInformation(state = state)
     Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
-    ProfileActions(onLogoutClick = onLogoutRequested)
+    ProfileActions(onLogoutClick = onLogoutRequested, onMyRequestClick = onMyRequestAction)
   }
 }

@@ -31,7 +31,7 @@ import com.android.sample.ui.theme.appPalette
  *   the global `appPalette()`.
  */
 @Composable
-fun ProfileActions(onLogoutClick: () -> Unit = {}, palette: AppPalette = appPalette()) {
+fun ProfileActions(onLogoutClick: () -> Unit = {}, onMyRequestClick: () -> Unit = {}, palette: AppPalette = appPalette()) {
   Column(
       modifier =
           Modifier.padding(horizontal = ProfileDimens.Horizontal)
@@ -55,6 +55,13 @@ fun ProfileActions(onLogoutClick: () -> Unit = {}, palette: AppPalette = appPale
             title = "About App",
             subtitle = "Find out more about CampusReach",
             tag = ProfileTestTags.PROFILE_ACTION_ABOUT_APP)
+      // My request button
+      ActionItem(
+          icon = Icons.Default.Info,
+          title = "My Request",
+          subtitle = "See and edit your own request",
+          tag = ProfileTestTags.PROFILE_ACTION_MY_REQUEST,
+          onClick = onMyRequestClick)
       }
 }
 

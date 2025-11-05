@@ -46,6 +46,7 @@ object ProfileTestTags {
   const val PROFILE_ACTIONS = "profile_actions"
   const val PROFILE_ACTION_LOG_OUT = "profile_action_log_out"
   const val PROFILE_ACTION_ABOUT_APP = "profile_action_about_app"
+  const val PROFILE_ACTION_MY_REQUEST = "profile_action_my_request"
   const val PROFILE_ACTION_ITEM_CARD_PREFIX = "profile_action_" // for discoverability
 
   // Logout dialog
