@@ -1,7 +1,5 @@
 package com.android.sample.ui.request
 
-import android.graphics.Bitmap
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -12,8 +10,8 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -29,6 +27,7 @@ import com.android.sample.ui.navigation.NavigationActions
 import com.android.sample.ui.navigation.NavigationTab
 import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.navigation.Screen
+import com.android.sample.ui.profile.ProfilePicture
 import com.android.sample.ui.theme.TopNavigationBar
 
 // removed local magic number vals; use ConstantRequestList instead
@@ -41,8 +40,6 @@ object RequestListTestTags {
   const val REQUEST_ITEM = "requestItem"
   const val REQUEST_ITEM_TITLE = "requestItemTitle"
   const val REQUEST_ITEM_DESCRIPTION = "requestItemDescription"
-  const val REQUEST_ITEM_ICON = "requestItemIcon"
-  const val REQUEST_ITEM_NO_ICON = "requestItemNoIcon"
   const val EMPTY_LIST_MESSAGE = "emptyListMessage"
 
   const val REQUEST_SEARCH_BAR = "requestSearchBar"
@@ -137,7 +134,6 @@ fun RequestListScreen(
           } else {
             RequestList(
                 state = state.copy(requests = toShow),
-                icons = icons,
                 onRequestClick = {
                   requestListViewModel.handleRequestClick(
                       request = it,
@@ -148,7 +144,8 @@ fun RequestListScreen(
                         navigationActions?.navigateTo(Screen.RequestAccept(id))
                       })
                 },
-                modifier = Modifier.fillMaxSize())
+                modifier = Modifier.fillMaxSize(),
+                viewModel = requestListViewModel)
           }
         }
       }
@@ -355,15 +352,15 @@ private fun <E : Enum<E>> FilterMenuValuesList(
 /** Renders the list of requests. */
 @Composable
 fun RequestList(
+    viewModel: RequestListViewModel,
     state: RequestListState,
-    icons: Map<String, Bitmap?>,
     onRequestClick: (Request) -> Unit,
     modifier: Modifier = Modifier
 ) {
   LazyColumn(modifier = modifier.padding(ConstantRequestList.ListPadding)) {
     items(state.requests.size) { index ->
       val request = state.requests[index]
-      RequestListItem(request = request, icon = icons[request.creatorId], onClick = onRequestClick)
+      RequestListItem(viewModel = viewModel, request = request, onClick = onRequestClick)
     }
   }
 }
@@ -371,8 +368,8 @@ fun RequestList(
 /** One request list item: title, compact type labels, truncated description, and optional icon. */
 @Composable
 fun RequestListItem(
+    viewModel: RequestListViewModel,
     request: Request,
-    icon: Bitmap?,
     onClick: (Request) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -385,18 +382,13 @@ fun RequestListItem(
               .testTag(RequestListTestTags.REQUEST_ITEM),
   ) {
     Row(modifier = Modifier.fillMaxWidth().padding(ConstantRequestList.RequestItemInnerPadding)) {
-      if (icon != null) {
-        Image(
-            bitmap = icon.asImageBitmap(),
-            contentDescription = "Photo profile",
-            modifier =
-                Modifier.size(ConstantRequestList.RequestItemIconSize)
-                    .testTag(RequestListTestTags.REQUEST_ITEM_ICON))
-      } else {
-        Box(
-            Modifier.size(ConstantRequestList.RequestItemIconSize)
-                .testTag(RequestListTestTags.REQUEST_ITEM_NO_ICON))
-      }
+      ProfilePicture(
+          profileRepository = viewModel.profileRepository,
+          profileId = request.creatorId,
+          onClick = {},
+          modifier =
+              Modifier.size(ConstantRequestList.RequestItemIconSize)
+                  .align(Alignment.CenterVertically))
       Spacer(Modifier.width(ConstantRequestList.RowSpacing))
       Column(Modifier.fillMaxWidth()) {
         Row(Modifier.fillMaxWidth()) {

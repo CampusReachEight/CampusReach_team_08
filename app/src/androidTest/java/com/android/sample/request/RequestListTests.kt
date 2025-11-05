@@ -2,6 +2,7 @@ package com.android.sample.request
 
 import android.graphics.Bitmap
 import android.graphics.Color
+import android.net.Uri
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
@@ -24,6 +25,7 @@ import com.android.sample.model.request.RequestStatus
 import com.android.sample.model.request.RequestType
 import com.android.sample.model.request.Tags
 import com.android.sample.model.request.displayString
+import com.android.sample.ui.profile.ProfilePictureTestTags
 import com.android.sample.ui.request.RequestListScreen
 import com.android.sample.ui.request.RequestListTestTags
 import com.android.sample.ui.request.RequestListViewModel
@@ -66,7 +68,7 @@ class RequestListTests : BaseEmulatorTest() {
 
   // Fake UserProfileRepository avec comptage
   private class FakeUserProfileRepository(
-      private val bitmap: Bitmap?,
+      private val withImage: Set<String> = emptySet(),
       private val failing: Set<String> = emptySet()
   ) : UserProfileRepository {
     var calls = 0
@@ -79,15 +81,22 @@ class RequestListTests : BaseEmulatorTest() {
     override suspend fun getUserProfile(userId: String): UserProfile {
       calls++
       if (userId in failing) throw IllegalStateException("Profile not found")
-      return UserProfile(
-          id = userId,
-          name = "John",
-          lastName = "Doe",
-          email = null,
-          photo = null,
-          kudos = 0,
-          section = Section.OTHER,
-          arrivalDate = Date())
+      val user =
+          UserProfile(
+              id = userId,
+              name = "John",
+              lastName = "Doe",
+              email = null,
+              photo = null,
+              kudos = 0,
+              section = Section.OTHER,
+              arrivalDate = Date())
+      if (userId in withImage) {
+        val uri =
+            "https://lh3.googleusercontent.com/a/ACg8ocIb9J_JIRcgy6IyLyn13VDWBzB5GJ_FLrIjCQ7Nj_pcUoy2qK3H=s96-c"
+        return user.copy(photo = Uri.parse(uri))
+      }
+      return user
     }
 
     override suspend fun addUserProfile(userProfile: UserProfile) {}
@@ -122,9 +131,7 @@ class RequestListTests : BaseEmulatorTest() {
   @Test
   fun displaysTitlesAndDescriptions() {
     val requests = sampleRequests(listOf("u1", "u2", "u3"))
-    val vm =
-        RequestListViewModel(
-            FakeRequestRepository(requests), FakeUserProfileRepository(createBitmap()))
+    val vm = RequestListViewModel(FakeRequestRepository(requests), FakeUserProfileRepository())
 
     composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
 
@@ -146,7 +153,7 @@ class RequestListTests : BaseEmulatorTest() {
   @Test
   fun cacheDoesNotReloadTwice() = runBlocking {
     val user = "userX"
-    val repoProfile = FakeUserProfileRepository(createBitmap())
+    val repoProfile = FakeUserProfileRepository()
     val vm = RequestListViewModel(FakeRequestRepository(emptyList()), repoProfile)
 
     vm.loadProfileImage(user)
@@ -162,8 +169,7 @@ class RequestListTests : BaseEmulatorTest() {
     val bad = "badUser"
     val vm =
         RequestListViewModel(
-            FakeRequestRepository(emptyList()),
-            FakeUserProfileRepository(createBitmap(), failing = setOf(bad)))
+            FakeRequestRepository(emptyList()), FakeUserProfileRepository(failing = setOf(bad)))
     vm.loadProfileImage(bad)
     composeTestRule.waitUntil(5_000) { vm.profileIcons.value.containsKey(bad) }
     assert(vm.profileIcons.value[bad] == null) { "Expected null icon" }
@@ -171,9 +177,7 @@ class RequestListTests : BaseEmulatorTest() {
 
   @Test
   fun emptyListShowsMessage() {
-    val vm =
-        RequestListViewModel(
-            FakeRequestRepository(emptyList()), FakeUserProfileRepository(createBitmap()))
+    val vm = RequestListViewModel(FakeRequestRepository(emptyList()), FakeUserProfileRepository())
     composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
     composeTestRule.waitForIdle()
 
@@ -188,22 +192,20 @@ class RequestListTests : BaseEmulatorTest() {
   fun failedIconNoImageDisplayed() {
     val fail = "failUser"
     val requests = sampleRequests(listOf(fail))
-    val profileRepo = FakeUserProfileRepository(createBitmap(), failing = setOf(fail))
+    val profileRepo = FakeUserProfileRepository(failing = setOf(fail))
     val vm = RequestListViewModel(FakeRequestRepository(requests), profileRepo)
     composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
     composeTestRule.waitUntil(5_000) { vm.profileIcons.value.containsKey(fail) }
 
     composeTestRule
-        .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM_ICON, useUnmergedTree = true)
-        .assertCountEquals(0)
+        .onAllNodesWithTag(ProfilePictureTestTags.PROFILE_PICTURE_DEFAULT, useUnmergedTree = true)
+        .assertCountEquals(1)
   }
 
   @Test
   fun displaysCorrectNumberOfRequests() {
     val requests = sampleRequests(listOf("u1", "u2", "u3", "u4", "u5"))
-    val vm =
-        RequestListViewModel(
-            FakeRequestRepository(requests), FakeUserProfileRepository(createBitmap()))
+    val vm = RequestListViewModel(FakeRequestRepository(requests), FakeUserProfileRepository())
 
     composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
 
@@ -220,9 +222,7 @@ class RequestListTests : BaseEmulatorTest() {
   @Test
   fun requestItemsHaveCorrectContent() {
     val requests = sampleRequests(listOf("user1"))
-    val vm =
-        RequestListViewModel(
-            FakeRequestRepository(requests), FakeUserProfileRepository(createBitmap()))
+    val vm = RequestListViewModel(FakeRequestRepository(requests), FakeUserProfileRepository())
 
     composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
 
@@ -238,9 +238,7 @@ class RequestListTests : BaseEmulatorTest() {
   @Test
   fun multipleRequestsDisplayAllContent() {
     val requests = sampleRequests(listOf("u1", "u2", "u3"))
-    val vm =
-        RequestListViewModel(
-            FakeRequestRepository(requests), FakeUserProfileRepository(createBitmap()))
+    val vm = RequestListViewModel(FakeRequestRepository(requests), FakeUserProfileRepository())
 
     composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
 
@@ -254,15 +252,13 @@ class RequestListTests : BaseEmulatorTest() {
         .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM_DESCRIPTION, useUnmergedTree = true)
         .assertCountEquals(3)
     composeTestRule
-        .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM_NO_ICON, useUnmergedTree = true)
+        .onAllNodesWithTag(ProfilePictureTestTags.PROFILE_PICTURE_DEFAULT, useUnmergedTree = true)
         .assertCountEquals(3)
   }
 
   @Test
   fun filterButtons_showTitles_and_openMenus() {
-    val vm =
-        RequestListViewModel(
-            FakeRequestRepository(emptyList()), FakeUserProfileRepository(createBitmap()))
+    val vm = RequestListViewModel(FakeRequestRepository(emptyList()), FakeUserProfileRepository())
 
     composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
     composeTestRule.waitForIdle()
@@ -343,9 +339,7 @@ class RequestListTests : BaseEmulatorTest() {
 
   @Test
   fun dropdownSearch_filtersOptions_locally() {
-    val vm =
-        RequestListViewModel(
-            FakeRequestRepository(emptyList()), FakeUserProfileRepository(createBitmap()))
+    val vm = RequestListViewModel(FakeRequestRepository(emptyList()), FakeUserProfileRepository())
 
     composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
     composeTestRule.waitForIdle()
@@ -432,13 +426,51 @@ class RequestListTests : BaseEmulatorTest() {
       override suspend fun isOwnerOfRequest(request: Request): Boolean = false
     }
 
-    val vm =
-        RequestListViewModel(FailingRequestRepository(), FakeUserProfileRepository(createBitmap()))
+    val vm = RequestListViewModel(FailingRequestRepository(), FakeUserProfileRepository())
 
     composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
 
     // Wait until error is set and ensure the dialog content is shown
     composeTestRule.waitUntil(5_000) { vm.state.value.errorMessage != null }
     composeTestRule.onNodeWithTag(RequestListTestTags.ERROR_MESSAGE_DIALOG).assertIsDisplayed()
+  }
+
+  @Test
+  fun loadsProfileImagesSuccessfully() {
+    val requests =
+        sampleRequests(listOf("special_profile1", "special_profile2", "special_profile3"))
+    val vm =
+        RequestListViewModel(
+            FakeRequestRepository(requests),
+            FakeUserProfileRepository(
+                withImage = setOf("special_profile1", "special_profile2", "special_profile3")))
+
+    composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
+    composeTestRule.waitForIdle()
+    composeTestRule.waitUntil(5_000) {
+      composeTestRule
+          .onAllNodesWithTag(ProfilePictureTestTags.PROFILE_PICTURE, useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .size == 3
+    }
+  }
+
+  @Test
+  fun loadsCachedProfileImagesSuccessfully() {
+    val requests = sampleRequests(listOf("cached_profile1", "cached_profile2", "cached_profile3"))
+    val vm =
+        RequestListViewModel(
+            FakeRequestRepository(requests),
+            FakeUserProfileRepository(
+                withImage = setOf("cached_profile1", "cached_profile2", "cached_profile3")))
+
+    composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
+    composeTestRule.waitForIdle()
+    composeTestRule.waitUntil(5_000) {
+      composeTestRule
+          .onAllNodesWithTag(ProfilePictureTestTags.PROFILE_PICTURE, useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .size == 3
+    }
   }
 }
