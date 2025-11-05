@@ -5,6 +5,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -93,13 +98,13 @@ fun EditProfileDialog(
 
           Spacer(modifier = Modifier.height(UiDimens.SpacingSm))
 
-          ProfileOutlinedTextField(
-              value = section,
-              onValueChange = { section = it },
-              label = "Section",
+          SectionDropDown(
+              selected = section,
+              onSelectedChange = { section = it },
+              options = com.android.sample.ui.profile.UserSections.labels(),
               modifier = Modifier.fillMaxWidth(),
-              singleLine = true,
-              palette = palette)
+              palette = palette
+          )
         }
       },
       confirmButton = {
@@ -138,4 +143,59 @@ fun ProfileOutlinedTextField(
               unfocusedBorderColor = palette.primary.copy(alpha = 0.6f),
               focusedContainerColor = palette.surface,
               unfocusedContainerColor = palette.surface))
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SectionDropDown (
+    selected: String,
+    onSelectedChange: (String) -> Unit,
+    options: List<String>,
+    modifier: Modifier = Modifier,
+    palette: AppPalette = appPalette()
+) {
+    // Implementation of dropdown menu for selecting section
+    var expanded by remember { mutableStateOf(false) }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded },
+        modifier = modifier
+    ) {
+        OutlinedTextField(
+            value = selected,
+            onValueChange = { },
+            label = { Text("Section", color = palette.text) },
+            readOnly = true,
+            singleLine = true,
+            trailingIcon = {
+                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+            },
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = palette.text,
+                unfocusedTextColor = palette.text,
+                cursorColor = palette.accent,
+                focusedBorderColor = palette.accent,
+                unfocusedBorderColor = palette.primary.copy(alpha = 0.6f),
+                focusedContainerColor = palette.surface,
+                unfocusedContainerColor = palette.surface
+            ),
+            modifier = Modifier.menuAnchor()
+        )
+
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            options.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option, color = palette.text) },
+                    onClick = {
+                        onSelectedChange(option)
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
 }
