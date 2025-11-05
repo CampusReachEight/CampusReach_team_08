@@ -1,7 +1,10 @@
 package com.android.sample.ui.profile
 
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
@@ -13,6 +16,8 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.android.sample.ui.profile.composables.ActionItem
 import com.android.sample.ui.profile.composables.ErrorBanner
 import com.android.sample.ui.profile.composables.InfoRow
 import com.android.sample.ui.profile.composables.LoadingIndicator
@@ -23,6 +28,8 @@ import com.android.sample.ui.profile.composables.ProfileHeader
 import com.android.sample.ui.profile.composables.ProfileInformation
 import com.android.sample.ui.profile.composables.ProfileStats
 import com.android.sample.ui.profile.composables.ProfileTopBar
+import com.android.sample.ui.profile.composables.StatGroupCard
+import com.android.sample.ui.theme.appPalette
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -183,7 +190,7 @@ class ProfileUiTests {
   @Test
   fun statGroupCard_displaysTopAndBottom_values_and_tags_directly() {
     composeTestRule.setContent {
-      com.android.sample.ui.profile.composables.StatGroupCard(
+      StatGroupCard(
           labelTop = "Top",
           topValue = 7,
           labelBottom = "Bottom",
@@ -345,13 +352,14 @@ class ProfileUiTests {
   fun actionItem_direct_displaysTitleSubtitle_and_invokesOnClick() {
     var clicked = false
     composeTestRule.setContent {
-      com.android.sample.ui.profile.composables.ActionItem(
-          icon = androidx.compose.material.icons.Icons.Default.Info,
+      ActionItem(
+          icon = Icons.Default.Info,
           title = "Test Action",
           subtitle = "Do something",
           tag = "test_action_item",
           onClick = { clicked = true },
-          palette = com.android.sample.ui.theme.appPalette())
+          palette = appPalette()
+      )
     }
 
     composeTestRule.onNodeWithTag("test_action_item").assertIsDisplayed()
@@ -529,7 +537,7 @@ class ProfileUiTests {
   @Test
   fun profileContent_showsErrorBanner_and_disappears_whenStateCleared() {
     val state = mutableStateOf(ProfileState.withError())
-    composeTestRule.setContent { ProfileContent(state = state.value, onLogoutRequested = {}) }
+    composeTestRule.setContent { ProfileContent(state = state.value, onLogoutRequested = {}, onMyRequestAction = {}) }
 
     // initially present
     composeTestRule.onAllNodesWithTag("profile_error").assertCountEquals(1)
@@ -543,27 +551,36 @@ class ProfileUiTests {
   @Test
   fun errorBanner_singleInstance_inProfileContent() {
     val state = ProfileState.withError()
-    composeTestRule.setContent { ProfileContent(state = state, onLogoutRequested = {}) }
+    composeTestRule.setContent { ProfileContent(state = state, onLogoutRequested = {}, onMyRequestAction = {}) }
 
     // ensure exactly one error banner node is present
     composeTestRule.onAllNodesWithTag("profile_error").assertCountEquals(1)
   }
 
-  // ----- ProfileContent integration -----
   @Test
-  fun profileContent_composesAllSections_and_actionClick_propagates() {
-    var logoutRequested = false
-    val s = ProfileState.default()
-    composeTestRule.setContent {
-      ProfileContent(state = s, onLogoutRequested = { logoutRequested = true })
-    }
+  fun profileActions_containsMyRequest_uniqueTag_and_isClickable() {
+    composeTestRule.setContent { ProfileActions() }
 
-    composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_HEADER).assertIsDisplayed()
-    composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_STATS).assertIsDisplayed()
-    composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_INFORMATION).assertIsDisplayed()
+    // container visible
     composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_ACTIONS).assertIsDisplayed()
 
-    composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_ACTION_LOG_OUT).performClick()
-    composeTestRule.runOnIdle { assertTrue(logoutRequested) }
+    // ensure MyRequest action appears exactly once and is clickable
+    composeTestRule.onAllNodesWithTag(ProfileTestTags.PROFILE_ACTION_MY_REQUEST).assertCountEquals(1)
+    composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_ACTION_MY_REQUEST).assertHasClickAction()
+
+    // Optional: if it has text visible on button, assert it too
+    composeTestRule.onNodeWithText("My Request").assertIsDisplayed()
+  }
+
+  @Test
+  fun myRequest_action_triggersCallback() {
+    var clicked = false
+    composeTestRule.setContent {
+      ProfileActions(onMyRequestClick = { clicked = true })
+    }
+
+    composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_ACTION_MY_REQUEST).assertHasClickAction()
+    composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_ACTION_MY_REQUEST).performClick()
+    composeTestRule.runOnIdle { assertTrue(clicked) }
   }
 }
