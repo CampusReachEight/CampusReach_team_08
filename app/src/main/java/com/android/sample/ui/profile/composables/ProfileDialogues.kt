@@ -67,18 +67,18 @@ fun EditProfileDialog(
     onCancel: () -> Unit,
     palette: AppPalette = appPalette()
 ) {
-    var name by remember { mutableStateOf("") }
-    var section by remember { mutableStateOf("") }
+  var name by remember { mutableStateOf("") }
+  var section by remember { mutableStateOf("") }
 
-    LaunchedEffect(visible) {
-        if (visible) {
-            name = initialName
-            section = initialSection
-        }
+  LaunchedEffect(visible) {
+    if (visible) {
+      name = initialName
+      section = initialSection
     }
+  }
 
-    if (!visible) return
-    AlertDialog(
+  if (!visible) return
+  AlertDialog(
       onDismissRequest = onCancel,
       title = { Text("Edit profile", color = palette.onBackground) },
       text = {
@@ -123,19 +123,19 @@ fun ProfileOutlinedTextField(
     singleLine: Boolean = false,
     palette: AppPalette = appPalette()
 ) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        label = { Text(label, color = palette.text) },
-        singleLine = singleLine,
-        modifier = modifier,
-        colors =
-            OutlinedTextFieldDefaults.colors(
-                focusedTextColor = palette.text,
-                unfocusedTextColor = palette.text,
-                cursorColor = palette.accent,
-                focusedBorderColor = palette.accent,
-                unfocusedBorderColor = palette.primary.copy(alpha = 0.6f),
-                focusedContainerColor = palette.surface,
-                unfocusedContainerColor = palette.surface))
+  OutlinedTextField(
+      value = value,
+      onValueChange = onValueChange,
+      label = { Text(label, color = palette.text) },
+      singleLine = singleLine,
+      modifier = modifier,
+      colors =
+          OutlinedTextFieldDefaults.colors(
+              focusedTextColor = palette.text,
+              unfocusedTextColor = palette.text,
+              cursorColor = palette.accent,
+              focusedBorderColor = palette.accent,
+              unfocusedBorderColor = palette.primary.copy(alpha = 0.6f),
+              focusedContainerColor = palette.surface,
+              unfocusedContainerColor = palette.surface))
 }

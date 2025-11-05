@@ -9,12 +9,12 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.ui.navigation.NavigationTestTags
+import com.android.sample.ui.profile.composables.EditProfileDialog
 import com.android.sample.ui.profile.composables.LoadingIndicator
 import com.android.sample.ui.profile.composables.LogoutDialog
 import com.android.sample.ui.profile.composables.ProfileContent
 import com.android.sample.ui.profile.composables.ProfileTopBar
 import com.android.sample.ui.theme.appPalette
-import com.android.sample.ui.profile.composables.EditProfileDialog
 
 /**
  * Screen entry point for the Profile feature.
@@ -49,16 +49,15 @@ fun ProfileScreen(viewModel: ProfileViewModel = viewModel(), onBackClick: () -> 
 
           // Edit flow dialogs
           EditProfileDialog(
-                visible = state.isEditMode,
-                initialName = state.userName,
-                initialSection = state.userSection,
-                onSave = { newName, newSection ->
-                    viewModel.updateUserName(newName)
-                    viewModel.updateSection(newSection)
-                    viewModel.setEditMode(false)
-                },
-                onCancel = { viewModel.setEditMode(false) }
-          )
+              visible = state.isEditMode,
+              initialName = state.userName,
+              initialSection = state.userSection,
+              onSave = { newName, newSection ->
+                viewModel.updateUserName(newName)
+                viewModel.updateSection(newSection)
+                viewModel.setEditMode(false)
+              },
+              onCancel = { viewModel.setEditMode(false) })
         }
       }
 }
