@@ -15,6 +15,7 @@ import androidx.compose.ui.platform.testTag
 import com.android.sample.ui.profile.ProfileDimens
 import com.android.sample.ui.profile.ProfileState
 import com.android.sample.ui.profile.ProfileTestTags
+import com.android.sample.ui.theme.AppColors
 import com.android.sample.ui.theme.AppPalette
 import com.android.sample.ui.theme.appPalette
 
@@ -27,7 +28,7 @@ fun ProfileHeader(
 ) {
   val accent = palette.accent
   val surface = palette.surface
-  val textColor = palette.text
+  val textColor = AppColors.WhiteColor
 
   Card(
       modifier =

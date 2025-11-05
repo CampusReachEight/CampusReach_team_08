@@ -71,7 +71,6 @@ object ProfileTestTags {
 
   // Dropdown-specific tags / aliases used in some implementations
   const val SECTION_DROPDOWN = "section_dropdown" // used by SectionDropDown.testTag
-  const val SECTION_TEXTFIELD = "section_textfield" // literal used on the anchored textfield
   const val SECTION_OPTION_PREFIX = "section_option_" // optional per-option tag prefix
   const val EDIT_PROFILE_SECTION_DROPDOWN_ITEM_PREFIX = "edit_profile_section_dropdown_item_"
 }

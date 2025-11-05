@@ -53,7 +53,7 @@ class ProfileUiTests {
             followers = 8,
             following = 15,
             arrivalDate = "15/02/2024",
-            section = "Physics")
+            userSection = "Physics")
     composeTestRule.setContent { ProfileScreen(viewModel = ProfileViewModel(customState)) }
 
     composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_HEADER).assertIsDisplayed()
@@ -257,7 +257,7 @@ class ProfileUiTests {
             userEmail = "alice@ex.com",
             profileId = "ID123",
             arrivalDate = "01/01/2020",
-            section = "Math")
+            userSection = "Math")
     composeTestRule.setContent { ProfileInformation(state = state) }
 
     composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_INFORMATION).assertIsDisplayed()
@@ -283,7 +283,7 @@ class ProfileUiTests {
   fun profileInformation_showsLabels_and_handlesEmptyValues() {
     val emptyState =
         ProfileState.default()
-            .copy(userName = "", userEmail = "", profileId = "", arrivalDate = "", section = "")
+            .copy(userName = "", userEmail = "", profileId = "", arrivalDate = "", userSection = "")
 
     composeTestRule.setContent { ProfileInformation(state = emptyState) }
 
@@ -308,7 +308,7 @@ class ProfileUiTests {
                 userEmail = longText,
                 profileId = longText,
                 arrivalDate = longText,
-                section = longText)
+                userSection = longText)
 
     composeTestRule.setContent { ProfileInformation(state = stateWithLongs) }
 

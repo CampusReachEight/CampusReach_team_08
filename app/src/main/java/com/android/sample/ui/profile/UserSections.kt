@@ -18,7 +18,8 @@ enum class UserSections(val label: String) {
   MICROENGINEERING("Microengineering"),
   NEURO_X("Neuro-X"),
   PHYSICS("Physics"),
-  QUANTUM_SCIENCE_AND_ENGINEERING("Quantum Science and Engineering");
+  QUANTUM_SCIENCE_AND_ENGINEERING("Quantum Science and Engineering"),
+  NONE("None");
 
   companion object {
     fun labels(): List<String> {

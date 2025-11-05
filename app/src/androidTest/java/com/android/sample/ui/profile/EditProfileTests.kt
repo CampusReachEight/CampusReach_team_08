@@ -24,17 +24,13 @@ class EditProfileUiTests {
           onCancel = {})
     }
 
-    composeTestRule.onNodeWithTag(ProfileTestTags.EDIT_PROFILE_DIALOG)
-        .assertIsDisplayed()
-    composeTestRule.onNodeWithTag(ProfileTestTags.EDIT_PROFILE_DIALOG_TITLE)
-        .assertIsDisplayed()
-    composeTestRule.onNodeWithTag(ProfileTestTags.EDIT_PROFILE_NAME_INPUT
-    ).assertIsDisplayed()
-    composeTestRule.onNodeWithTag(ProfileTestTags.SECTION_TEXTFIELD)
-        .assertIsDisplayed()
+    composeTestRule.onNodeWithTag(ProfileTestTags.EDIT_PROFILE_DIALOG).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(ProfileTestTags.EDIT_PROFILE_DIALOG_TITLE).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(ProfileTestTags.EDIT_PROFILE_NAME_INPUT).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(ProfileTestTags.SECTION_DROPDOWN).assertIsDisplayed()
     composeTestRule
-        .onNodeWithTag(ProfileTestTags.SECTION_TEXTFIELD)
-        .assertTextEquals("Computer Science")
+        .onNodeWithTag(ProfileTestTags.SECTION_DROPDOWN)
+        .assert(hasText("Computer Science"))
   }
 
   @Test
@@ -50,10 +46,10 @@ class EditProfileUiTests {
           onCancel = {})
     }
 
-    composeTestRule.onNodeWithTag(ProfileTestTags.EDIT_PROFILE_NAME_INPUT)
-        .performTextInput("Bob")
-    composeTestRule.onNodeWithTag(ProfileTestTags.EDIT_PROFILE_DIALOG_SAVE_BUTTON)
-        .performClick()
+    composeTestRule
+        .onNodeWithTag(ProfileTestTags.EDIT_PROFILE_NAME_INPUT)
+        .performTextReplacement("Bob")
+    composeTestRule.onNodeWithTag(ProfileTestTags.EDIT_PROFILE_DIALOG_SAVE_BUTTON).performClick()
 
     val pair = saved.get()
     assertNotNull("onSave should be called", pair)
@@ -62,7 +58,7 @@ class EditProfileUiTests {
   }
 
   @Test
-  fun opening_dropdown_and_selecting_option_updates_textfield() {
+  fun selecting_architecture_updates_textfield() {
     composeTestRule.setContent {
       EditProfileDialog(
           visible = true,
@@ -72,18 +68,22 @@ class EditProfileUiTests {
           onCancel = {})
     }
 
-    // open dropdown by clicking the anchored textfield
-    composeTestRule.onNodeWithTag(ProfileTestTags.SECTION_TEXTFIELD).performClick()
+    // open dropdown
+    composeTestRule.onNodeWithTag(ProfileTestTags.EDIT_PROFILE_SECTION_DROPDOWN).performClick()
+    composeTestRule.waitForIdle()
 
-    val label = "Computer Science"
+    // click the Architecture option by its generated test tag
+    val targetLabel = "Architecture"
     val optionTag =
         ProfileTestTags.SECTION_OPTION_PREFIX +
-            label.replace(Regex("\\s+"), "_")
-                .replace(Regex("[^A-Za-z0-9_]"), "")
+            targetLabel.replace(Regex("\\s+"), "_").replace(Regex("[^A-Za-z0-9_]"), "")
 
     composeTestRule.onNodeWithTag(optionTag).assertExists().performClick()
-    composeTestRule.onNodeWithTag(ProfileTestTags.SECTION_TEXTFIELD)
-        .assertTextEquals(label)
+
+    // ensure UI updated
+    composeTestRule.waitForIdle()
+
+    composeTestRule.onNodeWithTag(ProfileTestTags.SECTION_DROPDOWN).assert(hasText(targetLabel))
   }
 
   @Test
@@ -97,13 +97,12 @@ class EditProfileUiTests {
           onCancel = {})
     }
 
-    composeTestRule.onNodeWithTag(ProfileTestTags.SECTION_TEXTFIELD).performClick()
+    composeTestRule.onNodeWithTag(ProfileTestTags.EDIT_PROFILE_SECTION_DROPDOWN).performClick()
 
     UserSections.labels().forEach { label ->
       val optionTag =
           ProfileTestTags.SECTION_OPTION_PREFIX +
-              label.replace(Regex("\\s+"), "_")
-                  .replace(Regex("[^A-Za-z0-9_]"), "")
+              label.replace(Regex("\\s+"), "_").replace(Regex("[^A-Za-z0-9_]"), "")
       composeTestRule.onNodeWithTag(optionTag).assertExists()
     }
   }
@@ -121,8 +120,7 @@ class EditProfileUiTests {
           onCancel = { cancelled.set(true) })
     }
 
-    composeTestRule.onNodeWithTag(ProfileTestTags.EDIT_PROFILE_DIALOG_CANCEL_BUTTON)
-        .performClick()
+    composeTestRule.onNodeWithTag(ProfileTestTags.EDIT_PROFILE_DIALOG_CANCEL_BUTTON).performClick()
     assertTrue("onCancel should be invoked", cancelled.get())
   }
 }
