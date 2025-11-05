@@ -1,6 +1,8 @@
 package com.android.sample.ui.profile
 
 import androidx.lifecycle.ViewModel
+import com.android.sample.ui.navigation.NavigationActions
+import com.android.sample.ui.navigation.Screen
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -42,5 +44,9 @@ class ProfileViewModel(
     fireBaseAuth.signOut() // Log out user
     _state.value = ProfileState.empty()
     onLogout?.invoke()
+  }
+
+  fun onMyRequestsClick(navigationActions: NavigationActions?) {
+      navigationActions?.navigateTo(Screen.MyRequest)
   }
 }
