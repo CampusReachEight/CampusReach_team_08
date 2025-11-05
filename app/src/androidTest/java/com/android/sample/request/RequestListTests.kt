@@ -451,4 +451,21 @@ class RequestListTests : BaseEmulatorTest() {
         .onAllNodesWithTag(ProfilePictureTestTags.PROFILE_PICTURE, useUnmergedTree = true)
         .assertCountEquals(3)
   }
+
+    @Test
+    fun loadsCachedProfileImagesSuccessfully() {
+        val requests =
+            sampleRequests(listOf("cached_profile1", "cached_profile2", "cached_profile3"))
+        val vm =
+            RequestListViewModel(
+                FakeRequestRepository(requests),
+                FakeUserProfileRepository(
+                    withImage = setOf("cached_profile1", "cached_profile2", "cached_profile3")))
+
+        composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
+        composeTestRule.waitForIdle()
+        composeTestRule
+            .onAllNodesWithTag(ProfilePictureTestTags.PROFILE_PICTURE, useUnmergedTree = true)
+            .assertCountEquals(3)
+    }
 }
