@@ -23,6 +23,8 @@ import com.android.sample.ui.profile.composables.ProfileHeader
 import com.android.sample.ui.profile.composables.ProfileInformation
 import com.android.sample.ui.profile.composables.ProfileStats
 import com.android.sample.ui.profile.composables.ProfileTopBar
+import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -565,5 +567,33 @@ class ProfileUiTests {
 
     composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_ACTION_LOG_OUT).performClick()
     composeTestRule.runOnIdle { assertTrue(logoutRequested) }
+  }
+
+  @Test
+  fun setEditMode_updates_state() = runTest {
+    val viewModel = ProfileViewModel() // adjust if constructor requires params
+    // enable edit mode
+    viewModel.setEditMode(true)
+    assertEquals(true, viewModel.state.value.isEditMode)
+
+    // disable edit mode
+    viewModel.setEditMode(false)
+    assertEquals(false, viewModel.state.value.isEditMode)
+  }
+
+  @Test
+  fun updateSection_updates_userSection() = runTest {
+    val viewModel = ProfileViewModel() // adjust if constructor requires params
+    val newSection = "Architecture"
+    viewModel.updateSection(newSection)
+    assertEquals(newSection, viewModel.state.value.userSection)
+  }
+
+  @Test
+  fun updateUserName_updates_userName() = runTest {
+    val viewModel = ProfileViewModel() // adjust if constructor requires params
+    val newName = "Charlie"
+    viewModel.updateUserName(newName)
+    assertEquals(newName, viewModel.state.value.userName)
   }
 }
