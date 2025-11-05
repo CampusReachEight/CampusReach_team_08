@@ -447,9 +447,12 @@ class RequestListTests : BaseEmulatorTest() {
 
     composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
     composeTestRule.waitForIdle()
-    composeTestRule
-        .onAllNodesWithTag(ProfilePictureTestTags.PROFILE_PICTURE, useUnmergedTree = true)
-        .assertCountEquals(3)
+    composeTestRule.waitUntil(5_000) {
+      composeTestRule
+          .onAllNodesWithTag(ProfilePictureTestTags.PROFILE_PICTURE, useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .size == 3
+    }
   }
 
   @Test
@@ -463,8 +466,11 @@ class RequestListTests : BaseEmulatorTest() {
 
     composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
     composeTestRule.waitForIdle()
-    composeTestRule
-        .onAllNodesWithTag(ProfilePictureTestTags.PROFILE_PICTURE, useUnmergedTree = true)
-        .assertCountEquals(3)
+    composeTestRule.waitUntil(5_000) {
+      composeTestRule
+          .onAllNodesWithTag(ProfilePictureTestTags.PROFILE_PICTURE, useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .size == 3
+    }
   }
 }
