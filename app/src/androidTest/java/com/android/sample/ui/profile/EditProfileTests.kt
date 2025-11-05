@@ -1,0 +1,128 @@
+package com.android.sample.ui.profile
+
+import androidx.compose.ui.test.*
+import androidx.compose.ui.test.junit4.createComposeRule
+import com.android.sample.ui.profile.composables.EditProfileDialog
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
+import org.junit.Assert.*
+import org.junit.Rule
+import org.junit.Test
+
+class EditProfileUiTests {
+
+  @get:Rule val composeTestRule = createComposeRule()
+
+  @Test
+  fun dialog_displays_title_name_and_section() {
+    composeTestRule.setContent {
+      EditProfileDialog(
+          visible = true,
+          initialName = "Alice",
+          initialSection = "Computer Science",
+          onSave = { _, _ -> },
+          onCancel = {})
+    }
+
+    composeTestRule.onNodeWithTag(ProfileTestTags.EDIT_PROFILE_DIALOG)
+        .assertIsDisplayed()
+    composeTestRule.onNodeWithTag(ProfileTestTags.EDIT_PROFILE_DIALOG_TITLE)
+        .assertIsDisplayed()
+    composeTestRule.onNodeWithTag(ProfileTestTags.EDIT_PROFILE_NAME_INPUT
+    ).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(ProfileTestTags.SECTION_TEXTFIELD)
+        .assertIsDisplayed()
+    composeTestRule
+        .onNodeWithTag(ProfileTestTags.SECTION_TEXTFIELD)
+        .assertTextEquals("Computer Science")
+  }
+
+  @Test
+  fun editing_name_and_pressing_save_invokes_onSave_with_values() {
+    val saved = AtomicReference<Pair<String, String>?>(null)
+
+    composeTestRule.setContent {
+      EditProfileDialog(
+          visible = true,
+          initialName = "Alice",
+          initialSection = "Mathematics",
+          onSave = { n, s -> saved.set(n to s) },
+          onCancel = {})
+    }
+
+    composeTestRule.onNodeWithTag(ProfileTestTags.EDIT_PROFILE_NAME_INPUT)
+        .performTextInput("Bob")
+    composeTestRule.onNodeWithTag(ProfileTestTags.EDIT_PROFILE_DIALOG_SAVE_BUTTON)
+        .performClick()
+
+    val pair = saved.get()
+    assertNotNull("onSave should be called", pair)
+    assertEquals("Bob", pair!!.first)
+    assertEquals("Mathematics", pair.second)
+  }
+
+  @Test
+  fun opening_dropdown_and_selecting_option_updates_textfield() {
+    composeTestRule.setContent {
+      EditProfileDialog(
+          visible = true,
+          initialName = "Alice",
+          initialSection = "Computer Science",
+          onSave = { _, _ -> },
+          onCancel = {})
+    }
+
+    // open dropdown by clicking the anchored textfield
+    composeTestRule.onNodeWithTag(ProfileTestTags.SECTION_TEXTFIELD).performClick()
+
+    val label = "Computer Science"
+    val optionTag =
+        ProfileTestTags.SECTION_OPTION_PREFIX +
+            label.replace(Regex("\\s+"), "_")
+                .replace(Regex("[^A-Za-z0-9_]"), "")
+
+    composeTestRule.onNodeWithTag(optionTag).assertExists().performClick()
+    composeTestRule.onNodeWithTag(ProfileTestTags.SECTION_TEXTFIELD)
+        .assertTextEquals(label)
+  }
+
+  @Test
+  fun all_section_options_have_expected_tags_and_are_present_in_menu() {
+    composeTestRule.setContent {
+      EditProfileDialog(
+          visible = true,
+          initialName = "Alice",
+          initialSection = "Computer Science",
+          onSave = { _, _ -> },
+          onCancel = {})
+    }
+
+    composeTestRule.onNodeWithTag(ProfileTestTags.SECTION_TEXTFIELD).performClick()
+
+    UserSections.labels().forEach { label ->
+      val optionTag =
+          ProfileTestTags.SECTION_OPTION_PREFIX +
+              label.replace(Regex("\\s+"), "_")
+                  .replace(Regex("[^A-Za-z0-9_]"), "")
+      composeTestRule.onNodeWithTag(optionTag).assertExists()
+    }
+  }
+
+  @Test
+  fun pressing_cancel_invokes_onCancel() {
+    val cancelled = AtomicBoolean(false)
+
+    composeTestRule.setContent {
+      EditProfileDialog(
+          visible = true,
+          initialName = "Alice",
+          initialSection = "Physics",
+          onSave = { _, _ -> },
+          onCancel = { cancelled.set(true) })
+    }
+
+    composeTestRule.onNodeWithTag(ProfileTestTags.EDIT_PROFILE_DIALOG_CANCEL_BUTTON)
+        .performClick()
+    assertTrue("onCancel should be invoked", cancelled.get())
+  }
+}

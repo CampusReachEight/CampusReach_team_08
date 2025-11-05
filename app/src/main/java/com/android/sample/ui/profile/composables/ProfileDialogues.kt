@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -24,6 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import com.android.sample.ui.profile.ProfileTestTags
+import com.android.sample.ui.profile.UserSections
 import com.android.sample.ui.theme.AppPalette
 import com.android.sample.ui.theme.UiDimens
 import com.android.sample.ui.theme.appPalette
@@ -84,15 +84,22 @@ fun EditProfileDialog(
 
   if (!visible) return
   AlertDialog(
+      modifier = Modifier.testTag(ProfileTestTags.EDIT_PROFILE_DIALOG),
       onDismissRequest = onCancel,
-      title = { Text("Edit profile", color = palette.onBackground) },
+      title = {
+        Text(
+            "Edit profile",
+            color = palette.onBackground,
+            modifier = Modifier.testTag(ProfileTestTags.EDIT_PROFILE_DIALOG_TITLE),
+        )
+      },
       text = {
         Column {
           ProfileOutlinedTextField(
               value = name,
               onValueChange = { name = it },
               label = "Name",
-              modifier = Modifier.fillMaxWidth(),
+              modifier = Modifier.fillMaxWidth().testTag(ProfileTestTags.EDIT_PROFILE_NAME_INPUT),
               singleLine = true,
               palette = palette)
 
@@ -101,17 +108,25 @@ fun EditProfileDialog(
           SectionDropDown(
               selected = section,
               onSelectedChange = { section = it },
-              options = com.android.sample.ui.profile.UserSections.labels(),
-              modifier = Modifier.fillMaxWidth(),
-              palette = palette
-          )
+              options = UserSections.labels(),
+              modifier =
+                  Modifier.fillMaxWidth().testTag(ProfileTestTags.EDIT_PROFILE_SECTION_DROPDOWN),
+              palette = palette)
         }
       },
       confirmButton = {
-        TextButton(onClick = { onSave(name, section) }) { Text("Save", color = palette.text) }
+        TextButton(
+            onClick = { onSave(name, section) },
+            modifier = Modifier.testTag(ProfileTestTags.EDIT_PROFILE_DIALOG_SAVE_BUTTON)) {
+              Text("Save", color = palette.text)
+            }
       },
       dismissButton = {
-        OutlinedButton(onClick = onCancel) { Text("Cancel", color = palette.text) }
+        OutlinedButton(
+            onClick = onCancel,
+            modifier = Modifier.testTag(ProfileTestTags.EDIT_PROFILE_DIALOG_CANCEL_BUTTON)) {
+              Text("Cancel", color = palette.text)
+            }
       })
 }
 
@@ -147,55 +162,54 @@ fun ProfileOutlinedTextField(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SectionDropDown (
+fun SectionDropDown(
     selected: String,
     onSelectedChange: (String) -> Unit,
     options: List<String>,
     modifier: Modifier = Modifier,
     palette: AppPalette = appPalette()
 ) {
-    // Implementation of dropdown menu for selecting section
-    var expanded by remember { mutableStateOf(false) }
+  // Implementation of dropdown menu for selecting section
+  var expanded by remember { mutableStateOf(false) }
 
-    ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { expanded = !expanded },
-        modifier = modifier
-    ) {
+  ExposedDropdownMenuBox(
+      expanded = expanded,
+      onExpandedChange = { expanded = !expanded },
+      modifier = modifier.testTag(ProfileTestTags.SECTION_DROPDOWN)
+  ) {
         OutlinedTextField(
             value = selected,
-            onValueChange = { },
+            onValueChange = {},
             label = { Text("Section", color = palette.text) },
             readOnly = true,
             singleLine = true,
-            trailingIcon = {
-                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-            },
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedTextColor = palette.text,
-                unfocusedTextColor = palette.text,
-                cursorColor = palette.accent,
-                focusedBorderColor = palette.accent,
-                unfocusedBorderColor = palette.primary.copy(alpha = 0.6f),
-                focusedContainerColor = palette.surface,
-                unfocusedContainerColor = palette.surface
-            ),
-            modifier = Modifier.menuAnchor()
-        )
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            colors =
+                OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = palette.text,
+                    unfocusedTextColor = palette.text,
+                    cursorColor = palette.accent,
+                    focusedBorderColor = palette.accent,
+                    unfocusedBorderColor = palette.primary.copy(alpha = 0.6f),
+                    focusedContainerColor = palette.surface,
+                    unfocusedContainerColor = palette.surface),
+            modifier = Modifier.menuAnchor().testTag(ProfileTestTags.SECTION_TEXTFIELD))
 
-        ExposedDropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false }
-        ) {
-            options.forEach { option ->
-                DropdownMenuItem(
-                    text = { Text(option, color = palette.text) },
-                    onClick = {
-                        onSelectedChange(option)
-                        expanded = false
-                    }
-                )
-            }
+        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+          options.forEach { option ->
+            // sanitize label for stable test tag
+            val optionTag =
+                ProfileTestTags.SECTION_OPTION_PREFIX +
+                    option.replace(Regex("\\s+"), "_").replace(Regex("[^A-Za-z0-9_]"), "")
+
+            DropdownMenuItem(
+                text = { Text(option, color = palette.text) },
+                onClick = {
+                  onSelectedChange(option)
+                  expanded = false
+                },
+                modifier = Modifier.testTag(optionTag))
+          }
         }
-    }
+      }
 }
