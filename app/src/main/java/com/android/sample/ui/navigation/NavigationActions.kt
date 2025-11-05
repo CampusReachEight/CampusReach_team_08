@@ -24,6 +24,8 @@ sealed class Screen(
 
   object AddEvent : Screen(route = "events/add")
 
+  object MyRequest : Screen(route = "profile/myRequest", NavigationType.SUB_SCREEN)
+
   data class RequestAccept(val requestId: String) : Screen(route = "requests/accept/${requestId}") {
     companion object {
       const val ARG_REQUEST_ID = "requestId"
