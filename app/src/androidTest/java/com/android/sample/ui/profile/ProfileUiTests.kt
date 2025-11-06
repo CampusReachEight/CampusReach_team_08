@@ -23,6 +23,8 @@ import com.android.sample.ui.profile.composables.ProfileHeader
 import com.android.sample.ui.profile.composables.ProfileInformation
 import com.android.sample.ui.profile.composables.ProfileStats
 import com.android.sample.ui.profile.composables.ProfileTopBar
+import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -53,7 +55,7 @@ class ProfileUiTests {
             followers = 8,
             following = 15,
             arrivalDate = "15/02/2024",
-            section = "Physics")
+            userSection = "Physics")
     composeTestRule.setContent { ProfileScreen(viewModel = ProfileViewModel(customState)) }
 
     composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_HEADER).assertIsDisplayed()
@@ -257,7 +259,7 @@ class ProfileUiTests {
             userEmail = "alice@ex.com",
             profileId = "ID123",
             arrivalDate = "01/01/2020",
-            section = "Math")
+            userSection = "Math")
     composeTestRule.setContent { ProfileInformation(state = state) }
 
     composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_INFORMATION).assertIsDisplayed()
@@ -283,7 +285,7 @@ class ProfileUiTests {
   fun profileInformation_showsLabels_and_handlesEmptyValues() {
     val emptyState =
         ProfileState.default()
-            .copy(userName = "", userEmail = "", profileId = "", arrivalDate = "", section = "")
+            .copy(userName = "", userEmail = "", profileId = "", arrivalDate = "", userSection = "")
 
     composeTestRule.setContent { ProfileInformation(state = emptyState) }
 
@@ -308,7 +310,7 @@ class ProfileUiTests {
                 userEmail = longText,
                 profileId = longText,
                 arrivalDate = longText,
-                section = longText)
+                userSection = longText)
 
     composeTestRule.setContent { ProfileInformation(state = stateWithLongs) }
 
@@ -565,5 +567,33 @@ class ProfileUiTests {
 
     composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_ACTION_LOG_OUT).performClick()
     composeTestRule.runOnIdle { assertTrue(logoutRequested) }
+  }
+
+  @Test
+  fun setEditMode_updates_state() = runTest {
+    val viewModel = ProfileViewModel() // adjust if constructor requires params
+    // enable edit mode
+    viewModel.setEditMode(true)
+    assertEquals(true, viewModel.state.value.isEditMode)
+
+    // disable edit mode
+    viewModel.setEditMode(false)
+    assertEquals(false, viewModel.state.value.isEditMode)
+  }
+
+  @Test
+  fun updateSection_updates_userSection() = runTest {
+    val viewModel = ProfileViewModel() // adjust if constructor requires params
+    val newSection = "Architecture"
+    viewModel.updateSection(newSection)
+    assertEquals(newSection, viewModel.state.value.userSection)
+  }
+
+  @Test
+  fun updateUserName_updates_userName() = runTest {
+    val viewModel = ProfileViewModel() // adjust if constructor requires params
+    val newName = "Charlie"
+    viewModel.updateUserName(newName)
+    assertEquals(newName, viewModel.state.value.userName)
   }
 }

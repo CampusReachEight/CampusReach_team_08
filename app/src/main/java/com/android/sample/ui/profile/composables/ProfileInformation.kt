@@ -59,7 +59,7 @@ fun ProfileInformation(state: ProfileState, palette: AppPalette = appPalette()) 
         Spacer(modifier = Modifier.height(ProfileDimens.InfoSpacer))
         InfoRow(label = "Arrival date", value = state.arrivalDate, palette = palette)
         Spacer(modifier = Modifier.height(ProfileDimens.InfoSpacer))
-        InfoRow(label = "Section", value = state.section, palette = palette)
+        InfoRow(label = "Section", value = state.userSection, palette = palette)
         Spacer(modifier = Modifier.height(ProfileDimens.InfoSpacer))
         InfoRow(label = "Email", value = state.userEmail, palette = palette)
       }

@@ -60,4 +60,17 @@ object ProfileTestTags {
   const val PROFILE_STAT_HELP = PROFILE_STAT_BOTTOM_HELP_RECEIVED
   const val PROFILE_STAT_FOLLOWERS = PROFILE_STAT_TOP_FOLLOWERS
   const val PROFILE_STAT_FOLLOWING = PROFILE_STAT_BOTTOM_FOLLOWING
+
+  // Edit profile test tags (existing)
+  const val EDIT_PROFILE_DIALOG = "edit_profile_dialog"
+  const val EDIT_PROFILE_DIALOG_TITLE = "edit_profile_dialog_title"
+  const val EDIT_PROFILE_NAME_INPUT = "edit_profile_name_input"
+  const val EDIT_PROFILE_SECTION_DROPDOWN = "edit_profile_section_dropdown"
+  const val EDIT_PROFILE_DIALOG_SAVE_BUTTON = "edit_profile_dialog_save_button"
+  const val EDIT_PROFILE_DIALOG_CANCEL_BUTTON = "edit_profile_dialog_cancel_button"
+
+  // Dropdown-specific tags / aliases used in some implementations
+  const val SECTION_DROPDOWN = "section_dropdown" // used by SectionDropDown.testTag
+  const val SECTION_OPTION_PREFIX = "section_option_" // optional per-option tag prefix
+  const val EDIT_PROFILE_SECTION_DROPDOWN_ITEM_PREFIX = "edit_profile_section_dropdown_item_"
 }
