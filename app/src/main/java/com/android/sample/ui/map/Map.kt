@@ -269,7 +269,7 @@ fun MapScreen(viewModel: MapViewModel = viewModel(), navigationActions: Navigati
                               indicator = { tabPositions ->
                                 TabRowDefaults.SecondaryIndicator(
                                     Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
-                                    color = MaterialTheme.colorScheme.primary)
+                                    color = MaterialTheme.colorScheme.onPrimary)
                               },
                               divider = {}) {
                                 tabs.forEachIndexed { index, title ->
@@ -310,7 +310,7 @@ fun MapScreen(viewModel: MapViewModel = viewModel(), navigationActions: Navigati
                                   0 -> { // Information
                                     Surface(
                                         color =
-                                            MaterialTheme.colorScheme.primary.copy(
+                                            MaterialTheme.colorScheme.onPrimaryContainer.copy(
                                                 alpha = ConstantMap.ALPHA_PRIMARY_SURFACE),
                                         shape = RoundedCornerShape(ConstantMap.CORNER_RADIUS_SMALL),
                                         modifier =
@@ -319,7 +319,7 @@ fun MapScreen(viewModel: MapViewModel = viewModel(), navigationActions: Navigati
                                           Text(
                                               text = req.title,
                                               style = MaterialTheme.typography.titleMedium,
-                                              color = MaterialTheme.colorScheme.primary,
+                                              color = MaterialTheme.colorScheme.onPrimary,
                                               modifier =
                                                   Modifier.padding(
                                                           horizontal = ConstantMap.PADDING_STANDARD,
