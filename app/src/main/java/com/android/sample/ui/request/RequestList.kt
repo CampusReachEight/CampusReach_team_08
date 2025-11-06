@@ -250,7 +250,10 @@ private fun FilterMenuButton(
               modifier = Modifier.weight(1f),
               color = MaterialTheme.colorScheme.onPrimary,
           )
-          Icon(imageVector = Icons.Filled.ArrowDropDown, contentDescription = null)
+          Icon(
+              imageVector = Icons.Filled.ArrowDropDown,
+              contentDescription = null,
+              tint = MaterialTheme.colorScheme.onPrimary)
         }
       }
 }
