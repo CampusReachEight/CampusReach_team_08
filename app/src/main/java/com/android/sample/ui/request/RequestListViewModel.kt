@@ -5,6 +5,7 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.android.sample.model.profile.UserProfileRepository
 import com.android.sample.model.profile.UserProfileRepositoryFirestore
@@ -45,6 +46,7 @@ class RequestListViewModel(
     val requestRepository: RequestRepository = RequestRepositoryFirestore(Firebase.firestore),
     val profileRepository: UserProfileRepository =
         UserProfileRepositoryFirestore(Firebase.firestore),
+    val showOnlyMyRequests: Boolean = false,
     val verboseLogging: Boolean = false
 ) : ViewModel() {
   private val _state = MutableStateFlow(RequestListState())
@@ -165,7 +167,14 @@ class RequestListViewModel(
     _state.update { it.copy(isLoading = true) }
     viewModelScope.launch {
       try {
-        val requests = requestRepository.getAllRequests()
+        val requests =
+            if (showOnlyMyRequests) {
+              // Load only current user's requests
+              requestRepository.getMyRequests()
+            } else {
+              // Load all requests
+              requestRepository.getAllRequests()
+            }
         _state.update { it.copy(requests = requests, isLoading = false, errorMessage = null) }
         requests.forEach { loadProfileImage(it.creatorId) }
       } catch (e: Exception) {
@@ -228,6 +237,16 @@ class RequestListViewModel(
   }
 }
 
+class RequestListViewModelFactory(private val showOnlyMyRequests: Boolean = false) :
+    ViewModelProvider.Factory {
+  override fun <T : ViewModel> create(modelClass: Class<T>): T {
+    if (modelClass.isAssignableFrom(RequestListViewModel::class.java)) {
+      @Suppress("UNCHECKED_CAST")
+      return RequestListViewModel(showOnlyMyRequests = showOnlyMyRequests) as T
+    }
+    throw IllegalArgumentException("Unknown ViewModel class")
+  }
+}
 /** UI state for the request list screen. */
 data class RequestListState(
     val requests: List<Request> = emptyList(),

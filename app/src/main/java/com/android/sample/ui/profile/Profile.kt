@@ -23,7 +23,11 @@ import com.android.sample.ui.theme.appPalette
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileScreen(viewModel: ProfileViewModel = viewModel(), onBackClick: () -> Unit = {}, navigationActions: NavigationActions? = null) {
+fun ProfileScreen(
+    viewModel: ProfileViewModel = viewModel(),
+    onBackClick: () -> Unit = {},
+    navigationActions: NavigationActions? = null
+) {
   val state by viewModel.state.collectAsState()
 
   Scaffold(

@@ -28,7 +28,6 @@ import com.android.sample.ui.authentication.SignInScreen
 import com.android.sample.ui.authentication.SignInViewModel
 import com.android.sample.ui.map.MapScreen
 import com.android.sample.ui.map.MapViewModel
-import com.android.sample.ui.myrequests.MyRequestsScreen
 import com.android.sample.ui.overview.AcceptRequestScreen
 import com.android.sample.ui.overview.AcceptRequestViewModel
 import com.android.sample.ui.profile.ProfileScreen
@@ -155,12 +154,9 @@ fun NavigationScreen(
             onBackClick = { navigationActions.goBack() },
             navigationActions = navigationActions)
       }
-        composable(Screen.MyRequest.route) {
-            MyRequestsScreen(
-                profileId = FirebaseAuth.getInstance().currentUser?.uid ?: "",
-                navigationActions = navigationActions
-            )
-        }
+      composable(Screen.MyRequest.route) {
+        RequestListScreen(showOnlyMyRequests = true, navigationActions = navigationActions)
+      }
     }
 
     navigation(startDestination = Screen.Map.route, route = "map") {

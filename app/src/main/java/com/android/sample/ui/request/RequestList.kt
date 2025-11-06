@@ -8,6 +8,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -88,10 +90,13 @@ private enum class FilterKind {
 }
 
 /** Request List screen scaffold: top bar, filters section, list, bottom bar, and error dialog. */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RequestListScreen(
     modifier: Modifier = Modifier,
-    requestListViewModel: RequestListViewModel = viewModel(),
+    showOnlyMyRequests: Boolean = false,
+    requestListViewModel: RequestListViewModel =
+        viewModel(factory = RequestListViewModelFactory(showOnlyMyRequests = showOnlyMyRequests)),
     navigationActions: NavigationActions? = null,
 ) {
   LaunchedEffect(Unit) { requestListViewModel.loadRequests() }
@@ -103,14 +108,29 @@ fun RequestListScreen(
   Scaffold(
       modifier = modifier.fillMaxSize().testTag(NavigationTestTags.REQUESTS_SCREEN),
       topBar = {
-        TopNavigationBar(
-            selectedTab = NavigationTab.Requests,
-            onProfileClick = { navigationActions?.navigateTo(Screen.Profile("TODO")) },
-        )
+        if (showOnlyMyRequests) {
+          // Simple back button for My Requests
+          TopAppBar(
+              title = { Text("My Requests") },
+              navigationIcon = {
+                IconButton(onClick = { navigationActions?.goBack() }) {
+                  Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                }
+              })
+        } else {
+          // Full navigation bar for All Requests
+          TopNavigationBar(
+              selectedTab = NavigationTab.Requests,
+              onProfileClick = { navigationActions?.navigateTo(Screen.Profile("TODO")) },
+          )
+        }
       },
       bottomBar = {
-        BottomNavigationMenu(
-            selectedNavigationTab = NavigationTab.Requests, navigationActions = navigationActions)
+        // Only show bottom nav for All Requests
+        if (!showOnlyMyRequests) {
+          BottomNavigationMenu(
+              selectedNavigationTab = NavigationTab.Requests, navigationActions = navigationActions)
+        }
       },
       floatingActionButton = { AddButton(navigationActions) }) { innerPadding ->
 
@@ -128,7 +148,9 @@ fun RequestListScreen(
           val toShow = filtered.ifEmpty { state.requests }
           if (!state.isLoading && toShow.isEmpty()) {
             Text(
-                text = "No requests at the moment",
+                text =
+                    if (showOnlyMyRequests) "You don't have any requests yet"
+                    else "No requests at the moment",
                 modifier =
                     Modifier.fillMaxSize()
                         .wrapContentSize()

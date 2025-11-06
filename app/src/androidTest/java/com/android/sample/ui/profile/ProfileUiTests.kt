@@ -1,10 +1,8 @@
 package com.android.sample.ui.profile
 
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
@@ -358,8 +356,7 @@ class ProfileUiTests {
           subtitle = "Do something",
           tag = "test_action_item",
           onClick = { clicked = true },
-          palette = appPalette()
-      )
+          palette = appPalette())
     }
 
     composeTestRule.onNodeWithTag("test_action_item").assertIsDisplayed()
@@ -537,7 +534,9 @@ class ProfileUiTests {
   @Test
   fun profileContent_showsErrorBanner_and_disappears_whenStateCleared() {
     val state = mutableStateOf(ProfileState.withError())
-    composeTestRule.setContent { ProfileContent(state = state.value, onLogoutRequested = {}, onMyRequestAction = {}) }
+    composeTestRule.setContent {
+      ProfileContent(state = state.value, onLogoutRequested = {}, onMyRequestAction = {})
+    }
 
     // initially present
     composeTestRule.onAllNodesWithTag("profile_error").assertCountEquals(1)
@@ -551,7 +550,9 @@ class ProfileUiTests {
   @Test
   fun errorBanner_singleInstance_inProfileContent() {
     val state = ProfileState.withError()
-    composeTestRule.setContent { ProfileContent(state = state, onLogoutRequested = {}, onMyRequestAction = {}) }
+    composeTestRule.setContent {
+      ProfileContent(state = state, onLogoutRequested = {}, onMyRequestAction = {})
+    }
 
     // ensure exactly one error banner node is present
     composeTestRule.onAllNodesWithTag("profile_error").assertCountEquals(1)
@@ -565,7 +566,9 @@ class ProfileUiTests {
     composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_ACTIONS).assertIsDisplayed()
 
     // ensure MyRequest action appears exactly once and is clickable
-    composeTestRule.onAllNodesWithTag(ProfileTestTags.PROFILE_ACTION_MY_REQUEST).assertCountEquals(1)
+    composeTestRule
+        .onAllNodesWithTag(ProfileTestTags.PROFILE_ACTION_MY_REQUEST)
+        .assertCountEquals(1)
     composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_ACTION_MY_REQUEST).assertHasClickAction()
 
     // Optional: if it has text visible on button, assert it too
@@ -575,9 +578,7 @@ class ProfileUiTests {
   @Test
   fun myRequest_action_triggersCallback() {
     var clicked = false
-    composeTestRule.setContent {
-      ProfileActions(onMyRequestClick = { clicked = true })
-    }
+    composeTestRule.setContent { ProfileActions(onMyRequestClick = { clicked = true }) }
 
     composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_ACTION_MY_REQUEST).assertHasClickAction()
     composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_ACTION_MY_REQUEST).performClick()

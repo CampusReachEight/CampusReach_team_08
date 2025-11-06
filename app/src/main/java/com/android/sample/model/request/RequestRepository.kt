@@ -65,6 +65,8 @@ interface RequestRepository {
    * @param requestId The unique identifier of the request to cancel.
    */
   suspend fun cancelAcceptance(requestId: String)
+
+  suspend fun getMyRequests(): List<Request>
 }
 
 // Commented out mockup for testing purposes

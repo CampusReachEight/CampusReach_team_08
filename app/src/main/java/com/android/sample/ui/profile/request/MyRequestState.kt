@@ -7,9 +7,11 @@ data class MyRequestState(
     val errorMessage: String? = null,
     val myRequests: List<Request> = emptyList()
 ) {
-    companion object {
-        fun empty() = MyRequestState()
-        fun loading() = MyRequestState(isLoading = true)
-        fun withError(msg: String) = MyRequestState(errorMessage = msg)
-    }
+  companion object {
+    fun empty() = MyRequestState()
+
+    fun loading() = MyRequestState(isLoading = true)
+
+    fun withError(msg: String) = MyRequestState(errorMessage = msg)
+  }
 }
