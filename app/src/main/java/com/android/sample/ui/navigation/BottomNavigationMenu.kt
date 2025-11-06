@@ -1,7 +1,10 @@
 package com.android.sample.ui.navigation
 
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Alarm
@@ -41,6 +44,7 @@ fun BottomNavigationMenu(
       modifier =
           modifier
               .fillMaxWidth()
+              .windowInsetsPadding(WindowInsets.navigationBars)
               .height(UiDimens.ButtonHeight)
               .testTag(NavigationTestTags.BOTTOM_NAVIGATION_MENU),
       containerColor = appPalette().surface,
