@@ -7,6 +7,7 @@ import com.android.sample.utils.FirebaseEmulator
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import java.util.Date
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -321,4 +322,110 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
       signInUser()
     }
   }
+
+  // --------------------------
+  // Search tests (emulator-backed)
+  // --------------------------
+
+  private suspend fun addProfileFor(email: String, name: String, lastName: String) {
+    // Switch auth context to a deterministic user and add their own profile (ID must match UID)
+    signInUser(email, DEFAULT_USER_PASSWORD)
+    val p =
+        generateProfile(
+            id = currentUserId,
+            name = name,
+            lastName = lastName,
+            email = email,
+            section = Section.OTHER)
+    repository.addUserProfile(p)
+  }
+
+  @Test
+  fun search_returnsEmpty_forShortQueries() = runTest {
+    // No need to seed data
+    assertTrue(repository.searchUserProfiles("").isEmpty())
+    assertTrue(repository.searchUserProfiles("a").isEmpty())
+  }
+
+  @Test
+  fun search_findsByFirstNamePrefix() = runTest {
+    // Seed two users: John Doe and Jane Smith
+    addProfileFor(DEFAULT_USER_EMAIL, name = "John", lastName = "Doe")
+    addProfileFor(SECOND_USER_EMAIL, name = "Jane", lastName = "Smith")
+
+    val results = repository.searchUserProfiles("joh")
+    assertTrue(results.any { it.name == "John" && it.lastName == "Doe" })
+    assertFalse(results.any { it.name == "Jane" && it.lastName == "Smith" })
+  }
+
+  @Test
+  fun search_findsByLastNamePrefix_whenFirstNameDoesNotMatch() = runTest {
+    // Seed user with last name matching prefix only
+    addProfileFor(DEFAULT_USER_EMAIL, name = "Alice", lastName = "Smith")
+
+    val results = repository.searchUserProfiles("smi")
+    assertTrue(results.any { it.name == "Alice" && it.lastName == "Smith" })
+    assertFalse(results.any { it.name == "John" && it.lastName == "Doe" })
+  }
+
+  @Test
+  fun search_deduplicatesAcrossBothQueries() = runTest {
+    // Create a user whose first and last names both match prefix "jo"
+    addProfileFor(DEFAULT_USER_EMAIL, name = "Jo", lastName = "Johnson")
+
+    val results = repository.searchUserProfiles("jo")
+    val distinctIds = results.map { it.id }.toSet()
+    assertEquals(distinctIds.size, results.size)
+  }
+
+  @Test
+  fun search_respectsLimitParameter() = runTest {
+    // Seed 5 users with first name starting with Test
+    repeat(5) { idx ->
+      addProfileFor("test_limit_$idx@example.com", name = "Test$idx", lastName = "User$idx")
+    }
+    val results = repository.searchUserProfiles("test", limit = 3)
+    assertEquals(3, results.size)
+  }
+
+  @Test
+  fun search_isCaseInsensitive() = runTest {
+    addProfileFor(DEFAULT_USER_EMAIL, name = "John", lastName = "Doe")
+    val results = repository.searchUserProfiles("JOHN")
+    assertTrue(results.any { it.name == "John" && it.lastName == "Doe" })
+  }
+
+  @Test
+  fun search_substringMatchForJohn_returnsJohnnyAndJohnson() = runTest {
+    addProfileFor("johnny@example.com", name = "Johnny", lastName = "Alpha")
+    addProfileFor("alice.johnson@example.com", name = "Alice", lastName = "Johnson")
+
+    val results = repository.searchUserProfiles("john")
+
+    assertTrue(results.any { it.name == "Johnny" && it.lastName == "Alpha" })
+    assertTrue(results.any { it.lastName == "Johnson" && it.name == "Alice" })
+  }
+
+  @Test
+  fun search_largeDatabase_performance() =
+      runTest(timeout = 30.seconds) { // Extended timeout for seeding
+        // Seed 200 users with varying names
+        repeat(200) { idx ->
+          val name = "$idx" + "User"
+          val lastName = "LastName$idx"
+          val email = "${name.lowercase()}.${lastName.lowercase()}@example.com"
+          addProfileFor(email, name = name, lastName = lastName)
+        }
+
+        val objective = 500L // milliseconds
+
+        val startTime = System.currentTimeMillis()
+        val results =
+            repository.searchUserProfiles("11", limit = 9) // 10 results expected but limit 9
+        val endTime = System.currentTimeMillis()
+
+        val duration = endTime - startTime
+        assertTrue(duration < objective)
+        assertEquals(9, results.size)
+      }
 }

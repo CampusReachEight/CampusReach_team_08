@@ -43,4 +43,14 @@ interface UserProfileRepository {
    * @throws Exception if the user profile is not found.
    */
   suspend fun deleteUserProfile(userId: String)
+
+  /**
+   * Searches public user profiles by name (first/last). Uses Firestore queries to minimize data
+   * transfer.
+   *
+   * @param query Search query (minimum 2 characters)
+   * @param limit Maximum number of results (default 20)
+   * @return List of matching user profiles (without loading photos to save bandwidth)
+   */
+  suspend fun searchUserProfiles(query: String, limit: Int = 20): List<UserProfile>
 }
