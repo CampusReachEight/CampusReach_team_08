@@ -245,8 +245,15 @@ private fun FilterMenuButton(
       modifier =
           modifier.fillMaxWidth().height(ConstantRequestList.FilterButtonHeight).testTag(testTag)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
-          Text("$title ($selectedCount)", modifier = Modifier.weight(1f))
-          Icon(imageVector = Icons.Filled.ArrowDropDown, contentDescription = null)
+          Text(
+              "$title ($selectedCount)",
+              modifier = Modifier.weight(1f),
+              color = MaterialTheme.colorScheme.onPrimary,
+          )
+          Icon(
+              imageVector = Icons.Filled.ArrowDropDown,
+              contentDescription = null,
+              tint = MaterialTheme.colorScheme.onPrimary)
         }
       }
 }
