@@ -8,7 +8,7 @@ object AppColors {
   val WhiteColor = Color(0xFFFFFFFF)
 
   // Light theme palette
-  val PrimaryColor = Color(0xFF000AAA)
+  val PrimaryColor = Color(0xFFF0F4FF)
   val SecondaryColor = Color(0xFFD8E4FF)
   val AccentColor = Color(0xFF1247F8)
   val BackgroundColor = PrimaryColor
