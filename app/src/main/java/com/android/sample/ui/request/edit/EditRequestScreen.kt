@@ -1,19 +1,26 @@
 package com.android.sample.ui.request.edit
 
 import android.Manifest
+import android.R.attr.onClick
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.LocationManager
-import android.util.Log
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -33,6 +40,7 @@ import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import java.text.SimpleDateFormat
 import java.util.*
+import java.util.Calendar
 import okhttp3.OkHttpClient
 
 private val SCREEN_CONTENT_PADDING = 16.dp
@@ -179,12 +187,13 @@ fun EditRequestContent(
     actions: EditRequestActions,
     verbose: Boolean = false
 ) {
+
   val dateFormat = remember { SimpleDateFormat(DateFormats.DATE_TIME_FORMAT, Locale.getDefault()) }
-  val dateValidator = remember(dateFormat) { DateValidator(dateFormat) }
-  val startDateString =
-      remember(uiState.startTimeStamp) { mutableStateOf(dateFormat.format(uiState.startTimeStamp)) }
-  val expirationDateString =
-      remember(uiState.expirationTime) { mutableStateOf(dateFormat.format(uiState.expirationTime)) }
+  var showStartDatePicker by remember { mutableStateOf(false) }
+  var showStartTimePicker by remember { mutableStateOf(false) }
+  var showExpirationDatePicker by remember { mutableStateOf(false) }
+  var showExpirationTimePicker by remember { mutableStateOf(false) }
+  var tempSelectedDate by remember { mutableStateOf<Date?>(null) }
   Column(
       modifier =
           Modifier.fillMaxSize()
@@ -244,30 +253,16 @@ fun EditRequestContent(
                 Modifier.fillMaxWidth().testTag(EditRequestScreenTestTags.INPUT_LOCATION_NAME))
         Spacer(modifier = Modifier.height(SCREEN_CONTENT_PADDING))
         StartDateField(
-            dateString = startDateString.value,
+            dateString = dateFormat.format(uiState.startTimeStamp),
             showError = uiState.validationState.showStartDateError,
             isLoading = uiState.isLoading,
-            dateValidator = dateValidator,
-            onDateChange = { newDateString ->
-              startDateString.value = newDateString
-              handleStartDateChange(
-                  newDateString, dateValidator, actions.onStartTimeStampChange, verbose)
-            })
+            onClick = { showStartDatePicker = true })
         ExpirationDateField(
-            dateString = expirationDateString.value,
+            dateString = dateFormat.format(uiState.expirationTime),
             showError = uiState.validationState.showExpirationDateError,
             showDateOrderError = uiState.validationState.showDateOrderError,
             isLoading = uiState.isLoading,
-            dateValidator = dateValidator,
-            startTimeStamp = uiState.startTimeStamp,
-            onDateChange = { newDateString ->
-              expirationDateString.value = newDateString
-              handleExpirationDateChange(
-                  newDateString,
-                  uiState.startTimeStamp,
-                  dateValidator,
-                  actions.onExpirationTimeChange)
-            })
+            onClick = { showExpirationDatePicker = true })
         TagsSection(
             tags = uiState.tags, isLoading = uiState.isLoading, onTagsChange = actions.onTagsChange)
         Spacer(modifier = Modifier.height(SPACING))
@@ -282,35 +277,66 @@ fun EditRequestContent(
             onConfirmDelete = actions.onConfirmDelete,
             onCancelDelete = actions.onCancelDelete)
       }
-}
-
-// Simplified date change handlers (no validation state parameter needed)
-private fun handleStartDateChange(
-    dateString: String,
-    dateValidator: DateValidator,
-    onStartTimeStampChange: (Date) -> Unit,
-    verbose: Boolean
-) {
-  val isValid = dateValidator.isValidFormat(dateString)
-  if (isValid) {
-    dateValidator.parseDate(dateString)?.let { parsedDate -> onStartTimeStampChange(parsedDate) }
-        ?: run {
-          if (verbose) {
-            Log.d("EditRequest", "Error parsing start date")
-          }
-        }
+  if (showStartDatePicker) {
+    MaterialDatePickerDialog(
+        onDateSelected = { selectedDate ->
+          tempSelectedDate = selectedDate
+          showStartDatePicker = false
+          showStartTimePicker = true
+        },
+        onDismiss = { showStartDatePicker = false })
   }
-}
 
-private fun handleExpirationDateChange(
-    dateString: String,
-    startTimeStamp: Date,
-    dateValidator: DateValidator,
-    onExpirationTimeChange: (Date) -> Unit
-) {
-  val isValid = dateValidator.isValidFormat(dateString, allowPast = true)
-  if (isValid) {
-    dateValidator.parseDate(dateString)?.let { parsedDate -> onExpirationTimeChange(parsedDate) }
+  if (showStartTimePicker) {
+    MaterialTimePickerDialog(
+        onTimeSelected = { hour, minute ->
+          tempSelectedDate?.let { date ->
+            val calendar =
+                Calendar.getInstance().apply {
+                  time = date
+                  set(Calendar.HOUR_OF_DAY, hour)
+                  set(Calendar.MINUTE, minute)
+                }
+            actions.onStartTimeStampChange(calendar.time)
+          }
+          showStartTimePicker = false
+          tempSelectedDate = null
+        },
+        onDismiss = {
+          showStartTimePicker = false
+          tempSelectedDate = null
+        })
+  }
+
+  if (showExpirationDatePicker) {
+    MaterialDatePickerDialog(
+        onDateSelected = { selectedDate ->
+          tempSelectedDate = selectedDate
+          showExpirationDatePicker = false
+          showExpirationTimePicker = true
+        },
+        onDismiss = { showExpirationDatePicker = false })
+  }
+
+  if (showExpirationTimePicker) {
+    MaterialTimePickerDialog(
+        onTimeSelected = { hour, minute ->
+          tempSelectedDate?.let { date ->
+            val calendar =
+                Calendar.getInstance().apply {
+                  time = date
+                  set(Calendar.HOUR_OF_DAY, hour)
+                  set(Calendar.MINUTE, minute)
+                }
+            actions.onExpirationTimeChange(calendar.time)
+          }
+          showExpirationTimePicker = false
+          tempSelectedDate = null
+        },
+        onDismiss = {
+          showExpirationTimePicker = false
+          tempSelectedDate = null
+        })
   }
 }
 
@@ -478,34 +504,35 @@ private fun handleLocationPermissionCheck(
  *
  * @param dateString The current start date string.
  * @param showError Whether to show a format error.
- * @param isLoading Whether the field is in a loading state.
- * @param dateValidator The date validator to use.
- * @param onDateChange Callback for when the date string changes. returns The StartDateField
- *   composable.
+ * @param isLoading Whether the field is in a loading state. composable.
  */
 private fun StartDateField(
     dateString: String,
     showError: Boolean,
     isLoading: Boolean,
-    dateValidator: DateValidator,
-    onDateChange: (String) -> Unit
+    onClick: () -> Unit
 ) {
-  OutlinedTextField(
-      value = dateString,
-      onValueChange = onDateChange,
-      label = { Text(stringResource(R.string.start_date_field_label)) },
-      placeholder = { Text(DateFormats.DATE_TIME_FORMAT) },
-      isError = showError,
-      supportingText = {
-        if (showError) {
-          Text(
-              text = stringResource(R.string.date_format_error, DateFormats.DATE_TIME_FORMAT),
-              color = MaterialTheme.colorScheme.error,
-              modifier = Modifier.testTag(EditRequestScreenTestTags.ERROR_MESSAGE))
-        }
-      },
-      modifier = Modifier.fillMaxWidth().testTag(EditRequestScreenTestTags.INPUT_START_DATE),
-      enabled = !isLoading)
+  Box {
+    OutlinedTextField(
+        value = dateString,
+        onValueChange = {},
+        label = { Text(stringResource(R.string.start_date_field_label)) },
+        placeholder = { Text(DateFormats.DATE_TIME_FORMAT) },
+        readOnly = true,
+        isError = showError,
+        supportingText = {
+          if (showError) {
+            Text(
+                text = stringResource(R.string.date_format_error, DateFormats.DATE_TIME_FORMAT),
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.testTag(EditRequestScreenTestTags.ERROR_MESSAGE))
+          }
+        },
+        modifier = Modifier.fillMaxWidth().testTag(EditRequestScreenTestTags.INPUT_START_DATE),
+        enabled = !isLoading)
+
+    Box(modifier = Modifier.matchParentSize().clickable(enabled = !isLoading) { onClick() })
+  }
 }
 
 @Composable
@@ -515,45 +542,44 @@ private fun StartDateField(
  * @param dateString The current expiration date string.
  * @param showError Whether to show a format error.
  * @param showDateOrderError Whether to show a date order error.
- * @param isLoading Whether the field is in a loading state.
- * @param dateValidator The date validator to use.
- * @param startTimeStamp The start date to compare against.
- * @param onDateChange Callback for when the date string changes. returns The ExpirationDateField
- *   composable.
+ * @param isLoading Whether the field is in a loading state. composable.
  */
 private fun ExpirationDateField(
     dateString: String,
     showError: Boolean,
     showDateOrderError: Boolean,
     isLoading: Boolean,
-    dateValidator: DateValidator,
-    startTimeStamp: Date,
-    onDateChange: (String) -> Unit
+    onClick: () -> Unit
 ) {
-  OutlinedTextField(
-      value = dateString,
-      onValueChange = onDateChange,
-      label = { Text(stringResource(R.string.expiration_date_field_label)) },
-      placeholder = { Text(DateFormats.DATE_TIME_FORMAT) },
-      isError = showError || showDateOrderError,
-      supportingText = {
-        when {
-          showError -> {
-            Text(
-                text = stringResource(R.string.date_format_error, DateFormats.DATE_TIME_FORMAT),
-                color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.testTag(EditRequestScreenTestTags.ERROR_MESSAGE))
+  Box {
+    OutlinedTextField(
+        value = dateString,
+        onValueChange = {},
+        label = { Text(stringResource(R.string.expiration_date_field_label)) },
+        placeholder = { Text(DateFormats.DATE_TIME_FORMAT) },
+        readOnly = true,
+        isError = showError || showDateOrderError,
+        supportingText = {
+          when {
+            showError -> {
+              Text(
+                  text = stringResource(R.string.date_format_error, DateFormats.DATE_TIME_FORMAT),
+                  color = MaterialTheme.colorScheme.error,
+                  modifier = Modifier.testTag(EditRequestScreenTestTags.ERROR_MESSAGE))
+            }
+            showDateOrderError -> {
+              Text(
+                  text = stringResource(R.string.date_order_error),
+                  color = MaterialTheme.colorScheme.error,
+                  modifier = Modifier.testTag(EditRequestScreenTestTags.ERROR_MESSAGE))
+            }
           }
-          showDateOrderError -> {
-            Text(
-                text = stringResource(R.string.date_order_error),
-                color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.testTag(EditRequestScreenTestTags.ERROR_MESSAGE))
-          }
-        }
-      },
-      modifier = Modifier.fillMaxWidth().testTag(EditRequestScreenTestTags.INPUT_EXPIRATION_DATE),
-      enabled = !isLoading)
+        },
+        modifier = Modifier.fillMaxWidth().testTag(EditRequestScreenTestTags.INPUT_EXPIRATION_DATE),
+        enabled = !isLoading)
+
+    Box(modifier = Modifier.matchParentSize().clickable(enabled = !isLoading) { onClick() })
+  }
 }
 
 @Composable
@@ -638,4 +664,43 @@ fun TagsChipGroup(
               modifier = Modifier.testTag(EditRequestScreenTestTags.getTestTagForRequestTags(tag)))
         }
       }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun MaterialDatePickerDialog(onDateSelected: (Date) -> Unit, onDismiss: () -> Unit) {
+  val datePickerState = rememberDatePickerState()
+
+  DatePickerDialog(
+      onDismissRequest = onDismiss,
+      confirmButton = {
+        TextButton(
+            onClick = {
+              datePickerState.selectedDateMillis?.let { millis -> onDateSelected(Date(millis)) }
+            }) {
+              Text("OK")
+            }
+      },
+      dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }) {
+        DatePicker(state = datePickerState)
+      }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun MaterialTimePickerDialog(
+    onTimeSelected: (hour: Int, minute: Int) -> Unit,
+    onDismiss: () -> Unit
+) {
+  val timePickerState = rememberTimePickerState()
+
+  AlertDialog(
+      onDismissRequest = onDismiss,
+      confirmButton = {
+        TextButton(onClick = { onTimeSelected(timePickerState.hour, timePickerState.minute) }) {
+          Text("OK")
+        }
+      },
+      dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+      text = { TimePicker(state = timePickerState) })
 }
