@@ -23,11 +23,10 @@ enum class UserSections(val label: String) {
 
   companion object {
     fun labels(): List<String> {
-      return values().map { it.label }
+      return UserSections.entries.map { it.label }
     }
 
-    fun fromLabel(label: String): UserSections? {
-      return values().find { it.label == label }
-    }
+    fun fromLabel(label: String): UserSections =
+      UserSections.entries.find { it.label == label } ?: NONE
   }
 }

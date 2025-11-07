@@ -2,7 +2,6 @@ package com.android.sample.ui.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.android.sample.model.profile.Section
 import com.android.sample.model.profile.UserProfile
 import com.android.sample.model.profile.UserProfileRepository
 import com.android.sample.model.profile.UserProfileRepositoryFirestore
@@ -57,7 +56,7 @@ class ProfileViewModel(
       // Try load private profile (owner)
       val profile = try {
         repository.getUserProfile(user.uid)
-      } catch (e: Exception) {
+      } catch (_: Exception) {
         // Create minimal profile using the display name as-is (no splitting/formatting)
         val new = UserProfile(
           id = repository.getNewUid(),
@@ -66,7 +65,7 @@ class ProfileViewModel(
           email = user.email,
           photo = null,
           kudos = 0,
-          section = Section.OTHER,
+          section = UserSections.NONE,
           arrivalDate = Date()
         )
         repository.addUserProfile(new)
@@ -75,7 +74,7 @@ class ProfileViewModel(
 
       loadedProfile = profile
       _state.value = mapProfileToState(profile)
-    } catch (e: Exception) {
+    } catch (_: Exception) {
       setError("Failed to load profile")
     } finally {
       setLoading(false)
@@ -85,6 +84,14 @@ class ProfileViewModel(
   private fun mapProfileToState(profile: UserProfile): ProfileState {
     val displayName =
       if (profile.lastName.isBlank()) profile.name else "${profile.name} ${profile.lastName}"
+
+    // Normalize: try enum name, then enum label; fallback to "None" for any unknown value.
+    val raw = profile.section.toString()
+    val sectionLabel = UserSections.entries.firstOrNull { it.name.equals(raw, ignoreCase = true) }
+      ?.label
+      ?: UserSections.entries.firstOrNull { it.label.equals(raw, ignoreCase = true) }?.label
+      ?: "None"
+
     return ProfileState(
       userName = displayName,
       userEmail = profile.email.orEmpty(),
@@ -94,7 +101,7 @@ class ProfileViewModel(
       followers = 0,
       following = 0,
       arrivalDate = formatDate(profile.arrivalDate),
-      userSection = if (profile.section == Section.OTHER) "None" else profile.section.name.replace("_", " "),
+      userSection = sectionLabel,
       isLoading = false,
       errorMessage = null,
       isEditMode = false,
@@ -106,7 +113,7 @@ class ProfileViewModel(
   private fun formatDate(date: Date): String {
     return try {
       SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(date)
-    } catch (e: Exception) {
+    } catch (_: Exception) {
       "00/00/0000"
     }
   }
@@ -144,5 +151,50 @@ class ProfileViewModel(
 
   fun updateSection(newSection: String) {
     _state.value = _state.value.copy(userSection = newSection)
+  }
+
+  fun saveProfileChanges(newName: String, newSection: String) {
+    val current = loadedProfile
+    if (current == null) {
+      setError("No profile loaded")
+      return
+    }
+
+    viewModelScope.launch {
+      setLoading(true)
+      setError(null)
+      try {
+        // Map UI label -> UserSections (defaults to NONE)
+        val userSection = UserSections.fromLabel(newSection)
+
+        val parts = newName.trim().split(Regex("\\s+"), limit = 2)
+        val firstName = parts.getOrNull(0).orEmpty()
+        val lastName = parts.getOrNull(1).orEmpty()
+
+        // Build updated profile preserving fields we don't change
+        val updatedProfile =
+          UserProfile(
+            id = current.id,
+            name = firstName,
+            lastName = lastName,
+            email = current.email,
+            photo = current.photo,
+            kudos = current.kudos,
+            section = userSection, // persist enum, not an "OTHER" string
+            arrivalDate = current.arrivalDate
+          )
+
+        // Persist to repository
+        repository.updateUserProfile(updatedProfile.id, updatedProfile)
+
+        // Update local cache and UI state
+        loadedProfile = updatedProfile
+        _state.value = mapProfileToState(updatedProfile)
+      } catch (e: Exception) {
+        setError("Failed to save profile")
+      } finally {
+        setLoading(false)
+      }
+    }
   }
 }
