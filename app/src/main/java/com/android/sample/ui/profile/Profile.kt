@@ -37,6 +37,7 @@ fun ProfileScreen(viewModel: ProfileViewModel = viewModel(), onBackClick: () -> 
                 ProfileContent(
                     state = state,
                     onLogoutRequested = { viewModel.showLogoutDialog() },
+                    onEditRequested = { viewModel.setEditMode(true) },
                     modifier = Modifier.fillMaxSize())
           }
 
@@ -52,9 +53,9 @@ fun ProfileScreen(viewModel: ProfileViewModel = viewModel(), onBackClick: () -> 
               initialName = state.userName,
               initialSection = state.userSection,
               onSave = { newName, newSection ->
-                viewModel.updateUserName(newName)
-                viewModel.updateSection(newSection)
-                viewModel.setEditMode(false)
+                  // Persist to Firestore and update UI when done
+                  viewModel.saveProfileChanges(newName, newSection)
+                  viewModel.setEditMode(false)
               },
               onCancel = { viewModel.setEditMode(false) })
         }
