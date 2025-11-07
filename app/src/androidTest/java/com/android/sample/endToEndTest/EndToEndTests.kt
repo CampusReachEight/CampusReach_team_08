@@ -10,6 +10,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
@@ -25,7 +26,6 @@ import com.android.sample.ui.authentication.SignInScreenTestTags
 import com.android.sample.ui.map.MapTestTags
 import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.overview.AcceptRequestScreenTestTags
-import com.android.sample.ui.overview.toDisplayString
 import com.android.sample.ui.profile.ProfileTestTags
 import com.android.sample.ui.request.LocationSearchFieldTestTags
 import com.android.sample.ui.request.RequestListTestTags
@@ -242,27 +242,43 @@ class EndToEndTests : BaseEmulatorTest() {
         .onFirst()
         .performClick()
 
-    // clear start date
+    // NEW: Select start date using dialog
     composeTestRule
         .onNodeWithTag(EditRequestScreenTestTags.INPUT_START_DATE)
         .performScrollTo()
         .assertIsDisplayed()
-        .performTextClearance()
+        .performClick()
 
-    // put start date
-    composeTestRule
-        .onNodeWithTag(EditRequestScreenTestTags.INPUT_START_DATE)
-        .performTextInput(startDate.toDisplayString())
+    composeTestRule.waitForIdle()
 
+    // Accept date picker (uses default/current date)
+    composeTestRule.onNodeWithText("OK").performClick()
+
+    composeTestRule.waitForIdle()
+
+    // Accept time picker (uses default/current time)
+    composeTestRule.onNodeWithText("OK").performClick()
+
+    composeTestRule.waitForIdle()
+
+    // NEW: Select expiration date using dialog
     composeTestRule
         .onNodeWithTag(EditRequestScreenTestTags.INPUT_EXPIRATION_DATE)
         .performScrollTo()
         .assertIsDisplayed()
-        .performTextClearance()
+        .performClick()
 
-    composeTestRule
-        .onNodeWithTag(EditRequestScreenTestTags.INPUT_EXPIRATION_DATE)
-        .performTextInput(expireDate.toDisplayString())
+    composeTestRule.waitForIdle()
+
+    // Accept date picker
+    composeTestRule.onNodeWithText("OK").performClick()
+
+    composeTestRule.waitForIdle()
+
+    // Accept time picker
+    composeTestRule.onNodeWithText("OK").performClick()
+
+    composeTestRule.waitForIdle()
 
     // put a tag
     composeTestRule
