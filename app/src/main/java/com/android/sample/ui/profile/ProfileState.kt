@@ -33,17 +33,7 @@ data class ProfileState(
     fun empty() = ProfileState()
 
     // Default state with mock data
-    fun default() =
-        ProfileState(
-            userName = "John Doe",
-            userEmail = "john.doe@example.com",
-            profileId = "123456",
-            kudosReceived = 10,
-            helpReceived = 5,
-            followers = 3,
-            following = 7,
-            arrivalDate = "01/09/2025",
-            userSection = "Computer Science")
+    fun default() = empty()
 
     // State with loading state
     fun loading() = default().copy(isLoading = true)
