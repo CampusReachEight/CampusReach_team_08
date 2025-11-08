@@ -64,10 +64,9 @@ fun ProfileHeader(
             Spacer(modifier = Modifier.weight(1f))
             IconButton(
                 onClick = onEditRequested,
-                modifier = Modifier.testTag(ProfileTestTags.PROFILE_HEADER_EDIT_BUTTON)
-                ) {
-              Icon(Icons.Default.Edit, contentDescription = "Edit", tint = surface)
-            }
+                modifier = Modifier.testTag(ProfileTestTags.PROFILE_HEADER_EDIT_BUTTON)) {
+                  Icon(Icons.Default.Edit, contentDescription = "Edit", tint = surface)
+                }
           }
         }
       }

@@ -8,33 +8,35 @@ import com.android.sample.model.profile.UserProfileRepositoryFirestore
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 class ProfileViewModel(
-  initialState: ProfileState = ProfileState.default(),
-  private val fireBaseAuth: FirebaseAuth = FirebaseAuth.getInstance(),
-  private val repository: UserProfileRepository =
-    UserProfileRepositoryFirestore(FirebaseFirestore.getInstance()),
-  private val onLogout: (() -> Unit)? = null,
-  private val attachAuthListener: Boolean = true // NEW: allow tests to disable the auth listener
+    initialState: ProfileState = ProfileState.default(),
+    private val fireBaseAuth: FirebaseAuth = FirebaseAuth.getInstance(),
+    private val repository: UserProfileRepository =
+        UserProfileRepositoryFirestore(FirebaseFirestore.getInstance()),
+    private val onLogout: (() -> Unit)? = null,
+    private val attachAuthListener: Boolean = true // NEW: allow tests to disable the auth listener
 ) : ViewModel() {
   private val _state = MutableStateFlow(initialState)
   val state: StateFlow<ProfileState> = _state.asStateFlow()
 
   private var loadedProfile: UserProfile? = null
 
-  // Auth listener now respects current _state and will not trigger a load when tests set isLoading = true.
-  private val authListener = FirebaseAuth.AuthStateListener { auth ->
-    // If UI (or tests) expect a loading state, avoid auto-triggering a load here.
-    if (_state.value.isLoading) return@AuthStateListener
-    viewModelScope.launch { handleAuthUser(auth.currentUser) }
-  }
+  // Auth listener now respects current _state and will not trigger a load when tests set isLoading
+  // = true.
+  private val authListener =
+      FirebaseAuth.AuthStateListener { auth ->
+        // If UI (or tests) expect a loading state, avoid auto-triggering a load here.
+        if (_state.value.isLoading) return@AuthStateListener
+        viewModelScope.launch { handleAuthUser(auth.currentUser) }
+      }
 
   init {
     // Only add the listener when allowed (tests can set attachAuthListener = false)
@@ -62,23 +64,24 @@ class ProfileViewModel(
 
     try {
       // Try load private profile (owner)
-      val profile = try {
-        repository.getUserProfile(user.uid)
-      } catch (_: Exception) {
-        // Create minimal profile using the display name as-is (no splitting/formatting)
-        val new = UserProfile(
-          id = repository.getNewUid(),
-          name = user.displayName.orEmpty(),
-          lastName = "",
-          email = user.email,
-          photo = null,
-          kudos = 0,
-          section = UserSections.NONE,
-          arrivalDate = Date()
-        )
-        repository.addUserProfile(new)
-        new
-      }
+      val profile =
+          try {
+            repository.getUserProfile(user.uid)
+          } catch (_: Exception) {
+            // Create minimal profile using the display name as-is (no splitting/formatting)
+            val new =
+                UserProfile(
+                    id = repository.getNewUid(),
+                    name = user.displayName.orEmpty(),
+                    lastName = "",
+                    email = user.email,
+                    photo = null,
+                    kudos = 0,
+                    section = UserSections.NONE,
+                    arrivalDate = Date())
+            repository.addUserProfile(new)
+            new
+          }
 
       loadedProfile = profile
       _state.value = mapProfileToState(profile)
@@ -91,30 +94,29 @@ class ProfileViewModel(
 
   private fun mapProfileToState(profile: UserProfile): ProfileState {
     val displayName =
-      if (profile.lastName.isBlank()) profile.name else "${profile.name} ${profile.lastName}"
+        if (profile.lastName.isBlank()) profile.name else "${profile.name} ${profile.lastName}"
 
     val raw = profile.section.toString()
-    val sectionLabel = UserSections.entries.firstOrNull { it.name.equals(raw, ignoreCase = true) }
-      ?.label
-      ?: UserSections.entries.firstOrNull { it.label.equals(raw, ignoreCase = true) }?.label
-      ?: "None"
+    val sectionLabel =
+        UserSections.entries.firstOrNull { it.name.equals(raw, ignoreCase = true) }?.label
+            ?: UserSections.entries.firstOrNull { it.label.equals(raw, ignoreCase = true) }?.label
+            ?: "None"
 
     return ProfileState(
-      userName = displayName,
-      userEmail = profile.email.orEmpty(),
-      profileId = profile.id,
-      kudosReceived = profile.kudos,
-      helpReceived = 0,
-      followers = 0,
-      following = 0,
-      arrivalDate = formatDate(profile.arrivalDate),
-      userSection = sectionLabel,
-      isLoading = false,
-      errorMessage = null,
-      isEditMode = false,
-      profilePictureUrl = profile.photo?.toString(),
-      isLoggingOut = false
-    )
+        userName = displayName,
+        userEmail = profile.email.orEmpty(),
+        profileId = profile.id,
+        kudosReceived = profile.kudos,
+        helpReceived = 0,
+        followers = 0,
+        following = 0,
+        arrivalDate = formatDate(profile.arrivalDate),
+        userSection = sectionLabel,
+        isLoading = false,
+        errorMessage = null,
+        isEditMode = false,
+        profilePictureUrl = profile.photo?.toString(),
+        isLoggingOut = false)
   }
 
   private fun formatDate(date: Date): String {
@@ -172,10 +174,9 @@ class ProfileViewModel(
 
       // Update UI state using the display label for the section
       _state.value =
-        _state.value.copy(
-          userName = if (newName.isBlank()) _state.value.userName else newName,
-          userSection = userSectionEnum.label
-        )
+          _state.value.copy(
+              userName = if (newName.isBlank()) _state.value.userName else newName,
+              userSection = userSectionEnum.label)
       return
     }
 
@@ -191,16 +192,15 @@ class ProfileViewModel(
         val lastName = parts.getOrNull(1).orEmpty()
 
         val updatedProfile =
-          UserProfile(
-            id = current.id,
-            name = firstName,
-            lastName = lastName,
-            email = current.email,
-            photo = current.photo,
-            kudos = current.kudos,
-            section = userSection,
-            arrivalDate = current.arrivalDate
-          )
+            UserProfile(
+                id = current.id,
+                name = firstName,
+                lastName = lastName,
+                email = current.email,
+                photo = current.photo,
+                kudos = current.kudos,
+                section = userSection,
+                arrivalDate = current.arrivalDate)
 
         repository.updateUserProfile(updatedProfile.id, updatedProfile)
 

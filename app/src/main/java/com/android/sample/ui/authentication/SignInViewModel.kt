@@ -106,16 +106,15 @@ class SignInViewModel(
         return@launch
       } catch (_: NoSuchElementException) {
         profileRepository.addUserProfile(
-          UserProfile(
-            id = user.uid,
-            name = user.displayName?.split(" ")?.getOrNull(0) ?: "",
-            lastName = user.displayName?.split(" ")?.getOrNull(1) ?: "",
-            email = user.email,
-            photo = user.photoUrl,
-            kudos = 0,
-            section = UserSections.NONE,
-            arrivalDate = java.util.Date()
-          ))
+            UserProfile(
+                id = user.uid,
+                name = user.displayName?.split(" ")?.getOrNull(0) ?: "",
+                lastName = user.displayName?.split(" ")?.getOrNull(1) ?: "",
+                email = user.email,
+                photo = user.photoUrl,
+                kudos = 0,
+                section = UserSections.NONE,
+                arrivalDate = java.util.Date()))
       }
     }
   }

@@ -21,10 +21,7 @@ import com.android.sample.ui.theme.appPalette
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileScreen(
-    viewModel: ProfileViewModel = viewModel(),
-    onBackClick: () -> Unit = {}
-) {
+fun ProfileScreen(viewModel: ProfileViewModel = viewModel(), onBackClick: () -> Unit = {}) {
   val state by viewModel.state.collectAsState()
 
   Scaffold(
@@ -33,8 +30,7 @@ fun ProfileScreen(
       topBar = { ProfileTopBar(onBackClick) }) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
           when {
-            state.isLoading ->
-                ProfileLoadingBuffer(Modifier.fillMaxSize())
+            state.isLoading -> ProfileLoadingBuffer(Modifier.fillMaxSize())
             else ->
                 ProfileContent(
                     state = state,
@@ -55,9 +51,9 @@ fun ProfileScreen(
               initialName = state.userName,
               initialSection = state.userSection,
               onSave = { newName, newSection ->
-                  // Persist to Firestore and update UI when done
-                  viewModel.saveProfileChanges(newName, newSection)
-                  viewModel.setEditMode(false)
+                // Persist to Firestore and update UI when done
+                viewModel.saveProfileChanges(newName, newSection)
+                viewModel.setEditMode(false)
               },
               onCancel = { viewModel.setEditMode(false) })
         }
