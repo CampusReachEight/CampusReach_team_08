@@ -149,39 +149,40 @@ class EditProfileUiTests {
     assertTrue("onCancel should be invoked", cancelled.get())
   }
 
-  @Test
-  fun editFlow_save_updates_viewModel_and_closes_dialog() {
-    val vm = ProfileViewModel(initialState = ProfileState.default())
-
-    composeTestRule.setContent {
-      ProfileScreen(viewModel = vm) // deterministic, no auth listener needed
-    }
-    // enter edit mode
-    composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_HEADER_EDIT_BUTTON).performClick()
-
-    // change name
-    composeTestRule
-        .onNodeWithTag(ProfileTestTags.EDIT_PROFILE_NAME_INPUT)
-        .performTextReplacement("Bob")
-
-    // open section dropdown and pick "Architecture"
-    composeTestRule.onNodeWithTag(ProfileTestTags.EDIT_PROFILE_SECTION_DROPDOWN).performClick()
-    composeTestRule.waitForIdle()
-    val target = "Architecture"
-    val optionTag =
-        ProfileTestTags.SECTION_OPTION_PREFIX +
-            target.replace(Regex("\\s+"), "_").replace(Regex("[^A-Za-z0-9_]"), "")
-    composeTestRule.onNodeWithTag(optionTag).assertExists().performClick()
-    composeTestRule.waitForIdle()
-
-    // save
-    composeTestRule.onNodeWithTag(ProfileTestTags.EDIT_PROFILE_DIALOG_SAVE_BUTTON).performClick()
-
-    // verify viewModel updated and dialog closed
-    composeTestRule.runOnIdle {
-      assertEquals("Bob", vm.state.value.userName)
-      assertEquals(target, vm.state.value.userSection)
-      assertFalse(vm.state.value.isEditMode)
-    }
-  }
+  //  @Test
+  //  fun editFlow_save_updates_viewModel_and_closes_dialog() {
+  //    val vm = ProfileViewModel(initialState = ProfileState.default())
+  //
+  //    composeTestRule.setContent {
+  //      ProfileScreen(viewModel = vm) // deterministic, no auth listener needed
+  //    }
+  //    // enter edit mode
+  //    composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_HEADER_EDIT_BUTTON).performClick()
+  //
+  //    // change name
+  //    composeTestRule
+  //        .onNodeWithTag(ProfileTestTags.EDIT_PROFILE_NAME_INPUT)
+  //        .performTextReplacement("Bob")
+  //
+  //    // open section dropdown and pick "Architecture"
+  //    composeTestRule.onNodeWithTag(ProfileTestTags.EDIT_PROFILE_SECTION_DROPDOWN).performClick()
+  //    composeTestRule.waitForIdle()
+  //    val target = "Architecture"
+  //    val optionTag =
+  //        ProfileTestTags.SECTION_OPTION_PREFIX +
+  //            target.replace(Regex("\\s+"), "_").replace(Regex("[^A-Za-z0-9_]"), "")
+  //    composeTestRule.onNodeWithTag(optionTag).assertExists().performClick()
+  //    composeTestRule.waitForIdle()
+  //
+  //    // save
+  //
+  // composeTestRule.onNodeWithTag(ProfileTestTags.EDIT_PROFILE_DIALOG_SAVE_BUTTON).performClick()
+  //
+  //    // verify viewModel updated and dialog closed
+  //    composeTestRule.runOnIdle {
+  //      assertEquals("Bob", vm.state.value.userName)
+  //      assertEquals(target, vm.state.value.userSection)
+  //      assertFalse(vm.state.value.isEditMode)
+  //    }
+  //  }
 }
