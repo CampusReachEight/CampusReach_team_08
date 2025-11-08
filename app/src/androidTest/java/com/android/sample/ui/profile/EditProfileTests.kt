@@ -1,11 +1,9 @@
 package com.android.sample.ui.profile
 
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.unit.dp
@@ -161,7 +159,7 @@ class EditProfileUiTests {
     composeTestRule.setContent {
       MaterialTheme {
         Box(modifier = androidx.compose.ui.Modifier.size(360.dp, 640.dp)) {
-          ProfileScreen(viewModel = vm)
+          ProfileScreen(viewModel = vm,)
         }
       }
     }

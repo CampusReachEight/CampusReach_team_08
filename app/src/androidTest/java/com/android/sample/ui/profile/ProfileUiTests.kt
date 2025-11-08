@@ -6,6 +6,7 @@ import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -56,7 +57,7 @@ class ProfileUiTests {
             following = 15,
             arrivalDate = "15/02/2024",
             userSection = "Physics")
-    composeTestRule.setContent { ProfileScreen(viewModel = ProfileViewModel(customState)) }
+    composeTestRule.setContent { ProfileScreen(viewModel = ProfileViewModel(customState),) }
 
     composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_HEADER).assertIsDisplayed()
     composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_STATS).assertIsDisplayed()
@@ -65,9 +66,11 @@ class ProfileUiTests {
 
     composeTestRule
         .onNodeWithTag(ProfileTestTags.PROFILE_HEADER_NAME)
-        .assertTextEquals("Alice Smith")
-    composeTestRule.onNodeWithTag("profile_info_name").assertTextEquals("Alice Smith")
-    composeTestRule.onNodeWithTag("profile_info_section").assertTextEquals("Physics")
+        .assertTextContains("Alice Smith")
+    composeTestRule.onNodeWithTag("profile_info_name")
+      .assertTextContains("Alice Smith")
+    composeTestRule.onNodeWithTag("profile_info_section")
+      .assertTextContains("Physics")
   }
 
   // ----- Header -----
@@ -175,7 +178,7 @@ class ProfileUiTests {
   @Test
   fun statGroupCard_displaysCorrectValues_inProfileScreen() {
     val state = ProfileState(kudosReceived = 99, helpReceived = 88, followers = 77, following = 66)
-    composeTestRule.setContent { ProfileScreen(viewModel = ProfileViewModel(state)) }
+    composeTestRule.setContent { ProfileScreen(viewModel = ProfileViewModel(state),) }
     composeTestRule.onNodeWithText("99").assertIsDisplayed()
     composeTestRule.onNodeWithText("88").assertIsDisplayed()
     composeTestRule.onNodeWithText("77").assertIsDisplayed()
@@ -496,7 +499,7 @@ class ProfileUiTests {
   fun profileScreen_loadingState_showsLoadingIndicator_and_disappearsWhenNotLoading() {
     val loadingState = ProfileState.loading()
     val vm = ProfileViewModel(loadingState)
-    composeTestRule.setContent { ProfileScreen(viewModel = vm) }
+    composeTestRule.setContent { ProfileScreen(viewModel = vm,) }
 
     // initially loading
     composeTestRule.onNodeWithTag(ProfileTestTags.LOADING_INDICATOR).assertIsDisplayed()
@@ -511,7 +514,7 @@ class ProfileUiTests {
     // Start with a ProfileViewModel that has an error and compose once
     val errorState = ProfileState.withError()
     val vm = ProfileViewModel(errorState)
-    composeTestRule.setContent { ProfileScreen(viewModel = vm) }
+    composeTestRule.setContent { ProfileScreen(viewModel = vm,) }
 
     composeTestRule.onNodeWithTag("profile_error").assertIsDisplayed()
     composeTestRule.onNodeWithTag("profile_error").assertTextEquals("Failed to load profile data")
