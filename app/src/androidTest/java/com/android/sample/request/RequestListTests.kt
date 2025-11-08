@@ -27,9 +27,11 @@ import com.android.sample.model.request.RequestStatus
 import com.android.sample.model.request.RequestType
 import com.android.sample.model.request.Tags
 import com.android.sample.model.request.displayString
+import com.android.sample.ui.profile.ProfilePictureTestTags
 import com.android.sample.ui.request.RequestListScreen
 import com.android.sample.ui.request.RequestListTestTags
 import com.android.sample.ui.request.RequestListViewModel
+import com.android.sample.ui.request.RequestSearchFilterTestTags
 import com.android.sample.utils.BaseEmulatorTest
 import java.util.Date
 import java.util.UUID
@@ -292,9 +294,7 @@ class RequestListTests : BaseEmulatorTest() {
 
   @Test
   fun filterButtons_showTitles_and_openMenus() {
-    val vm =
-        RequestListViewModel(
-            FakeRequestRepository(emptyList()), FakeUserProfileRepository(createBitmap()))
+    val vm = RequestListViewModel(FakeRequestRepository(emptyList()), FakeUserProfileRepository())
 
     composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
     composeTestRule.waitForIdle()
@@ -543,7 +543,7 @@ class RequestListTests : BaseEmulatorTest() {
 
                   override suspend fun isOwnerOfRequest(request: Request): Boolean = false
                 },
-            profileRepository = FakeUserProfileRepository(createBitmap()))
+            profileRepository = FakeUserProfileRepository())
 
     composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
 
@@ -654,7 +654,7 @@ class RequestListTests : BaseEmulatorTest() {
 
                   override suspend fun isOwnerOfRequest(request: Request): Boolean = false
                 },
-            profileRepository = FakeUserProfileRepository(createBitmap()))
+            profileRepository = FakeUserProfileRepository())
 
     composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
     composeTestRule.waitUntil(WAIT_TIMEOUT_MS) { vm.state.value.requests.size == requests.size }
