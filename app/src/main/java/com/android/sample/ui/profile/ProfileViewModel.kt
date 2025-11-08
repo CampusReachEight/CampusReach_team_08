@@ -21,7 +21,8 @@ class ProfileViewModel(
   private val fireBaseAuth: FirebaseAuth = FirebaseAuth.getInstance(),
   private val repository: UserProfileRepository =
     UserProfileRepositoryFirestore(FirebaseFirestore.getInstance()),
-  private val onLogout: (() -> Unit)? = null
+  private val onLogout: (() -> Unit)? = null,
+  private val attachAuthListener: Boolean = true // NEW: allow tests to disable the auth listener
 ) : ViewModel() {
   private val _state = MutableStateFlow(initialState)
   val state: StateFlow<ProfileState> = _state.asStateFlow()
@@ -36,14 +37,17 @@ class ProfileViewModel(
   }
 
   init {
-    // Add the listener and let the listener drive the initial fetch.
-    // The listener checks _state.value.isLoading so tests can pass a loading state without being overridden.
-    fireBaseAuth.addAuthStateListener(authListener)
+    // Only add the listener when allowed (tests can set attachAuthListener = false)
+    if (attachAuthListener) {
+      fireBaseAuth.addAuthStateListener(authListener)
+    }
   }
 
   override fun onCleared() {
     super.onCleared()
-    fireBaseAuth.removeAuthStateListener(authListener)
+    if (attachAuthListener) {
+      fireBaseAuth.removeAuthStateListener(authListener)
+    }
   }
 
   private suspend fun handleAuthUser(user: FirebaseUser?) {
@@ -189,7 +193,7 @@ class ProfileViewModel(
 
         loadedProfile = updatedProfile
         _state.value = mapProfileToState(updatedProfile)
-      } catch (e: Exception) {
+      } catch (_: Exception) {
         setError("Failed to save profile")
       } finally {
         setLoading(false)
