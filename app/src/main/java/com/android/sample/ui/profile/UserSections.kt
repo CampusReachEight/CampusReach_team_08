@@ -27,6 +27,6 @@ enum class UserSections(val label: String) {
     }
 
     fun fromLabel(label: String): UserSections =
-      UserSections.entries.find { it.label == label } ?: NONE
+        UserSections.entries.find { it.label == label } ?: NONE
   }
 }

@@ -56,36 +56,37 @@ data class UserProfile(
   companion object {
     // Allows for deserialization from Firestore document data
     fun fromMap(data: Map<String, Any?>): UserProfile {
-        val rawSection = (data["section"] as? String).orEmpty()
+      val rawSection = (data["section"] as? String).orEmpty()
 
-        // Normalize: treat blank / legacy "OTHER" / unknown values as NONE.
-        val section = when {
+      // Normalize: treat blank / legacy "OTHER" / unknown values as NONE.
+      val section =
+          when {
             rawSection.isBlank() -> UserSections.NONE
             rawSection.equals("OTHER", ignoreCase = true) -> UserSections.NONE
             // Match by enum name (e.g. "COMPUTER_SCIENCE")
             UserSections.entries.any { it.name.equals(rawSection, ignoreCase = true) } -> {
-                val matched = UserSections.entries.first { it.name.equals(rawSection, ignoreCase = true) }
-                UserSections.valueOf(matched.name)
+              val matched =
+                  UserSections.entries.first { it.name.equals(rawSection, ignoreCase = true) }
+              UserSections.valueOf(matched.name)
             }
             // Match by label (e.g. "Computer Science")
             UserSections.entries.any { it.label.equals(rawSection, ignoreCase = true) } -> {
-                UserSections.entries.first { it.label.equals(rawSection, ignoreCase = true) }
+              UserSections.entries.first { it.label.equals(rawSection, ignoreCase = true) }
             }
             else -> UserSections.NONE
-        }
+          }
 
-        val arrival = (data["arrivalDate"] as? Timestamp)?.toDate() ?: Date()
+      val arrival = (data["arrivalDate"] as? Timestamp)?.toDate() ?: Date()
 
-        return UserProfile(
-            id = data["id"] as String,
-            name = data["name"] as String,
-            lastName = data["lastName"] as String,
-            email = data["email"] as String?,
-            photo = data["photo"]?.let { uriString -> Uri.parse(uriString as String) },
-            kudos = (data["kudos"] as Number).toInt(),
-            section = section,
-            arrivalDate = arrival
-        )
+      return UserProfile(
+          id = data["id"] as String,
+          name = data["name"] as String,
+          lastName = data["lastName"] as String,
+          email = data["email"] as String?,
+          photo = data["photo"]?.let { uriString -> Uri.parse(uriString as String) },
+          kudos = (data["kudos"] as Number).toInt(),
+          section = section,
+          arrivalDate = arrival)
     }
 
     // Converts Firestore Blob to Bitmap, ensuring size constraints

@@ -154,7 +154,9 @@ fun NavigationScreen(
                         popUpTo(0) // Clears the back stack
                       }
                     }),
-        ) { navigationActions.goBack() }
+        ) {
+          navigationActions.goBack()
+        }
       }
     }
 

@@ -151,13 +151,13 @@ class EditProfileUiTests {
 
   @Test
   fun editFlow_save_updates_viewModel_and_closes_dialog() {
-      val vm = ProfileViewModel(initialState = ProfileState.default())
+    val vm = ProfileViewModel(initialState = ProfileState.default())
 
-      composeTestRule.setContent {
-          ProfileScreen(viewModel = vm) // deterministic, no auth listener needed
-      }
-      // enter edit mode
-        composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_HEADER_EDIT_BUTTON).performClick()
+    composeTestRule.setContent {
+      ProfileScreen(viewModel = vm) // deterministic, no auth listener needed
+    }
+    // enter edit mode
+    composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_HEADER_EDIT_BUTTON).performClick()
 
     // change name
     composeTestRule
