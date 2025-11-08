@@ -22,10 +22,11 @@ import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class RequestSearchFilterViewModelTest {
-
   private val testDispatcher = StandardTestDispatcher()
   private lateinit var vm: RequestSearchFilterViewModel
   private lateinit var requests: List<Request>
+
+  private fun facet(id: String) = vm.facets.first { it.id == id }
 
   @Before
   fun setUp() =
@@ -60,7 +61,6 @@ class RequestSearchFilterViewModelTest {
                     RequestStatus.OPEN),
             )
         vm.initializeWithRequests(requests)
-        // Allow indexing to complete
         advanceTimeBy(10)
       }
 
@@ -88,7 +88,6 @@ class RequestSearchFilterViewModelTest {
   fun debounced_search_triggers_after_300ms() =
       runTest(testDispatcher) {
         vm.updateSearchQuery("pizza")
-        // Before debounce window elapsed
         var displayed = vm.displayedRequests.first()
         assertTrue(displayed.isEmpty() || displayed == requests)
         advanceTimeBy(350)
@@ -101,7 +100,8 @@ class RequestSearchFilterViewModelTest {
       runTest(testDispatcher) {
         vm.updateSearchQuery("pizza")
         advanceTimeBy(350)
-        vm.toggleStatus(RequestStatus.OPEN)
+        val statusFacet = facet("status")
+        statusFacet.toggle(RequestStatus.OPEN)
         val displayed = vm.displayedRequests.first()
         assertTrue(displayed.isEmpty())
       }
@@ -109,24 +109,30 @@ class RequestSearchFilterViewModelTest {
   @Test
   fun toggle_methods_update_state() =
       runTest(testDispatcher) {
-        vm.toggleType(RequestType.EATING)
-        assertTrue(vm.selectedTypes.first().contains(RequestType.EATING))
-        vm.toggleStatus(RequestStatus.OPEN)
-        assertTrue(vm.selectedStatuses.first().contains(RequestStatus.OPEN))
-        vm.toggleTag(Tags.INDOOR)
-        assertTrue(vm.selectedTags.first().contains(Tags.INDOOR))
+        val typeFacet = facet("type")
+        val statusFacet = facet("status")
+        val tagFacet = facet("tags")
+        typeFacet.toggle(RequestType.EATING)
+        assertTrue(typeFacet.selected.first().contains(RequestType.EATING))
+        statusFacet.toggle(RequestStatus.OPEN)
+        assertTrue(statusFacet.selected.first().contains(RequestStatus.OPEN))
+        tagFacet.toggle(Tags.INDOOR)
+        assertTrue(tagFacet.selected.first().contains(Tags.INDOOR))
       }
 
   @Test
   fun clearAllFilters_resets_all() =
       runTest(testDispatcher) {
-        vm.toggleType(RequestType.EATING)
-        vm.toggleStatus(RequestStatus.OPEN)
-        vm.toggleTag(Tags.INDOOR)
+        val typeFacet = facet("type")
+        val statusFacet = facet("status")
+        val tagFacet = facet("tags")
+        typeFacet.toggle(RequestType.EATING)
+        statusFacet.toggle(RequestStatus.OPEN)
+        tagFacet.toggle(Tags.INDOOR)
         vm.clearAllFilters()
-        assertTrue(vm.selectedTypes.first().isEmpty())
-        assertTrue(vm.selectedStatuses.first().isEmpty())
-        assertTrue(vm.selectedTags.first().isEmpty())
+        assertTrue(typeFacet.selected.first().isEmpty())
+        assertTrue(statusFacet.selected.first().isEmpty())
+        assertTrue(tagFacet.selected.first().isEmpty())
       }
 
   @Test
@@ -143,7 +149,8 @@ class RequestSearchFilterViewModelTest {
       runTest(testDispatcher) {
         vm.updateSearchQuery("pizza")
         advanceTimeBy(350)
-        vm.toggleTag(Tags.INDOOR)
+        val tagFacet = facet("tags")
+        tagFacet.toggle(Tags.INDOOR)
         val displayed = vm.displayedRequests.first()
         assertEquals(1, displayed.size)
         assertEquals("2", displayed.first().requestId)

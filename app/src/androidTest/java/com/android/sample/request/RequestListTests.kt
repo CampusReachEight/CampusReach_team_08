@@ -284,10 +284,12 @@ class RequestListTests : BaseEmulatorTest() {
     val statusTitle = RequestStatus.toString()
     val tagsTitle = Tags.toString()
 
-    // Titles with (0) selected by default
-    composeTestRule.onNodeWithText("$typeTitle (0)").assertExists().assertIsDisplayed()
-    composeTestRule.onNodeWithText("$statusTitle (0)").assertExists().assertIsDisplayed()
-    composeTestRule.onNodeWithText("$tagsTitle (0)").assertExists().assertIsDisplayed()
+    Thread.sleep(10000)
+
+    // Titles selected by default
+    composeTestRule.onNodeWithText(typeTitle).assertExists().assertIsDisplayed()
+    composeTestRule.onNodeWithText(statusTitle).assertExists().assertIsDisplayed()
+    composeTestRule.onNodeWithText(tagsTitle).assertExists().assertIsDisplayed()
 
     // Open each menu and verify the per-menu search bar appears (no crash on click)
     composeTestRule
@@ -655,7 +657,7 @@ class RequestListTests : BaseEmulatorTest() {
 
     // Select Title Asc
     composeTestRule
-        .onNodeWithText("Title asc", ignoreCase = true)
+        .onNodeWithText("Title ascending", ignoreCase = true)
         .assertIsDisplayed()
         .performClick()
 

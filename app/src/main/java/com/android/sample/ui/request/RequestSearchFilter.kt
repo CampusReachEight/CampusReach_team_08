@@ -14,57 +14,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import com.android.sample.model.request.RequestStatus
-import com.android.sample.model.request.RequestType
-import com.android.sample.model.request.displayString
 
-/**
- * FilterKind: binds UI filter categories directly to Request model enums for clarity/extensibility.
- */
-internal sealed interface FilterKind<T : Enum<T>> {
-  val title: String
-  val entries: Array<T>
-
-  fun labelOf(item: T): String
-}
-
-internal object KindRequestType : FilterKind<RequestType> {
-  override val title: String = RequestType.toString()
-  override val entries: Array<RequestType> = RequestType.entries.toTypedArray()
-
-  override fun labelOf(item: RequestType): String = item.displayString()
-}
-
-internal object KindRequestStatus : FilterKind<RequestStatus> {
-  override val title: String = RequestStatus.toString()
-  override val entries: Array<RequestStatus> = RequestStatus.entries.toTypedArray()
-
-  override fun labelOf(item: RequestStatus): String = item.displayString()
-}
-
-internal object KindRequestTags : FilterKind<com.android.sample.model.request.Tags> {
-  override val title: String = com.android.sample.model.request.Tags.toString()
-  override val entries: Array<com.android.sample.model.request.Tags> =
-      com.android.sample.model.request.Tags.entries.toTypedArray()
-
-  override fun labelOf(item: com.android.sample.model.request.Tags): String = item.displayString()
-}
-
-/** Lightweight config used to render filter buttons in a compact, reusable way. */
-internal data class FilterCfg<T : Enum<T>>(
-    val kind: FilterKind<T>,
-    val selectedCount: Int,
-    val testTag: String,
-)
-
-/**
- * All composables related to searching, filtering and sorting of Requests. Moved out of
- * RequestList.kt to reduce cognitive load and keep RequestList file focused on high-level screen
- * composition and list rendering.
- */
-
-// --- Filter infrastructure ---
-/** Public entry point grouping the global search bar, filter buttons, and expanded panel. */
+/** Centralized filter UI consuming dynamic facets from ViewModel. */
 @Composable
 internal fun FiltersSection(
     searchFilterViewModel: RequestSearchFilterViewModel,
@@ -73,15 +24,10 @@ internal fun FiltersSection(
     onQueryChange: (String) -> Unit,
     onClearQuery: () -> Unit
 ) {
-  val selectedTypes by searchFilterViewModel.selectedTypes.collectAsState()
-  val selectedStatuses by searchFilterViewModel.selectedStatuses.collectAsState()
-  val selectedTags by searchFilterViewModel.selectedTags.collectAsState()
-  val typeCounts by searchFilterViewModel.typeCounts.collectAsState()
-  val statusCounts by searchFilterViewModel.statusCounts.collectAsState()
-  val tagCounts by searchFilterViewModel.tagCounts.collectAsState()
   val sortCriteria by searchFilterViewModel.sortCriteria.collectAsState()
-
-  var openMenu: FilterKind<*>? by remember { mutableStateOf<FilterKind<*>?>(null) }
+  val facets = searchFilterViewModel.facets
+  val selectedSets = facets.map { it.selected.collectAsState() }
+  var openFacetId: String? by remember { mutableStateOf<String?>(null) }
 
   RequestSearchBar(
       query = query,
@@ -106,70 +52,32 @@ internal fun FiltersSection(
               onSelect = { searchFilterViewModel.setSortCriteria(it) },
               modifier = Modifier.height(ConstantRequestList.FilterButtonHeight))
         }
-
-        // Compact configs for the three filters
-        val cfgs: List<FilterCfg<out Enum<*>>> =
-            listOf(
-                FilterCfg(
-                    KindRequestType,
-                    selectedTypes.size,
-                    RequestListTestTags.REQUEST_TYPE_FILTER_DROPDOWN_BUTTON),
-                FilterCfg(
-                    KindRequestStatus,
-                    selectedStatuses.size,
-                    RequestListTestTags.REQUEST_STATUS_FILTER_DROPDOWN_BUTTON),
-                FilterCfg(
-                    KindRequestTags,
-                    selectedTags.size,
-                    RequestListTestTags.REQUEST_TAG_FILTER_DROPDOWN_BUTTON),
-            )
-
-        cfgs.forEach { anyCfg ->
-          item {
-            // Use star-projection for generic neutrality; only metadata used here
+        facets.forEachIndexed { index, facet ->
+          val selectedCount = selectedSets[index].value.size
+          item(key = facet.id) {
             FilterMenuButton(
-                title = anyCfg.kind.title,
-                selectedCount = anyCfg.selectedCount,
-                testTag = anyCfg.testTag,
-                onClick = { openMenu = if (openMenu == anyCfg.kind) null else anyCfg.kind },
+                title = facet.title,
+                selectedCount = selectedCount,
+                testTag = facet.dropdownButtonTag,
+                onClick = { openFacetId = if (openFacetId == facet.id) null else facet.id },
                 modifier = Modifier.height(ConstantRequestList.FilterButtonHeight))
           }
         }
       }
 
-  when {
-    openMenu === KindRequestType -> {
-      FilterMenuPanel(
-          values = KindRequestType.entries,
-          selected = selectedTypes,
-          counts = typeCounts,
-          labelOf = { KindRequestType.labelOf(it) },
-          onToggle = { searchFilterViewModel.toggleType(it) },
-          dropdownSearchBarTestTag = RequestListTestTags.REQUEST_TYPE_FILTER_SEARCH_BAR,
-          rowTestTagOf = { RequestListTestTags.getRequestTypeFilterTag(it) })
-    }
-    openMenu === KindRequestStatus -> {
-      FilterMenuPanel(
-          values = KindRequestStatus.entries,
-          selected = selectedStatuses,
-          counts = statusCounts,
-          labelOf = { KindRequestStatus.labelOf(it) },
-          onToggle = { searchFilterViewModel.toggleStatus(it) },
-          dropdownSearchBarTestTag = RequestListTestTags.REQUEST_STATUS_FILTER_SEARCH_BAR,
-          rowTestTagOf = { RequestListTestTags.getRequestStatusFilterTag(it.displayString()) })
-    }
-    openMenu === KindRequestTags -> {
-      FilterMenuPanel(
-          values = KindRequestTags.entries,
-          selected = selectedTags,
-          counts = tagCounts,
-          labelOf = { KindRequestTags.labelOf(it) },
-          onToggle = { searchFilterViewModel.toggleTag(it) },
-          dropdownSearchBarTestTag = RequestListTestTags.REQUEST_TAG_FILTER_SEARCH_BAR,
-          rowTestTagOf = { RequestListTestTags.getRequestTagFilterTag(it.displayString()) })
-    }
-    else -> Unit
-  }
+  facets
+      .find { it.id == openFacetId }
+      ?.let { openFacet ->
+        val countsState = openFacet.counts.collectAsState()
+        FilterMenuPanel(
+            values = openFacet.values as Array<Enum<*>>,
+            selected = openFacet.selected.collectAsState().value,
+            counts = countsState.value,
+            labelOf = { openFacet.labelOf(it) },
+            onToggle = { openFacet.toggle(it) },
+            dropdownSearchBarTestTag = openFacet.searchBarTag,
+            rowTestTagOf = { openFacet.rowTagOf(it) })
+      }
 }
 
 @Composable
@@ -180,28 +88,26 @@ private fun FilterMenuButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-  OutlinedButton(
-      onClick = onClick,
-      // In a LazyRow, prefer wrap content width (no fillMaxWidth) to avoid unbounded weight issues
-      modifier = modifier.testTag(testTag)) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically) {
-              Text("$title ($selectedCount)")
-              Icon(imageVector = Icons.Filled.ArrowDropDown, contentDescription = null)
-            }
-      }
+  OutlinedButton(onClick = onClick, modifier = modifier.testTag(testTag)) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically) {
+          val label = if (selectedCount > 0) "$title ($selectedCount)" else title
+          Text(label)
+          Icon(imageVector = Icons.Filled.ArrowDropDown, contentDescription = null)
+        }
+  }
 }
 
 @Composable
-private fun <E : Enum<E>> FilterMenuPanel(
-    values: Array<E>,
-    selected: Set<E>,
-    counts: Map<E, Int>,
-    labelOf: (E) -> String,
-    onToggle: (E) -> Unit,
+private fun FilterMenuPanel(
+    values: Array<Enum<*>>,
+    selected: Set<Enum<*>>,
+    counts: Map<Enum<*>, Int>,
+    labelOf: (Enum<*>) -> String,
+    onToggle: (Enum<*>) -> Unit,
     dropdownSearchBarTestTag: String,
-    rowTestTagOf: (E) -> String
+    rowTestTagOf: (Enum<*>) -> String
 ) {
   Column(
       modifier = Modifier.fillMaxWidth().padding(horizontal = ConstantRequestList.PaddingLarge)) {
@@ -244,14 +150,14 @@ private fun FilterMenuSearchBar(
 }
 
 @Composable
-private fun <E : Enum<E>> FilterMenuValuesList(
-    values: Array<E>,
-    selected: Set<E>,
-    counts: Map<E, Int>,
-    labelOf: (E) -> String,
-    onToggle: (E) -> Unit,
+private fun FilterMenuValuesList(
+    values: Array<Enum<*>>,
+    selected: Set<Enum<*>>,
+    counts: Map<Enum<*>, Int>,
+    labelOf: (Enum<*>) -> String,
+    onToggle: (Enum<*>) -> Unit,
     localQuery: String,
-    rowTestTagOf: (E) -> String
+    rowTestTagOf: (Enum<*>) -> String
 ) {
   val filteredValues =
       remember(localQuery, values, counts) {

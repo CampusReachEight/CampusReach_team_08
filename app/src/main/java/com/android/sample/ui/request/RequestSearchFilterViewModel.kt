@@ -4,12 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.sample.model.request.Request
 import com.android.sample.model.request.RequestStatus
-import com.android.sample.model.request.RequestType
-import com.android.sample.model.request.Tags
 import com.android.sample.model.search.LuceneRequestSearchEngine
 import com.android.sample.model.search.SearchResult
 import java.util.Comparator
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -21,25 +20,14 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-/**
- * ViewModel responsible for full-text search (Lucene) and facet filtering for Requests.
- *
- * Responsibilities:
- * - Manage query and searching state
- * - Debounced search using Lucene (300ms)
- * - Manage facet selections (types, statuses, tags)
- * - Expose counts and the final displayedRequests
- */
 @OptIn(FlowPreview::class)
 class RequestSearchFilterViewModel(
     private val engineFactory: () -> LuceneRequestSearchEngine = { LuceneRequestSearchEngine() }
 ) : ViewModel() {
 
-  // Lazily-created Lucene engine to avoid classloading or initialization issues
   private var engine: LuceneRequestSearchEngine? = null
 
-  // Replace overloaded helpers with a single inline reified version to avoid JVM clash
-  private inline fun <reified T> kotlinx.coroutines.flow.Flow<T>.stateInEager(): StateFlow<T> {
+  private inline fun <reified T> Flow<T>.stateInEager(): StateFlow<T> {
     val initial: T =
         when {
           List::class.java.isAssignableFrom(T::class.java) -> emptyList<Any?>() as T
@@ -49,32 +37,22 @@ class RequestSearchFilterViewModel(
     return this.stateIn(viewModelScope, SharingStarted.Eagerly, initial)
   }
 
-  // Base requests set by UI after loading via RequestListViewModel
   private val _baseRequests = MutableStateFlow<List<Request>>(emptyList())
 
-  // Public query/searching state
   private val _searchQuery = MutableStateFlow("")
   val searchQuery: StateFlow<String> = _searchQuery
 
   private val _isSearching = MutableStateFlow(false)
   val isSearching: StateFlow<Boolean> = _isSearching
 
-  // Facet selections
-  private val _selectedTypes = MutableStateFlow<Set<RequestType>>(emptySet())
-  val selectedTypes: StateFlow<Set<RequestType>> = _selectedTypes
-
-  private val _selectedStatuses = MutableStateFlow<Set<RequestStatus>>(emptySet())
-  val selectedStatuses: StateFlow<Set<RequestStatus>> = _selectedStatuses
-
-  private val _selectedTags = MutableStateFlow<Set<Tags>>(emptySet())
-  val selectedTags: StateFlow<Set<Tags>> = _selectedTags
-
-  private val _sortCriteria = MutableStateFlow(RequestSort.NEWEST_START)
+  private val _sortCriteria = MutableStateFlow(RequestSort.default())
   val sortCriteria: StateFlow<RequestSort> = _sortCriteria
+
+  // Build facets from single-source definitions
+  val facets: List<RequestFacet> = RequestFacetDefinitions.all.map { RequestFacet(it) }
 
   @Volatile private var hasIndex: Boolean = false
 
-  // Debounced Lucene search results
   private val searchResults: StateFlow<List<SearchResult<Request>>> =
       _searchQuery
           .debounce(300)
@@ -87,20 +65,15 @@ class RequestSearchFilterViewModel(
                   if (q.isBlank()) return@map emptyList<SearchResult<Request>>()
                   _isSearching.update { true }
                   try {
-                    // If engine isn't ready, fallback to substring search
                     val localEngine = engine
                     if (!hasIndex || localEngine == null) {
                       val lower = q.lowercase()
                       return@map base
-                          .filter { req ->
-                            val haystack = req.toSearchText().lowercase()
-                            haystack.contains(lower)
-                          }
+                          .filter { req -> req.toSearchText().lowercase().contains(lower) }
                           .map { SearchResult(item = it, score = 100, matchedFields = emptyList()) }
                     }
                     localEngine.search(base, q)
                   } catch (_: Throwable) {
-                    // Any Lucene failure should not crash; return empty to be safe
                     emptyList()
                   } finally {
                     _isSearching.update { false }
@@ -109,7 +82,6 @@ class RequestSearchFilterViewModel(
           }
           .stateInEager()
 
-  // Determine the base collection for counts and filtering: either search results or all
   private val searchBase: StateFlow<List<Request>> =
       combine(_baseRequests, searchResults, _searchQuery) { base, results, q ->
             if (q.isBlank()) base else results.map { it.item }
@@ -117,26 +89,46 @@ class RequestSearchFilterViewModel(
           .distinctUntilChanged()
           .stateInEager()
 
-  // Backing state for displayed list to allow synchronous recomputation after toggles/clears
   private val _displayedRequests = MutableStateFlow<List<Request>>(emptyList())
   val displayedRequests: StateFlow<List<Request>> = _displayedRequests
 
   init {
-    // Keep displayedRequests reactive to all upstream changes
+    // For each facet, compute counts excluding other selections
+    facets.forEach { f ->
+      val otherSelections: List<StateFlow<Set<Enum<*>>>> =
+          facets.filter { it !== f }.map { it.selected }
+      val flows: List<Flow<*>> = listOf(searchBase) + otherSelections
+      val countsFlow: StateFlow<Map<Enum<*>, Int>> =
+          combine(flows) { arr ->
+                val base = arr[0] as List<Request>
+                val others = otherSelections.mapIndexed { idx, _ -> arr[idx + 1] as Set<Enum<*>> }
+                val include: (Request) -> Boolean = { req ->
+                  others.zip(facets.filter { it !== f }).all { (sel, facet) ->
+                    sel.isEmpty() || facet.extract(req).any { it in sel }
+                  }
+                }
+                val filtered = base.filter(include)
+                val counts =
+                    mutableMapOf<Enum<*>, Int>().apply { f.values.forEach { this[it] = 0 } }
+                filtered.forEach { r ->
+                  f.extract(r).forEach { v -> counts[v] = (counts[v] ?: 0) + 1 }
+                }
+                counts.toMap()
+              }
+              .stateInEager()
+      f.counts = countsFlow
+    }
+
     viewModelScope.launch {
-      combine(searchBase, selectedTypes, selectedStatuses, selectedTags, sortCriteria) {
-              list,
-              types,
-              statuses,
-              tags,
-              sort ->
+      val selectionFlows: List<StateFlow<Set<Enum<*>>>> = facets.map { it.selected }
+      combine(searchBase, combine(selectionFlows) { it.toList() }, sortCriteria) { list, sels, sort
+            ->
             if (list.isEmpty()) return@combine emptyList<Request>()
             val filtered =
                 list.filter { req ->
-                  val typeOk = types.isEmpty() || req.requestType.any { it in types }
-                  val statusOk = statuses.isEmpty() || req.status in statuses
-                  val tagsOk = tags.isEmpty() || req.tags.any { it in tags }
-                  typeOk && statusOk && tagsOk
+                  sels.zip(facets).all { (sel, facet) ->
+                    sel.isEmpty() || facet.extract(req).any { it in sel }
+                  }
                 }
             applySort(filtered, sort)
           }
@@ -147,77 +139,20 @@ class RequestSearchFilterViewModel(
 
   private fun recomputeDisplayed() {
     val base = searchBase.value
-    val types = _selectedTypes.value
-    val statuses = _selectedStatuses.value
-    val tags = _selectedTags.value
+    val sels = facets.map { it.selected.value }
     val sort = _sortCriteria.value
     _displayedRequests.value =
         applySort(
             base.filter { req ->
-              val typeOk = types.isEmpty() || req.requestType.any { it in types }
-              val statusOk = statuses.isEmpty() || req.status in statuses
-              val tagsOk = tags.isEmpty() || req.tags.any { it in tags }
-              typeOk && statusOk && tagsOk
+              sels.zip(facets).all { (sel, facet) ->
+                sel.isEmpty() || facet.extract(req).any { it in sel }
+              }
             },
             sort)
   }
 
-  // Facet counts with self-exclusion across the other active facets, computed over searchBase
-  val typeCounts: StateFlow<Map<RequestType, Int>> =
-      combine(searchBase, selectedStatuses, selectedTags) { list, statuses, tags ->
-            val base =
-                list.filter { req ->
-                  val statusOk = statuses.isEmpty() || req.status in statuses
-                  val tagsOk = tags.isEmpty() || req.tags.any { it in tags }
-                  statusOk && tagsOk
-                }
-            val counts =
-                mutableMapOf<RequestType, Int>().apply {
-                  RequestType.entries.forEach { this[it] = 0 }
-                }
-            base.forEach { req -> req.requestType.forEach { counts[it] = (counts[it] ?: 0) + 1 } }
-            counts.toMap()
-          }
-          .distinctUntilChanged()
-          .stateInEager()
-
-  val statusCounts: StateFlow<Map<RequestStatus, Int>> =
-      combine(searchBase, selectedTypes, selectedTags) { list, types, tags ->
-            val base =
-                list.filter { req ->
-                  val typeOk = types.isEmpty() || req.requestType.any { it in types }
-                  val tagsOk = tags.isEmpty() || req.tags.any { it in tags }
-                  typeOk && tagsOk
-                }
-            val counts =
-                mutableMapOf<RequestStatus, Int>().apply {
-                  RequestStatus.entries.forEach { this[it] = 0 }
-                }
-            base.forEach { req -> counts[req.status] = (counts[req.status] ?: 0) + 1 }
-            counts.toMap()
-          }
-          .distinctUntilChanged()
-          .stateInEager()
-
-  val tagCounts: StateFlow<Map<Tags, Int>> =
-      combine(searchBase, selectedTypes, selectedStatuses) { list, types, statuses ->
-            val base =
-                list.filter { req ->
-                  val typeOk = types.isEmpty() || req.requestType.any { it in types }
-                  val statusOk = statuses.isEmpty() || req.status in statuses
-                  typeOk && statusOk
-                }
-            val counts = mutableMapOf<Tags, Int>().apply { Tags.entries.forEach { this[it] = 0 } }
-            base.forEach { req -> req.tags.forEach { counts[it] = (counts[it] ?: 0) + 1 } }
-            counts.toMap()
-          }
-          .distinctUntilChanged()
-          .stateInEager()
-
-  // API
   fun updateSearchQuery(query: String) {
     _searchQuery.update { query.trim() }
-    // No need to force recompute here; debounce/searchResults will drive updates
   }
 
   fun clearSearch() {
@@ -225,32 +160,14 @@ class RequestSearchFilterViewModel(
     recomputeDisplayed()
   }
 
-  fun toggleType(type: RequestType) {
-    _selectedTypes.update { cur -> if (type in cur) cur - type else cur + type }
-    recomputeDisplayed()
-  }
-
-  fun toggleStatus(status: RequestStatus) {
-    _selectedStatuses.update { cur -> if (status in cur) cur - status else cur + status }
-    recomputeDisplayed()
-  }
-
-  fun toggleTag(tag: Tags) {
-    _selectedTags.update { cur -> if (tag in cur) cur - tag else cur + tag }
-    recomputeDisplayed()
-  }
-
   fun clearAllFilters() {
-    _selectedTypes.update { emptySet() }
-    _selectedStatuses.update { emptySet() }
-    _selectedTags.update { emptySet() }
+    facets.forEach { it.clear() }
     recomputeDisplayed()
   }
 
   fun initializeWithRequests(requests: List<Request>) {
     _baseRequests.value = requests
     recomputeDisplayed()
-    // Index in background tied to the ViewModel scope dispatcher (test dispatcher in tests)
     viewModelScope.launch {
       try {
         if (engine == null) engine = engineFactory()
@@ -272,47 +189,46 @@ class RequestSearchFilterViewModel(
       list.sortedWith(criteria.comparator)
 
   override fun onCleared() {
-    super.onCleared()
     try {
       engine?.close()
     } catch (_: Exception) {}
   }
 }
 
-// Sorting enum with embedded comparator functions (stable where practical)
+// Sorting stays as-is
 enum class RequestSort(val comparator: Comparator<Request>) {
-  // NEWEST_START: Newer (later) startTimeStamp first; ties broken by requestId for stability.
-  NEWEST_START(compareByDescending<Request> { it.startTimeStamp }.thenBy { it.requestId }),
-  // OLDEST_START: Older (earlier) startTimeStamp first; ties broken by requestId.
-  OLDEST_START(compareBy<Request> { it.startTimeStamp }.thenBy { it.requestId }),
-  // SOONEST_EXPIRING: Requests ending sooner (earlier expirationTime) first, then by start time.
-  SOONEST_EXPIRING(compareBy<Request> { it.expirationTime }.thenBy { it.startTimeStamp }),
-  // STATUS: Ordered semantic lifecycle OPEN -> IN_PROGRESS -> COMPLETED -> CANCELLED -> ARCHIVED;
-  // ties by start.
+  NEWEST(compareByDescending<Request> { it.startTimeStamp }.thenBy { it.requestId }),
+  OLDEST(compareBy<Request> { it.startTimeStamp }.thenBy { it.requestId }),
+  LAST_MINUTE(compareBy<Request> { it.expirationTime }.thenBy { it.startTimeStamp }),
   STATUS(
       Comparator<Request> { a, b ->
             val diff = statusOrderForSort(a.status) - statusOrderForSort(b.status)
             if (diff != 0) diff else a.startTimeStamp.compareTo(b.startTimeStamp)
           }
           .thenBy { it.requestId }),
-  // MOST_PARTICIPANTS: Higher participant count first; ties fall back to older start then
-  // requestId.
   MOST_PARTICIPANTS(
       Comparator<Request> { a, b ->
             val diff = b.people.size - a.people.size
             if (diff != 0) diff else a.startTimeStamp.compareTo(b.startTimeStamp)
           }
           .thenBy { it.requestId }),
-  // TITLE_ASC: Lexicographically ascending title (case-insensitive), then start time then
-  // requestId.
-  TITLE_ASC(
+  LEAST_PARTICIPANTS(
+      Comparator<Request> { a, b ->
+            val diff = a.people.size - b.people.size
+            if (diff != 0) diff else a.startTimeStamp.compareTo(b.startTimeStamp)
+          }
+          .thenBy { it.requestId }),
+  TITLE_ASCENDING(
       compareBy<Request> { it.title.lowercase() }
+          .thenBy { it.startTimeStamp }
+          .thenBy { it.requestId }),
+  TITLE_DESCENDING(
+      compareByDescending<Request> { it.title.lowercase() }
           .thenBy { it.startTimeStamp }
           .thenBy { it.requestId });
 
   companion object {
-    // Provide order label if needed later
-    fun default(): RequestSort = NEWEST_START
+    fun default(): RequestSort = NEWEST
   }
 }
 
