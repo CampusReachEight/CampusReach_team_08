@@ -24,7 +24,7 @@ class ProfileLogoutTests : BaseEmulatorTest() {
         ProfileViewModel(
             initialState = ProfileState.default(),
         )
-    composeTestRule.setContent { ProfileScreen(viewModel) }
+    composeTestRule.setContent { ProfileScreen(viewModel,) }
     composeTestRule.waitForIdle()
   }
 
