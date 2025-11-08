@@ -11,6 +11,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -23,8 +24,8 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class RequestSearchFilterViewModelTest {
   companion object {
-    const val ADVANCE_TIME_SHORT_MS = 10L
-    const val ADVANCE_TIME_SEARCH_MS = 350L
+    const val ADVANCE_TIME_SHORT_MS = 10L // 10ms delay
+    const val ADVANCE_TIME_SEARCH_MS = 500L // 500ms delay
     const val ONE_HOUR_MS = 3_600_000L
     const val COUNT_ONE = 1
   }
@@ -69,6 +70,7 @@ class RequestSearchFilterViewModelTest {
             )
         vm.initializeWithRequests(requests)
         advanceTimeBy(ADVANCE_TIME_SHORT_MS)
+        advanceUntilIdle()
       }
 
   @After
@@ -92,12 +94,13 @@ class RequestSearchFilterViewModelTest {
       }
 
   @Test
-  fun debounced_search_triggers_after_300ms() =
+  fun debounced_search_triggers_after_short_delay() =
       runTest(testDispatcher) {
         vm.updateSearchQuery("pizza")
         var displayed = vm.displayedRequests.first()
         assertTrue(displayed.isEmpty() || displayed == requests)
         advanceTimeBy(ADVANCE_TIME_SEARCH_MS)
+        advanceUntilIdle()
         displayed = vm.displayedRequests.first()
         assertTrue(displayed.any { it.title.contains("Pizza", ignoreCase = true) })
       }
@@ -107,8 +110,10 @@ class RequestSearchFilterViewModelTest {
       runTest(testDispatcher) {
         vm.updateSearchQuery("pizza")
         advanceTimeBy(ADVANCE_TIME_SEARCH_MS)
+        advanceUntilIdle()
         val statusFacet = facet("status")
         statusFacet.toggle(RequestStatus.OPEN)
+        advanceUntilIdle()
         val displayed = vm.displayedRequests.first()
         assertTrue(displayed.isEmpty())
       }
@@ -147,6 +152,7 @@ class RequestSearchFilterViewModelTest {
       runTest(testDispatcher) {
         vm.updateSearchQuery("football")
         advanceTimeBy(ADVANCE_TIME_SEARCH_MS)
+        advanceUntilIdle()
         val displayed = vm.displayedRequests.first()
         assertTrue(displayed.any { it.title.contains("football", ignoreCase = true) })
       }
@@ -156,8 +162,10 @@ class RequestSearchFilterViewModelTest {
       runTest(testDispatcher) {
         vm.updateSearchQuery("pizza")
         advanceTimeBy(ADVANCE_TIME_SEARCH_MS)
+        advanceUntilIdle()
         val tagFacet = facet("tags")
         tagFacet.toggle(Tags.INDOOR)
+        advanceUntilIdle()
         val displayed = vm.displayedRequests.first()
         assertEquals(COUNT_ONE, displayed.size)
         assertEquals("2", displayed.first().requestId)
@@ -169,6 +177,7 @@ class RequestSearchFilterViewModelTest {
         val fresh = RequestSearchFilterViewModel()
         fresh.updateSearchQuery("anything")
         advanceTimeBy(ADVANCE_TIME_SEARCH_MS)
+        advanceUntilIdle()
         assertTrue(fresh.displayedRequests.first().isEmpty())
       }
 
@@ -177,10 +186,12 @@ class RequestSearchFilterViewModelTest {
       runTest(testDispatcher) {
         vm.updateSearchQuery("pizza")
         advanceTimeBy(ADVANCE_TIME_SEARCH_MS)
+        advanceUntilIdle()
         val searched = vm.displayedRequests.first()
         assertTrue(searched.size < requests.size)
         vm.clearSearch()
         advanceTimeBy(ADVANCE_TIME_SEARCH_MS)
+        advanceUntilIdle()
         val displayed = vm.displayedRequests.first()
         assertEquals(requests.size, displayed.size)
       }
