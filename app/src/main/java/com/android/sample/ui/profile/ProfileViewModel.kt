@@ -43,4 +43,8 @@ class ProfileViewModel(
     _state.value = ProfileState.empty()
     onLogout?.invoke()
   }
+
+  fun updateSection(newSection: String) {
+    _state.value = _state.value.copy(userSection = newSection)
+  }
 }

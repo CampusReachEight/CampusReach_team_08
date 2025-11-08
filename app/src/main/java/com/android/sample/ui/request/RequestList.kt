@@ -1,14 +1,12 @@
 package com.android.sample.ui.request
 
-import android.graphics.Bitmap
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -21,7 +19,9 @@ import com.android.sample.ui.navigation.NavigationActions
 import com.android.sample.ui.navigation.NavigationTab
 import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.navigation.Screen
+import com.android.sample.ui.profile.ProfilePicture
 import com.android.sample.ui.theme.TopNavigationBar
+import kotlin.collections.ifEmpty
 
 // removed local magic number vals; use ConstantRequestList instead
 
@@ -39,7 +39,10 @@ object RequestListTestTags {
 
   const val REQUEST_SEARCH_BAR = "requestSearchBar"
 
-  /** Tags for the filter dropdown buttons When clicked, they open the respective filter menus */
+  /**
+   * Tags for the filter dropdown buttons When clicked, they open the respective filter dropdown
+   * menus
+   */
   const val REQUEST_TYPE_FILTER_DROPDOWN_BUTTON = "requestTypeFilterDropdown"
 
   const val REQUEST_TAG_FILTER_DROPDOWN_BUTTON = "requestTagFilterDropdown"
@@ -78,7 +81,6 @@ fun RequestListScreen(
     navigationActions: NavigationActions? = null,
 ) {
   val searchFilterViewModel: RequestSearchFilterViewModel = viewModel()
-
   LaunchedEffect(Unit) { requestListViewModel.loadRequests() }
 
   val icons by requestListViewModel.profileIcons.collectAsState()
@@ -139,7 +141,6 @@ fun RequestListScreen(
           } else {
             RequestList(
                 state = state.copy(requests = toShow),
-                icons = icons,
                 onRequestClick = {
                   requestListViewModel.handleRequestClick(
                       request = it,
@@ -150,32 +151,34 @@ fun RequestListScreen(
                         navigationActions?.navigateTo(Screen.RequestAccept(id))
                       })
                 },
-                modifier = Modifier.fillMaxSize())
+                modifier = Modifier.fillMaxSize(),
+                viewModel = requestListViewModel)
           }
         }
       }
 }
 
-// --- List rendering remains here to keep the screen self-contained visually ---
+/** Renders the list of requests. */
 @Composable
 fun RequestList(
+    viewModel: RequestListViewModel,
     state: RequestListState,
-    icons: Map<String, Bitmap?>,
     onRequestClick: (Request) -> Unit,
     modifier: Modifier = Modifier
 ) {
   LazyColumn(modifier = modifier.padding(ConstantRequestList.ListPadding)) {
     items(state.requests.size) { index ->
       val request = state.requests[index]
-      RequestListItem(request = request, icon = icons[request.creatorId], onClick = onRequestClick)
+      RequestListItem(viewModel = viewModel, request = request, onClick = onRequestClick)
     }
   }
 }
 
+/** One request list item: title, compact type labels, truncated description, and optional icon. */
 @Composable
 fun RequestListItem(
+    viewModel: RequestListViewModel,
     request: Request,
-    icon: Bitmap?,
     onClick: (Request) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -188,18 +191,13 @@ fun RequestListItem(
               .testTag(RequestListTestTags.REQUEST_ITEM),
   ) {
     Row(modifier = Modifier.fillMaxWidth().padding(ConstantRequestList.RequestItemInnerPadding)) {
-      if (icon != null) {
-        Image(
-            bitmap = icon.asImageBitmap(),
-            contentDescription = "Photo profile",
-            modifier =
-                Modifier.size(ConstantRequestList.RequestItemIconSize)
-                    .testTag(RequestListTestTags.REQUEST_ITEM_ICON))
-      } else {
-        Box(
-            Modifier.size(ConstantRequestList.RequestItemIconSize)
-                .testTag(RequestListTestTags.REQUEST_ITEM_NO_ICON))
-      }
+      ProfilePicture(
+          profileRepository = viewModel.profileRepository,
+          profileId = request.creatorId,
+          onClick = {},
+          modifier =
+              Modifier.size(ConstantRequestList.RequestItemIconSize)
+                  .align(Alignment.CenterVertically))
       Spacer(Modifier.width(ConstantRequestList.RowSpacing))
       Column(Modifier.fillMaxWidth()) {
         Row(Modifier.fillMaxWidth()) {
@@ -222,6 +220,7 @@ fun RequestListItem(
   }
 }
 
+/** Floating add button to navigate to the add-request screen. */
 @Composable
 fun AddButton(navigationActions: NavigationActions?) {
   FloatingActionButton(
@@ -231,6 +230,7 @@ fun AddButton(navigationActions: NavigationActions?) {
       }
 }
 
+/** Simple alert dialog to surface user-facing errors. */
 @Composable
 private fun ErrorDialog(message: String, onDismiss: () -> Unit) {
   AlertDialog(
@@ -248,8 +248,31 @@ private fun ErrorDialog(message: String, onDismiss: () -> Unit) {
       })
 }
 
+/** Formats a list of request types into a compact label like `SPORT | EATING | ...`. */
 private fun List<RequestType>.toCompactLabel(max: Int = 2): String {
   if (isEmpty()) return ""
   val head = take(max).joinToString(" | ") { it.displayString() }
   return if (size > max) "$head | ..." else head
 }
+
+// Preview for rendering improvements during development
+// @Preview
+// @Composable
+// fun RequestListItemPreview() {
+//  val sampleRequest =
+//      Request(
+//          requestId = "1",
+//          title = "Sample Request",
+//          description = "This is a sample request description.",
+//          creatorId = "user1",
+//          location = com.android.sample.model.map.Location(0.0, 0.0, "knowhere"),
+//          locationName = "No where",
+//          requestType = RequestType.entries, // 2 values should appear and the rest should be
+// truncated
+//          status = RequestStatus.OPEN,
+//          startTimeStamp = java.util.Date(),
+//          expirationTime = java.util.Date(),
+//          people = listOf(),
+//          tags = listOf())
+//  RequestListItem(request = sampleRequest, icon = null, onClick = {})
+// }

@@ -6,9 +6,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.ui.navigation.NavigationTestTags
+import com.android.sample.ui.profile.composables.EditProfileDialog
 import com.android.sample.ui.profile.composables.LoadingIndicator
 import com.android.sample.ui.profile.composables.LogoutDialog
 import com.android.sample.ui.profile.composables.ProfileContent
@@ -45,12 +45,25 @@ fun ProfileScreen(viewModel: ProfileViewModel = viewModel(), onBackClick: () -> 
               visible = state.isLoggingOut,
               onConfirm = { viewModel.logout() },
               onDismiss = { viewModel.hideLogoutDialog() })
+
+          // Edit flow dialogs
+          EditProfileDialog(
+              visible = state.isEditMode,
+              initialName = state.userName,
+              initialSection = state.userSection,
+              onSave = { newName, newSection ->
+                viewModel.updateUserName(newName)
+                viewModel.updateSection(newSection)
+                viewModel.setEditMode(false)
+              },
+              onCancel = { viewModel.setEditMode(false) })
         }
       }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun ProfilePreview() {
-  ProfileScreen()
-}
+// Simple preview for quick visual checks during development (not covered)
+// @Preview(showBackground = true)
+// @Composable
+// fun ProfilePreview() {
+//  ProfileScreen()
+// }
