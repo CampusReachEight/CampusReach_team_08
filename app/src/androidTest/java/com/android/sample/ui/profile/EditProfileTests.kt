@@ -151,18 +151,13 @@ class EditProfileUiTests {
 
   @Test
   fun editFlow_save_updates_viewModel_and_closes_dialog() {
-    val initialState =
-        ProfileState.default()
-            .copy(isEditMode = true, userName = "Alice", userSection = "Computer Science")
-    val vm = ProfileViewModel(initialState)
+      val vm = ProfileViewModel(initialState = ProfileState.default())
 
-    composeTestRule.setContent {
-      MaterialTheme {
-        Box(modifier = androidx.compose.ui.Modifier.size(360.dp, 640.dp)) {
-          ProfileScreen(viewModel = vm,)
-        }
+      composeTestRule.setContent {
+          ProfileScreen(viewModel = vm) // deterministic, no auth listener needed
       }
-    }
+      // enter edit mode
+        composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_HEADER_EDIT_BUTTON).performClick()
 
     // change name
     composeTestRule

@@ -178,7 +178,8 @@ class ProfileUiTests {
   @Test
   fun statGroupCard_displaysCorrectValues_inProfileScreen() {
     val state = ProfileState(kudosReceived = 99, helpReceived = 88, followers = 77, following = 66)
-    composeTestRule.setContent { ProfileScreen(viewModel = ProfileViewModel(state)) }
+    composeTestRule.setContent { ProfileScreen(viewModel = ProfileViewModel(state,
+      attachAuthListener = false)) }
     composeTestRule.onNodeWithText("99").assertIsDisplayed()
     composeTestRule.onNodeWithText("88").assertIsDisplayed()
     composeTestRule.onNodeWithText("77").assertIsDisplayed()
@@ -513,7 +514,7 @@ class ProfileUiTests {
   fun errorBanner_and_profileScreen_errorState_showsMessage_and_disappears() {
     // Start with a ProfileViewModel that has an error and compose once
     val errorState = ProfileState.withError()
-    val vm = ProfileViewModel(errorState)
+    val vm = ProfileViewModel(errorState, attachAuthListener = false)
     composeTestRule.setContent { ProfileScreen(viewModel = vm,) }
 
     composeTestRule.onNodeWithTag("profile_error").assertIsDisplayed()
