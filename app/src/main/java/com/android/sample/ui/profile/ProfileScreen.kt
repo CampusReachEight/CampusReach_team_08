@@ -12,6 +12,7 @@ import com.android.sample.ui.profile.composables.EditProfileDialog
 import com.android.sample.ui.profile.composables.LoadingIndicator
 import com.android.sample.ui.profile.composables.LogoutDialog
 import com.android.sample.ui.profile.composables.ProfileContent
+import com.android.sample.ui.profile.composables.ProfileLoadingBuffer
 import com.android.sample.ui.profile.composables.ProfileTopBar
 import com.android.sample.ui.theme.appPalette
 
@@ -32,7 +33,7 @@ fun ProfileScreen(viewModel: ProfileViewModel = viewModel(), onBackClick: () -> 
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
           when {
             state.isLoading ->
-                LoadingIndicator(Modifier.align(Alignment.Center).testTag("profile_loading"))
+                ProfileLoadingBuffer(Modifier.fillMaxSize())
             else ->
                 ProfileContent(
                     state = state,

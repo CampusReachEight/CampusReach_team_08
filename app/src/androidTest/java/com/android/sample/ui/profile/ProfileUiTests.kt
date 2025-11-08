@@ -499,11 +499,11 @@ class ProfileUiTests {
     composeTestRule.setContent { ProfileScreen(viewModel = vm) }
 
     // initially loading
-    composeTestRule.onNodeWithTag("profile_loading").assertIsDisplayed()
+    composeTestRule.onNodeWithTag(ProfileTestTags.LOADING_INDICATOR).assertIsDisplayed()
 
     // flip loading off via the viewModel (no second setContent)
     composeTestRule.runOnIdle { vm.setLoading(false) }
-    composeTestRule.onNodeWithTag("profile_loading").assertIsNotDisplayed()
+    composeTestRule.onNodeWithTag(ProfileTestTags.LOADING_INDICATOR).assertIsNotDisplayed()
   }
 
   @Test
