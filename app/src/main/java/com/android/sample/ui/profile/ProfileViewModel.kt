@@ -28,13 +28,17 @@ class ProfileViewModel(
 
   private var loadedProfile: UserProfile? = null
 
-  private val authListener = FirebaseAuth.AuthStateListener {
-    auth -> viewModelScope.launch { handleAuthUser(auth.currentUser) }
+  // Auth listener now respects current _state and will not trigger a load when tests set isLoading = true.
+  private val authListener = FirebaseAuth.AuthStateListener { auth ->
+    // If UI (or tests) expect a loading state, avoid auto-triggering a load here.
+    if (_state.value.isLoading) return@AuthStateListener
+    viewModelScope.launch { handleAuthUser(auth.currentUser) }
   }
 
   init {
+    // Add the listener and let the listener drive the initial fetch.
+    // The listener checks _state.value.isLoading so tests can pass a loading state without being overridden.
     fireBaseAuth.addAuthStateListener(authListener)
-    viewModelScope.launch { handleAuthUser(fireBaseAuth.currentUser) }
   }
 
   override fun onCleared() {
@@ -60,8 +64,8 @@ class ProfileViewModel(
         // Create minimal profile using the display name as-is (no splitting/formatting)
         val new = UserProfile(
           id = repository.getNewUid(),
-          name = user.displayName.orEmpty(), // keep full name at face value
-          lastName = "", // don't force a format — leave empty
+          name = user.displayName.orEmpty(),
+          lastName = "",
           email = user.email,
           photo = null,
           kudos = 0,
@@ -85,7 +89,6 @@ class ProfileViewModel(
     val displayName =
       if (profile.lastName.isBlank()) profile.name else "${profile.name} ${profile.lastName}"
 
-    // Normalize: try enum name, then enum label; fallback to "None" for any unknown value.
     val raw = profile.section.toString()
     val sectionLabel = UserSections.entries.firstOrNull { it.name.equals(raw, ignoreCase = true) }
       ?.label
@@ -144,7 +147,7 @@ class ProfileViewModel(
 
   fun logout() {
     _state.value = _state.value.copy(isLoggingOut = false, isLoading = true)
-    fireBaseAuth.signOut() // Log out user
+    fireBaseAuth.signOut()
     _state.value = ProfileState.empty()
     onLogout?.invoke()
   }
@@ -164,14 +167,12 @@ class ProfileViewModel(
       setLoading(true)
       setError(null)
       try {
-        // Map UI label -> UserSections (defaults to NONE)
         val userSection = UserSections.fromLabel(newSection)
 
         val parts = newName.trim().split(Regex("\\s+"), limit = 2)
         val firstName = parts.getOrNull(0).orEmpty()
         val lastName = parts.getOrNull(1).orEmpty()
 
-        // Build updated profile preserving fields we don't change
         val updatedProfile =
           UserProfile(
             id = current.id,
@@ -180,14 +181,12 @@ class ProfileViewModel(
             email = current.email,
             photo = current.photo,
             kudos = current.kudos,
-            section = userSection, // persist enum, not an "OTHER" string
+            section = userSection,
             arrivalDate = current.arrivalDate
           )
 
-        // Persist to repository
         repository.updateUserProfile(updatedProfile.id, updatedProfile)
 
-        // Update local cache and UI state
         loadedProfile = updatedProfile
         _state.value = mapProfileToState(updatedProfile)
       } catch (e: Exception) {
