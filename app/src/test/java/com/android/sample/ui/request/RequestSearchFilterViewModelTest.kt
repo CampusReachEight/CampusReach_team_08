@@ -22,6 +22,13 @@ import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class RequestSearchFilterViewModelTest {
+  companion object {
+    const val ADVANCE_TIME_SHORT_MS = 10L
+    const val ADVANCE_TIME_SEARCH_MS = 350L
+    const val ONE_HOUR_MS = 3_600_000L
+    const val COUNT_ONE = 1
+  }
+
   private val testDispatcher = StandardTestDispatcher()
   private lateinit var vm: RequestSearchFilterViewModel
   private lateinit var requests: List<Request>
@@ -61,7 +68,7 @@ class RequestSearchFilterViewModelTest {
                     RequestStatus.OPEN),
             )
         vm.initializeWithRequests(requests)
-        advanceTimeBy(10)
+        advanceTimeBy(ADVANCE_TIME_SHORT_MS)
       }
 
   @After
@@ -90,7 +97,7 @@ class RequestSearchFilterViewModelTest {
         vm.updateSearchQuery("pizza")
         var displayed = vm.displayedRequests.first()
         assertTrue(displayed.isEmpty() || displayed == requests)
-        advanceTimeBy(350)
+        advanceTimeBy(ADVANCE_TIME_SEARCH_MS)
         displayed = vm.displayedRequests.first()
         assertTrue(displayed.any { it.title.contains("Pizza", ignoreCase = true) })
       }
@@ -99,7 +106,7 @@ class RequestSearchFilterViewModelTest {
   fun facet_filters_AND_with_search() =
       runTest(testDispatcher) {
         vm.updateSearchQuery("pizza")
-        advanceTimeBy(350)
+        advanceTimeBy(ADVANCE_TIME_SEARCH_MS)
         val statusFacet = facet("status")
         statusFacet.toggle(RequestStatus.OPEN)
         val displayed = vm.displayedRequests.first()
@@ -139,7 +146,7 @@ class RequestSearchFilterViewModelTest {
   fun initializeWithRequests_indexes_and_searches() =
       runTest(testDispatcher) {
         vm.updateSearchQuery("football")
-        advanceTimeBy(350)
+        advanceTimeBy(ADVANCE_TIME_SEARCH_MS)
         val displayed = vm.displayedRequests.first()
         assertTrue(displayed.any { it.title.contains("football", ignoreCase = true) })
       }
@@ -148,11 +155,11 @@ class RequestSearchFilterViewModelTest {
   fun combined_flow_filters_correctly() =
       runTest(testDispatcher) {
         vm.updateSearchQuery("pizza")
-        advanceTimeBy(350)
+        advanceTimeBy(ADVANCE_TIME_SEARCH_MS)
         val tagFacet = facet("tags")
         tagFacet.toggle(Tags.INDOOR)
         val displayed = vm.displayedRequests.first()
-        assertEquals(1, displayed.size)
+        assertEquals(COUNT_ONE, displayed.size)
         assertEquals("2", displayed.first().requestId)
       }
 
@@ -161,7 +168,7 @@ class RequestSearchFilterViewModelTest {
       runTest(testDispatcher) {
         val fresh = RequestSearchFilterViewModel()
         fresh.updateSearchQuery("anything")
-        advanceTimeBy(350)
+        advanceTimeBy(ADVANCE_TIME_SEARCH_MS)
         assertTrue(fresh.displayedRequests.first().isEmpty())
       }
 
@@ -169,11 +176,11 @@ class RequestSearchFilterViewModelTest {
   fun clearSearch_resets_displayed_to_base_list() =
       runTest(testDispatcher) {
         vm.updateSearchQuery("pizza")
-        advanceTimeBy(350)
+        advanceTimeBy(ADVANCE_TIME_SEARCH_MS)
         val searched = vm.displayedRequests.first()
         assertTrue(searched.size < requests.size)
         vm.clearSearch()
-        advanceTimeBy(350)
+        advanceTimeBy(ADVANCE_TIME_SEARCH_MS)
         val displayed = vm.displayedRequests.first()
         assertEquals(requests.size, displayed.size)
       }
@@ -196,7 +203,7 @@ class RequestSearchFilterViewModelTest {
           locationName = locationName,
           status = status,
           startTimeStamp = Date(),
-          expirationTime = Date(Date().time + 3600_000),
+          expirationTime = Date(Date().time + ONE_HOUR_MS),
           people = emptyList(),
           tags = tags,
           creatorId = "creator-$id")

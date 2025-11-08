@@ -41,6 +41,27 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class RequestListTests : BaseEmulatorTest() {
 
+  companion object {
+    const val BITMAP_SIZE = 512
+    const val ONE_HOUR_MS = 3_600_000L
+    const val WAIT_TIMEOUT_MS = 5_000L
+    const val SHORT_SLEEP_MS = 150L
+    const val LONG_SLEEP_MS = 10_000L
+    const val COUNT_ZERO = 0
+    const val COUNT_ONE = 1
+    const val COUNT_THREE = 3
+    const val OFFSET_1_S_MS = 1_000L
+    const val OFFSET_2_S_MS = 2_000L
+    const val OFFSET_10_S_MS = 10_000L
+    const val OFFSET_11_S_MS = 11_000L
+    const val OFFSET_12_S_MS = 12_000L
+    const val OFFSET_20_S_MS = 20_000L
+    const val OFFSET_30_S_MS = 30_000L
+    const val OFFSET_110_S_MS = 110_000L
+    const val OFFSET_120_S_MS = 120_000L
+    const val OFFSET_130_S_MS = 130_000L
+  }
+
   @get:Rule val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
   // Fake RequestRepository minimal
@@ -106,15 +127,15 @@ class RequestListTests : BaseEmulatorTest() {
     val now = Date()
     return creatorIds.mapIndexed { idx, creator ->
       Request(
-          requestId = "req_${idx + 1}",
-          title = "Title ${idx + 1}",
-          description = "Description ${idx + 1}",
+          requestId = "req_${idx + COUNT_ONE}",
+          title = "Title ${idx + COUNT_ONE}",
+          description = "Description ${idx + COUNT_ONE}",
           requestType = listOf(RequestType.OTHER),
           location = Location(0.0, 0.0, "Loc"),
           locationName = "LocName",
           status = RequestStatus.OPEN,
           startTimeStamp = now,
-          expirationTime = Date(now.time + 3_600_000),
+          expirationTime = Date(now.time + ONE_HOUR_MS),
           people = emptyList(),
           tags = listOf(Tags.INDOOR),
           creatorId = creator)
@@ -122,7 +143,9 @@ class RequestListTests : BaseEmulatorTest() {
   }
 
   private fun createBitmap(): Bitmap =
-      Bitmap.createBitmap(512, 512, Bitmap.Config.ARGB_8888).apply { eraseColor(Color.RED) }
+      Bitmap.createBitmap(BITMAP_SIZE, BITMAP_SIZE, Bitmap.Config.ARGB_8888).apply {
+        eraseColor(Color.RED)
+      }
 
   /** Helper to extract the visible sequence of request titles (in list order). */
   private fun extractVisibleTitles(): List<String> {
@@ -141,7 +164,7 @@ class RequestListTests : BaseEmulatorTest() {
 
     composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
 
-    composeTestRule.waitUntil(5_000) { vm.state.value.requests.size == requests.size }
+    composeTestRule.waitUntil(WAIT_TIMEOUT_MS) { vm.state.value.requests.size == requests.size }
 
     composeTestRule
         .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM_TITLE, useUnmergedTree = true)
@@ -163,10 +186,10 @@ class RequestListTests : BaseEmulatorTest() {
     val vm = RequestListViewModel(FakeRequestRepository(emptyList()), repoProfile)
 
     vm.loadProfileImage(user)
-    composeTestRule.waitUntil(5_000) { vm.profileIcons.value.containsKey(user) }
+    composeTestRule.waitUntil(WAIT_TIMEOUT_MS) { vm.profileIcons.value.containsKey(user) }
     val calls = repoProfile.calls
     vm.loadProfileImage(user)
-    Thread.sleep(150)
+    Thread.sleep(SHORT_SLEEP_MS)
     assert(repoProfile.calls == calls) { "Profile reloaded unexpectedly" }
   }
 
@@ -178,7 +201,7 @@ class RequestListTests : BaseEmulatorTest() {
             FakeRequestRepository(emptyList()),
             FakeUserProfileRepository(createBitmap(), failing = setOf(bad)))
     vm.loadProfileImage(bad)
-    composeTestRule.waitUntil(5_000) { vm.profileIcons.value.containsKey(bad) }
+    composeTestRule.waitUntil(WAIT_TIMEOUT_MS) { vm.profileIcons.value.containsKey(bad) }
     assert(vm.profileIcons.value[bad] == null) { "Expected null icon" }
   }
 
@@ -204,11 +227,11 @@ class RequestListTests : BaseEmulatorTest() {
     val profileRepo = FakeUserProfileRepository(createBitmap(), failing = setOf(fail))
     val vm = RequestListViewModel(FakeRequestRepository(requests), profileRepo)
     composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
-    composeTestRule.waitUntil(5_000) { vm.profileIcons.value.containsKey(fail) }
+    composeTestRule.waitUntil(WAIT_TIMEOUT_MS) { vm.profileIcons.value.containsKey(fail) }
 
     composeTestRule
         .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM_ICON, useUnmergedTree = true)
-        .assertCountEquals(0)
+        .assertCountEquals(COUNT_ZERO)
   }
 
   @Test
@@ -220,7 +243,7 @@ class RequestListTests : BaseEmulatorTest() {
 
     composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
 
-    composeTestRule.waitUntil(5_000) { vm.state.value.requests.size == requests.size }
+    composeTestRule.waitUntil(WAIT_TIMEOUT_MS) { vm.state.value.requests.size == requests.size }
 
     composeTestRule
         .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM, useUnmergedTree = true)
@@ -239,10 +262,10 @@ class RequestListTests : BaseEmulatorTest() {
 
     composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
 
-    composeTestRule.waitUntil(5_000) { vm.state.value.requests.size == 1 }
+    composeTestRule.waitUntil(WAIT_TIMEOUT_MS) { vm.state.value.requests.size == COUNT_ONE }
 
     val request = requests[0]
-    composeTestRule.onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM).assertCountEquals(1)
+    composeTestRule.onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM).assertCountEquals(COUNT_ONE)
 
     composeTestRule.onNodeWithText(request.title).assertExists()
     composeTestRule.onNodeWithText(request.description).assertExists()
@@ -257,18 +280,20 @@ class RequestListTests : BaseEmulatorTest() {
 
     composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
 
-    composeTestRule.waitUntil(5_000) { vm.state.value.requests.size == requests.size }
+    composeTestRule.waitUntil(WAIT_TIMEOUT_MS) { vm.state.value.requests.size == requests.size }
 
-    composeTestRule.onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM).assertCountEquals(3)
+    composeTestRule
+        .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM)
+        .assertCountEquals(COUNT_THREE)
     composeTestRule
         .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM_TITLE, useUnmergedTree = true)
-        .assertCountEquals(3)
+        .assertCountEquals(COUNT_THREE)
     composeTestRule
         .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM_DESCRIPTION, useUnmergedTree = true)
-        .assertCountEquals(3)
+        .assertCountEquals(COUNT_THREE)
     composeTestRule
         .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM_NO_ICON, useUnmergedTree = true)
-        .assertCountEquals(3)
+        .assertCountEquals(COUNT_THREE)
   }
 
   @Test
@@ -284,7 +309,7 @@ class RequestListTests : BaseEmulatorTest() {
     val statusTitle = RequestStatus.toString()
     val tagsTitle = Tags.toString()
 
-    Thread.sleep(10000)
+    Thread.sleep(LONG_SLEEP_MS)
 
     // Titles selected by default
     composeTestRule.onNodeWithText(typeTitle).assertExists().assertIsDisplayed()
@@ -333,7 +358,7 @@ class RequestListTests : BaseEmulatorTest() {
             locationName = "LocName",
             status = RequestStatus.OPEN,
             startTimeStamp = Date(),
-            expirationTime = Date(System.currentTimeMillis() + 3_600_000),
+            expirationTime = Date(System.currentTimeMillis() + ONE_HOUR_MS),
             people = emptyList(),
             tags = listOf(Tags.INDOOR),
             creatorId = currentUserId)
@@ -353,7 +378,7 @@ class RequestListTests : BaseEmulatorTest() {
     val otherTag = RequestListTestTags.getRequestTypeFilterTag(RequestType.OTHER)
     composeTestRule.onNodeWithTag(otherTag).assertExists().performClick()
 
-    composeTestRule.onNodeWithText("$typeTitle (1)").assertExists().assertIsDisplayed()
+    composeTestRule.onNodeWithText("$typeTitle ($COUNT_ONE)").assertExists().assertIsDisplayed()
   }
 
   @Test
@@ -377,7 +402,7 @@ class RequestListTests : BaseEmulatorTest() {
     val outdoorTag = RequestListTestTags.getRequestTagFilterTag(Tags.OUTDOOR.displayString())
 
     composeTestRule.onNodeWithTag(indoorTag).assertExists()
-    composeTestRule.onAllNodesWithTag(outdoorTag).assertCountEquals(0)
+    composeTestRule.onAllNodesWithTag(outdoorTag).assertCountEquals(COUNT_ZERO)
   }
 
   @Test
@@ -453,7 +478,7 @@ class RequestListTests : BaseEmulatorTest() {
     composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
 
     // Wait until error is set and ensure the dialog content is shown
-    composeTestRule.waitUntil(5_000) { vm.state.value.errorMessage != null }
+    composeTestRule.waitUntil(WAIT_TIMEOUT_MS) { vm.state.value.errorMessage != null }
     composeTestRule.onNodeWithTag(RequestListTestTags.ERROR_MESSAGE_DIALOG).assertIsDisplayed()
   }
 
@@ -470,7 +495,7 @@ class RequestListTests : BaseEmulatorTest() {
                 locationName = "Loc",
                 status = RequestStatus.OPEN,
                 startTimeStamp = Date(System.currentTimeMillis()),
-                expirationTime = Date(System.currentTimeMillis() + 10_000),
+                expirationTime = Date(System.currentTimeMillis() + OFFSET_10_S_MS),
                 people = emptyList(),
                 tags = listOf(Tags.INDOOR),
                 creatorId = "creator-1"),
@@ -482,8 +507,8 @@ class RequestListTests : BaseEmulatorTest() {
                 location = Location(0.0, 0.0, "Loc"),
                 locationName = "Loc",
                 status = RequestStatus.OPEN,
-                startTimeStamp = Date(System.currentTimeMillis() + 1_000),
-                expirationTime = Date(System.currentTimeMillis() + 11_000),
+                startTimeStamp = Date(System.currentTimeMillis() + OFFSET_1_S_MS),
+                expirationTime = Date(System.currentTimeMillis() + OFFSET_11_S_MS),
                 people = listOf("u1", "u2"),
                 tags = listOf(Tags.INDOOR),
                 creatorId = "creator-2"),
@@ -495,8 +520,8 @@ class RequestListTests : BaseEmulatorTest() {
                 location = Location(0.0, 0.0, "Loc"),
                 locationName = "Loc",
                 status = RequestStatus.OPEN,
-                startTimeStamp = Date(System.currentTimeMillis() + 2_000),
-                expirationTime = Date(System.currentTimeMillis() + 12_000),
+                startTimeStamp = Date(System.currentTimeMillis() + OFFSET_2_S_MS),
+                expirationTime = Date(System.currentTimeMillis() + OFFSET_12_S_MS),
                 people = listOf("u1", "u2", "u3"),
                 tags = listOf(Tags.INDOOR),
                 creatorId = "creator-3"),
@@ -532,7 +557,7 @@ class RequestListTests : BaseEmulatorTest() {
     composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
 
     // Wait until base requests loaded (Lucene index builds asynchronously afterwards)
-    composeTestRule.waitUntil(5_000) { vm.state.value.requests.size == requests.size }
+    composeTestRule.waitUntil(WAIT_TIMEOUT_MS) { vm.state.value.requests.size == requests.size }
 
     // Enter a query that should narrow to a single item ("pizza")
     composeTestRule
@@ -542,27 +567,28 @@ class RequestListTests : BaseEmulatorTest() {
         .performTextInput("pizza")
 
     // Wait for debounce + indexing (~300ms). Poll until only 1 title remains
-    composeTestRule.waitUntil(5_000) {
+    composeTestRule.waitUntil(WAIT_TIMEOUT_MS) {
       composeTestRule
           .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM_TITLE, useUnmergedTree = true)
           .fetchSemanticsNodes()
-          .size == 1
+          .size == COUNT_ONE
     }
 
     val afterSearch = extractVisibleTitles()
-    assert(afterSearch.size == 1 && afterSearch.first().contains("Pizza", ignoreCase = true)) {
-      "Expected only 'Pizza night', got $afterSearch"
-    }
+    assert(
+        afterSearch.size == COUNT_ONE && afterSearch.first().contains("Pizza", ignoreCase = true)) {
+          "Expected only 'Pizza night', got $afterSearch"
+        }
 
     // Clear button becomes visible when query not empty
     composeTestRule.onNodeWithText("Clear").assertIsDisplayed().performClick()
 
     // All items should reappear (3)
-    composeTestRule.waitUntil(5_000) {
+    composeTestRule.waitUntil(WAIT_TIMEOUT_MS) {
       composeTestRule
           .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM_TITLE, useUnmergedTree = true)
           .fetchSemanticsNodes()
-          .size == 3
+          .size == COUNT_THREE
     }
   }
 
@@ -579,8 +605,8 @@ class RequestListTests : BaseEmulatorTest() {
                 location = Location(0.0, 0.0, "Loc"),
                 locationName = "Loc",
                 status = RequestStatus.OPEN,
-                startTimeStamp = Date(now + 30_000),
-                expirationTime = Date(now + 130_000),
+                startTimeStamp = Date(now + OFFSET_30_S_MS),
+                expirationTime = Date(now + OFFSET_130_S_MS),
                 people = listOf("u1", "u2"),
                 tags = listOf(Tags.INDOOR),
                 creatorId = "creator-a"),
@@ -592,8 +618,8 @@ class RequestListTests : BaseEmulatorTest() {
                 location = Location(0.0, 0.0, "Loc"),
                 locationName = "Loc",
                 status = RequestStatus.OPEN,
-                startTimeStamp = Date(now + 10_000),
-                expirationTime = Date(now + 110_000),
+                startTimeStamp = Date(now + OFFSET_10_S_MS),
+                expirationTime = Date(now + OFFSET_110_S_MS),
                 people = listOf("u1", "u2", "u3", "u4", "u5"),
                 tags = listOf(Tags.INDOOR),
                 creatorId = "creator-b"),
@@ -605,8 +631,8 @@ class RequestListTests : BaseEmulatorTest() {
                 location = Location(0.0, 0.0, "Loc"),
                 locationName = "Loc",
                 status = RequestStatus.OPEN,
-                startTimeStamp = Date(now + 20_000),
-                expirationTime = Date(now + 120_000),
+                startTimeStamp = Date(now + OFFSET_20_S_MS),
+                expirationTime = Date(now + OFFSET_120_S_MS),
                 people = emptyList(),
                 tags = listOf(Tags.INDOOR),
                 creatorId = "creator-c"),
@@ -640,7 +666,7 @@ class RequestListTests : BaseEmulatorTest() {
             profileRepository = FakeUserProfileRepository(createBitmap()))
 
     composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
-    composeTestRule.waitUntil(5_000) { vm.state.value.requests.size == requests.size }
+    composeTestRule.waitUntil(WAIT_TIMEOUT_MS) { vm.state.value.requests.size == requests.size }
 
     // Default sort: NEWEST_START (descending startTime) => C (30s), B (20s), A (10s)
     val defaultOrder = extractVisibleTitles()
@@ -662,7 +688,7 @@ class RequestListTests : BaseEmulatorTest() {
         .performClick()
 
     // Verify alphabetical order: A, B, C
-    composeTestRule.waitUntil(5_000) {
+    composeTestRule.waitUntil(WAIT_TIMEOUT_MS) {
       val titles = extractVisibleTitles()
       titles == titles.sortedBy { it.lowercase() }
     }
@@ -672,6 +698,6 @@ class RequestListTests : BaseEmulatorTest() {
     composeTestRule.onNodeWithText("Most participants", ignoreCase = true).performClick()
 
     // Expect request with 5 participants (A Alpha) first.
-    composeTestRule.waitUntil(5_000) { extractVisibleTitles().first().startsWith("A") }
+    composeTestRule.waitUntil(WAIT_TIMEOUT_MS) { extractVisibleTitles().first().startsWith("A") }
   }
 }
