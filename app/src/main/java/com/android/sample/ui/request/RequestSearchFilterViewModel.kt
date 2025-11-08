@@ -8,6 +8,8 @@ import com.android.sample.model.request.RequestType
 import com.android.sample.model.request.Tags
 import com.android.sample.model.search.LuceneRequestSearchEngine
 import com.android.sample.model.search.SearchResult
+import java.util.Comparator
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -28,6 +30,7 @@ import kotlinx.coroutines.launch
  * - Manage facet selections (types, statuses, tags)
  * - Expose counts and the final displayedRequests
  */
+@OptIn(FlowPreview::class)
 class RequestSearchFilterViewModel(
     private val engineFactory: () -> LuceneRequestSearchEngine = { LuceneRequestSearchEngine() }
 ) : ViewModel() {
@@ -65,6 +68,9 @@ class RequestSearchFilterViewModel(
 
   private val _selectedTags = MutableStateFlow<Set<Tags>>(emptySet())
   val selectedTags: StateFlow<Set<Tags>> = _selectedTags
+
+  private val _sortCriteria = MutableStateFlow(RequestSort.NEWEST_START)
+  val sortCriteria: StateFlow<RequestSort> = _sortCriteria
 
   @Volatile private var hasIndex: Boolean = false
 
@@ -118,18 +124,21 @@ class RequestSearchFilterViewModel(
   init {
     // Keep displayedRequests reactive to all upstream changes
     viewModelScope.launch {
-      combine(searchBase, selectedTypes, selectedStatuses, selectedTags) {
+      combine(searchBase, selectedTypes, selectedStatuses, selectedTags, sortCriteria) {
               list,
               types,
               statuses,
-              tags ->
+              tags,
+              sort ->
             if (list.isEmpty()) return@combine emptyList<Request>()
-            list.filter { req ->
-              val typeOk = types.isEmpty() || req.requestType.any { it in types }
-              val statusOk = statuses.isEmpty() || req.status in statuses
-              val tagsOk = tags.isEmpty() || req.tags.any { it in tags }
-              typeOk && statusOk && tagsOk
-            }
+            val filtered =
+                list.filter { req ->
+                  val typeOk = types.isEmpty() || req.requestType.any { it in types }
+                  val statusOk = statuses.isEmpty() || req.status in statuses
+                  val tagsOk = tags.isEmpty() || req.tags.any { it in tags }
+                  typeOk && statusOk && tagsOk
+                }
+            applySort(filtered, sort)
           }
           .distinctUntilChanged()
           .collect { filtered -> _displayedRequests.value = filtered }
@@ -141,13 +150,16 @@ class RequestSearchFilterViewModel(
     val types = _selectedTypes.value
     val statuses = _selectedStatuses.value
     val tags = _selectedTags.value
+    val sort = _sortCriteria.value
     _displayedRequests.value =
-        base.filter { req ->
-          val typeOk = types.isEmpty() || req.requestType.any { it in types }
-          val statusOk = statuses.isEmpty() || req.status in statuses
-          val tagsOk = tags.isEmpty() || req.tags.any { it in tags }
-          typeOk && statusOk && tagsOk
-        }
+        applySort(
+            base.filter { req ->
+              val typeOk = types.isEmpty() || req.requestType.any { it in types }
+              val statusOk = statuses.isEmpty() || req.status in statuses
+              val tagsOk = tags.isEmpty() || req.tags.any { it in tags }
+              typeOk && statusOk && tagsOk
+            },
+            sort)
   }
 
   // Facet counts with self-exclusion across the other active facets, computed over searchBase
@@ -251,6 +263,14 @@ class RequestSearchFilterViewModel(
     }
   }
 
+  fun setSortCriteria(criteria: RequestSort) {
+    _sortCriteria.update { criteria }
+    recomputeDisplayed()
+  }
+
+  private fun applySort(list: List<Request>, criteria: RequestSort): List<Request> =
+      list.sortedWith(criteria.comparator)
+
   override fun onCleared() {
     super.onCleared()
     try {
@@ -258,3 +278,49 @@ class RequestSearchFilterViewModel(
     } catch (_: Exception) {}
   }
 }
+
+// Sorting enum with embedded comparator functions (stable where practical)
+enum class RequestSort(val comparator: Comparator<Request>) {
+  // NEWEST_START: Newer (later) startTimeStamp first; ties broken by requestId for stability.
+  NEWEST_START(compareByDescending<Request> { it.startTimeStamp }.thenBy { it.requestId }),
+  // OLDEST_START: Older (earlier) startTimeStamp first; ties broken by requestId.
+  OLDEST_START(compareBy<Request> { it.startTimeStamp }.thenBy { it.requestId }),
+  // SOONEST_EXPIRING: Requests ending sooner (earlier expirationTime) first, then by start time.
+  SOONEST_EXPIRING(compareBy<Request> { it.expirationTime }.thenBy { it.startTimeStamp }),
+  // STATUS: Ordered semantic lifecycle OPEN -> IN_PROGRESS -> COMPLETED -> CANCELLED -> ARCHIVED;
+  // ties by start.
+  STATUS(
+      Comparator<Request> { a, b ->
+            val diff = statusOrderForSort(a.status) - statusOrderForSort(b.status)
+            if (diff != 0) diff else a.startTimeStamp.compareTo(b.startTimeStamp)
+          }
+          .thenBy { it.requestId }),
+  // MOST_PARTICIPANTS: Higher participant count first; ties fall back to older start then
+  // requestId.
+  MOST_PARTICIPANTS(
+      Comparator<Request> { a, b ->
+            val diff = b.people.size - a.people.size
+            if (diff != 0) diff else a.startTimeStamp.compareTo(b.startTimeStamp)
+          }
+          .thenBy { it.requestId }),
+  // TITLE_ASC: Lexicographically ascending title (case-insensitive), then start time then
+  // requestId.
+  TITLE_ASC(
+      compareBy<Request> { it.title.lowercase() }
+          .thenBy { it.startTimeStamp }
+          .thenBy { it.requestId });
+
+  companion object {
+    // Provide order label if needed later
+    fun default(): RequestSort = NEWEST_START
+  }
+}
+
+private fun statusOrderForSort(status: RequestStatus): Int =
+    when (status) {
+      RequestStatus.OPEN -> 0
+      RequestStatus.IN_PROGRESS -> 1
+      RequestStatus.COMPLETED -> 2
+      RequestStatus.CANCELLED -> 3
+      RequestStatus.ARCHIVED -> 4
+    }

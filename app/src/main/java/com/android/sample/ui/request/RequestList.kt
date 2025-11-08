@@ -5,24 +5,16 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.model.request.Request
-import com.android.sample.model.request.RequestStatus
 import com.android.sample.model.request.RequestType
-import com.android.sample.model.request.Tags
 import com.android.sample.model.request.displayString
 import com.android.sample.ui.navigation.BottomNavigationMenu
 import com.android.sample.ui.navigation.NavigationActions
@@ -47,10 +39,7 @@ object RequestListTestTags {
 
   const val REQUEST_SEARCH_BAR = "requestSearchBar"
 
-  /**
-   * Tags for the filter dropdown buttons When clicked, they open the respective filter dropdown
-   * menus
-   */
+  /** Tags for the filter dropdown buttons When clicked, they open the respective filter menus */
   const val REQUEST_TYPE_FILTER_DROPDOWN_BUTTON = "requestTypeFilterDropdown"
 
   const val REQUEST_TAG_FILTER_DROPDOWN_BUTTON = "requestTagFilterDropdown"
@@ -79,12 +68,6 @@ object RequestListTestTags {
   fun getRequestTagFilterTag(tag: String): String = getFilterTag("requestTag", tag)
 
   fun getRequestStatusFilterTag(status: String): String = getFilterTag("requestStatus", status)
-}
-
-private enum class FilterKind {
-  Type,
-  Status,
-  Tags
 }
 
 /** Request List screen scaffold: top bar, filters section, list, bottom bar, and error dialog. */
@@ -133,6 +116,7 @@ fun RequestListScreen(
         }
 
         Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+          // 1) Filters block (moved to RequestSearchFilter.kt)
           FiltersSection(
               searchFilterViewModel = searchFilterViewModel,
               query = searchQuery,
@@ -142,7 +126,7 @@ fun RequestListScreen(
 
           Spacer(modifier = Modifier.height(ConstantRequestList.PaddingLarge))
 
-          // Content list (filtered or base)
+          // 2) Content list (filtered or base) - unchanged display
           val toShow = displayed.ifEmpty { state.requests }
           if (!state.isLoading && toShow.isEmpty()) {
             Text(
@@ -172,215 +156,7 @@ fun RequestListScreen(
       }
 }
 
-/**
- * Groups the search bar, filter buttons, and one active filter panel to reduce screen complexity.
- */
-@Composable
-private fun FiltersSection(
-    searchFilterViewModel: RequestSearchFilterViewModel,
-    query: String,
-    isSearching: Boolean,
-    onQueryChange: (String) -> Unit,
-    onClearQuery: () -> Unit
-) {
-  // Collect facet state and counts
-  val selectedTypes by searchFilterViewModel.selectedTypes.collectAsState()
-  val selectedStatuses by searchFilterViewModel.selectedStatuses.collectAsState()
-  val selectedTags by searchFilterViewModel.selectedTags.collectAsState()
-  val typeCounts by searchFilterViewModel.typeCounts.collectAsState()
-  val statusCounts by searchFilterViewModel.statusCounts.collectAsState()
-  val tagCounts by searchFilterViewModel.tagCounts.collectAsState()
-
-  var openMenu by rememberSaveable { mutableStateOf<FilterKind?>(null) }
-
-  // Global search bar
-  RequestSearchBar(
-      query = query,
-      onQueryChange = onQueryChange,
-      onClear = onClearQuery,
-      isSearching = isSearching,
-      modifier = Modifier.fillMaxWidth().padding(horizontal = ConstantRequestList.PaddingLarge))
-
-  Spacer(modifier = Modifier.height(ConstantRequestList.PaddingMedium))
-
-  // Filter buttons row
-  Row(
-      modifier = Modifier.fillMaxWidth().padding(horizontal = ConstantRequestList.PaddingLarge),
-      horizontalArrangement = Arrangement.spacedBy(ConstantRequestList.RowSpacing)) {
-        FilterMenuButton(
-            title = RequestType.toString(),
-            selectedCount = selectedTypes.size,
-            testTag = RequestListTestTags.REQUEST_TYPE_FILTER_DROPDOWN_BUTTON,
-            onClick = { openMenu = if (openMenu == FilterKind.Type) null else FilterKind.Type },
-            modifier = Modifier.weight(1f))
-        FilterMenuButton(
-            title = RequestStatus.toString(),
-            selectedCount = selectedStatuses.size,
-            testTag = RequestListTestTags.REQUEST_STATUS_FILTER_DROPDOWN_BUTTON,
-            onClick = { openMenu = if (openMenu == FilterKind.Status) null else FilterKind.Status },
-            modifier = Modifier.weight(1f))
-        FilterMenuButton(
-            title = Tags.toString(),
-            selectedCount = selectedTags.size,
-            testTag = RequestListTestTags.REQUEST_TAG_FILTER_DROPDOWN_BUTTON,
-            onClick = { openMenu = if (openMenu == FilterKind.Tags) null else FilterKind.Tags },
-            modifier = Modifier.weight(1f))
-      }
-
-  // Single full-width expanded filter panel
-  when (openMenu) {
-    FilterKind.Type -> {
-      FilterMenuPanel(
-          values = RequestType.entries.toTypedArray(),
-          selected = selectedTypes,
-          counts = typeCounts,
-          labelOf = { it.displayString() },
-          onToggle = { searchFilterViewModel.toggleType(it) },
-          dropdownSearchBarTestTag = RequestListTestTags.REQUEST_TYPE_FILTER_SEARCH_BAR,
-          rowTestTagOf = { RequestListTestTags.getRequestTypeFilterTag(it) })
-    }
-    FilterKind.Status -> {
-      FilterMenuPanel(
-          values = RequestStatus.entries.toTypedArray(),
-          selected = selectedStatuses,
-          counts = statusCounts,
-          labelOf = { it.displayString() },
-          onToggle = { searchFilterViewModel.toggleStatus(it) },
-          dropdownSearchBarTestTag = RequestListTestTags.REQUEST_STATUS_FILTER_SEARCH_BAR,
-          rowTestTagOf = { RequestListTestTags.getRequestStatusFilterTag(it.displayString()) })
-    }
-    FilterKind.Tags -> {
-      FilterMenuPanel(
-          values = Tags.entries.toTypedArray(),
-          selected = selectedTags,
-          counts = tagCounts,
-          labelOf = { it.displayString() },
-          onToggle = { searchFilterViewModel.toggleTag(it) },
-          dropdownSearchBarTestTag = RequestListTestTags.REQUEST_TAG_FILTER_SEARCH_BAR,
-          rowTestTagOf = { RequestListTestTags.getRequestTagFilterTag(it.displayString()) })
-    }
-    null -> Unit
-  }
-}
-
-@Composable
-private fun FilterMenuButton(
-    title: String,
-    selectedCount: Int,
-    testTag: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-  OutlinedButton(
-      onClick = onClick,
-      modifier =
-          modifier.fillMaxWidth().height(ConstantRequestList.FilterButtonHeight).testTag(testTag)) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
-          Text("$title ($selectedCount)", modifier = Modifier.weight(1f))
-          Icon(imageVector = Icons.Filled.ArrowDropDown, contentDescription = null)
-        }
-      }
-}
-
-@Composable
-private fun <E : Enum<E>> FilterMenuPanel(
-    values: Array<E>,
-    selected: Set<E>,
-    counts: Map<E, Int>,
-    labelOf: (E) -> String,
-    onToggle: (E) -> Unit,
-    dropdownSearchBarTestTag: String,
-    rowTestTagOf: (E) -> String
-) {
-  // Panel appearing under buttons
-  Column(
-      modifier = Modifier.fillMaxWidth().padding(horizontal = ConstantRequestList.PaddingLarge)) {
-        Spacer(modifier = Modifier.height(ConstantRequestList.PaddingSmall))
-        Surface(
-            shape = MaterialTheme.shapes.medium, tonalElevation = 2.dp, shadowElevation = 2.dp) {
-              Column(
-                  modifier = Modifier.fillMaxWidth().padding(ConstantRequestList.PaddingMedium)) {
-                    var localQuery by rememberSaveable { mutableStateOf("") }
-
-                    // Search bar for the filters inside the panel
-                    FilterMenuSearchBar(
-                        query = localQuery,
-                        onQueryChange = { localQuery = it },
-                        dropdownSearchBarTestTag = dropdownSearchBarTestTag)
-
-                    Spacer(modifier = Modifier.height(ConstantRequestList.PaddingSmall))
-
-                    // Filters list
-                    FilterMenuValuesList(
-                        values = values,
-                        selected = selected,
-                        counts = counts,
-                        labelOf = labelOf,
-                        onToggle = onToggle,
-                        localQuery = localQuery,
-                        rowTestTagOf = rowTestTagOf)
-                  }
-            }
-      }
-}
-
-@Composable
-private fun FilterMenuSearchBar(
-    query: String,
-    onQueryChange: (String) -> Unit,
-    dropdownSearchBarTestTag: String
-) {
-  OutlinedTextField(
-      value = query,
-      onValueChange = onQueryChange,
-      modifier = Modifier.fillMaxWidth().testTag(dropdownSearchBarTestTag),
-      singleLine = true,
-      placeholder = { Text("Search options") })
-}
-
-@Composable
-private fun <E : Enum<E>> FilterMenuValuesList(
-    values: Array<E>,
-    selected: Set<E>,
-    counts: Map<E, Int>,
-    labelOf: (E) -> String,
-    onToggle: (E) -> Unit,
-    localQuery: String,
-    rowTestTagOf: (E) -> String
-) {
-  val filteredValues =
-      remember(localQuery, values, counts) {
-        values
-            .filter { labelOf(it).contains(localQuery, ignoreCase = true) }
-            .sortedByDescending { counts[it] ?: 0 }
-      }
-
-  Box(modifier = Modifier.heightIn(max = ConstantRequestList.DropdownMaxHeight)) {
-    Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
-      filteredValues.forEach { v ->
-        val isChecked = selected.contains(v)
-        val count = counts[v] ?: 0
-
-        Row(
-            modifier =
-                Modifier.fillMaxWidth()
-                    .clickable { onToggle(v) }
-                    .padding(horizontal = ConstantRequestList.FilterRowHorizontalPadding)
-                    .testTag(rowTestTagOf(v))
-                    .height(ConstantRequestList.FilterRowHeight),
-            horizontalArrangement = Arrangement.Start) {
-              Checkbox(checked = isChecked, onCheckedChange = null)
-              Spacer(modifier = Modifier.width(ConstantRequestList.RowSpacing))
-              Text(text = labelOf(v))
-              Spacer(modifier = Modifier.weight(1f))
-              Text(text = count.toString())
-            }
-      }
-    }
-  }
-}
-
-/** Renders the list of requests. */
+// --- List rendering remains here to keep the screen self-contained visually ---
 @Composable
 fun RequestList(
     state: RequestListState,
@@ -396,7 +172,6 @@ fun RequestList(
   }
 }
 
-/** One request list item: title, compact type labels, truncated description, and optional icon. */
 @Composable
 fun RequestListItem(
     request: Request,
@@ -447,7 +222,6 @@ fun RequestListItem(
   }
 }
 
-/** Floating add button to navigate to the add-request screen. */
 @Composable
 fun AddButton(navigationActions: NavigationActions?) {
   FloatingActionButton(
@@ -457,31 +231,6 @@ fun AddButton(navigationActions: NavigationActions?) {
       }
 }
 
-/** Global search bar bound to SearchFilterViewModel's state. */
-@Composable
-private fun RequestSearchBar(
-    query: String,
-    onQueryChange: (String) -> Unit,
-    onClear: () -> Unit,
-    isSearching: Boolean,
-    modifier: Modifier = Modifier
-) {
-  OutlinedTextField(
-      value = query,
-      onValueChange = onQueryChange,
-      modifier = modifier.testTag(RequestListTestTags.REQUEST_SEARCH_BAR),
-      singleLine = true,
-      placeholder = { Text("Search") },
-      trailingIcon = {
-        if (query.isNotEmpty()) {
-          TextButton(onClick = onClear) { Text("Clear") }
-        } else if (isSearching) {
-          CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-        }
-      })
-}
-
-/** Simple alert dialog to surface user-facing errors. */
 @Composable
 private fun ErrorDialog(message: String, onDismiss: () -> Unit) {
   AlertDialog(
@@ -499,31 +248,8 @@ private fun ErrorDialog(message: String, onDismiss: () -> Unit) {
       })
 }
 
-/** Formats a list of request types into a compact label like `SPORT | EATING | ...`. */
 private fun List<RequestType>.toCompactLabel(max: Int = 2): String {
   if (isEmpty()) return ""
   val head = take(max).joinToString(" | ") { it.displayString() }
   return if (size > max) "$head | ..." else head
 }
-
-// Preview for rendering improvements during development
-// @Preview
-// @Composable
-// fun RequestListItemPreview() {
-//  val sampleRequest =
-//      Request(
-//          requestId = "1",
-//          title = "Sample Request",
-//          description = "This is a sample request description.",
-//          creatorId = "user1",
-//          location = com.android.sample.model.map.Location(0.0, 0.0, "knowhere"),
-//          locationName = "No where",
-//          requestType = RequestType.entries, // 2 values should appear and the rest should be
-// truncated
-//          status = RequestStatus.OPEN,
-//          startTimeStamp = java.util.Date(),
-//          expirationTime = java.util.Date(),
-//          people = listOf(),
-//          tags = listOf())
-//  RequestListItem(request = sampleRequest, icon = null, onClick = {})
-// }
