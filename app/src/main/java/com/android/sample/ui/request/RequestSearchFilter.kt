@@ -70,7 +70,7 @@ internal fun FiltersSection(
       ?.let { openFacet ->
         val countsState = openFacet.counts.collectAsState()
         FilterMenuPanel(
-            values = openFacet.values as Array<Enum<*>>,
+            values = openFacet.values,
             selected = openFacet.selected.collectAsState().value,
             counts = countsState.value,
             labelOf = { openFacet.labelOf(it) },
@@ -101,7 +101,7 @@ private fun FilterMenuButton(
 
 @Composable
 private fun FilterMenuPanel(
-    values: Array<Enum<*>>,
+    values: List<Enum<*>>,
     selected: Set<Enum<*>>,
     counts: Map<Enum<*>, Int>,
     labelOf: (Enum<*>) -> String,
@@ -151,7 +151,7 @@ private fun FilterMenuSearchBar(
 
 @Composable
 private fun FilterMenuValuesList(
-    values: Array<Enum<*>>,
+    values: List<Enum<*>>,
     selected: Set<Enum<*>>,
     counts: Map<Enum<*>, Int>,
     labelOf: (Enum<*>) -> String,

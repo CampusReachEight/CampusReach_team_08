@@ -44,16 +44,15 @@ import org.junit.runner.RunWith
 class RequestListTests : BaseEmulatorTest() {
 
   companion object {
-    const val BITMAP_SIZE = 512
     const val ONE_HOUR_MS = 3_600_000L
     const val WAIT_TIMEOUT_MS = 5_000L
-    const val SHORT_SLEEP_MS = 150L
     const val LONG_SLEEP_MS = 10_000L
     const val COUNT_ZERO = 0
     const val COUNT_ONE = 1
     const val COUNT_THREE = 3
     const val OFFSET_1_S_MS = 1_000L
     const val OFFSET_2_S_MS = 2_000L
+    const val OFFSET_5_S_MS = 5_000L
     const val OFFSET_10_S_MS = 10_000L
     const val OFFSET_11_S_MS = 11_000L
     const val OFFSET_12_S_MS = 12_000L
@@ -704,7 +703,7 @@ class RequestListTests : BaseEmulatorTest() {
 
     composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
     composeTestRule.waitForIdle()
-    composeTestRule.waitUntil(5_000) {
+    composeTestRule.waitUntil(OFFSET_5_S_MS) {
       composeTestRule
           .onAllNodesWithTag(ProfilePictureTestTags.PROFILE_PICTURE, useUnmergedTree = true)
           .fetchSemanticsNodes()
@@ -723,7 +722,7 @@ class RequestListTests : BaseEmulatorTest() {
 
     composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
     composeTestRule.waitForIdle()
-    composeTestRule.waitUntil(5_000) {
+    composeTestRule.waitUntil(OFFSET_5_S_MS) {
       composeTestRule
           .onAllNodesWithTag(ProfilePictureTestTags.PROFILE_PICTURE, useUnmergedTree = true)
           .fetchSemanticsNodes()

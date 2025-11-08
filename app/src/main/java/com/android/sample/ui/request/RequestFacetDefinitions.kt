@@ -17,7 +17,7 @@ object RequestFacetDefinitions {
   data class FacetDefinition(
       val id: String,
       val title: String,
-      val values: Array<out Enum<*>>, // full set of enum values
+      val values: List<Enum<*>>, // full set of enum values (List for structural equality)
       val extract: (Request) -> List<Enum<*>>, // how to read facet values from a Request
       val dropdownButtonTag: String,
       val searchBarTag: String,
@@ -31,7 +31,7 @@ object RequestFacetDefinitions {
           FacetDefinition(
               id = "type",
               title = RequestType.toString(),
-              values = RequestType.entries.toTypedArray(),
+              values = RequestType.entries.toList(),
               extract = { it.requestType },
               dropdownButtonTag = RequestListTestTags.REQUEST_TYPE_FILTER_DROPDOWN_BUTTON,
               searchBarTag = RequestListTestTags.REQUEST_TYPE_FILTER_SEARCH_BAR,
@@ -41,7 +41,7 @@ object RequestFacetDefinitions {
           FacetDefinition(
               id = "status",
               title = RequestStatus.toString(),
-              values = RequestStatus.entries.toTypedArray(),
+              values = RequestStatus.entries.toList(),
               extract = { listOf(it.status) },
               dropdownButtonTag = RequestListTestTags.REQUEST_STATUS_FILTER_DROPDOWN_BUTTON,
               searchBarTag = RequestListTestTags.REQUEST_STATUS_FILTER_SEARCH_BAR,
@@ -53,7 +53,7 @@ object RequestFacetDefinitions {
           FacetDefinition(
               id = "tags",
               title = Tags.toString(),
-              values = Tags.entries.toTypedArray(),
+              values = Tags.entries.toList(),
               extract = { it.tags },
               dropdownButtonTag = RequestListTestTags.REQUEST_TAG_FILTER_DROPDOWN_BUTTON,
               searchBarTag = RequestListTestTags.REQUEST_TAG_FILTER_SEARCH_BAR,
@@ -72,7 +72,7 @@ class RequestFacet internal constructor(val def: RequestFacetDefinitions.FacetDe
   val title: String
     get() = def.title
 
-  val values: Array<out Enum<*>>
+  val values: List<Enum<*>>
     get() = def.values
 
   val dropdownButtonTag: String
