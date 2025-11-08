@@ -103,7 +103,7 @@ class ProfileUiTests {
   fun profileHeader_editButton_invokesCallback() {
     var clicked = false
     val state = ProfileState.default()
-    composeTestRule.setContent { ProfileHeader(state = state, onEditClick = { clicked = true }) }
+    composeTestRule.setContent { ProfileHeader(state = state, onEditRequested = { clicked = true }) }
 
     composeTestRule.onNodeWithContentDescription("Edit").assertHasClickAction()
     composeTestRule.onNodeWithContentDescription("Edit").performClick()
