@@ -23,7 +23,7 @@ import com.android.sample.ui.theme.appPalette
 fun ProfileHeader(
     state: ProfileState,
     modifier: Modifier = Modifier,
-    onEditRequested: () -> Unit,
+    onEditRequested: () -> Unit = {},
     palette: AppPalette = appPalette()
 ) {
   val accent = palette.accent

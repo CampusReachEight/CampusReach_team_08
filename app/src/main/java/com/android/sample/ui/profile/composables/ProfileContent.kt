@@ -18,9 +18,9 @@ import com.android.sample.ui.profile.ProfileState
 @Composable
 fun ProfileContent(
     state: ProfileState,
-    onLogoutRequested: () -> Unit,
-    onEditRequested: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onLogoutRequested: () -> Unit = {},
+    onEditRequested: () -> Unit = {}
 ) {
   Column(modifier = modifier.verticalScroll(rememberScrollState())) {
     state.errorMessage?.let {
