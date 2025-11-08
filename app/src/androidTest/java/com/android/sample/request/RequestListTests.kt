@@ -3,6 +3,8 @@ package com.android.sample.request
 import android.graphics.Bitmap
 import android.graphics.Color
 import androidx.activity.ComponentActivity
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -27,6 +29,7 @@ import com.android.sample.model.request.displayString
 import com.android.sample.ui.request.RequestListScreen
 import com.android.sample.ui.request.RequestListTestTags
 import com.android.sample.ui.request.RequestListViewModel
+import com.android.sample.ui.request.RequestSearchFilterTestTags
 import com.android.sample.utils.BaseEmulatorTest
 import java.util.Date
 import java.util.UUID
@@ -120,6 +123,14 @@ class RequestListTests : BaseEmulatorTest() {
 
   private fun createBitmap(): Bitmap =
       Bitmap.createBitmap(512, 512, Bitmap.Config.ARGB_8888).apply { eraseColor(Color.RED) }
+
+  /** Helper to extract the visible sequence of request titles (in list order). */
+  private fun extractVisibleTitles(): List<String> {
+    return composeTestRule
+        .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM_TITLE, useUnmergedTree = true)
+        .fetchSemanticsNodes()
+        .mapNotNull { it.config.getOrNull(SemanticsProperties.Text)?.joinToString("") }
+  }
 
   @Test
   fun displaysTitlesAndDescriptions() {
@@ -442,5 +453,223 @@ class RequestListTests : BaseEmulatorTest() {
     // Wait until error is set and ensure the dialog content is shown
     composeTestRule.waitUntil(5_000) { vm.state.value.errorMessage != null }
     composeTestRule.onNodeWithTag(RequestListTestTags.ERROR_MESSAGE_DIALOG).assertIsDisplayed()
+  }
+
+  @Test
+  fun search_bar_filters_results_and_clear_restores_all() {
+    val requests =
+        listOf(
+            Request(
+                requestId = "1",
+                title = "Study group calculus",
+                description = "desc",
+                requestType = listOf(RequestType.STUDY_GROUP),
+                location = Location(0.0, 0.0, "Loc"),
+                locationName = "Loc",
+                status = RequestStatus.OPEN,
+                startTimeStamp = Date(System.currentTimeMillis()),
+                expirationTime = Date(System.currentTimeMillis() + 10_000),
+                people = emptyList(),
+                tags = listOf(Tags.INDOOR),
+                creatorId = "creator-1"),
+            Request(
+                requestId = "2",
+                title = "Pizza night",
+                description = "desc",
+                requestType = listOf(RequestType.EATING),
+                location = Location(0.0, 0.0, "Loc"),
+                locationName = "Loc",
+                status = RequestStatus.OPEN,
+                startTimeStamp = Date(System.currentTimeMillis() + 1_000),
+                expirationTime = Date(System.currentTimeMillis() + 11_000),
+                people = listOf("u1", "u2"),
+                tags = listOf(Tags.INDOOR),
+                creatorId = "creator-2"),
+            Request(
+                requestId = "3",
+                title = "Football practice",
+                description = "desc",
+                requestType = listOf(RequestType.SPORT),
+                location = Location(0.0, 0.0, "Loc"),
+                locationName = "Loc",
+                status = RequestStatus.OPEN,
+                startTimeStamp = Date(System.currentTimeMillis() + 2_000),
+                expirationTime = Date(System.currentTimeMillis() + 12_000),
+                people = listOf("u1", "u2", "u3"),
+                tags = listOf(Tags.INDOOR),
+                creatorId = "creator-3"),
+        )
+
+    val vm =
+        RequestListViewModel(
+            requestRepository =
+                object : RequestRepository {
+                  override fun getNewRequestId(): String = "n/a"
+
+                  override suspend fun getAllRequests(): List<Request> = requests
+
+                  override suspend fun getRequest(requestId: String): Request =
+                      requests.first { it.requestId == requestId }
+
+                  override suspend fun addRequest(request: Request) {}
+
+                  override suspend fun updateRequest(requestId: String, updatedRequest: Request) {}
+
+                  override suspend fun deleteRequest(requestId: String) {}
+
+                  override fun hasUserAcceptedRequest(request: Request): Boolean = false
+
+                  override suspend fun acceptRequest(requestId: String) {}
+
+                  override suspend fun cancelAcceptance(requestId: String) {}
+
+                  override suspend fun isOwnerOfRequest(request: Request): Boolean = false
+                },
+            profileRepository = FakeUserProfileRepository(createBitmap()))
+
+    composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
+
+    // Wait until base requests loaded (Lucene index builds asynchronously afterwards)
+    composeTestRule.waitUntil(5_000) { vm.state.value.requests.size == requests.size }
+
+    // Enter a query that should narrow to a single item ("pizza")
+    composeTestRule
+        .onNodeWithTag(RequestListTestTags.REQUEST_SEARCH_BAR)
+        .assertExists()
+        .assertIsDisplayed()
+        .performTextInput("pizza")
+
+    // Wait for debounce + indexing (~300ms). Poll until only 1 title remains
+    composeTestRule.waitUntil(5_000) {
+      composeTestRule
+          .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM_TITLE, useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .size == 1
+    }
+
+    val afterSearch = extractVisibleTitles()
+    assert(afterSearch.size == 1 && afterSearch.first().contains("Pizza", ignoreCase = true)) {
+      "Expected only 'Pizza night', got $afterSearch"
+    }
+
+    // Clear button becomes visible when query not empty
+    composeTestRule.onNodeWithText("Clear").assertIsDisplayed().performClick()
+
+    // All items should reappear (3)
+    composeTestRule.waitUntil(5_000) {
+      composeTestRule
+          .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM_TITLE, useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .size == 3
+    }
+  }
+
+  @Test
+  fun sorting_changes_order_based_on_selected_criteria() {
+    val now = System.currentTimeMillis()
+    val requests =
+        listOf(
+            Request(
+                requestId = "a",
+                title = "C Charlie",
+                description = "desc",
+                requestType = listOf(RequestType.OTHER),
+                location = Location(0.0, 0.0, "Loc"),
+                locationName = "Loc",
+                status = RequestStatus.OPEN,
+                startTimeStamp = Date(now + 30_000),
+                expirationTime = Date(now + 130_000),
+                people = listOf("u1", "u2"),
+                tags = listOf(Tags.INDOOR),
+                creatorId = "creator-a"),
+            Request(
+                requestId = "b",
+                title = "A Alpha",
+                description = "desc",
+                requestType = listOf(RequestType.OTHER),
+                location = Location(0.0, 0.0, "Loc"),
+                locationName = "Loc",
+                status = RequestStatus.OPEN,
+                startTimeStamp = Date(now + 10_000),
+                expirationTime = Date(now + 110_000),
+                people = listOf("u1", "u2", "u3", "u4", "u5"),
+                tags = listOf(Tags.INDOOR),
+                creatorId = "creator-b"),
+            Request(
+                requestId = "c",
+                title = "B Bravo",
+                description = "desc",
+                requestType = listOf(RequestType.OTHER),
+                location = Location(0.0, 0.0, "Loc"),
+                locationName = "Loc",
+                status = RequestStatus.OPEN,
+                startTimeStamp = Date(now + 20_000),
+                expirationTime = Date(now + 120_000),
+                people = emptyList(),
+                tags = listOf(Tags.INDOOR),
+                creatorId = "creator-c"),
+        )
+
+    val vm =
+        RequestListViewModel(
+            requestRepository =
+                object : RequestRepository {
+                  override fun getNewRequestId(): String = "n/a"
+
+                  override suspend fun getAllRequests(): List<Request> = requests
+
+                  override suspend fun getRequest(requestId: String): Request =
+                      requests.first { it.requestId == requestId }
+
+                  override suspend fun addRequest(request: Request) {}
+
+                  override suspend fun updateRequest(requestId: String, updatedRequest: Request) {}
+
+                  override suspend fun deleteRequest(requestId: String) {}
+
+                  override fun hasUserAcceptedRequest(request: Request): Boolean = false
+
+                  override suspend fun acceptRequest(requestId: String) {}
+
+                  override suspend fun cancelAcceptance(requestId: String) {}
+
+                  override suspend fun isOwnerOfRequest(request: Request): Boolean = false
+                },
+            profileRepository = FakeUserProfileRepository(createBitmap()))
+
+    composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
+    composeTestRule.waitUntil(5_000) { vm.state.value.requests.size == requests.size }
+
+    // Default sort: NEWEST_START (descending startTime) => C (30s), B (20s), A (10s)
+    val defaultOrder = extractVisibleTitles()
+    assert(defaultOrder.first().startsWith("C")) {
+      "Expected newest start first (C), got $defaultOrder"
+    }
+
+    // Open sort menu using dedicated test tag
+    composeTestRule
+        .onNodeWithTag(RequestSearchFilterTestTags.SORT_BUTTON)
+        .assertExists()
+        .assertIsDisplayed()
+        .performClick()
+
+    // Select Title Asc
+    composeTestRule
+        .onNodeWithText("Title asc", ignoreCase = true)
+        .assertIsDisplayed()
+        .performClick()
+
+    // Verify alphabetical order: A, B, C
+    composeTestRule.waitUntil(5_000) {
+      val titles = extractVisibleTitles()
+      titles == titles.sortedBy { it.lowercase() }
+    }
+
+    // Switch to Most participants
+    composeTestRule.onNodeWithTag(RequestSearchFilterTestTags.SORT_BUTTON).performClick()
+    composeTestRule.onNodeWithText("Most participants", ignoreCase = true).performClick()
+
+    // Expect request with 5 participants (A Alpha) first.
+    composeTestRule.waitUntil(5_000) { extractVisibleTitles().first().startsWith("A") }
   }
 }
