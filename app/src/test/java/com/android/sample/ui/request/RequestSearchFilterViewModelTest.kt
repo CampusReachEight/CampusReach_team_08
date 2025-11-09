@@ -231,7 +231,8 @@ class RequestSearchFilterViewModelTest {
         tagsFacet.toggle(Tags.OUTDOOR)
         advanceUntilIdle()
         val typeFacet = facet("type")
-        val counts = typeFacet.counts.first()
+        // Wait until counts are computed (stateIn starts with emptyMap())
+        val counts = typeFacet.counts.first { it.containsKey(RequestType.SPORT) }
         // Only SPORT request matches OUTDOOR -> SPORT count should be 1; STUDY_GROUP/EATING should
         // be 0
         assertEquals(1, counts[RequestType.SPORT])
