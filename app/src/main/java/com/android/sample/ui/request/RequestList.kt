@@ -124,13 +124,8 @@ fun RequestListScreen(
 
           Spacer(modifier = Modifier.height(ConstantRequestList.PaddingLarge))
 
-          // Determine if user has an active search query or any facet selections
-          val isFilteringActive =
-              searchQuery.isNotBlank() ||
-                  searchFilterViewModel.facets.any { it.selected.value.isNotEmpty() }
-
-          // Decide list to show: if filtering active use displayedRequests directly; else base
-          val toShow = if (isFilteringActive) displayed else state.requests
+          // Always show the sorted/filtered list from the filter ViewModel
+          val toShow = displayed
 
           if (!state.isLoading && toShow.isEmpty()) {
             Text(
