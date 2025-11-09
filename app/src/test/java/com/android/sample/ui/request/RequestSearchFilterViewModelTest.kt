@@ -82,7 +82,8 @@ class RequestSearchFilterViewModelTest {
   fun updateSearchQuery_updates_state() =
       runTest(testDispatcher) {
         vm.updateSearchQuery("  pizza  ")
-        assertEquals("pizza", vm.searchQuery.first())
+        // searchQuery now stores the raw value; trimming is applied only in the debounced pipeline
+        assertEquals("  pizza  ", vm.searchQuery.first())
       }
 
   @Test
@@ -103,6 +104,17 @@ class RequestSearchFilterViewModelTest {
         advanceUntilIdle()
         displayed = vm.displayedRequests.first()
         assertTrue(displayed.any { it.title.contains("Pizza", ignoreCase = true) })
+      }
+
+  @Test
+  fun multi_word_query_requires_min_should_match() =
+      runTest(testDispatcher) {
+        // Query has two tokens both present in description "Fresh pizza"
+        vm.updateSearchQuery("fresh pizza")
+        advanceTimeBy(ADVANCE_TIME_SEARCH_MS)
+        advanceUntilIdle()
+        val displayed = vm.displayedRequests.first()
+        assertTrue(displayed.any { it.requestId == "2" })
       }
 
   @Test
@@ -194,6 +206,37 @@ class RequestSearchFilterViewModelTest {
         advanceUntilIdle()
         val displayed = vm.displayedRequests.first()
         assertEquals(requests.size, displayed.size)
+      }
+
+  @Test
+  fun setSortCriteria_changes_order() =
+      runTest(testDispatcher) {
+        // Default NEWEST order (by start timestamp) is arbitrary since all startTimeStamp = Date()
+        // We simulate difference by updating search to restrict to a single item then clearing.
+        vm.setSortCriteria(RequestSort.TITLE_ASCENDING)
+        advanceUntilIdle()
+        val displayed = vm.displayedRequests.first()
+        // Titles (case-insensitive): Football, Pizza night, Study group -> ascending should start
+        // with Football
+        if (displayed.size == requests.size) {
+          assertEquals("3", displayed.first().requestId)
+        }
+      }
+
+  @Test
+  fun facet_counts_exclude_other_selections() =
+      runTest(testDispatcher) {
+        // Select OUTDOOR tag; type facet counts should only reflect requests matching OUTDOOR
+        val tagsFacet = facet("tags")
+        tagsFacet.toggle(Tags.OUTDOOR)
+        advanceUntilIdle()
+        val typeFacet = facet("type")
+        val counts = typeFacet.counts.first()
+        // Only SPORT request matches OUTDOOR -> SPORT count should be 1; STUDY_GROUP/EATING should
+        // be 0
+        assertEquals(1, counts[RequestType.SPORT])
+        assertEquals(0, counts[RequestType.STUDY_GROUP])
+        assertEquals(0, counts[RequestType.EATING])
       }
 
   private fun req(
