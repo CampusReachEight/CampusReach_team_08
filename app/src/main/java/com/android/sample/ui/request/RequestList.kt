@@ -21,7 +21,6 @@ import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.navigation.Screen
 import com.android.sample.ui.profile.ProfilePicture
 import com.android.sample.ui.theme.TopNavigationBar
-import kotlin.collections.ifEmpty
 
 // removed local magic number vals; use ConstantRequestList instead
 
@@ -81,7 +80,6 @@ fun RequestListScreen(
   val searchFilterViewModel: RequestSearchFilterViewModel = viewModel()
   LaunchedEffect(Unit) { requestListViewModel.loadRequests() }
 
-  val icons by requestListViewModel.profileIcons.collectAsState()
   val state by requestListViewModel.state.collectAsState()
 
   // Keep Lucene index in sync with loaded requests
@@ -126,8 +124,14 @@ fun RequestListScreen(
 
           Spacer(modifier = Modifier.height(ConstantRequestList.PaddingLarge))
 
-          // 2) Content list (filtered or base) - unchanged display
-          val toShow = displayed.ifEmpty { state.requests }
+          // Determine if user has an active search query or any facet selections
+          val isFilteringActive =
+              searchQuery.isNotBlank() ||
+                  searchFilterViewModel.facets.any { it.selected.value.isNotEmpty() }
+
+          // Decide list to show: if filtering active use displayedRequests directly; else base
+          val toShow = if (isFilteringActive) displayed else state.requests
+
           if (!state.isLoading && toShow.isEmpty()) {
             Text(
                 text = "No requests at the moment",

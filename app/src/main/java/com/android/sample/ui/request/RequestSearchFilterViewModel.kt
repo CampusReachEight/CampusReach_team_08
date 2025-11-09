@@ -7,6 +7,8 @@ import com.android.sample.model.request.RequestStatus
 import com.android.sample.model.search.LuceneRequestSearchEngine
 import com.android.sample.model.search.SearchResult
 import java.util.Comparator
+import kotlin.math.ceil
+import kotlin.math.max
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,16 +29,6 @@ class RequestSearchFilterViewModel(
 
   private var engine: LuceneRequestSearchEngine? = null
 
-  private inline fun <reified T> Flow<T>.stateInEager(): StateFlow<T> {
-    val initial: T =
-        when {
-          List::class.java.isAssignableFrom(T::class.java) -> emptyList<Any?>() as T
-          Map::class.java.isAssignableFrom(T::class.java) -> emptyMap<Any?, Any?>() as T
-          else -> throw IllegalArgumentException("Unsupported type for stateInEager: ${T::class}")
-        }
-    return this.stateIn(viewModelScope, SharingStarted.Eagerly, initial)
-  }
-
   private val _baseRequests = MutableStateFlow<List<Request>>(emptyList())
 
   private val _searchQuery = MutableStateFlow("")
@@ -48,46 +40,62 @@ class RequestSearchFilterViewModel(
   private val _sortCriteria = MutableStateFlow(RequestSort.default())
   val sortCriteria: StateFlow<RequestSort> = _sortCriteria
 
-  // Build facets from single-source definitions
   val facets: List<RequestFacet> = RequestFacetDefinitions.all.map { RequestFacet(it) }
 
   @Volatile private var hasIndex: Boolean = false
 
-  private val searchResults: StateFlow<List<SearchResult<Request>>> =
+  // Debounced, trimmed query for searching
+  private val debouncedQuery: StateFlow<String> =
       _searchQuery
           .debounce(300)
           .map { it.trim() }
           .distinctUntilChanged()
-          .let { debounced ->
-            debounced
-                .combine(_baseRequests) { q, base -> q to base }
-                .map { (q, base) ->
-                  if (q.isBlank()) return@map emptyList<SearchResult<Request>>()
-                  _isSearching.update { true }
-                  try {
-                    val localEngine = engine
-                    if (!hasIndex || localEngine == null) {
-                      val lower = q.lowercase()
-                      return@map base
-                          .filter { req -> req.toSearchText().lowercase().contains(lower) }
-                          .map { SearchResult(item = it, score = 100, matchedFields = emptyList()) }
-                    }
-                    localEngine.search(base, q)
-                  } catch (_: Throwable) {
-                    emptyList()
-                  } finally {
-                    _isSearching.update { false }
-                  }
-                }
-          }
-          .stateInEager()
+          .stateIn(viewModelScope, SharingStarted.Lazily, "")
 
+  // Search results flow: combines debounced query with base requests
+  private val searchResults: StateFlow<List<SearchResult<Request>>> =
+      combine(debouncedQuery, _baseRequests) { q, base ->
+            if (q.isBlank()) return@combine emptyList<SearchResult<Request>>()
+
+            _isSearching.update { true }
+            try {
+              val localEngine = engine
+              if (!hasIndex || localEngine == null) {
+                // Fallback: tokenize-based matching
+                val tokens = tokenize(q)
+                if (tokens.isEmpty()) return@combine emptyList<SearchResult<Request>>()
+
+                val minShould = minShouldMatch(tokens.size)
+                val lowerTokens = tokens.map { it.lowercase() }
+
+                return@combine base
+                    .mapNotNull { req ->
+                      val text = req.toSearchText().lowercase()
+                      val matchCount = lowerTokens.count { text.contains(it) }
+                      if (matchCount >= minShould) {
+                        val score = ((matchCount.toFloat() / lowerTokens.size) * 100).toInt()
+                        SearchResult(item = req, score = score, matchedFields = emptyList())
+                      } else null
+                    }
+                    .sortedByDescending { it.score }
+              }
+
+              localEngine.search(base, q)
+            } catch (_: Throwable) {
+              emptyList()
+            } finally {
+              _isSearching.update { false }
+            }
+          }
+          .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+  // Base for filtering: either search results or all requests
   private val searchBase: StateFlow<List<Request>> =
-      combine(_baseRequests, searchResults, _searchQuery) { base, results, q ->
+      combine(debouncedQuery, searchResults, _baseRequests) { q, results, base ->
             if (q.isBlank()) base else results.map { it.item }
           }
           .distinctUntilChanged()
-          .stateInEager()
+          .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
   private val _displayedRequests = MutableStateFlow<List<Request>>(emptyList())
   val displayedRequests: StateFlow<List<Request>> = _displayedRequests
@@ -98,15 +106,18 @@ class RequestSearchFilterViewModel(
       val otherSelections: List<StateFlow<Set<Enum<*>>>> =
           facets.filter { it !== f }.map { it.selected }
       val flows: List<Flow<*>> = listOf(searchBase) + otherSelections
+
       val countsFlow: StateFlow<Map<Enum<*>, Int>> =
           combine(flows) { arr ->
                 val base = arr[0] as List<Request>
                 val others = otherSelections.mapIndexed { idx, _ -> arr[idx + 1] as Set<Enum<*>> }
+
                 val include: (Request) -> Boolean = { req ->
                   others.zip(facets.filter { it !== f }).all { (sel, facet) ->
                     sel.isEmpty() || facet.extract(req).any { it in sel }
                   }
                 }
+
                 val filtered = base.filter(include)
                 val counts =
                     mutableMapOf<Enum<*>, Int>().apply { f.values.forEach { this[it] = 0 } }
@@ -115,21 +126,25 @@ class RequestSearchFilterViewModel(
                 }
                 counts.toMap()
               }
-              .stateInEager()
+              .stateIn(viewModelScope, SharingStarted.Lazily, emptyMap())
+
       f.counts = countsFlow
     }
 
+    // Single source of truth for displayed requests
     viewModelScope.launch {
       val selectionFlows: List<StateFlow<Set<Enum<*>>>> = facets.map { it.selected }
       combine(searchBase, combine(selectionFlows) { it.toList() }, sortCriteria) { list, sels, sort
             ->
             if (list.isEmpty()) return@combine emptyList<Request>()
+
             val filtered =
                 list.filter { req ->
                   sels.zip(facets).all { (sel, facet) ->
                     sel.isEmpty() || facet.extract(req).any { it in sel }
                   }
                 }
+
             applySort(filtered, sort)
           }
           .distinctUntilChanged()
@@ -137,37 +152,21 @@ class RequestSearchFilterViewModel(
     }
   }
 
-  private fun recomputeDisplayed() {
-    val base = searchBase.value
-    val sels = facets.map { it.selected.value }
-    val sort = _sortCriteria.value
-    _displayedRequests.value =
-        applySort(
-            base.filter { req ->
-              sels.zip(facets).all { (sel, facet) ->
-                sel.isEmpty() || facet.extract(req).any { it in sel }
-              }
-            },
-            sort)
-  }
-
   fun updateSearchQuery(query: String) {
-    _searchQuery.update { query.trim() }
+    _searchQuery.update { query }
   }
 
   fun clearSearch() {
     _searchQuery.update { "" }
-    recomputeDisplayed()
   }
 
   fun clearAllFilters() {
     facets.forEach { it.clear() }
-    recomputeDisplayed()
   }
 
   fun initializeWithRequests(requests: List<Request>) {
     _baseRequests.value = requests
-    recomputeDisplayed()
+
     viewModelScope.launch {
       try {
         if (engine == null) engine = engineFactory()
@@ -182,20 +181,31 @@ class RequestSearchFilterViewModel(
 
   fun setSortCriteria(criteria: RequestSort) {
     _sortCriteria.update { criteria }
-    recomputeDisplayed()
   }
 
   private fun applySort(list: List<Request>, criteria: RequestSort): List<Request> =
       list.sortedWith(criteria.comparator)
+
+  // Tokenization utilities for fallback search
+  private fun tokenize(query: String): List<String> =
+      REGEX_TOKEN.findAll(query.lowercase()).map { it.value }.filter { it.length >= 2 }.toList()
+
+  private fun minShouldMatch(tokenCount: Int, ratio: Double = 0.6, floor: Int = 1): Int =
+      if (tokenCount <= 0) 0 else max(floor, ceil(tokenCount * ratio).toInt())
 
   override fun onCleared() {
     try {
       engine?.close()
     } catch (_: Exception) {}
   }
+
+  private companion object {
+    // Regex pattern for tokenizing search queries (words, underscores, hyphens)
+    val REGEX_TOKEN = Regex("[a-z0-9_-]+")
+  }
 }
 
-// Sorting stays as-is
+// --- Sorting definitions ---
 enum class RequestSort(val comparator: Comparator<Request>) {
   NEWEST(compareByDescending<Request> { it.startTimeStamp }.thenBy { it.requestId }),
   OLDEST(compareBy<Request> { it.startTimeStamp }.thenBy { it.requestId }),
