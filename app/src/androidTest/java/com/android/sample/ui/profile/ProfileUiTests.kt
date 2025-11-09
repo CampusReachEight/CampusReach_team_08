@@ -24,6 +24,7 @@ import com.android.sample.ui.profile.composables.ProfileHeader
 import com.android.sample.ui.profile.composables.ProfileInformation
 import com.android.sample.ui.profile.composables.ProfileStats
 import com.android.sample.ui.profile.composables.ProfileTopBar
+import junit.framework.TestCase
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -395,6 +396,27 @@ class ProfileUiTests {
     composeTestRule.setContent { ProfileActions() }
     // About App should be present and have a click action
     composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_ACTION_ABOUT_APP).assertHasClickAction()
+  }
+
+  @Test
+  fun backButton_invokesOnBackClick() {
+    var backClicked = false
+
+    val viewModel = ProfileViewModel(initialState = ProfileState.default())
+
+    composeTestRule.setContent {
+      ProfileScreen(viewModel = viewModel, onBackClick = { backClicked = true })
+    }
+
+    composeTestRule.waitForIdle()
+
+    composeTestRule
+        .onNodeWithTag(ProfileTestTags.PROFILE_TOP_BAR_BACK_BUTTON)
+        .assertExists()
+        .performClick()
+
+    // ensure callback executed
+    TestCase.assertTrue("Expected onBackClick to be invoked", backClicked)
   }
 
   // ----- Dialogues -----
