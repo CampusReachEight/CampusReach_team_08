@@ -41,11 +41,14 @@ class SetupProfileViewModel(
 
   private fun saveProfile() {
     viewModelScope.launch {
+      // show progress in the UI
       _state.value = _state.value.copy(isSaving = true, saveError = null, saved = false)
       try {
-        val toSave = _state.value
-        repository.saveProfile(toSave)
-        _state.value = _state.value.copy(isSaving = false, saved = true)
+        val toSaveForRepo = _state.value.copy(isSaving = false, saved = true)
+        repository.saveProfile(toSaveForRepo)
+
+        // update UI to finished state
+        _state.value = _state.value.copy(isSaving = false, saved = true, saveError = null)
       } catch (t: Throwable) {
         _state.value = _state.value.copy(isSaving = false, saveError = t.message)
       }
