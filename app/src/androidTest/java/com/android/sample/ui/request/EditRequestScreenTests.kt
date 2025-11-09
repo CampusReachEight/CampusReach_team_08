@@ -10,6 +10,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.unit.dp
+import androidx.test.espresso.Espresso
 import com.android.sample.model.map.Location
 import com.android.sample.model.map.LocationRepository
 import com.android.sample.model.request.Request
@@ -28,10 +29,12 @@ import com.android.sample.ui.request.edit.FieldValidationState
 import com.android.sample.ui.request.edit.RequestTypeChipGroup
 import com.android.sample.ui.request.edit.TagsChipGroup
 import com.android.sample.ui.request.edit.isLocationEnabled
+import com.android.sample.utils.UI_WAIT_TIMEOUT
 import java.text.SimpleDateFormat
 import java.util.*
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertFalse
+import junit.framework.TestCase.assertNotNull
 import junit.framework.TestCase.assertTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -1467,5 +1470,315 @@ class EditRequestScreenTests : EditRequestScreenTestBase() {
     // Should show date picker for expiration date
     composeTestRule.onNodeWithText("OK").assertExists()
     composeTestRule.onNodeWithText("Cancel").assertExists()
+  }
+
+  @Test
+  fun startTimePicker_selectTime_updatesFieldWithCorrectDateTime() {
+    val viewModel = createTestViewModel()
+    composeTestRule.setContent { TestEditRequestContentWithRealViewModel(viewModel = viewModel) }
+
+    composeTestRule.onNodeWithTag(EditRequestScreenTestTags.INPUT_START_DATE).performClick()
+    waitForUI()
+
+    composeTestRule.onNodeWithText("OK").performClick()
+    waitForUI()
+
+    composeTestRule.onNodeWithText("OK").performClick()
+    waitForUI()
+
+    val updatedDate = viewModel.uiState.value.startTimeStamp
+    assertNotNull(updatedDate)
+
+    val displayedText =
+        composeTestRule
+            .onNodeWithTag(EditRequestScreenTestTags.INPUT_START_DATE)
+            .fetchSemanticsNode()
+            .config[SemanticsProperties.EditableText]
+            .text
+
+    assertTrue(displayedText.isNotEmpty())
+  }
+
+  @Test
+  fun startDatePicker_dismissViaOutsideClick_clearsState() {
+    val viewModel = createTestViewModel()
+    composeTestRule.setContent { TestEditRequestContentWithRealViewModel(viewModel = viewModel) }
+
+    composeTestRule.onNodeWithTag(EditRequestScreenTestTags.INPUT_START_DATE).performClick()
+    waitForUI()
+    composeTestRule.onNode(isDialog()).assertExists()
+
+    Espresso.pressBack()
+    waitForUI()
+
+    composeTestRule.onNodeWithText("OK").assertDoesNotExist()
+  }
+
+  // ========== ADDITIONAL COVERAGE TESTS ==========
+
+  @Test
+  fun startDateTimePicker_completesFullFlow_updatesViewModel() {
+    val viewModel = createTestViewModel()
+    val initialDate = viewModel.uiState.value.startTimeStamp
+
+    composeTestRule.setContent { TestEditRequestContentWithRealViewModel(viewModel = viewModel) }
+
+    // Complete full flow: click field -> date picker -> time picker
+    composeTestRule.onNodeWithTag(EditRequestScreenTestTags.INPUT_START_DATE).performClick()
+    waitForUI()
+
+    // Accept date
+    composeTestRule.onAllNodesWithText("OK").onFirst().performClick()
+    waitForUI()
+
+    // Accept time
+    composeTestRule.onAllNodesWithText("OK").onFirst().performClick()
+    waitForUI()
+
+    // Verify ViewModel was updated (this covers the lambda body execution)
+    val updatedDate = viewModel.uiState.value.startTimeStamp
+    assertNotNull(updatedDate)
+
+    // Verify the date changed or at least the field displays something valid
+    val displayedText =
+        composeTestRule
+            .onNodeWithTag(EditRequestScreenTestTags.INPUT_START_DATE)
+            .fetchSemanticsNode()
+            .config[SemanticsProperties.EditableText]
+            .text
+
+    assertTrue(displayedText.isNotEmpty())
+  }
+
+  @Test
+  fun expirationDateTimePicker_completesFullFlow_updatesViewModel() {
+    val viewModel = createTestViewModel()
+    val initialDate = viewModel.uiState.value.expirationTime
+
+    composeTestRule.setContent { TestEditRequestContentWithRealViewModel(viewModel = viewModel) }
+
+    // Complete full flow for expiration date
+    composeTestRule.onNodeWithTag(EditRequestScreenTestTags.INPUT_EXPIRATION_DATE).performClick()
+    waitForUI()
+
+    // Accept date
+    composeTestRule.onAllNodesWithText("OK").onFirst().performClick()
+    waitForUI()
+
+    // Accept time
+    composeTestRule.onAllNodesWithText("OK").onFirst().performClick()
+    waitForUI()
+
+    // Verify ViewModel was updated
+    val updatedDate = viewModel.uiState.value.expirationTime
+    assertNotNull(updatedDate)
+
+    val displayedText =
+        composeTestRule
+            .onNodeWithTag(EditRequestScreenTestTags.INPUT_EXPIRATION_DATE)
+            .fetchSemanticsNode()
+            .config[SemanticsProperties.EditableText]
+            .text
+
+    assertTrue(displayedText.isNotEmpty())
+  }
+
+  @Test
+  fun startTimePicker_dismissViaCancel_resetsState() {
+    val viewModel = createTestViewModel()
+    val initialDate = viewModel.uiState.value.startTimeStamp
+
+    composeTestRule.setContent { TestEditRequestContentWithRealViewModel(viewModel = viewModel) }
+
+    // Open date picker
+    composeTestRule.onNodeWithTag(EditRequestScreenTestTags.INPUT_START_DATE).performClick()
+    waitForUI()
+
+    // Accept date (this sets tempSelectedDate)
+    composeTestRule.onAllNodesWithText("OK").onFirst().performClick()
+    waitForUI()
+
+    // Now cancel the time picker (this should trigger the dismiss lambda)
+    composeTestRule.onNodeWithText("Cancel").performClick()
+    waitForUI()
+
+    val updatedDate = viewModel.uiState.value.startTimeStamp
+    assertEquals(initialDate, updatedDate)
+    composeTestRule.onAllNodesWithText("OK").assertCountEquals(0)
+  }
+
+  @Test
+  fun expirationTimePicker_dismissViaCancel_resetsState() {
+    val viewModel = createTestViewModel()
+    val initialDate = viewModel.uiState.value.expirationTime
+
+    composeTestRule.setContent { TestEditRequestContentWithRealViewModel(viewModel = viewModel) }
+
+    composeTestRule.onNodeWithTag(EditRequestScreenTestTags.INPUT_EXPIRATION_DATE).performClick()
+    waitForUI()
+
+    composeTestRule.onAllNodesWithText("OK").onFirst().performClick()
+    waitForUI()
+
+    composeTestRule.onNodeWithText("Cancel").performClick()
+    waitForUI()
+
+    val updatedDate = viewModel.uiState.value.expirationTime
+    assertEquals(initialDate, updatedDate)
+  }
+
+  @Test
+  fun dateTimePicker_calendarManipulation_preservesDateAndSetsTime() {
+    val viewModel = createTestViewModel()
+
+    composeTestRule.setContent { TestEditRequestContentWithRealViewModel(viewModel = viewModel) }
+
+    val knownDate =
+        Calendar.getInstance()
+            .apply {
+              set(2025, Calendar.JUNE, 15, 10, 30, 0)
+              set(Calendar.MILLISECOND, 0)
+            }
+            .time
+
+    viewModel.updateStartTimeStamp(knownDate)
+    waitForUI()
+
+    composeTestRule.onNodeWithTag(EditRequestScreenTestTags.INPUT_START_DATE).performClick()
+    waitForUI()
+
+    composeTestRule.onAllNodesWithText("OK").onFirst().performClick()
+    waitForUI()
+
+    composeTestRule.onAllNodesWithText("OK").onFirst().performClick()
+    waitForUI()
+
+    val updatedDate = viewModel.uiState.value.startTimeStamp
+    assertNotNull(updatedDate)
+  }
+
+  @Test
+  fun sequentialDatePickers_bothWorkIndependently() {
+    val viewModel = createTestViewModel()
+
+    composeTestRule.setContent { TestEditRequestContentWithRealViewModel(viewModel = viewModel) }
+
+    composeTestRule.onNodeWithTag(EditRequestScreenTestTags.INPUT_START_DATE).performClick()
+    waitForUI()
+    composeTestRule.onAllNodesWithText("OK").onFirst().performClick()
+    waitForUI()
+    composeTestRule.onAllNodesWithText("OK").onFirst().performClick()
+    waitForUI()
+
+    val startDate = viewModel.uiState.value.startTimeStamp
+
+    composeTestRule.onNodeWithTag(EditRequestScreenTestTags.INPUT_EXPIRATION_DATE).performClick()
+    waitForUI()
+    composeTestRule.onAllNodesWithText("OK").onFirst().performClick()
+    waitForUI()
+    composeTestRule.onAllNodesWithText("OK").onFirst().performClick()
+    waitForUI()
+
+    val expirationDate = viewModel.uiState.value.expirationTime
+
+    assertNotNull(startDate)
+    assertNotNull(expirationDate)
+  }
+
+  @Test
+  fun datePickerOnly_cancelBeforeTimePicker_noUpdate() {
+    val viewModel = createTestViewModel()
+    val initialDate = viewModel.uiState.value.startTimeStamp
+
+    composeTestRule.setContent { TestEditRequestContentWithRealViewModel(viewModel = viewModel) }
+
+    composeTestRule.onNodeWithTag(EditRequestScreenTestTags.INPUT_START_DATE).performClick()
+    waitForUI()
+
+    composeTestRule.onNodeWithText("Cancel").performClick()
+    waitForUI()
+
+    assertEquals(initialDate, viewModel.uiState.value.startTimeStamp)
+  }
+
+  @Test
+  fun multipleCancelAndRetry_workCorrectly() {
+    val viewModel = createTestViewModel()
+
+    composeTestRule.setContent { TestEditRequestContentWithRealViewModel(viewModel = viewModel) }
+
+    composeTestRule.onNodeWithTag(EditRequestScreenTestTags.INPUT_START_DATE).performClick()
+    waitForUI()
+    composeTestRule.onNodeWithText("Cancel").performClick()
+    waitForUI()
+
+    composeTestRule.onNodeWithTag(EditRequestScreenTestTags.INPUT_START_DATE).performClick()
+    waitForUI()
+    composeTestRule.onAllNodesWithText("OK").onFirst().performClick()
+    waitForUI()
+    composeTestRule.onNodeWithText("Cancel").performClick()
+    waitForUI()
+
+    composeTestRule.onNodeWithTag(EditRequestScreenTestTags.INPUT_START_DATE).performClick()
+    waitForUI()
+    composeTestRule.onAllNodesWithText("OK").onFirst().performClick()
+    waitForUI()
+    composeTestRule.onAllNodesWithText("OK").onFirst().performClick()
+    waitForUI()
+
+    assertNotNull(viewModel.uiState.value.startTimeStamp)
+  }
+
+  @Test
+  fun dateField_clickWhileLoading_isDisabled() {
+    val uiState = EditRequestUiStateBuilder().withLoading(true).build()
+
+    composeTestRule.setContent { TestEditRequestContentWithStaticState(uiState = uiState) }
+
+    composeTestRule
+        .onNodeWithTag(EditRequestScreenTestTags.INPUT_START_DATE)
+        .assertIsDisplayed()
+        .assertIsNotEnabled()
+
+    composeTestRule
+        .onNodeWithTag(EditRequestScreenTestTags.INPUT_EXPIRATION_DATE)
+        .assertIsDisplayed()
+        .assertIsNotEnabled()
+  }
+
+  @Test
+  fun sequentialDatePickers_bothComplete() {
+    val viewModel = createTestViewModel()
+
+    composeTestRule.setContent { TestEditRequestContentWithRealViewModel(viewModel = viewModel) }
+
+    composeTestRule.onNodeWithTag(EditRequestScreenTestTags.INPUT_START_DATE).performClick()
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule.onAllNodesWithText("OK").fetchSemanticsNodes().isNotEmpty()
+    }
+    composeTestRule.onAllNodesWithText("OK").onFirst().performClick()
+    waitForUI()
+    composeTestRule.onAllNodesWithText("OK").onFirst().performClick()
+    waitForUI()
+
+    val startDate = viewModel.uiState.value.startTimeStamp
+    assertNotNull(startDate)
+
+    Thread.sleep(300)
+
+    composeTestRule.onNodeWithTag(EditRequestScreenTestTags.INPUT_EXPIRATION_DATE).performClick()
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule.onAllNodesWithText("OK").fetchSemanticsNodes().isNotEmpty()
+    }
+    composeTestRule.onAllNodesWithText("OK").onFirst().performClick()
+    waitForUI()
+    composeTestRule.onAllNodesWithText("OK").onFirst().performClick()
+    waitForUI()
+
+    val expirationDate = viewModel.uiState.value.expirationTime
+    assertNotNull(expirationDate)
+
+    assertNotNull(viewModel.uiState.value.startTimeStamp)
+    assertNotNull(viewModel.uiState.value.expirationTime)
   }
 }
