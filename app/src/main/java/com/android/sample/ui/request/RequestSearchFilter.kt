@@ -14,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.PopupProperties
 
 /** Centralized filter UI consuming dynamic facets from ViewModel. */
 @Composable
@@ -247,6 +248,7 @@ internal fun SortCriteriaButton(
     DropdownMenu(
         expanded = expanded,
         onDismissRequest = { expanded = false },
+        properties = PopupProperties(focusable = false),
         modifier = Modifier.testTag(RequestSearchFilterTestTags.SORT_MENU)) {
           RequestSort.entries.forEach { option ->
             DropdownMenuItem(
