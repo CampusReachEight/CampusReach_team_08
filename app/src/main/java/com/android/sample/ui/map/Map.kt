@@ -8,6 +8,7 @@ import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,6 +21,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.LocationOn
@@ -61,6 +63,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.android.sample.model.profile.UserProfile
 import com.android.sample.model.request.Request
 import com.android.sample.ui.navigation.BottomNavigationMenu
 import com.android.sample.ui.navigation.NavigationActions
@@ -68,6 +71,7 @@ import com.android.sample.ui.navigation.NavigationTab
 import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.navigation.Screen
 import com.android.sample.ui.overview.toDisplayString
+import com.android.sample.ui.profile.ProfilePicture
 import com.android.sample.ui.theme.TopNavigationBar
 import com.android.sample.ui.theme.UiDimens
 import com.android.sample.ui.theme.appPalette
@@ -79,6 +83,9 @@ import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import kotlinx.coroutines.launch
 
 object MapTestTags {
@@ -96,7 +103,13 @@ object MapTestTags {
   const val REQUEST_STATUS = "requestStatus"
   const val REQUEST_LOCATION_NAME = "requestLocationName"
   const val BUTTON_DETAILS = "buttonDetails"
-  const val PROFILE_TEXT = "profileText"
+  const val PROFILE_NAME = "profileName"
+  const val PROFILE_KUDOS = "profileKudos"
+  const val PROFILE_KUDOS_TEXT = "profileKudosText"
+  const val PROFILE_SECTION = "profileSection"
+  const val PROFILE_SECTION_TEXT = "profileSectionText"
+  const val PROFILE_CREATION_DATE = "profileCreationDate"
+  const val PROFILE_EDIT_BUTTON = "profileEditButton"
 
   fun testTagForTab(tab: String): String {
     return "tag${tab}"
@@ -176,6 +189,7 @@ fun MapScreen(viewModel: MapViewModel = viewModel(), navigationActions: Navigati
                       state = markerState,
                       onClick = {
                         viewModel.updateCurrentRequest(request)
+                        viewModel.updateCurrentProfile(request.creatorId)
                         true
                       })
                 }
@@ -248,7 +262,10 @@ fun MapScreen(viewModel: MapViewModel = viewModel(), navigationActions: Navigati
 
                             // Button X
                             IconButton(
-                                onClick = { viewModel.updateCurrentRequest(null) },
+                                onClick = {
+                                  viewModel.updateCurrentRequest(null)
+                                  viewModel.updateCurrentProfile(null)
+                                },
                                 modifier =
                                     Modifier.align(Alignment.CenterEnd)
                                         .testTag(MapTestTags.BUTTON_X)) {
@@ -494,11 +511,13 @@ fun MapScreen(viewModel: MapViewModel = viewModel(), navigationActions: Navigati
                                         uiState.isOwner, navigationActions, req, viewModel)
                                   }
                                   1 -> { // Profile
-                                    Text(
-                                        text = "Profile information would go here",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.testTag(MapTestTags.PROFILE_TEXT))
+                                    CurrentProfileUI(
+                                        uiState.isOwner,
+                                        navigationActions,
+                                        uiState.currentProfile,
+                                        viewModel,
+                                        this,
+                                        req)
                                   }
                                 // if you want to add more tab, just put last number + 1 ->...
                                 }
@@ -509,42 +528,44 @@ fun MapScreen(viewModel: MapViewModel = viewModel(), navigationActions: Navigati
           }
 
           // Zoom controls
-          Column(
-              modifier = Modifier.align(Alignment.BottomEnd).padding(UiDimens.SpacingMd),
-              horizontalAlignment = Alignment.CenterHorizontally) {
-                FloatingActionButton(
-                    onClick = {
-                      coroutineScope.launch {
-                        cameraPositionState.animate(CameraUpdateFactory.zoomIn())
+          if (uiState.currentRequest == null) {
+            Column(
+                modifier = Modifier.align(Alignment.BottomEnd).padding(UiDimens.SpacingMd),
+                horizontalAlignment = Alignment.CenterHorizontally) {
+                  FloatingActionButton(
+                      onClick = {
+                        coroutineScope.launch {
+                          cameraPositionState.animate(CameraUpdateFactory.zoomIn())
+                        }
+                      },
+                      modifier =
+                          Modifier.testTag(MapTestTags.ZOOM_IN_BUTTON)
+                              .size(UiDimens.SpacingXxl)
+                              .padding(UiDimens.SpacingXs),
+                      containerColor = appPalette().accent,
+                      contentColor = appPalette().surface) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Zoom In",
+                            tint = appPalette().surface)
                       }
-                    },
-                    modifier =
-                        Modifier.testTag(MapTestTags.ZOOM_IN_BUTTON)
-                            .size(UiDimens.SpacingXxl)
-                            .padding(UiDimens.SpacingXs),
-                    containerColor = appPalette().accent,
-                    contentColor = appPalette().surface) {
-                      Icon(
-                          imageVector = Icons.Default.Add,
-                          contentDescription = "Zoom In",
-                          tint = appPalette().surface)
-                    }
 
-                FloatingActionButton(
-                    onClick = {
-                      coroutineScope.launch {
-                        cameraPositionState.animate(CameraUpdateFactory.zoomOut())
+                  FloatingActionButton(
+                      onClick = {
+                        coroutineScope.launch {
+                          cameraPositionState.animate(CameraUpdateFactory.zoomOut())
+                        }
+                      },
+                      modifier =
+                          Modifier.testTag(MapTestTags.ZOOM_OUT_BUTTON)
+                              .size(UiDimens.SpacingXxl)
+                              .padding(UiDimens.SpacingXs),
+                      containerColor = appPalette().accent,
+                      contentColor = appPalette().surface) {
+                        Icon(imageVector = Icons.Default.Remove, contentDescription = "Zoom Out")
                       }
-                    },
-                    modifier =
-                        Modifier.testTag(MapTestTags.ZOOM_OUT_BUTTON)
-                            .size(UiDimens.SpacingXxl)
-                            .padding(UiDimens.SpacingXs),
-                    containerColor = appPalette().accent,
-                    contentColor = appPalette().surface) {
-                      Icon(imageVector = Icons.Default.Remove, contentDescription = "Zoom Out")
-                    }
-              }
+                }
+          }
 
           // Invisible box to expose zoom level for testing
           Box(
@@ -610,6 +631,181 @@ fun ButtonDetails(
               else -> ConstantMap.PROBLEM_OCCUR
             })
       }
+}
+
+@Composable
+fun CurrentProfileUI(
+    isOwner: Boolean?,
+    navigationActions: NavigationActions?,
+    profile: UserProfile?,
+    mapViewModel: MapViewModel,
+    columnScope: ColumnScope,
+    request: Request
+) {
+  with(columnScope) {
+    if (profile != null) {
+      Surface(
+          color =
+              MaterialTheme.colorScheme.tertiary.copy(alpha = ConstantMap.ALPHA_PRIMARY_SURFACE),
+          shape = RoundedCornerShape(ConstantMap.CORNER_RADIUS_SMALL),
+          modifier = Modifier.padding(bottom = ConstantMap.SPACER_HEIGHT_LARGE)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier =
+                    Modifier.padding(ConstantMap.PADDING_HORIZONTAL_STANDARD).fillMaxWidth()) {
+                  ProfilePicture(
+                      profileRepository = mapViewModel.profileRepository,
+                      profileId = profile.id,
+                      onClick = {},
+                      modifier = Modifier.size(ConstantMap.REQUEST_ITEM_ICON_SIZE))
+
+                  Text(
+                      text = "${profile.lastName} ${profile.name}",
+                      style =
+                          MaterialTheme.typography.titleMedium.copy(
+                              fontSize = ConstantMap.FONT_SIZE_BIG),
+                      color = MaterialTheme.colorScheme.onPrimaryContainer,
+                      modifier =
+                          Modifier.padding(start = ConstantMap.PADDING_STANDARD)
+                              .testTag(MapTestTags.PROFILE_NAME))
+                }
+          }
+      // Kudos + Section
+      Surface(
+          shape = RoundedCornerShape(ConstantMap.CORNER_RADIUS_LARGE),
+          color = MaterialTheme.colorScheme.tertiaryContainer,
+          modifier = Modifier.fillMaxWidth().align(Alignment.CenterHorizontally)) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(ConstantMap.SPACER_HEIGHT_LARGE),
+                horizontalArrangement = Arrangement.spacedBy(ConstantMap.SPACER_HEIGHT_MEDIUM)) {
+                  Surface(
+                      shape = RoundedCornerShape(ConstantMap.CORNER_RADIUS_LARGE),
+                      color = MaterialTheme.colorScheme.primaryContainer,
+                      modifier = Modifier.weight(ConstantMap.WEIGHT_FILL)) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(ConstantMap.PADDING_STANDARD)) {
+                              Text(
+                                  text = ConstantMap.KUDOS,
+                                  style =
+                                      MaterialTheme.typography.titleMedium.copy(
+                                          fontSize = ConstantMap.FONT_SIZE_BIG),
+                                  color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                  modifier = Modifier.testTag(MapTestTags.PROFILE_KUDOS_TEXT))
+
+                              Text(
+                                  text = profile.kudos.toString(),
+                                  style =
+                                      MaterialTheme.typography.bodyMedium.copy(
+                                          fontSize = ConstantMap.FONT_SIZE_MID),
+                                  color = MaterialTheme.colorScheme.tertiary,
+                                  modifier = Modifier.testTag(MapTestTags.PROFILE_KUDOS))
+                            }
+                      }
+
+                  Surface(
+                      shape = RoundedCornerShape(ConstantMap.CORNER_RADIUS_LARGE),
+                      color = MaterialTheme.colorScheme.primaryContainer,
+                      modifier = Modifier.weight(ConstantMap.WEIGHT_FILL)) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(ConstantMap.PADDING_STANDARD)) {
+                              Text(
+                                  text = ConstantMap.SECTION,
+                                  style =
+                                      MaterialTheme.typography.titleMedium.copy(
+                                          fontSize = ConstantMap.FONT_SIZE_BIG),
+                                  color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                  modifier = Modifier.testTag(MapTestTags.PROFILE_SECTION_TEXT))
+                              Text(
+                                  text = profile.section.toString(),
+                                  style =
+                                      MaterialTheme.typography.labelMedium.copy(
+                                          fontSize = ConstantMap.FONT_SIZE_MID),
+                                  color = MaterialTheme.colorScheme.tertiary,
+                                  modifier = Modifier.testTag(MapTestTags.PROFILE_SECTION))
+                            }
+                      }
+                }
+          }
+
+      Spacer(modifier = Modifier.height(ConstantMap.SPACER_HEIGHT_MEDIUM))
+
+      // Location name
+      Surface(
+          shape = RoundedCornerShape(ConstantMap.CORNER_RADIUS_MEDIUM),
+          color = MaterialTheme.colorScheme.surfaceVariant,
+          modifier = Modifier.align(Alignment.CenterHorizontally)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier =
+                    Modifier.padding(
+                        horizontal = ConstantMap.PADDING_HORIZONTAL_STANDARD,
+                        vertical = ConstantMap.PADDING_STANDARD)) {
+                  Icon(
+                      imageVector = Icons.Default.AccessTime,
+                      contentDescription = ConstantMap.LOCATION,
+                      tint = MaterialTheme.colorScheme.primary,
+                      modifier = Modifier.size(ConstantMap.ICON_SIZE_LOCATION))
+                  Spacer(modifier = Modifier.width(ConstantMap.SPACER_WIDTH_SMALL))
+                  Text(
+                      text = profile.arrivalDate.toDisplayStringWithoutHours(),
+                      style = MaterialTheme.typography.bodyMedium,
+                      fontWeight = FontWeight.Medium,
+                      color = MaterialTheme.colorScheme.onSurfaceVariant,
+                      modifier = Modifier.testTag(MapTestTags.PROFILE_CREATION_DATE))
+                }
+          }
+      Spacer(modifier = Modifier.height(ConstantMap.SPACER_HEIGHT_MEDIUM))
+    }
+    ButtonProfileDetails(isOwner, navigationActions, profile, mapViewModel, request)
+  }
+}
+
+@Composable
+fun ButtonProfileDetails(
+    isOwner: Boolean?,
+    navigationActions: NavigationActions?,
+    profile: UserProfile?,
+    mapViewModel: MapViewModel,
+    request: Request
+) {
+
+  if (isOwner == false && profile != null) return
+
+  val buttonText =
+      when {
+        profile == null -> ConstantMap.PROBLEM_OCCUR
+        isOwner == true -> ConstantMap.TEXT_EDIT_PROFILE
+        else -> ConstantMap.PROBLEM_OCCUR
+      }
+
+  val onClickAction: () -> Unit = {
+    when {
+      profile == null -> mapViewModel.updateCurrentProfile(request.creatorId)
+      isOwner == true -> navigationActions?.navigateTo(Screen.Profile(profile.id))
+      else -> mapViewModel.isHisRequest(request)
+    }
+  }
+
+  Button(
+      onClick = onClickAction,
+      colors =
+          ButtonDefaults.buttonColors(
+              containerColor = MaterialTheme.colorScheme.primary,
+              contentColor = MaterialTheme.colorScheme.onPrimary),
+      modifier =
+          Modifier.fillMaxWidth()
+              .padding(bottom = ConstantMap.SPACER_HEIGHT_LARGE)
+              .testTag(MapTestTags.PROFILE_EDIT_BUTTON)) {
+        Text(buttonText)
+      }
+}
+
+fun Date.toDisplayStringWithoutHours(): String {
+  return this.let { timestamp ->
+    SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(timestamp)
+  }
 }
 
 @Preview(showBackground = true)
