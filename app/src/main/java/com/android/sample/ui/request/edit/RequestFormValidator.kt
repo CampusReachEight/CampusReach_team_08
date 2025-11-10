@@ -31,8 +31,6 @@ class RequestFormValidator(
         showDescriptionError = !isDescriptionValid,
         showRequestTypeError = !isRequestTypeValid,
         showLocationNameError = !isLocationNameValid,
-        showStartDateError = !isStartDateValid,
-        showExpirationDateError = !isExpirationDateValid,
         showDateOrderError = !isDateOrderValid)
   }
 
@@ -42,8 +40,6 @@ class RequestFormValidator(
         !state.showDescriptionError &&
         !state.showRequestTypeError &&
         !state.showLocationNameError &&
-        !state.showStartDateError &&
-        !state.showExpirationDateError &&
         !state.showDateOrderError
   }
 }
