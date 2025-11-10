@@ -62,7 +62,8 @@ class RequestListTests : BaseEmulatorTest() {
     override suspend fun acceptRequest(requestId: String) {}
 
     override suspend fun cancelAcceptance(requestId: String) {}
-      override suspend fun getMyRequests(): List<Request> = throw NotImplementedError()
+
+    override suspend fun getMyRequests(): List<Request> = throw NotImplementedError()
   }
 
   // Fake UserProfileRepository avec comptage
@@ -430,7 +431,7 @@ class RequestListTests : BaseEmulatorTest() {
 
       override suspend fun cancelAcceptance(requestId: String) = throw NotImplementedError()
 
-        override suspend fun getMyRequests(): List<Request> = throw NotImplementedError()
+      override suspend fun getMyRequests(): List<Request> = throw NotImplementedError()
     }
 
     val vm =
@@ -442,12 +443,13 @@ class RequestListTests : BaseEmulatorTest() {
     composeTestRule.waitUntil(5_000) { vm.state.value.errorMessage != null }
     composeTestRule.onNodeWithTag(RequestListTestTags.ERROR_MESSAGE_DIALOG).assertIsDisplayed()
   }
-    // Add these tests to your RequestListTests class
+  // Add these tests to your RequestListTests class
 
-    @Test
-    fun showOnlyMyRequests_displaysOnlyCurrentUserRequests() {
-        // Create requests with different creators
-        val myRequest = Request(
+  @Test
+  fun showOnlyMyRequests_displaysOnlyCurrentUserRequests() {
+    // Create requests with different creators
+    val myRequest =
+        Request(
             requestId = "my_req_1",
             title = "My Request",
             description = "Created by me",
@@ -459,10 +461,11 @@ class RequestListTests : BaseEmulatorTest() {
             expirationTime = Date(System.currentTimeMillis() + 3_600_000),
             people = emptyList(),
             tags = listOf(Tags.INDOOR),
-            creatorId = currentUserId  // Current user's request
-        )
+            creatorId = currentUserId // Current user's request
+            )
 
-        val otherRequest = Request(
+    val otherRequest =
+        Request(
             requestId = "other_req_1",
             title = "Other Request",
             description = "Created by someone else",
@@ -474,91 +477,81 @@ class RequestListTests : BaseEmulatorTest() {
             expirationTime = Date(System.currentTimeMillis() + 3_600_000),
             people = emptyList(),
             tags = listOf(Tags.INDOOR),
-            creatorId = "other_user"  // Different user
-        )
+            creatorId = "other_user" // Different user
+            )
 
-        val allRequests = listOf(myRequest, otherRequest)
+    val allRequests = listOf(myRequest, otherRequest)
 
-        // Create FakeRepository that returns all requests
-        val repository = FakeRequestRepository(allRequests)
+    // Create FakeRepository that returns all requests
+    val repository = FakeRequestRepository(allRequests)
 
-        // Create ViewModel with showOnlyMyRequests = true
-        val vm = RequestListViewModel(
+    // Create ViewModel with showOnlyMyRequests = true
+    val vm =
+        RequestListViewModel(
             requestRepository = repository,
             profileRepository = FakeUserProfileRepository(createBitmap()),
-            showOnlyMyRequests = true
-        )
+            showOnlyMyRequests = true)
 
-        composeTestRule.setContent {
-            RequestListScreen(
-                requestListViewModel = vm,
-                showOnlyMyRequests = true
-            )
-        }
-
-        // Wait for requests to load
-        composeTestRule.waitUntil(5_000) { vm.state.value.requests.isNotEmpty() }
-
-        // Verify only current user's request is displayed
-        composeTestRule.onNodeWithText("My Request").assertExists()
-        composeTestRule.onNodeWithText("Other Request").assertDoesNotExist()
-
-        // Verify count is 1
-        composeTestRule
-            .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM, useUnmergedTree = true)
-            .assertCountEquals(1)
+    composeTestRule.setContent {
+      RequestListScreen(requestListViewModel = vm, showOnlyMyRequests = true)
     }
 
-    @Test
-    fun showOnlyMyRequests_displaysBackButton() {
-        val vm = RequestListViewModel(
+    // Wait for requests to load
+    composeTestRule.waitUntil(5_000) { vm.state.value.requests.isNotEmpty() }
+
+    // Verify only current user's request is displayed
+    composeTestRule.onNodeWithText("My Request").assertExists()
+    composeTestRule.onNodeWithText("Other Request").assertDoesNotExist()
+
+    // Verify count is 1
+    composeTestRule
+        .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM, useUnmergedTree = true)
+        .assertCountEquals(1)
+  }
+
+  @Test
+  fun showOnlyMyRequests_displaysBackButton() {
+    val vm =
+        RequestListViewModel(
             requestRepository = FakeRequestRepository(emptyList()),
             profileRepository = FakeUserProfileRepository(createBitmap()),
-            showOnlyMyRequests = true
-        )
+            showOnlyMyRequests = true)
 
-        composeTestRule.setContent {
-            RequestListScreen(
-                requestListViewModel = vm,
-                showOnlyMyRequests = true
-            )
-        }
-
-        composeTestRule.waitForIdle()
-
-        // Verify "My Requests" title is displayed
-        composeTestRule.onNodeWithText("My Requests").assertExists().assertIsDisplayed()
-
-        // Verify back button exists (by content description)
-        composeTestRule.onNodeWithContentDescription("Back").assertExists()
+    composeTestRule.setContent {
+      RequestListScreen(requestListViewModel = vm, showOnlyMyRequests = true)
     }
 
-    @Test
-    fun showOnlyMyRequests_hidesBottomNavigation() {
-        val vm = RequestListViewModel(
+    composeTestRule.waitForIdle()
+
+    // Verify "My Requests" title is displayed
+    composeTestRule.onNodeWithText("My Requests").assertExists().assertIsDisplayed()
+
+    // Verify back button exists (by content description)
+    composeTestRule.onNodeWithContentDescription("Back").assertExists()
+  }
+
+  @Test
+  fun showOnlyMyRequests_hidesBottomNavigation() {
+    val vm =
+        RequestListViewModel(
             requestRepository = FakeRequestRepository(emptyList()),
             profileRepository = FakeUserProfileRepository(createBitmap()),
-            showOnlyMyRequests = true
-        )
+            showOnlyMyRequests = true)
 
-        composeTestRule.setContent {
-            RequestListScreen(
-                requestListViewModel = vm,
-                showOnlyMyRequests = true
-            )
-        }
-
-        composeTestRule.waitForIdle()
-
-        // Bottom navigation should not be present when showOnlyMyRequests is true
-        composeTestRule
-            .onNodeWithTag(NavigationTestTags.BOTTOM_NAVIGATION_MENU)
-            .assertDoesNotExist()
+    composeTestRule.setContent {
+      RequestListScreen(requestListViewModel = vm, showOnlyMyRequests = true)
     }
 
-    @Test
-    fun showOnlyMyRequests_false_displaysAllRequests() {
-        val myRequest = Request(
+    composeTestRule.waitForIdle()
+
+    // Bottom navigation should not be present when showOnlyMyRequests is true
+    composeTestRule.onNodeWithTag(NavigationTestTags.BOTTOM_NAVIGATION_MENU).assertDoesNotExist()
+  }
+
+  @Test
+  fun showOnlyMyRequests_false_displaysAllRequests() {
+    val myRequest =
+        Request(
             requestId = "my_req_1",
             title = "My Request",
             description = "Created by me",
@@ -570,10 +563,10 @@ class RequestListTests : BaseEmulatorTest() {
             expirationTime = Date(System.currentTimeMillis() + 3_600_000),
             people = emptyList(),
             tags = listOf(Tags.INDOOR),
-            creatorId = currentUserId
-        )
+            creatorId = currentUserId)
 
-        val otherRequest = Request(
+    val otherRequest =
+        Request(
             requestId = "other_req_1",
             title = "Other Request",
             description = "Created by someone else",
@@ -585,89 +578,77 @@ class RequestListTests : BaseEmulatorTest() {
             expirationTime = Date(System.currentTimeMillis() + 3_600_000),
             people = emptyList(),
             tags = listOf(Tags.INDOOR),
-            creatorId = "other_user"
-        )
+            creatorId = "other_user")
 
-        val allRequests = listOf(myRequest, otherRequest)
-        val repository = FakeRequestRepository(allRequests)
+    val allRequests = listOf(myRequest, otherRequest)
+    val repository = FakeRequestRepository(allRequests)
 
-        // Create ViewModel with showOnlyMyRequests = false
-        val vm = RequestListViewModel(
+    // Create ViewModel with showOnlyMyRequests = false
+    val vm =
+        RequestListViewModel(
             requestRepository = repository,
             profileRepository = FakeUserProfileRepository(createBitmap()),
-            showOnlyMyRequests = false
-        )
+            showOnlyMyRequests = false)
 
-        composeTestRule.setContent {
-            RequestListScreen(
-                requestListViewModel = vm,
-                showOnlyMyRequests = false
-            )
-        }
-
-        composeTestRule.waitUntil(5_000) { vm.state.value.requests.size == 2 }
-
-        // Verify both requests are displayed
-        composeTestRule.onNodeWithText("My Request").assertExists()
-        composeTestRule.onNodeWithText("Other Request").assertExists()
-
-        composeTestRule
-            .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM, useUnmergedTree = true)
-            .assertCountEquals(2)
+    composeTestRule.setContent {
+      RequestListScreen(requestListViewModel = vm, showOnlyMyRequests = false)
     }
 
-    @Test
-    fun showOnlyMyRequests_emptyList_displaysCustomMessage() {
-        val vm = RequestListViewModel(
+    composeTestRule.waitUntil(5_000) { vm.state.value.requests.size == 2 }
+
+    // Verify both requests are displayed
+    composeTestRule.onNodeWithText("My Request").assertExists()
+    composeTestRule.onNodeWithText("Other Request").assertExists()
+
+    composeTestRule
+        .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM, useUnmergedTree = true)
+        .assertCountEquals(2)
+  }
+
+  @Test
+  fun showOnlyMyRequests_emptyList_displaysCustomMessage() {
+    val vm =
+        RequestListViewModel(
             requestRepository = FakeRequestRepository(emptyList()),
             profileRepository = FakeUserProfileRepository(createBitmap()),
-            showOnlyMyRequests = true
-        )
+            showOnlyMyRequests = true)
 
-        composeTestRule.setContent {
-            RequestListScreen(
-                requestListViewModel = vm,
-                showOnlyMyRequests = true
-            )
-        }
-
-        composeTestRule.waitForIdle()
-
-        // Verify the custom empty message for My Requests
-        composeTestRule
-            .onNodeWithText("You don't have any requests yet")
-            .assertExists()
-            .assertIsDisplayed()
+    composeTestRule.setContent {
+      RequestListScreen(requestListViewModel = vm, showOnlyMyRequests = true)
     }
 
-    @Test
-    fun showOnlyMyRequests_false_emptyList_displaysGenericMessage() {
-        val vm = RequestListViewModel(
+    composeTestRule.waitForIdle()
+
+    // Verify the custom empty message for My Requests
+    composeTestRule
+        .onNodeWithText("You don't have any requests yet")
+        .assertExists()
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun showOnlyMyRequests_false_emptyList_displaysGenericMessage() {
+    val vm =
+        RequestListViewModel(
             requestRepository = FakeRequestRepository(emptyList()),
             profileRepository = FakeUserProfileRepository(createBitmap()),
-            showOnlyMyRequests = false
-        )
+            showOnlyMyRequests = false)
 
-        composeTestRule.setContent {
-            RequestListScreen(
-                requestListViewModel = vm,
-                showOnlyMyRequests = false
-            )
-        }
-
-        composeTestRule.waitForIdle()
-
-        // Verify the generic empty message for All Requests
-        composeTestRule
-            .onNodeWithText("No requests at the moment")
-            .assertExists()
-            .assertIsDisplayed()
+    composeTestRule.setContent {
+      RequestListScreen(requestListViewModel = vm, showOnlyMyRequests = false)
     }
 
-    @Test
-    fun showOnlyMyRequests_multipleUserRequests_displaysAll() {
-        // Create multiple requests from the current user
-        val requests = listOf(
+    composeTestRule.waitForIdle()
+
+    // Verify the generic empty message for All Requests
+    composeTestRule.onNodeWithText("No requests at the moment").assertExists().assertIsDisplayed()
+  }
+
+  @Test
+  fun showOnlyMyRequests_multipleUserRequests_displaysAll() {
+    // Create multiple requests from the current user
+    val requests =
+        listOf(
             Request(
                 requestId = "my_req_1",
                 title = "My First Request",
@@ -680,8 +661,7 @@ class RequestListTests : BaseEmulatorTest() {
                 expirationTime = Date(System.currentTimeMillis() + 3_600_000),
                 people = emptyList(),
                 tags = listOf(Tags.INDOOR),
-                creatorId = currentUserId
-            ),
+                creatorId = currentUserId),
             Request(
                 requestId = "my_req_2",
                 title = "My Second Request",
@@ -694,8 +674,7 @@ class RequestListTests : BaseEmulatorTest() {
                 expirationTime = Date(System.currentTimeMillis() + 3_600_000),
                 people = emptyList(),
                 tags = listOf(Tags.OUTDOOR),
-                creatorId = currentUserId
-            ),
+                creatorId = currentUserId),
             Request(
                 requestId = "other_req",
                 title = "Other Request",
@@ -708,32 +687,27 @@ class RequestListTests : BaseEmulatorTest() {
                 expirationTime = Date(System.currentTimeMillis() + 3_600_000),
                 people = emptyList(),
                 tags = listOf(Tags.INDOOR),
-                creatorId = "other_user"
-            )
-        )
+                creatorId = "other_user"))
 
-        val vm = RequestListViewModel(
+    val vm =
+        RequestListViewModel(
             requestRepository = FakeRequestRepository(requests),
             profileRepository = FakeUserProfileRepository(createBitmap()),
-            showOnlyMyRequests = true
-        )
+            showOnlyMyRequests = true)
 
-        composeTestRule.setContent {
-            RequestListScreen(
-                requestListViewModel = vm,
-                showOnlyMyRequests = true
-            )
-        }
-
-        composeTestRule.waitUntil(5_000) { vm.state.value.requests.size == 2 }
-
-        // Verify only current user's requests are displayed
-        composeTestRule.onNodeWithText("My First Request").assertExists()
-        composeTestRule.onNodeWithText("My Second Request").assertExists()
-        composeTestRule.onNodeWithText("Other Request").assertDoesNotExist()
-
-        composeTestRule
-            .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM, useUnmergedTree = true)
-            .assertCountEquals(2)
+    composeTestRule.setContent {
+      RequestListScreen(requestListViewModel = vm, showOnlyMyRequests = true)
     }
+
+    composeTestRule.waitUntil(5_000) { vm.state.value.requests.size == 2 }
+
+    // Verify only current user's requests are displayed
+    composeTestRule.onNodeWithText("My First Request").assertExists()
+    composeTestRule.onNodeWithText("My Second Request").assertExists()
+    composeTestRule.onNodeWithText("Other Request").assertDoesNotExist()
+
+    composeTestRule
+        .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM, useUnmergedTree = true)
+        .assertCountEquals(2)
+  }
 }
