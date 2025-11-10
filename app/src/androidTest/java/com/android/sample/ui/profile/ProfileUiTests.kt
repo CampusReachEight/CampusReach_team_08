@@ -634,15 +634,15 @@ class ProfileUiTests {
     assertEquals(newName, viewModel.state.value.userName)
   }
 
-    @Test
-    fun fromLabel_mapsEachEntry() {
-        for (entry in UserSections.entries) {
-            assertEquals(entry, UserSections.fromLabel(entry.label))
-        }
+  @Test
+  fun fromLabel_mapsEachEntry() {
+    for (entry in UserSections.entries) {
+      assertEquals(entry, UserSections.fromLabel(entry.label))
     }
+  }
 
-    @Test
-    fun fromLabel_unknownReturnsNone() {
-        assertEquals(UserSections.NONE, UserSections.fromLabel("non_existent_label_123"))
-    }
+  @Test
+  fun fromLabel_unknownReturnsNone() {
+    assertEquals(UserSections.NONE, UserSections.fromLabel("non_existent_label_123"))
+  }
 }
