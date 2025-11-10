@@ -22,8 +22,6 @@ class RequestFormValidator(
     val isRequestTypeValid = requestTypes.isNotEmpty()
     val isLocationValid = location != null
     val isLocationNameValid = locationName.isNotBlank()
-    val isStartDateValid = startDateString.isNotBlank()
-    val isExpirationDateValid = expirationDateString.isNotBlank()
     val isDateOrderValid = !expirationTime.before(startTimeStamp)
 
     return FieldValidationState(

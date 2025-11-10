@@ -1,7 +1,6 @@
 package com.android.sample.ui.request.edit
 
 import android.Manifest
-import android.R.attr.onClick
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.LocationManager
@@ -92,23 +91,12 @@ fun EditRequestScreen(
 ) {
   val context = LocalContext.current
   // Permission launcher for location permissions
+  val permissionHandler = remember(viewModel) { PermissionResultHandler(context, viewModel) }
+
   val permissionLauncher =
-      rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
-          permissions ->
-        when {
-          permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
-              permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true -> {
-            if (isLocationEnabled(context)) {
-              viewModel.getCurrentLocation()
-            } else {
-              viewModel.setLocationPermissionError()
-            }
-          }
-          else -> {
-            viewModel.setLocationPermissionError()
-          }
-        }
-      }
+      rememberLauncherForActivityResult(
+          ActivityResultContracts.RequestMultiplePermissions(),
+          permissionHandler::handlePermissionResult)
   val isEditMode = requestId != null
   LaunchedEffect(requestId) {
     if (requestId != null) {
@@ -180,6 +168,12 @@ fun EditRequestContent(
     uiState: EditRequestUiState,
     actions: EditRequestActions
 ) {
+  val pickerState =
+      remember(actions.onStartTimeStampChange, actions.onExpirationTimeChange) {
+        DateTimePickerState(
+            onStartDateTimeChange = actions.onStartTimeStampChange,
+            onExpirationDateTimeChange = actions.onExpirationTimeChange)
+      }
 
   val dateFormat = remember { SimpleDateFormat(DateFormats.DATE_TIME_FORMAT, Locale.getDefault()) }
   var showStartDatePicker by remember { mutableStateOf(false) }
@@ -214,7 +208,6 @@ fun EditRequestContent(
             showError = uiState.validationState.showRequestTypeError,
             isLoading = uiState.isLoading,
             onRequestTypesChange = actions.onRequestTypesChange)
-        // this is the your current location button
         Button(
             onClick = actions.onUseCurrentLocation,
             modifier =
@@ -248,12 +241,12 @@ fun EditRequestContent(
         StartDateField(
             dateString = dateFormat.format(uiState.startTimeStamp),
             isLoading = uiState.isLoading,
-            onClick = { showStartDatePicker = true })
+            onClick = { pickerState.showStartDatePicker = true })
         ExpirationDateField(
             dateString = dateFormat.format(uiState.expirationTime),
             showDateOrderError = uiState.validationState.showDateOrderError,
             isLoading = uiState.isLoading,
-            onClick = { showExpirationDatePicker = true })
+            onClick = { pickerState.showExpirationDatePicker = true })
         TagsSection(
             tags = uiState.tags, isLoading = uiState.isLoading, onTagsChange = actions.onTagsChange)
         Spacer(modifier = Modifier.height(SPACING))
@@ -268,62 +261,32 @@ fun EditRequestContent(
             onConfirmDelete = actions.onConfirmDelete,
             onCancelDelete = actions.onCancelDelete)
       }
-  if (showStartDatePicker) {
+  if (pickerState.showStartDatePicker) {
     MaterialDatePickerDialog(
-        onDateSelected = { selectedDate ->
-          tempSelectedDate = selectedDate
-          showStartDatePicker = false
-          showStartTimePicker = true
-        },
-        onDismiss = { showStartDatePicker = false },
-        initialDate = uiState.startTimeStamp)
+        onDateSelected = pickerState::handleStartDateSelected,
+        onDismiss = pickerState::handleStartDateDismiss)
   }
 
-  if (showStartTimePicker) {
+  if (pickerState.showStartTimePicker) {
     MaterialTimePickerDialog(
-        onTimeSelected = { hour, minute ->
-          tempSelectedDate?.let { date ->
-            val combinedDate = combineDateAndTime(date, hour, minute)
-            actions.onStartTimeStampChange(combinedDate)
-          }
-          showStartTimePicker = false
-          tempSelectedDate = null
-        },
-        onDismiss = {
-          showStartTimePicker = false
-          tempSelectedDate = null
-        })
+        onTimeSelected = pickerState::handleStartTimeSelected,
+        onDismiss = pickerState::handleStartTimeDismiss)
   }
 
-  if (showExpirationDatePicker) {
+  if (pickerState.showExpirationDatePicker) {
     MaterialDatePickerDialog(
-        onDateSelected = { selectedDate ->
-          tempSelectedDate = selectedDate
-          showExpirationDatePicker = false
-          showExpirationTimePicker = true
-        },
-        onDismiss = { showExpirationDatePicker = false },
+        onDateSelected = pickerState::handleExpirationDateSelected,
+        onDismiss = pickerState::handleExpirationDateDismiss,
         initialDate = uiState.expirationTime)
   }
 
-  if (showExpirationTimePicker) {
+  if (pickerState.showExpirationTimePicker) {
     MaterialTimePickerDialog(
-        onTimeSelected = { hour, minute ->
-          tempSelectedDate?.let { date ->
-            val combinedDate = combineDateAndTime(date, hour, minute)
-            actions.onExpirationTimeChange(combinedDate)
-          }
-          showExpirationTimePicker = false
-          tempSelectedDate = null
-        },
-        onDismiss = {
-          showExpirationTimePicker = false
-          tempSelectedDate = null
-        })
+        onTimeSelected = pickerState::handleExpirationTimeSelected,
+        onDismiss = pickerState::handleExpirationTimeDismiss)
   }
 }
 
-// Extracted composable components
 @Composable
 private fun ErrorMessageCard(errorMessage: String?, onClearError: () -> Unit) {
   errorMessage?.let { error ->
