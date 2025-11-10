@@ -161,6 +161,34 @@ class RequestListTests : BaseEmulatorTest() {
         .mapNotNull { it.config.getOrNull(SemanticsProperties.Text)?.joinToString("") }
   }
 
+  /** Helper to instantiate fake ViewModel for tests. */
+  fun getFakeVm(requests: List<Request>) =
+      RequestListViewModel(
+          requestRepository =
+              object : RequestRepository {
+                override fun getNewRequestId(): String = "n/a"
+
+                override suspend fun getAllRequests(): List<Request> = requests
+
+                override suspend fun getRequest(requestId: String): Request =
+                    requests.first { it.requestId == requestId }
+
+                override suspend fun addRequest(request: Request) {}
+
+                override suspend fun updateRequest(requestId: String, updatedRequest: Request) {}
+
+                override suspend fun deleteRequest(requestId: String) {}
+
+                override fun hasUserAcceptedRequest(request: Request): Boolean = false
+
+                override suspend fun acceptRequest(requestId: String) {}
+
+                override suspend fun cancelAcceptance(requestId: String) {}
+
+                override suspend fun isOwnerOfRequest(request: Request): Boolean = false
+              },
+          profileRepository = FakeUserProfileRepository())
+
   @Test
   fun displaysTitlesAndDescriptions() {
     val requests = sampleRequests(listOf("u1", "u2", "u3"))
@@ -517,32 +545,7 @@ class RequestListTests : BaseEmulatorTest() {
                 creatorId = "creator-3"),
         )
 
-    val vm =
-        RequestListViewModel(
-            requestRepository =
-                object : RequestRepository {
-                  override fun getNewRequestId(): String = "n/a"
-
-                  override suspend fun getAllRequests(): List<Request> = requests
-
-                  override suspend fun getRequest(requestId: String): Request =
-                      requests.first { it.requestId == requestId }
-
-                  override suspend fun addRequest(request: Request) {}
-
-                  override suspend fun updateRequest(requestId: String, updatedRequest: Request) {}
-
-                  override suspend fun deleteRequest(requestId: String) {}
-
-                  override fun hasUserAcceptedRequest(request: Request): Boolean = false
-
-                  override suspend fun acceptRequest(requestId: String) {}
-
-                  override suspend fun cancelAcceptance(requestId: String) {}
-
-                  override suspend fun isOwnerOfRequest(request: Request): Boolean = false
-                },
-            profileRepository = FakeUserProfileRepository())
+    val vm = getFakeVm(requests)
 
     composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
 
@@ -628,32 +631,7 @@ class RequestListTests : BaseEmulatorTest() {
                 creatorId = "creator-c"),
         )
 
-    val vm =
-        RequestListViewModel(
-            requestRepository =
-                object : RequestRepository {
-                  override fun getNewRequestId(): String = "n/a"
-
-                  override suspend fun getAllRequests(): List<Request> = requests
-
-                  override suspend fun getRequest(requestId: String): Request =
-                      requests.first { it.requestId == requestId }
-
-                  override suspend fun addRequest(request: Request) {}
-
-                  override suspend fun updateRequest(requestId: String, updatedRequest: Request) {}
-
-                  override suspend fun deleteRequest(requestId: String) {}
-
-                  override fun hasUserAcceptedRequest(request: Request): Boolean = false
-
-                  override suspend fun acceptRequest(requestId: String) {}
-
-                  override suspend fun cancelAcceptance(requestId: String) {}
-
-                  override suspend fun isOwnerOfRequest(request: Request): Boolean = false
-                },
-            profileRepository = FakeUserProfileRepository())
+    val vm = getFakeVm(requests)
 
     composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
     composeTestRule.waitUntil(WAIT_TIMEOUT_MS) { vm.state.value.requests.size == requests.size }

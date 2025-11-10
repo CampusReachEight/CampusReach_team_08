@@ -27,18 +27,32 @@ import org.apache.lucene.search.TopDocs
 import org.apache.lucene.store.ByteBuffersDirectory
 import org.apache.lucene.store.Directory
 
-class LuceneRequestSearchEngine(private val maxResults: Int = 100) :
+const val DEFAULT_MAX_SEARCH_RESULTS = 100
+
+/**
+ * A search engine for requests using Apache Lucene. Pros:
+ * - Powerful full-text search capabilities
+ * - Flexible querying with support for multiple fields and boosting
+ * - Fast search performance on indexed data Cons:
+ * - /!\ Requires indexing step before searching
+ * - Additional dependency on Lucene library
+ * - Increased app size due to Lucene binaries
+ */
+class LuceneRequestSearchEngine(private val maxResults: Int = DEFAULT_MAX_SEARCH_RESULTS) :
     SearchStrategy<Request>, Closeable {
 
+  private val dispatcher = Dispatchers.IO
   private val directory: Directory = ByteBuffersDirectory()
   private val analyzer: Analyzer = StandardAnalyzer()
   private var writer: IndexWriter? = null
   private var reader: DirectoryReader? = null
   private var searcher: IndexSearcher? = null
+
   private val indexedById = HashMap<String, Request>()
 
+  /** Indexes the provided list of requests, replacing any previously indexed data. */
   suspend fun indexRequests(requests: List<Request>) =
-      withContext(Dispatchers.IO) {
+      withContext(dispatcher) {
         try {
           writer?.close()
           val cfg = IndexWriterConfig(analyzer)
@@ -60,7 +74,8 @@ class LuceneRequestSearchEngine(private val maxResults: Int = 100) :
 
             fun joinList(values: Any?): String {
               return when (values) {
-                is List<*> -> values.filterNotNull().joinToString(" ") { it.toString() }
+                is List<*> ->
+                    values.filterNotNull().joinToString(TEXT_JOIN_SEPARATOR) { it.toString() }
                 else -> values?.toString() ?: ""
               }
             }
@@ -78,8 +93,8 @@ class LuceneRequestSearchEngine(private val maxResults: Int = 100) :
                 else
                     buildString {
                       append(text)
-                      append(' ')
-                      append(text.replace('_', ' '))
+                      append(SPACE_CHAR)
+                      append(text.replace(UNDERSCORE_CHAR, SPACE_CHAR))
                     }
 
             addText(FIELD_TYPES, withDisplayVariants(types))
@@ -119,8 +134,17 @@ class LuceneRequestSearchEngine(private val maxResults: Int = 100) :
         }
       }
 
+  /**
+   * Searches the indexed requests for the given query string and returns a list of matching results
+   * with their scores.
+   *
+   * @param items Not used in this implementation - the search is performed on the data indexed by
+   *   [indexRequests], assumed to be called by the view model.
+   * @param query The search query string.
+   * @return A list of [SearchResult] containing matching requests and their scores.
+   */
   override suspend fun search(items: List<Request>, query: String): List<SearchResult<Request>> =
-      withContext(Dispatchers.IO) {
+      withContext(dispatcher) {
         if (query.isBlank()) return@withContext emptyList()
         val localSearcher = searcher ?: return@withContext emptyList()
 
@@ -137,25 +161,25 @@ class LuceneRequestSearchEngine(private val maxResults: Int = 100) :
             )
         val boosts =
             mapOf(
-                FIELD_TITLE to 3.0f,
-                FIELD_DESCRIPTION to 1.5f,
-                FIELD_LOCATION_NAME to 2.0f,
-                FIELD_TYPES to 1.2f,
-                FIELD_TAGS to 1.2f,
-                FIELD_STATUS to 1.0f,
+                FIELD_TITLE to BOOST_TITLE,
+                FIELD_DESCRIPTION to BOOST_DESCRIPTION,
+                FIELD_LOCATION_NAME to BOOST_LOCATION_NAME,
+                FIELD_TYPES to BOOST_TYPES,
+                FIELD_TAGS to BOOST_TAGS,
+                FIELD_STATUS to BOOST_STATUS,
             )
 
         val parser = MultiFieldQueryParser(fields, analyzer, boosts)
         parser.defaultOperator = QueryParser.Operator.OR
 
-        val terms = safeQuery.split("\\s+".toRegex()).mapNotNull { t -> t.trim().ifEmpty { null } }
+        val terms = safeQuery.split(WHITESPACE_REGEX).mapNotNull { t -> t.trim().ifEmpty { null } }
 
         val luceneQuery =
-            if (terms.size <= 1) {
+            if (terms.size <= SINGLE_TERM_SIZE_THRESHOLD) {
               try {
                 parser.parse(safeQuery)
               } catch (_: Exception) {
-                parser.parse("*")
+                parser.parse(QUERY_MATCH_ALL)
               }
             } else {
               val builder = BooleanQuery.Builder()
@@ -171,10 +195,11 @@ class LuceneRequestSearchEngine(private val maxResults: Int = 100) :
               val builtQuery = builder.build()
               val tokenCount = builtQuery.clauses().size
 
-              if (tokenCount > 0) {
+              if (tokenCount > MIN_TOKEN_COUNT) {
                 val msm =
                     kotlin.math.max(
-                        1, kotlin.math.ceil(tokenCount * MIN_SHOULD_MATCH_RATIO).toInt())
+                        MIN_SHOULD_MATCH_BASE,
+                        kotlin.math.ceil(tokenCount * MIN_SHOULD_MATCH_RATIO).toInt())
                 val finalBuilder = BooleanQuery.Builder()
                 builtQuery.clauses().forEach { finalBuilder.add(it) }
                 finalBuilder.setMinimumNumberShouldMatch(msm)
@@ -183,7 +208,7 @@ class LuceneRequestSearchEngine(private val maxResults: Int = 100) :
                 try {
                   parser.parse(safeQuery)
                 } catch (_: Exception) {
-                  parser.parse("*")
+                  parser.parse(QUERY_MATCH_ALL)
                 }
               }
             }
@@ -192,12 +217,15 @@ class LuceneRequestSearchEngine(private val maxResults: Int = 100) :
         val hits: Array<ScoreDoc> = top.scoreDocs
         if (hits.isEmpty()) return@withContext emptyList()
 
-        val topScore = hits.maxOf { it.score }.takeIf { it > 0f } ?: 1f
+        val topScore = hits.maxOf { it.score }.takeIf { it > MIN_TOP_SCORE } ?: FALLBACK_TOP_SCORE
         hits.mapNotNull { sd ->
           val doc = localSearcher.storedFields().document(sd.doc)
           val id = doc.get(FIELD_REQUEST_ID) ?: return@mapNotNull null
           val item = indexedById[id] ?: return@mapNotNull null
-          val normalizedScore = ((sd.score / topScore) * 100f).toInt().coerceIn(0, 100)
+          val normalizedScore =
+              ((sd.score / topScore) * SCORE_PERCENT_SCALE)
+                  .toInt()
+                  .coerceIn(SCORE_PERCENT_MIN, SCORE_PERCENT_SCALE.toInt())
           SearchResult(item = item, score = normalizedScore, matchedFields = emptyList())
         }
       }
@@ -226,5 +254,31 @@ class LuceneRequestSearchEngine(private val maxResults: Int = 100) :
     const val FIELD_START_TS = "startTimeStamp"
     const val FIELD_EXPIRATION_TS = "expirationTime"
     const val MIN_SHOULD_MATCH_RATIO = 0.6
+
+    // Boost factors for individual fields
+    const val BOOST_TITLE = 3.0f
+    const val BOOST_DESCRIPTION = 1.5f
+    const val BOOST_LOCATION_NAME = 2.0f
+    const val BOOST_TYPES = 1.2f
+    const val BOOST_TAGS = 1.2f
+    const val BOOST_STATUS = 1.0f
+
+    // Thresholds & scaling constants
+    const val SINGLE_TERM_SIZE_THRESHOLD = 1
+    const val MIN_TOKEN_COUNT = 0
+    const val MIN_SHOULD_MATCH_BASE = 1
+    const val MIN_TOP_SCORE = 0f
+    const val FALLBACK_TOP_SCORE = 1f
+    const val SCORE_PERCENT_SCALE = 100f
+    const val SCORE_PERCENT_MIN = 0
+
+    // Query / parsing related constants
+    const val WHITESPACE_REGEX = "\\s+"
+    const val QUERY_MATCH_ALL = "*"
+
+    // String building helpers
+    const val SPACE_CHAR = ' '
+    const val UNDERSCORE_CHAR = '_'
+    const val TEXT_JOIN_SEPARATOR = " "
   }
 }
