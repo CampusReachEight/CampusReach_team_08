@@ -16,7 +16,6 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.sample.model.map.Location
-import com.android.sample.model.profile.Section
 import com.android.sample.model.profile.UserProfile
 import com.android.sample.model.profile.UserProfileRepository
 import com.android.sample.model.profile.UserProfileRepositoryFirestore
@@ -28,6 +27,7 @@ import com.android.sample.model.request.RequestType
 import com.android.sample.model.request.Tags
 import com.android.sample.model.request.displayString
 import com.android.sample.ui.profile.ProfilePictureTestTags
+import com.android.sample.ui.profile.UserSections
 import com.android.sample.ui.request.RequestListScreen
 import com.android.sample.ui.request.RequestListTestTags
 import com.android.sample.ui.request.RequestListViewModel
@@ -112,7 +112,7 @@ class RequestListTests : BaseEmulatorTest() {
               email = null,
               photo = null,
               kudos = 0,
-              section = Section.OTHER,
+              section = UserSections.NONE,
               arrivalDate = Date())
       if (userId in withImage) {
         val uri =
