@@ -127,7 +127,7 @@ class RequestListTests : BaseEmulatorTest() {
               arrivalDate = Date())
       if (userId in withImage) {
         val uri =
-            "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
+            "https://lh3.googleusercontent.com/a/ACg8ocIb9J_JIRcgy6IyLyn13VDWBzB5GJ_FLrIjCQ7Nj_pcUoy2qK3H=s96-c"
         return user.copy(photo = Uri.parse(uri))
       }
       return user
