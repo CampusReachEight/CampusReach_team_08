@@ -90,24 +90,15 @@ fun EditRequestScreen(
                     locationProvider = FusedLocationProvider(LocalContext.current)))
 ) {
   val context = LocalContext.current
+  val permissionHandler = remember(viewModel) { PermissionResultHandler(context, viewModel) }
+  rememberLauncherForActivityResult(
+      ActivityResultContracts.RequestMultiplePermissions(),
+      permissionHandler::handlePermissionResult)
   // Permission launcher for location permissions
   val permissionLauncher =
-      rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
-          permissions ->
-        when {
-          permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
-              permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true -> {
-            if (isLocationEnabled(context)) {
-              viewModel.getCurrentLocation()
-            } else {
-              viewModel.setLocationPermissionError()
-            }
-          }
-          else -> {
-            viewModel.setLocationPermissionError()
-          }
-        }
-      }
+      rememberLauncherForActivityResult(
+          ActivityResultContracts.RequestMultiplePermissions(),
+          permissionHandler::handlePermissionResult)
   val isEditMode = requestId != null
   LaunchedEffect(requestId) {
     if (requestId != null) {
