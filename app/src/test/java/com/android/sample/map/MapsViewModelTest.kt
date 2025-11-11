@@ -1,13 +1,13 @@
 package com.android.sample.map
 
 import com.android.sample.model.map.Location
-import com.android.sample.model.profile.Section
 import com.android.sample.model.profile.UserProfile
 import com.android.sample.model.profile.UserProfileRepository
 import com.android.sample.model.request.Request
 import com.android.sample.model.request.RequestRepository
 import com.android.sample.model.request.RequestStatus
 import com.android.sample.ui.map.MapViewModel
+import com.android.sample.ui.profile.UserSections
 import com.google.android.gms.maps.model.LatLng
 import java.util.Date
 import java.util.UUID
@@ -102,7 +102,7 @@ class MapsViewModelTest {
     }
 
     override suspend fun getUserProfile(userId: String): UserProfile {
-      return UserProfile("", "", "", "", null, 0, Section.COMPUTER_SCIENCE, Date(0L))
+      return UserProfile("", "", "", "", null, 0, UserSections.COMPUTER_SCIENCE, Date(0L))
     }
 
     override suspend fun addUserProfile(userProfile: UserProfile) {}
