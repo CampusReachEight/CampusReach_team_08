@@ -72,6 +72,7 @@ import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.navigation.Screen
 import com.android.sample.ui.overview.toDisplayString
 import com.android.sample.ui.profile.ProfilePicture
+import com.android.sample.ui.theme.AppPalette
 import com.android.sample.ui.theme.TopNavigationBar
 import com.android.sample.ui.theme.UiDimens
 import com.android.sample.ui.theme.appPalette
@@ -132,6 +133,7 @@ fun calculateZoomLevel(markerCount: Int): Float {
 @Composable
 fun MapScreen(viewModel: MapViewModel = viewModel(), navigationActions: NavigationActions? = null) {
   val uiState by viewModel.uiState.collectAsState()
+  val appPalette = appPalette()
 
   val errorMsg = uiState.errorMsg
 
@@ -231,7 +233,7 @@ fun MapScreen(viewModel: MapViewModel = viewModel(), navigationActions: Navigati
                           RoundedCornerShape(
                               topStart = ConstantMap.BOTTOM_SHEET_SHAPE,
                               topEnd = ConstantMap.BOTTOM_SHEET_SHAPE),
-                      color = MaterialTheme.colorScheme.surface,
+                      color = appPalette.primary,
                       shadowElevation = ConstantMap.BOTTOM_SHEET_ELEVATION) {
                         Column(modifier = Modifier.fillMaxSize()) {
                           // Drag Handle + Button
@@ -286,7 +288,7 @@ fun MapScreen(viewModel: MapViewModel = viewModel(), navigationActions: Navigati
                               indicator = { tabPositions ->
                                 TabRowDefaults.SecondaryIndicator(
                                     Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
-                                    color = MaterialTheme.colorScheme.tertiary)
+                                    color = appPalette.accent)
                               },
                               divider = {}) {
                                 tabs.forEachIndexed { index, title ->
@@ -298,8 +300,7 @@ fun MapScreen(viewModel: MapViewModel = viewModel(), navigationActions: Navigati
                                             text = title,
                                             style = MaterialTheme.typography.titleSmall,
                                             color =
-                                                if (selectedTab == index)
-                                                    MaterialTheme.colorScheme.tertiary
+                                                if (selectedTab == index) appPalette.accent
                                                 else
                                                     MaterialTheme.colorScheme.onSurface.copy(
                                                         alpha = ConstantMap.ALPHA_TEXT_UNSELECTED))
@@ -327,7 +328,7 @@ fun MapScreen(viewModel: MapViewModel = viewModel(), navigationActions: Navigati
                                   0 -> { // Information
                                     Surface(
                                         color =
-                                            MaterialTheme.colorScheme.tertiary.copy(
+                                            appPalette.accent.copy(
                                                 alpha = ConstantMap.ALPHA_PRIMARY_SURFACE),
                                         shape = RoundedCornerShape(ConstantMap.CORNER_RADIUS_SMALL),
                                         modifier =
@@ -336,7 +337,7 @@ fun MapScreen(viewModel: MapViewModel = viewModel(), navigationActions: Navigati
                                           Text(
                                               text = req.title,
                                               style = MaterialTheme.typography.titleMedium,
-                                              color = MaterialTheme.colorScheme.tertiary,
+                                              color = appPalette.accent,
                                               modifier =
                                                   Modifier.padding(
                                                           horizontal = ConstantMap.PADDING_STANDARD,
@@ -366,7 +367,8 @@ fun MapScreen(viewModel: MapViewModel = viewModel(), navigationActions: Navigati
                                               shape =
                                                   RoundedCornerShape(
                                                       ConstantMap.CORNER_RADIUS_MEDIUM),
-                                              color = MaterialTheme.colorScheme.primaryContainer) {
+                                              color =
+                                                  MaterialTheme.colorScheme.secondaryContainer) {
                                                 Column(
                                                     modifier =
                                                         Modifier.padding(
@@ -484,7 +486,7 @@ fun MapScreen(viewModel: MapViewModel = viewModel(), navigationActions: Navigati
                                                 Icon(
                                                     imageVector = Icons.Default.LocationOn,
                                                     contentDescription = ConstantMap.LOCATION,
-                                                    tint = MaterialTheme.colorScheme.primary,
+                                                    tint = appPalette.primary,
                                                     modifier =
                                                         Modifier.size(
                                                             ConstantMap.ICON_SIZE_LOCATION))
@@ -508,7 +510,11 @@ fun MapScreen(viewModel: MapViewModel = viewModel(), navigationActions: Navigati
                                             Modifier.height(ConstantMap.SPACER_HEIGHT_MEDIUM))
 
                                     ButtonDetails(
-                                        uiState.isOwner, navigationActions, req, viewModel)
+                                        uiState.isOwner,
+                                        navigationActions,
+                                        req,
+                                        viewModel,
+                                        appPalette)
                                   }
                                   1 -> { // Profile
                                     CurrentProfileUI(
@@ -517,7 +523,8 @@ fun MapScreen(viewModel: MapViewModel = viewModel(), navigationActions: Navigati
                                         uiState.currentProfile,
                                         viewModel,
                                         this,
-                                        req)
+                                        req,
+                                        appPalette)
                                   }
                                 // if you want to add more tab, just put last number + 1 ->...
                                 }
@@ -542,12 +549,12 @@ fun MapScreen(viewModel: MapViewModel = viewModel(), navigationActions: Navigati
                           Modifier.testTag(MapTestTags.ZOOM_IN_BUTTON)
                               .size(UiDimens.SpacingXxl)
                               .padding(UiDimens.SpacingXs),
-                      containerColor = appPalette().accent,
-                      contentColor = appPalette().surface) {
+                      containerColor = appPalette.accent,
+                      contentColor = appPalette.surface) {
                         Icon(
                             imageVector = Icons.Default.Add,
                             contentDescription = "Zoom In",
-                            tint = appPalette().surface)
+                            tint = appPalette.surface)
                       }
 
                   FloatingActionButton(
@@ -560,8 +567,8 @@ fun MapScreen(viewModel: MapViewModel = viewModel(), navigationActions: Navigati
                           Modifier.testTag(MapTestTags.ZOOM_OUT_BUTTON)
                               .size(UiDimens.SpacingXxl)
                               .padding(UiDimens.SpacingXs),
-                      containerColor = appPalette().accent,
-                      contentColor = appPalette().surface) {
+                      containerColor = appPalette.accent,
+                      contentColor = appPalette.surface) {
                         Icon(imageVector = Icons.Default.Remove, contentDescription = "Zoom Out")
                       }
                 }
@@ -600,7 +607,8 @@ fun ButtonDetails(
     isOwner: Boolean?,
     navigationActions: NavigationActions?,
     request: Request,
-    mapViewModel: MapViewModel
+    mapViewModel: MapViewModel,
+    appPalette: AppPalette
 ) {
   Button(
       onClick = {
@@ -618,8 +626,7 @@ fun ButtonDetails(
       },
       colors =
           ButtonDefaults.buttonColors(
-              containerColor = MaterialTheme.colorScheme.primary,
-              contentColor = MaterialTheme.colorScheme.onPrimary),
+              containerColor = appPalette.accent, contentColor = appPalette.primary),
       modifier =
           Modifier.fillMaxWidth()
               .padding(bottom = ConstantMap.SPACER_HEIGHT_LARGE)
@@ -640,13 +647,13 @@ fun CurrentProfileUI(
     profile: UserProfile?,
     mapViewModel: MapViewModel,
     columnScope: ColumnScope,
-    request: Request
+    request: Request,
+    appPalette: AppPalette
 ) {
   with(columnScope) {
     if (profile != null) {
       Surface(
-          color =
-              MaterialTheme.colorScheme.tertiary.copy(alpha = ConstantMap.ALPHA_PRIMARY_SURFACE),
+          color = appPalette.accent.copy(alpha = ConstantMap.ALPHA_PRIMARY_SURFACE),
           shape = RoundedCornerShape(ConstantMap.CORNER_RADIUS_SMALL),
           modifier = Modifier.padding(bottom = ConstantMap.SPACER_HEIGHT_LARGE)) {
             Row(
@@ -664,7 +671,7 @@ fun CurrentProfileUI(
                       style =
                           MaterialTheme.typography.titleMedium.copy(
                               fontSize = ConstantMap.FONT_SIZE_BIG),
-                      color = MaterialTheme.colorScheme.onPrimaryContainer,
+                      color = appPalette.onPrimary,
                       modifier =
                           Modifier.padding(start = ConstantMap.PADDING_STANDARD)
                               .testTag(MapTestTags.PROFILE_NAME))
@@ -680,7 +687,7 @@ fun CurrentProfileUI(
                 horizontalArrangement = Arrangement.spacedBy(ConstantMap.SPACER_HEIGHT_MEDIUM)) {
                   Surface(
                       shape = RoundedCornerShape(ConstantMap.CORNER_RADIUS_LARGE),
-                      color = MaterialTheme.colorScheme.primaryContainer,
+                      color = appPalette.primary,
                       modifier = Modifier.weight(ConstantMap.WEIGHT_FILL)) {
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
@@ -698,14 +705,14 @@ fun CurrentProfileUI(
                                   style =
                                       MaterialTheme.typography.bodyMedium.copy(
                                           fontSize = ConstantMap.FONT_SIZE_MID),
-                                  color = MaterialTheme.colorScheme.tertiary,
+                                  color = appPalette.accent,
                                   modifier = Modifier.testTag(MapTestTags.PROFILE_KUDOS))
                             }
                       }
 
                   Surface(
                       shape = RoundedCornerShape(ConstantMap.CORNER_RADIUS_LARGE),
-                      color = MaterialTheme.colorScheme.primaryContainer,
+                      color = appPalette.primary,
                       modifier = Modifier.weight(ConstantMap.WEIGHT_FILL)) {
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
@@ -718,11 +725,11 @@ fun CurrentProfileUI(
                                   color = MaterialTheme.colorScheme.onSurfaceVariant,
                                   modifier = Modifier.testTag(MapTestTags.PROFILE_SECTION_TEXT))
                               Text(
-                                  text = profile.section.toString(),
+                                  text = profile.section.label,
                                   style =
                                       MaterialTheme.typography.labelMedium.copy(
                                           fontSize = ConstantMap.FONT_SIZE_MID),
-                                  color = MaterialTheme.colorScheme.tertiary,
+                                  color = appPalette.accent,
                                   modifier = Modifier.testTag(MapTestTags.PROFILE_SECTION))
                             }
                       }
@@ -745,7 +752,7 @@ fun CurrentProfileUI(
                   Icon(
                       imageVector = Icons.Default.AccessTime,
                       contentDescription = ConstantMap.LOCATION,
-                      tint = MaterialTheme.colorScheme.primary,
+                      tint = appPalette.primary,
                       modifier = Modifier.size(ConstantMap.ICON_SIZE_LOCATION))
                   Spacer(modifier = Modifier.width(ConstantMap.SPACER_WIDTH_SMALL))
                   Text(
@@ -758,7 +765,7 @@ fun CurrentProfileUI(
           }
       Spacer(modifier = Modifier.height(ConstantMap.SPACER_HEIGHT_MEDIUM))
     }
-    ButtonProfileDetails(isOwner, navigationActions, profile, mapViewModel, request)
+    ButtonProfileDetails(isOwner, navigationActions, profile, mapViewModel, request, appPalette)
   }
 }
 
@@ -768,7 +775,8 @@ fun ButtonProfileDetails(
     navigationActions: NavigationActions?,
     profile: UserProfile?,
     mapViewModel: MapViewModel,
-    request: Request
+    request: Request,
+    appPalette: AppPalette
 ) {
 
   if (isOwner == false && profile != null) return
@@ -792,8 +800,7 @@ fun ButtonProfileDetails(
       onClick = onClickAction,
       colors =
           ButtonDefaults.buttonColors(
-              containerColor = MaterialTheme.colorScheme.primary,
-              contentColor = MaterialTheme.colorScheme.onPrimary),
+              containerColor = appPalette.accent, contentColor = appPalette.primary),
       modifier =
           Modifier.fillMaxWidth()
               .padding(bottom = ConstantMap.SPACER_HEIGHT_LARGE)

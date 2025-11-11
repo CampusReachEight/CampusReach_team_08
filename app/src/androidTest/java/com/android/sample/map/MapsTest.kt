@@ -12,7 +12,6 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import com.android.sample.model.map.Location
-import com.android.sample.model.profile.Section
 import com.android.sample.model.profile.UserProfile
 import com.android.sample.model.profile.UserProfileRepository
 import com.android.sample.model.profile.UserProfileRepositoryFirestore
@@ -28,6 +27,7 @@ import com.android.sample.ui.map.MapTestTags
 import com.android.sample.ui.map.MapViewModel
 import com.android.sample.ui.map.toDisplayStringWithoutHours
 import com.android.sample.ui.overview.toDisplayString
+import com.android.sample.ui.profile.UserSections
 import com.android.sample.utils.BaseEmulatorTest
 import com.android.sample.utils.UI_WAIT_TIMEOUT
 import java.util.Calendar
@@ -67,8 +67,8 @@ class MapsTest : BaseEmulatorTest() {
   private val firstName2 = "Mama"
   private val kudos1 = 0
   private val kudos2 = 11
-  private val section1 = Section.OTHER
-  private val section2 = Section.COMPUTER_SCIENCE
+  private val section1 = UserSections.NONE
+  private val section2 = UserSections.MATHEMATICS
 
   @Before
   override fun setUp() {
@@ -293,7 +293,7 @@ class MapsTest : BaseEmulatorTest() {
     composeTestRule
         .onNodeWithTag(MapTestTags.PROFILE_SECTION)
         .assertIsDisplayed()
-        .assertTextContains(section1.toString())
+        .assertTextContains(section1.label)
 
     composeTestRule
         .onNodeWithTag(MapTestTags.PROFILE_KUDOS_TEXT)
