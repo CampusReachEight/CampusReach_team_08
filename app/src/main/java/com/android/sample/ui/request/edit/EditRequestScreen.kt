@@ -187,11 +187,6 @@ fun EditRequestContent(
       }
 
   val dateFormat = remember { SimpleDateFormat(DateFormats.DATE_TIME_FORMAT, Locale.getDefault()) }
-  var showStartDatePicker by remember { mutableStateOf(false) }
-  var showStartTimePicker by remember { mutableStateOf(false) }
-  var showExpirationDatePicker by remember { mutableStateOf(false) }
-  var showExpirationTimePicker by remember { mutableStateOf(false) }
-  var tempSelectedDate by remember { mutableStateOf<Date?>(null) }
   Column(
       modifier =
           Modifier.fillMaxSize()
@@ -275,7 +270,8 @@ fun EditRequestContent(
   if (pickerState.showStartDatePicker) {
     MaterialDatePickerDialog(
         onDateSelected = pickerState::handleStartDateSelected,
-        onDismiss = pickerState::handleStartDateDismiss)
+        onDismiss = pickerState::handleStartDateDismiss,
+        initialDate = uiState.startTimeStamp)
   }
 
   if (pickerState.showStartTimePicker) {
