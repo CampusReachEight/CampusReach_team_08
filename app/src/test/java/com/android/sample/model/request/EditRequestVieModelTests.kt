@@ -713,4 +713,64 @@ class EditRequestViewModelTest {
     assertEquals("Location permission is required to use current location", uiState.errorMessage)
     assertFalse(uiState.isSearchingLocation)
   }
+
+  // ========================================================================
+  // Test: Date Updates
+  // ========================================================================
+
+  @Test
+  fun updateStartTimeStamp_updatesState() {
+    val newDate = Date(1735689600000L) // 2025-01-01
+
+    viewModel.updateStartTimeStamp(newDate)
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    assertEquals(newDate, viewModel.uiState.value.startTimeStamp)
+  }
+
+  @Test
+  fun updateExpirationTime_updatesState() {
+    val newDate = Date(1767225600000L) // 2026-01-01
+
+    viewModel.updateExpirationTime(newDate)
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    assertEquals(newDate, viewModel.uiState.value.expirationTime)
+  }
+
+  @Test
+  fun updateStartTimeStamp_afterExpiration_triggersDateOrderError() {
+    val startDate = Date(1767225600000L) // 2026
+    val expirationDate = Date(1735689600000L) // 2025 (earlier)
+
+    viewModel.updateExpirationTime(expirationDate)
+    viewModel.updateStartTimeStamp(startDate)
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    assertTrue(viewModel.uiState.value.validationState.showDateOrderError)
+  }
+
+  @Test
+  fun updateExpirationTime_beforeStart_triggersDateOrderError() {
+    val startDate = Date(1767225600000L) // 2026
+    val expirationDate = Date(1735689600000L) // 2025 (earlier)
+
+    viewModel.updateStartTimeStamp(startDate)
+    viewModel.updateExpirationTime(expirationDate)
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    assertTrue(viewModel.uiState.value.validationState.showDateOrderError)
+  }
+
+  @Test
+  fun updateExpirationTime_afterStart_noDateOrderError() {
+    val startDate = Date(1735689600000L) // 2025
+    val expirationDate = Date(1767225600000L) // 2026 (later)
+
+    viewModel.updateStartTimeStamp(startDate)
+    viewModel.updateExpirationTime(expirationDate)
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    assertFalse(viewModel.uiState.value.validationState.showDateOrderError)
+  }
 }

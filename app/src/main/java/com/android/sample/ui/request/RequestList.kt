@@ -3,24 +3,16 @@ package com.android.sample.ui.request
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.model.request.Request
-import com.android.sample.model.request.RequestStatus
 import com.android.sample.model.request.RequestType
-import com.android.sample.model.request.Tags
 import com.android.sample.model.request.displayString
 import com.android.sample.ui.navigation.BottomNavigationMenu
 import com.android.sample.ui.navigation.NavigationActions
@@ -78,12 +70,6 @@ object RequestListTestTags {
   fun getRequestStatusFilterTag(status: String): String = getFilterTag("requestStatus", status)
 }
 
-private enum class FilterKind {
-  Type,
-  Status,
-  Tags
-}
-
 /** Request List screen scaffold: top bar, filters section, list, bottom bar, and error dialog. */
 @Composable
 fun RequestListScreen(
@@ -91,11 +77,22 @@ fun RequestListScreen(
     requestListViewModel: RequestListViewModel = viewModel(),
     navigationActions: NavigationActions? = null,
 ) {
+  val searchFilterViewModel: RequestSearchFilterViewModel = viewModel()
   LaunchedEffect(Unit) { requestListViewModel.loadRequests() }
 
-  val icons by requestListViewModel.profileIcons.collectAsState()
-  val filtered by requestListViewModel.filteredRequests.collectAsState()
   val state by requestListViewModel.state.collectAsState()
+
+  // Keep Lucene index in sync with loaded requests
+  LaunchedEffect(state.requests) {
+    if (state.requests.isNotEmpty()) {
+      searchFilterViewModel.initializeWithRequests(state.requests)
+    }
+  }
+
+  // Collect search/filter state
+  val displayed by searchFilterViewModel.displayedRequests.collectAsState()
+  val searchQuery by searchFilterViewModel.searchQuery.collectAsState()
+  val isSearching by searchFilterViewModel.isSearching.collectAsState()
 
   Scaffold(
       modifier = modifier.fillMaxSize().testTag(NavigationTestTags.REQUESTS_SCREEN),
@@ -117,12 +114,19 @@ fun RequestListScreen(
         }
 
         Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
-          FiltersSection(requestListViewModel = requestListViewModel)
+          // 1) Filters block (moved to RequestSearchFilter.kt)
+          FiltersSection(
+              searchFilterViewModel = searchFilterViewModel,
+              query = searchQuery,
+              isSearching = isSearching,
+              onQueryChange = { searchFilterViewModel.updateSearchQuery(it) },
+              onClearQuery = { searchFilterViewModel.clearSearch() })
 
           Spacer(modifier = Modifier.height(ConstantRequestList.PaddingLarge))
 
-          // Content list (filtered or base)
-          val toShow = filtered.ifEmpty { state.requests }
+          // Always show the sorted/filtered list from the filter ViewModel
+          val toShow = displayed
+
           if (!state.isLoading && toShow.isEmpty()) {
             Text(
                 text = "No requests at the moment",
@@ -149,211 +153,6 @@ fun RequestListScreen(
           }
         }
       }
-}
-
-/**
- * Groups the search bar, filter buttons, and one active filter panel to reduce screen complexity.
- */
-@Composable
-private fun FiltersSection(requestListViewModel: RequestListViewModel) {
-  // Collect facet state and counts
-  val selectedTypes by requestListViewModel.selectedTypes.collectAsState()
-  val selectedStatuses by requestListViewModel.selectedStatuses.collectAsState()
-  val selectedTags by requestListViewModel.selectedTags.collectAsState()
-  val typeCounts by requestListViewModel.typeCounts.collectAsState()
-  val statusCounts by requestListViewModel.statusCounts.collectAsState()
-  val tagCounts by requestListViewModel.tagCounts.collectAsState()
-
-  var openMenu by rememberSaveable { mutableStateOf<FilterKind?>(null) }
-
-  // Global search bar (UI only)
-  RequestSearchBar(
-      modifier = Modifier.fillMaxWidth().padding(horizontal = ConstantRequestList.PaddingLarge))
-
-  Spacer(modifier = Modifier.height(ConstantRequestList.PaddingMedium))
-
-  // Filter buttons row
-  Row(
-      modifier = Modifier.fillMaxWidth().padding(horizontal = ConstantRequestList.PaddingLarge),
-      horizontalArrangement = Arrangement.spacedBy(ConstantRequestList.RowSpacing)) {
-        FilterMenuButton(
-            title = RequestType.toString(),
-            selectedCount = selectedTypes.size,
-            testTag = RequestListTestTags.REQUEST_TYPE_FILTER_DROPDOWN_BUTTON,
-            onClick = { openMenu = if (openMenu == FilterKind.Type) null else FilterKind.Type },
-            modifier = Modifier.weight(1f))
-        FilterMenuButton(
-            title = RequestStatus.toString(),
-            selectedCount = selectedStatuses.size,
-            testTag = RequestListTestTags.REQUEST_STATUS_FILTER_DROPDOWN_BUTTON,
-            onClick = { openMenu = if (openMenu == FilterKind.Status) null else FilterKind.Status },
-            modifier = Modifier.weight(1f))
-        FilterMenuButton(
-            title = Tags.toString(),
-            selectedCount = selectedTags.size,
-            testTag = RequestListTestTags.REQUEST_TAG_FILTER_DROPDOWN_BUTTON,
-            onClick = { openMenu = if (openMenu == FilterKind.Tags) null else FilterKind.Tags },
-            modifier = Modifier.weight(1f))
-      }
-
-  // Single full-width expanded filter panel
-  when (openMenu) {
-    FilterKind.Type -> {
-      FilterMenuPanel(
-          values = RequestType.entries.toTypedArray(),
-          selected = selectedTypes,
-          counts = typeCounts,
-          labelOf = { it.displayString() },
-          onToggle = { requestListViewModel.toggleType(it) },
-          dropdownSearchBarTestTag = RequestListTestTags.REQUEST_TYPE_FILTER_SEARCH_BAR,
-          rowTestTagOf = { RequestListTestTags.getRequestTypeFilterTag(it) })
-    }
-    FilterKind.Status -> {
-      FilterMenuPanel(
-          values = RequestStatus.entries.toTypedArray(),
-          selected = selectedStatuses,
-          counts = statusCounts,
-          labelOf = { it.displayString() },
-          onToggle = { requestListViewModel.toggleStatus(it) },
-          dropdownSearchBarTestTag = RequestListTestTags.REQUEST_STATUS_FILTER_SEARCH_BAR,
-          rowTestTagOf = { RequestListTestTags.getRequestStatusFilterTag(it.displayString()) })
-    }
-    FilterKind.Tags -> {
-      FilterMenuPanel(
-          values = Tags.entries.toTypedArray(),
-          selected = selectedTags,
-          counts = tagCounts,
-          labelOf = { it.displayString() },
-          onToggle = { requestListViewModel.toggleTag(it) },
-          dropdownSearchBarTestTag = RequestListTestTags.REQUEST_TAG_FILTER_SEARCH_BAR,
-          rowTestTagOf = { RequestListTestTags.getRequestTagFilterTag(it.displayString()) })
-    }
-    null -> Unit
-  }
-}
-
-@Composable
-private fun FilterMenuButton(
-    title: String,
-    selectedCount: Int,
-    testTag: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-  OutlinedButton(
-      onClick = onClick,
-      modifier =
-          modifier.fillMaxWidth().height(ConstantRequestList.FilterButtonHeight).testTag(testTag)) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
-          Text(
-              "$title ($selectedCount)",
-              modifier = Modifier.weight(1f),
-              color = MaterialTheme.colorScheme.onPrimary,
-          )
-          Icon(
-              imageVector = Icons.Filled.ArrowDropDown,
-              contentDescription = null,
-              tint = MaterialTheme.colorScheme.onPrimary)
-        }
-      }
-}
-
-@Composable
-private fun <E : Enum<E>> FilterMenuPanel(
-    values: Array<E>,
-    selected: Set<E>,
-    counts: Map<E, Int>,
-    labelOf: (E) -> String,
-    onToggle: (E) -> Unit,
-    dropdownSearchBarTestTag: String,
-    rowTestTagOf: (E) -> String
-) {
-  // Panel appearing under buttons
-  Column(
-      modifier = Modifier.fillMaxWidth().padding(horizontal = ConstantRequestList.PaddingLarge)) {
-        Spacer(modifier = Modifier.height(ConstantRequestList.PaddingSmall))
-        Surface(
-            shape = MaterialTheme.shapes.medium, tonalElevation = 2.dp, shadowElevation = 2.dp) {
-              Column(
-                  modifier = Modifier.fillMaxWidth().padding(ConstantRequestList.PaddingMedium)) {
-                    var localQuery by rememberSaveable { mutableStateOf("") }
-
-                    // Search bar for the filters inside the panel
-                    FilterMenuSearchBar(
-                        query = localQuery,
-                        onQueryChange = { localQuery = it },
-                        dropdownSearchBarTestTag = dropdownSearchBarTestTag)
-
-                    Spacer(modifier = Modifier.height(ConstantRequestList.PaddingSmall))
-
-                    // Filters list
-                    FilterMenuValuesList(
-                        values = values,
-                        selected = selected,
-                        counts = counts,
-                        labelOf = labelOf,
-                        onToggle = onToggle,
-                        localQuery = localQuery,
-                        rowTestTagOf = rowTestTagOf)
-                  }
-            }
-      }
-}
-
-@Composable
-private fun FilterMenuSearchBar(
-    query: String,
-    onQueryChange: (String) -> Unit,
-    dropdownSearchBarTestTag: String
-) {
-  OutlinedTextField(
-      value = query,
-      onValueChange = onQueryChange,
-      modifier = Modifier.fillMaxWidth().testTag(dropdownSearchBarTestTag),
-      singleLine = true,
-      placeholder = { Text("Search options") })
-}
-
-@Composable
-private fun <E : Enum<E>> FilterMenuValuesList(
-    values: Array<E>,
-    selected: Set<E>,
-    counts: Map<E, Int>,
-    labelOf: (E) -> String,
-    onToggle: (E) -> Unit,
-    localQuery: String,
-    rowTestTagOf: (E) -> String
-) {
-  val filteredValues =
-      remember(localQuery, values, counts) {
-        values
-            .filter { labelOf(it).contains(localQuery, ignoreCase = true) }
-            .sortedByDescending { counts[it] ?: 0 }
-      }
-
-  Box(modifier = Modifier.heightIn(max = ConstantRequestList.DropdownMaxHeight)) {
-    Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
-      filteredValues.forEach { v ->
-        val isChecked = selected.contains(v)
-        val count = counts[v] ?: 0
-
-        Row(
-            modifier =
-                Modifier.fillMaxWidth()
-                    .clickable { onToggle(v) }
-                    .padding(horizontal = ConstantRequestList.FilterRowHorizontalPadding)
-                    .testTag(rowTestTagOf(v))
-                    .height(ConstantRequestList.FilterRowHeight),
-            horizontalArrangement = Arrangement.Start) {
-              Checkbox(checked = isChecked, onCheckedChange = null)
-              Spacer(modifier = Modifier.width(ConstantRequestList.RowSpacing))
-              Text(text = labelOf(v))
-              Spacer(modifier = Modifier.weight(1f))
-              Text(text = count.toString())
-            }
-      }
-    }
-  }
 }
 
 /** Renders the list of requests. */
@@ -426,18 +225,6 @@ fun AddButton(navigationActions: NavigationActions?) {
       modifier = Modifier.testTag(RequestListTestTags.REQUEST_ADD_BUTTON)) {
         Text("+")
       }
-}
-
-/** Global search bar placeholder for future full-text search. */
-@Composable
-private fun RequestSearchBar(modifier: Modifier = Modifier) {
-  var query by rememberSaveable { mutableStateOf("") }
-  OutlinedTextField(
-      value = query,
-      onValueChange = { query = it },
-      modifier = modifier.testTag(RequestListTestTags.REQUEST_SEARCH_BAR),
-      singleLine = true,
-      placeholder = { Text("Search") })
 }
 
 /** Simple alert dialog to surface user-facing errors. */

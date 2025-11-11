@@ -3,6 +3,7 @@ package com.android.sample.model.profile
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import com.android.sample.ui.profile.UserSections
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.Blob
 import java.io.ByteArrayOutputStream
@@ -44,7 +45,7 @@ data class UserProfile(
         String?, // User (or default settings) can choose to not share email with others -> nullable
     val photo: Uri?, // Nullable Bitmap for user photo in case user hasn't set one
     val kudos: Int,
-    val section: Section,
+    val section: UserSections,
     val arrivalDate: Date,
 ) {
 
@@ -55,6 +56,28 @@ data class UserProfile(
   companion object {
     // Allows for deserialization from Firestore document data
     fun fromMap(data: Map<String, Any?>): UserProfile {
+      val rawSection = (data["section"] as? String).orEmpty()
+
+      // Normalize: treat blank / legacy "OTHER" / unknown values as NONE.
+      val section =
+          when {
+            rawSection.isBlank() -> UserSections.NONE
+            rawSection.equals("OTHER", ignoreCase = true) -> UserSections.NONE
+            // Match by enum name (e.g. "COMPUTER_SCIENCE")
+            UserSections.entries.any { it.name.equals(rawSection, ignoreCase = true) } -> {
+              val matched =
+                  UserSections.entries.first { it.name.equals(rawSection, ignoreCase = true) }
+              UserSections.valueOf(matched.name)
+            }
+            // Match by label (e.g. "Computer Science")
+            UserSections.entries.any { it.label.equals(rawSection, ignoreCase = true) } -> {
+              UserSections.entries.first { it.label.equals(rawSection, ignoreCase = true) }
+            }
+            else -> UserSections.NONE
+          }
+
+      val arrival = (data["arrivalDate"] as? Timestamp)?.toDate() ?: Date()
+
       return UserProfile(
           id = data["id"] as String,
           name = data["name"] as String,
@@ -62,9 +85,8 @@ data class UserProfile(
           email = data["email"] as String?,
           photo = data["photo"]?.let { uriString -> Uri.parse(uriString as String) },
           kudos = (data["kudos"] as Number).toInt(),
-          section = Section.valueOf(data["section"] as String),
-          arrivalDate = (data["arrivalDate"] as Timestamp).toDate(),
-      )
+          section = section,
+          arrivalDate = arrival)
     }
 
     // Converts Firestore Blob to Bitmap, ensuring size constraints
@@ -124,21 +146,4 @@ data class UserProfile(
           "nameLowercase" to nameLowercase,
           "lastNameLowercase" to lastNameLowercase,
       )
-}
-
-enum class Section {
-  INFORMATION_SYSTEMS,
-  COMPUTER_SCIENCE,
-  SOFTWARE_ENGINEERING,
-  CYBER_SECURITY,
-  MECHANICAL_ENGINEERING,
-  ELECTRICAL_ENGINEERING,
-  INDUSTRIAL_ENGINEERING,
-  LITTERATURE,
-  LIFE_SCIENCES,
-  PHILOSOPHY,
-  ECONOMICS,
-  LAW,
-  // ton add some stuff
-  OTHER
 }

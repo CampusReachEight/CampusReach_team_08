@@ -180,6 +180,24 @@ class NavigationTests : BaseEmulatorTest() {
   }
 
   @Test
+  fun goBackFromProfileScreenReturnsToPreviousTab() {
+    // Start at Requests screen
+    composeTestRule.onNodeWithTag(NavigationTestTags.REQUESTS_SCREEN).assertIsDisplayed()
+
+    // Navigate to Profile screen
+    composeTestRule.onNodeWithTag(NavigationTestTags.PROFILE_BUTTON).performClick()
+    composeTestRule.waitForIdle()
+    composeTestRule.onNodeWithTag(NavigationTestTags.PROFILE_SCREEN).assertIsDisplayed()
+
+    // Go back using navigation action
+    composeTestRule.runOnUiThread { navigationActions.goBack() }
+    composeTestRule.waitForIdle()
+
+    // Verify we're back at Requests screen
+    composeTestRule.onNodeWithTag(NavigationTestTags.REQUESTS_SCREEN).assertIsDisplayed()
+  }
+
+  @Test
   fun goBackFromAddEventScreenReturnsToEventsTab() {
     // Navigate to Events tab
     composeTestRule.onNodeWithTag(NavigationTestTags.EVENT_TAB).performClick()

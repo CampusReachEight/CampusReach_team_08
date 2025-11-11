@@ -4,10 +4,10 @@ import androidx.credentials.Credential
 import androidx.credentials.CustomCredential
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.android.sample.model.profile.Section
 import com.android.sample.model.profile.UserProfile
 import com.android.sample.model.profile.UserProfileRepository
 import com.android.sample.model.profile.UserProfileRepositoryFirestore
+import com.android.sample.ui.profile.UserSections
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
 import com.google.firebase.Firebase
@@ -100,21 +100,21 @@ class SignInViewModel(
 
   fun addUserToDataBase() {
     viewModelScope.launch {
+      val user = firebaseAuth.currentUser ?: return@launch
       try {
-        profileRepository.getUserProfile(firebaseAuth.currentUser!!.uid)
+        profileRepository.getUserProfile(user.uid)
         return@launch
-      } catch (e: NoSuchElementException) {
+      } catch (_: NoSuchElementException) {
         profileRepository.addUserProfile(
             UserProfile(
-                id = firebaseAuth.currentUser!!.uid,
-                name = firebaseAuth.currentUser!!.displayName?.split(" ")?.getOrNull(0) ?: "",
-                lastName = firebaseAuth.currentUser!!.displayName?.split(" ")?.getOrNull(1) ?: "",
-                email = firebaseAuth.currentUser!!.email,
-                photo = firebaseAuth.currentUser!!.photoUrl,
+                id = user.uid,
+                name = user.displayName?.split(" ")?.getOrNull(0) ?: "",
+                lastName = user.displayName?.split(" ")?.getOrNull(1) ?: "",
+                email = user.email,
+                photo = user.photoUrl,
                 kudos = 0,
-                section = Section.OTHER,
-                arrivalDate = java.util.Date(),
-            ))
+                section = UserSections.NONE,
+                arrivalDate = java.util.Date()))
       }
     }
   }
