@@ -687,7 +687,7 @@ fun CurrentProfileUI(
                 horizontalArrangement = Arrangement.spacedBy(ConstantMap.SPACER_HEIGHT_MEDIUM)) {
                   Surface(
                       shape = RoundedCornerShape(ConstantMap.CORNER_RADIUS_LARGE),
-                      color = appPalette.primary,
+                      color = appPalette.accent.copy(alpha = ConstantMap.ALPHA_KUDOS_DIVIDER),
                       modifier = Modifier.weight(ConstantMap.WEIGHT_FILL)) {
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
@@ -712,7 +712,7 @@ fun CurrentProfileUI(
 
                   Surface(
                       shape = RoundedCornerShape(ConstantMap.CORNER_RADIUS_LARGE),
-                      color = appPalette.primary,
+                      color = appPalette.accent.copy(alpha = ConstantMap.ALPHA_KUDOS_DIVIDER),
                       modifier = Modifier.weight(ConstantMap.WEIGHT_FILL)) {
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,

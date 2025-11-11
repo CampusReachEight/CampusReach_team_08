@@ -89,4 +89,5 @@ object ConstantMap {
   const val TEXT_EDIT_PROFILE = "Edit your profile"
   val FONT_SIZE_BIG = 18.sp
   val FONT_SIZE_MID = 15.sp
+  const val ALPHA_KUDOS_DIVIDER = 0.17f
 }
