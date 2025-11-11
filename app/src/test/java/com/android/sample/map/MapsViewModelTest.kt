@@ -87,6 +87,10 @@ class MapsViewModelTest {
     override suspend fun cancelAcceptance(requestId: String) {}
 
     override suspend fun isOwnerOfRequest(request: Request): Boolean = false
+
+    override suspend fun getMyRequests(): List<Request> {
+      TODO("Not yet implemented")
+    }
   }
 
   private lateinit var fakeRepository: FakeRequestRepository
