@@ -98,6 +98,8 @@ object MapTestTags {
   const val BUTTON_DETAILS = "buttonDetails"
   const val PROFILE_TEXT = "profileText"
 
+  const val TEST_TRIGGER_BOTTOM_SHEET = "testTriggerBottomSheet"
+
   fun testTagForTab(tab: String): String {
     return "tag${tab}"
   }
@@ -545,7 +547,6 @@ fun MapScreen(viewModel: MapViewModel = viewModel(), navigationActions: Navigati
                       Icon(imageVector = Icons.Default.Remove, contentDescription = "Zoom Out")
                     }
               }
-
           // Invisible box to expose zoom level for testing
           Box(
               modifier =

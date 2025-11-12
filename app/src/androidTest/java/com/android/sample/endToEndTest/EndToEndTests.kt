@@ -11,10 +11,12 @@ import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
+import androidx.test.platform.app.InstrumentationRegistry
 import com.android.sample.AppNavigation
 import com.android.sample.model.map.Location
 import com.android.sample.model.request.Request
@@ -29,6 +31,9 @@ import com.android.sample.ui.overview.AcceptRequestScreenTestTags
 import com.android.sample.ui.profile.ProfileTestTags
 import com.android.sample.ui.request.LocationSearchFieldTestTags
 import com.android.sample.ui.request.RequestListTestTags
+import com.android.sample.ui.request.edit.DELETE_BUTTON_TEST_TAG
+import com.android.sample.ui.request.edit.DELETE_CONFIRMATION_DIALOG_TEST_TAG
+import com.android.sample.ui.request.edit.DELETE_CONFIRM_BUTTON_TEST_TAG
 import com.android.sample.ui.request.edit.EditRequestScreenTestTags
 import com.android.sample.utils.BaseEmulatorTest
 import com.android.sample.utils.FakeCredentialManager
@@ -76,7 +81,15 @@ class EndToEndTests : BaseEmulatorTest() {
   override fun setUp() {
     db = FirebaseEmulator.firestore
     auth = FirebaseEmulator.auth
-
+    // Grant location permissions before tests
+    InstrumentationRegistry.getInstrumentation()
+        .uiAutomation
+        .executeShellCommand(
+            "pm grant ${InstrumentationRegistry.getInstrumentation().targetContext.packageName} android.permission.ACCESS_FINE_LOCATION")
+    InstrumentationRegistry.getInstrumentation()
+        .uiAutomation
+        .executeShellCommand(
+            "pm grant ${InstrumentationRegistry.getInstrumentation().targetContext.packageName} android.permission.ACCESS_COARSE_LOCATION")
     runTest {
       FirebaseEmulator.clearAuthEmulator()
       delay(500)
@@ -555,5 +568,314 @@ class EndToEndTests : BaseEmulatorTest() {
         .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)
         .assertTextContains("Cancel", substring = true, ignoreCase = true)
         .performClick()
+  }
+  // Test 1: Sign in → Create Request → Edit Profile → View My Requests → Logout
+
+  @Test
+  fun canCreateAndDeleteRequest() {
+    val sixthName = "92847"
+    val sixthEmail = "sixth@example.com"
+
+    initialize(sixthName, sixthEmail)
+
+    // Create request
+    goAddRequest()
+    addElementOfRequest()
+
+    composeTestRule.waitForIdle()
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule
+          .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Open edit screen
+    goToEditScreen()
+
+    // Click delete
+    composeTestRule
+        .onNodeWithTag(DELETE_BUTTON_TEST_TAG)
+        .performScrollTo()
+        .assertIsDisplayed()
+        .performClick()
+
+    composeTestRule.waitForIdle()
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule
+          .onAllNodesWithTag(DELETE_CONFIRMATION_DIALOG_TEST_TAG)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Confirm delete
+    composeTestRule.onNodeWithTag(DELETE_CONFIRM_BUTTON_TEST_TAG).assertIsDisplayed().performClick()
+
+    composeTestRule.waitForIdle()
+    Thread.sleep(2000)
+
+    composeTestRule.onNodeWithTag(RequestListTestTags.REQUEST_ADD_BUTTON).assertExists()
+
+    // Logout
+    logOut()
+  }
+
+  @Test
+  fun canCreateRequestAndViewOnMap() {
+    val seventhName = "45612"
+    val seventhEmail = "seventh@example.com"
+
+    initialize(seventhName, seventhEmail)
+
+    goAddRequest()
+
+    addElementOfRequest()
+    composeTestRule.waitForIdle()
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule
+          .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Navigate to map
+    composeTestRule.onNodeWithTag(NavigationTestTags.MAP_TAB).performClick()
+
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule
+          .onAllNodesWithTag(MapTestTags.GOOGLE_MAP_SCREEN)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Wait for the trigger button to exist (means requests are loaded!)
+    composeTestRule.waitUntil(10000) { // 10 second timeout
+      composeTestRule
+          .onAllNodesWithTag(MapTestTags.TEST_TRIGGER_BOTTOM_SHEET)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Now click it
+    composeTestRule.onNodeWithTag(MapTestTags.TEST_TRIGGER_BOTTOM_SHEET).performClick()
+
+    // Wait for bottom sheet
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule
+          .onAllNodesWithTag(MapTestTags.DRAG_DOWN_MENU)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    composeTestRule.onNodeWithText(titles).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(MapTestTags.BUTTON_DETAILS).performClick()
+
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule
+          .onAllNodesWithTag(EditRequestScreenTestTags.INPUT_TITLE)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    composeTestRule.onNodeWithTag(EditRequestScreenTestTags.INPUT_TITLE).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(NavigationTestTags.GO_BACK_BUTTON).performClick()
+
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule
+          .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    logOut()
+  }
+
+  @Test
+  fun canCreateRequestWithCurrentLocationEditOnMapAndLogout() {
+    val TAG = "EndToEndTests"
+
+    // 1. Sign in and create request (your existing working code)
+    val fifthName = "78234"
+    val fifthEmail = "fifth@example.com"
+    initialize(fifthName, fifthEmail)
+
+    composeTestRule
+        .onNodeWithTag(RequestListTestTags.REQUEST_ADD_BUTTON)
+        .assertIsDisplayed()
+        .performClick()
+
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule
+          .onAllNodesWithTag(EditRequestScreenTestTags.INPUT_TITLE)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    composeTestRule
+        .onNodeWithTag(EditRequestScreenTestTags.INPUT_TITLE)
+        .performScrollTo()
+        .performTextInput(titles)
+    composeTestRule
+        .onNodeWithTag(EditRequestScreenTestTags.INPUT_DESCRIPTION)
+        .performScrollTo()
+        .performTextInput(descriptions)
+    composeTestRule
+        .onNodeWithTag(EditRequestScreenTestTags.getTestTagForRequestType(RequestType.SPORT))
+        .performScrollTo()
+        .performClick()
+    composeTestRule
+        .onNodeWithTag(EditRequestScreenTestTags.USE_CURRENT_LOCATION_BUTTON)
+        .performScrollTo()
+        .performClick()
+
+    Thread.sleep(1000)
+
+    // Dates
+    composeTestRule
+        .onNodeWithTag(EditRequestScreenTestTags.INPUT_START_DATE)
+        .performScrollTo()
+        .performClick()
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule.onAllNodesWithText("OK").fetchSemanticsNodes().isNotEmpty()
+    }
+    composeTestRule.onAllNodesWithText("OK").onFirst().performClick()
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule.onAllNodesWithText("OK").fetchSemanticsNodes().isNotEmpty()
+    }
+    composeTestRule.onAllNodesWithText("OK").onFirst().performClick()
+
+    composeTestRule
+        .onNodeWithTag(EditRequestScreenTestTags.INPUT_EXPIRATION_DATE)
+        .performScrollTo()
+        .performClick()
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule.onAllNodesWithText("OK").fetchSemanticsNodes().isNotEmpty()
+    }
+    composeTestRule.onAllNodesWithText("OK").onFirst().performClick()
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule.onAllNodesWithText("OK").fetchSemanticsNodes().isNotEmpty()
+    }
+    composeTestRule.onAllNodesWithText("OK").onFirst().performClick()
+
+    composeTestRule
+        .onNodeWithTag(EditRequestScreenTestTags.getTestTagForRequestTags(Tags.GROUP_WORK))
+        .performScrollTo()
+        .performClick()
+
+    composeTestRule.waitForIdle()
+    Thread.sleep(500)
+
+    composeTestRule
+        .onNodeWithTag(EditRequestScreenTestTags.SAVE_BUTTON)
+        .performScrollTo()
+        .performClick()
+
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule
+          .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // 2. Go to Map and verify
+    composeTestRule.onNodeWithTag(NavigationTestTags.MAP_TAB).assertIsDisplayed().performClick()
+
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule
+          .onAllNodesWithTag(MapTestTags.GOOGLE_MAP_SCREEN)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    Thread.sleep(2000)
+    composeTestRule.waitForIdle()
+
+    // Click map to open bottom sheet
+    composeTestRule.onNodeWithTag(MapTestTags.GOOGLE_MAP_SCREEN).performClick()
+    composeTestRule.waitForIdle()
+    Thread.sleep(1000)
+
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule
+          .onAllNodesWithTag(MapTestTags.REQUEST_TITLE)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Verify original title
+    composeTestRule.onNodeWithText(titles).assertIsDisplayed()
+
+    // 3. Go to Request List (FIXED: using REQUEST_TAB not REQUESTS_TAB)
+    composeTestRule.onNodeWithTag(NavigationTestTags.REQUEST_TAB).performClick()
+
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule
+          .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // 4. Click request item to edit
+    composeTestRule.onNodeWithTag(RequestListTestTags.REQUEST_ITEM).performClick()
+
+    composeTestRule.waitForIdle()
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule
+          .onAllNodesWithTag(EditRequestScreenTestTags.INPUT_TITLE)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // 5. Edit title
+    composeTestRule
+        .onNodeWithTag(EditRequestScreenTestTags.INPUT_TITLE)
+        .performScrollTo()
+        .performTextClearance()
+    composeTestRule
+        .onNodeWithTag(EditRequestScreenTestTags.INPUT_TITLE)
+        .performTextInput(anotherTitle)
+
+    composeTestRule
+        .onNodeWithTag(EditRequestScreenTestTags.SAVE_BUTTON)
+        .performScrollTo()
+        .performClick()
+
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule
+          .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // 6. Go back to Map
+    composeTestRule.onNodeWithTag(NavigationTestTags.MAP_TAB).performClick()
+
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule
+          .onAllNodesWithTag(MapTestTags.GOOGLE_MAP_SCREEN)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    Thread.sleep(2000)
+    composeTestRule.waitForIdle()
+
+    // 7. Click map to verify edit
+    composeTestRule.onNodeWithTag(MapTestTags.GOOGLE_MAP_SCREEN).performClick()
+    composeTestRule.waitForIdle()
+    Thread.sleep(1000)
+
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule
+          .onAllNodesWithTag(MapTestTags.REQUEST_TITLE)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Verify edited title
+    composeTestRule.onNodeWithText(anotherTitle).assertIsDisplayed()
+
+    // 8. Logout
+    logOut()
   }
 }
