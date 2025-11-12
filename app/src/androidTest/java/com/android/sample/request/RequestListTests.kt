@@ -54,7 +54,7 @@ class RequestListTests : BaseEmulatorTest() {
     const val COUNT_ZERO = 0
     const val COUNT_ONE = 1
     const val COUNT_THREE = 3
-    const val currentUserId = "test_current_user_id"
+    const val DEFAULT_USER_ID = "test_current_user_id"
 
     const val OFFSET_1_S_MS = 1_000L
     const val OFFSET_2_S_MS = 2_000L
@@ -76,7 +76,7 @@ class RequestListTests : BaseEmulatorTest() {
     override fun getNewRequestId(): String = UUID.randomUUID().toString()
 
     override suspend fun getMyRequests(): List<Request> {
-      val currentUid = Firebase.auth.currentUser?.uid ?: currentUserId
+      val currentUid = Firebase.auth.currentUser?.uid ?: DEFAULT_USER_ID
       return requests.filter { it.creatorId == currentUid }
     }
 
@@ -199,7 +199,7 @@ class RequestListTests : BaseEmulatorTest() {
                 override suspend fun isOwnerOfRequest(request: Request): Boolean = false
 
                 override suspend fun getMyRequests(): List<Request> {
-                  TODO("Not yet implemented")
+                  return emptyList()
                 }
               },
           profileRepository = FakeUserProfileRepository())
@@ -982,7 +982,7 @@ class RequestListTests : BaseEmulatorTest() {
       RequestListScreen(requestListViewModel = vm, showOnlyMyRequests = true)
     }
 
-    composeTestRule.waitUntil(5_000) { vm.state.value.requests.size == 2 }
+    composeTestRule.waitUntil(OFFSET_5_S_MS) { vm.state.value.requests.size == 2 }
 
     composeTestRule.onNodeWithText("My First Request").assertExists()
     composeTestRule.onNodeWithText("My Second Request").assertExists()
