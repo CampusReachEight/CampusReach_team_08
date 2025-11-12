@@ -622,8 +622,7 @@ class EndToEndTests : BaseEmulatorTest() {
 
   @Test
   fun canCreateRequestWithCurrentLocationEditOnMapAndLogout() {
-    val TAG = "EndToEndTests"
-
+    // End-to-end flow: create with current location, verify on map, edit, verify, logout
     // 1. Sign in and create request (your existing working code)
     val fifthName = "78234"
     val fifthEmail = "fifth@example.com"
@@ -658,7 +657,23 @@ class EndToEndTests : BaseEmulatorTest() {
         .performScrollTo()
         .performClick()
 
-    Thread.sleep(1000)
+    // Wait for location fetching to complete: spinner appears then selected card appears
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      val spinnerVisible =
+          composeTestRule
+              .onAllNodesWithTag(EditRequestScreenTestTags.LOCATION_LOADING_SPINNER)
+              .fetchSemanticsNodes()
+              .isNotEmpty()
+      spinnerVisible
+    }
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      val cardVisible =
+          composeTestRule
+              .onAllNodesWithTag(LocationSearchFieldTestTags.SelectedLocationCard)
+              .fetchSemanticsNodes()
+              .isNotEmpty()
+      cardVisible
+    }
 
     // Dates
     composeTestRule
@@ -693,7 +708,6 @@ class EndToEndTests : BaseEmulatorTest() {
         .performClick()
 
     composeTestRule.waitForIdle()
-    Thread.sleep(500)
 
     composeTestRule
         .onNodeWithTag(EditRequestScreenTestTags.SAVE_BUTTON)
@@ -717,13 +731,10 @@ class EndToEndTests : BaseEmulatorTest() {
           .isNotEmpty()
     }
 
-    Thread.sleep(2000)
     composeTestRule.waitForIdle()
 
-    // Click map to open bottom sheet
-    composeTestRule.onNodeWithTag(MapTestTags.GOOGLE_MAP_SCREEN).performClick()
-    composeTestRule.waitForIdle()
-    Thread.sleep(1000)
+    // Use deterministic trigger to open bottom sheet instead of tapping map
+    composeTestRule.onNodeWithTag(MapTestTags.TEST_TRIGGER_BOTTOM_SHEET).performClick()
 
     composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
       composeTestRule
@@ -748,7 +759,6 @@ class EndToEndTests : BaseEmulatorTest() {
     // 4. Click request item to edit
     composeTestRule.onNodeWithTag(RequestListTestTags.REQUEST_ITEM).performClick()
 
-    composeTestRule.waitForIdle()
     composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
       composeTestRule
           .onAllNodesWithTag(EditRequestScreenTestTags.INPUT_TITLE)
@@ -787,14 +797,10 @@ class EndToEndTests : BaseEmulatorTest() {
           .isNotEmpty()
     }
 
-    Thread.sleep(2000)
     composeTestRule.waitForIdle()
 
-    // 7. Click map to verify edit
-    composeTestRule.onNodeWithTag(MapTestTags.GOOGLE_MAP_SCREEN).performClick()
-    composeTestRule.waitForIdle()
-    Thread.sleep(1000)
-
+    // 7. Click test trigger to verify edit
+    composeTestRule.onNodeWithTag(MapTestTags.TEST_TRIGGER_BOTTOM_SHEET).performClick()
     composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
       composeTestRule
           .onAllNodesWithTag(MapTestTags.REQUEST_TITLE)
