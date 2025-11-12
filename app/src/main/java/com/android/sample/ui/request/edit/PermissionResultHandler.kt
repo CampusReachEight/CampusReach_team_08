@@ -1,25 +1,28 @@
 package com.android.sample.ui.request.edit
 
 import android.Manifest
-import android.content.Context
+import android.location.LocationManager
 
 internal class PermissionResultHandler(
-    private val context: Context,
-    private val viewModel: EditRequestViewModel
+    private val viewModel: EditRequestViewModel,
+    private val locationManager: LocationManager
 ) {
   fun handlePermissionResult(permissions: Map<String, Boolean>) {
     when {
       permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
           permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true -> {
-        if (isLocationEnabled(context)) {
+        if (isLocationEnabled(locationManager)) { // ← Use injected instance
           viewModel.getCurrentLocation()
         } else {
           viewModel.setLocationPermissionError()
         }
       }
-      else -> {
-        viewModel.setLocationPermissionError()
-      }
+      else -> viewModel.setLocationPermissionError()
     }
+  }
+
+  private fun isLocationEnabled(lm: LocationManager): Boolean {
+    return lm.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
+        lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
   }
 }

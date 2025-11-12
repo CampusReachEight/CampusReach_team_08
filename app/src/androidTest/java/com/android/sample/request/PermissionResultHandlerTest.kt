@@ -1,56 +1,52 @@
 package com.android.sample.request
 
 import android.Manifest
-import android.content.Context
 import android.location.LocationManager
+import androidx.test.core.app.ApplicationProvider
 import com.android.sample.ui.request.edit.EditRequestViewModel
 import com.android.sample.ui.request.edit.PermissionResultHandler
+import io.mockk.*
 import org.junit.Before
 import org.junit.Test
-import org.mockito.Mockito
 
 class PermissionResultHandlerTest {
-  private lateinit var mockContext: Context
   private lateinit var mockViewModel: EditRequestViewModel
   private lateinit var mockLocationManager: LocationManager
   private lateinit var handler: PermissionResultHandler
 
   @Before
   fun setup() {
-    mockContext = Mockito.mock(Context::class.java)
-    mockViewModel = Mockito.mock(EditRequestViewModel::class.java)
-    mockLocationManager = Mockito.mock(LocationManager::class.java)
+    mockViewModel = mockk(relaxed = true)
+    mockLocationManager = mockk(relaxed = true)
 
-    Mockito.`when`(mockContext.getSystemService(Context.LOCATION_SERVICE))
-        .thenReturn(mockLocationManager)
-    handler = PermissionResultHandler(mockContext, mockViewModel)
+    // Use real Context from test environment instead of mocking it
+    val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+
+    handler = PermissionResultHandler(mockViewModel, mockLocationManager)
   }
 
   @Test
   fun permissionGranted_locationEnabled_getsCurrentLocation() {
     val permissions = mapOf(Manifest.permission.ACCESS_FINE_LOCATION to true)
-    Mockito.`when`(mockLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER))
-        .thenReturn(true)
+    every { mockLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) } returns true
 
     handler.handlePermissionResult(permissions)
 
-    Mockito.verify(mockViewModel).getCurrentLocation()
-    Mockito.verify(mockViewModel, Mockito.never()).setLocationPermissionError()
+    verify { mockViewModel.getCurrentLocation() }
+    verify(exactly = 0) { mockViewModel.setLocationPermissionError() }
   }
 
   @Test
   fun permissionGranted_locationDisabled_setsError() {
     val permissions = mapOf(Manifest.permission.ACCESS_FINE_LOCATION to true)
 
-    Mockito.`when`(mockLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER))
-        .thenReturn(false)
-    Mockito.`when`(mockLocationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER))
-        .thenReturn(false)
+    every { mockLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) } returns false
+    every { mockLocationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER) } returns false
 
     handler.handlePermissionResult(permissions)
 
-    Mockito.verify(mockViewModel).setLocationPermissionError()
-    Mockito.verify(mockViewModel, Mockito.never()).getCurrentLocation()
+    verify { mockViewModel.setLocationPermissionError() }
+    verify(exactly = 0) { mockViewModel.getCurrentLocation() }
   }
 
   @Test
@@ -62,18 +58,17 @@ class PermissionResultHandlerTest {
 
     handler.handlePermissionResult(permissions)
 
-    Mockito.verify(mockViewModel).setLocationPermissionError()
-    Mockito.verify(mockViewModel, Mockito.never()).getCurrentLocation()
+    verify { mockViewModel.setLocationPermissionError() }
+    verify(exactly = 0) { mockViewModel.getCurrentLocation() }
   }
 
   @Test
   fun coarsePermissionGranted_locationEnabled_getsCurrentLocation() {
     val permissions = mapOf(Manifest.permission.ACCESS_COARSE_LOCATION to true)
-    Mockito.`when`(mockLocationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER))
-        .thenReturn(true)
+    every { mockLocationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER) } returns true
 
     handler.handlePermissionResult(permissions)
 
-    Mockito.verify(mockViewModel).getCurrentLocation()
+    verify { mockViewModel.getCurrentLocation() }
   }
 }
