@@ -1,11 +1,12 @@
 package com.android.sample.ui.map
 
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 object ConstantMap {
   const val TEXT_SEE_DETAILS = "See details"
   const val TEXT_EDIT = "Edit your request"
-  const val PROBLEM_OCCUR = "A problem occur"
+  const val PROBLEM_OCCUR = "A problem occur, click to reload"
 
   const val DETAILS = "Details"
 
@@ -16,6 +17,9 @@ object ConstantMap {
 
   const val START_DATE = "Start Date"
   const val END_DATE = "End Date"
+
+  const val KUDOS = "Kudos"
+  const val SECTION = "Section"
 
   // ======================
   // General / reusable
@@ -76,4 +80,14 @@ object ConstantMap {
   const val WEIGHT_FILL = 1f
 
   const val MIN_OFFSET_Y = 0f
+
+  // ======================
+  // Profile
+  // ======================
+
+  val REQUEST_ITEM_ICON_SIZE = 40.dp
+  const val TEXT_EDIT_PROFILE = "Edit your profile"
+  val FONT_SIZE_BIG = 18.sp
+  val FONT_SIZE_MID = 15.sp
+  const val ALPHA_KUDOS_DIVIDER = 0.17f
 }
