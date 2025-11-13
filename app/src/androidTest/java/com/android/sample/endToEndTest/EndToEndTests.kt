@@ -513,13 +513,18 @@ class EndToEndTests : BaseEmulatorTest() {
     hadARequestWithOtherAccount()
     initialize(fourthName, fourthEmail)
 
+    composeTestRule.waitForIdle()
+    Thread.sleep(1000) // Give time for request to load
+
     composeTestRule
         .onNodeWithTag(RequestListTestTags.REQUEST_ITEM)
         .assertIsDisplayed()
         .performClick()
 
     composeTestRule.waitForIdle()
-    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+    Thread.sleep(500) // Give time for screen transition
+
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT * 2) {
       composeTestRule
           .onAllNodesWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)
           .fetchSemanticsNodes()
@@ -531,12 +536,15 @@ class EndToEndTests : BaseEmulatorTest() {
         .assertTextContains("Accept", substring = true, ignoreCase = true)
         .performClick()
 
+    composeTestRule.waitForIdle()
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_GO_BACK)
         .assertIsDisplayed()
         .performClick()
 
     composeTestRule.waitForIdle()
+    Thread.sleep(500)
+
     composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
       composeTestRule
           .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM)
@@ -548,6 +556,16 @@ class EndToEndTests : BaseEmulatorTest() {
         .onNodeWithTag(RequestListTestTags.REQUEST_ITEM)
         .assertIsDisplayed()
         .performClick()
+
+    composeTestRule.waitForIdle()
+    Thread.sleep(500)
+
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule
+          .onAllNodesWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
 
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)

@@ -131,7 +131,8 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
 
   @Test
   fun addUserProfileStoresFullDetailsInPrivateCollection() = runTest {
-    val profile = testProfile1.copy(id = currentUserId)
+    // Use the authenticated user's email to match what's in Firebase Auth
+    val profile = testProfile1.copy(id = currentUserId, email = DEFAULT_USER_EMAIL)
     repository.addUserProfile(profile)
 
     val privateProfile = repository.getUserProfile(currentUserId)

@@ -4,6 +4,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import com.android.sample.model.profile.UserProfileRepositoryFirestore
 import com.android.sample.utils.BaseEmulatorTest
 import junit.framework.TestCase.assertNull
@@ -50,14 +51,20 @@ class ProfileLogoutTests : BaseEmulatorTest() {
   @Test
   fun clickingLogoutButton_showsLogoutDialog() {
     composeTestRule.waitForIdle()
-    composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_ACTION_LOG_OUT).performClick()
+    composeTestRule
+        .onNodeWithTag(ProfileTestTags.PROFILE_ACTION_LOG_OUT)
+        .performScrollTo()
+        .performClick()
     composeTestRule.onNodeWithTag(ProfileTestTags.LOG_OUT_DIALOG).assertIsDisplayed()
   }
 
   @Test
   fun cancelLogoutDialog_hidesDialog() {
     composeTestRule.waitForIdle()
-    composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_ACTION_LOG_OUT).performClick()
+    composeTestRule
+        .onNodeWithTag(ProfileTestTags.PROFILE_ACTION_LOG_OUT)
+        .performScrollTo()
+        .performClick()
     composeTestRule.onNodeWithTag(ProfileTestTags.LOG_OUT_DIALOG_CANCEL).performClick()
     composeTestRule.onNodeWithTag(ProfileTestTags.LOG_OUT_DIALOG).assertDoesNotExist()
   }
@@ -70,7 +77,10 @@ class ProfileLogoutTests : BaseEmulatorTest() {
   @Test
   fun confirmLogout_signsOutUser() {
     composeTestRule.waitForIdle()
-    composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_ACTION_LOG_OUT).performClick()
+    composeTestRule
+        .onNodeWithTag(ProfileTestTags.PROFILE_ACTION_LOG_OUT)
+        .performScrollTo()
+        .performClick()
     composeTestRule.onNodeWithTag(ProfileTestTags.LOG_OUT_DIALOG_CONFIRM).performClick()
     composeTestRule.waitForIdle()
     // Assert Firebase user is signed out
