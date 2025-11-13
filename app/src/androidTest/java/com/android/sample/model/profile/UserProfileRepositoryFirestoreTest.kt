@@ -9,8 +9,13 @@ import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import java.util.Date
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
@@ -67,14 +72,43 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
 
   @Before
   override fun setUp() {
-    super.setUp()
+    super.setUp() // Initialize auth and db
+
+    runTest {
+      auth.signOut()
+      signInUser()
+
+      // CRITICAL: Clear any existing data BEFORE creating repository
+      clearAllTestData()
+    }
+
     repository = UserProfileRepositoryFirestore(db)
   }
 
   @After
   override fun tearDown() {
-    runTest { clearTestCollections() }
+    runTest { clearAllTestData() }
     super.tearDown()
+  }
+
+  private suspend fun clearAllTestData() {
+    try {
+      val publicSnapshot = db.collection(PUBLIC_PROFILES_PATH).get().await()
+      val privateSnapshot = db.collection(PRIVATE_PROFILES_PATH).get().await()
+
+      val batch = db.batch()
+
+      publicSnapshot.documents.forEach { doc -> batch.delete(doc.reference) }
+
+      privateSnapshot.documents.forEach { doc -> batch.delete(doc.reference) }
+
+      batch.commit().await()
+
+      // Small delay to ensure deletion completes
+      kotlinx.coroutines.delay(100)
+    } catch (e: Exception) {
+      Log.e("TestCleanup", "Error clearing test data", e)
+    }
   }
 
   private suspend fun clearTestCollections() {
@@ -130,14 +164,23 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
   }
 
   @Test
-  fun addUserProfileStoresFullDetailsInPrivateCollection() = runTest {
-    val profile = testProfile1.copy(id = currentUserId)
-    repository.addUserProfile(profile)
+  fun addUserProfileStoresFullDetailsInPrivateCollection() =
+      runTest(timeout = 10.seconds) {
+        val profile = testProfile1.copy(id = currentUserId)
+        repository.addUserProfile(profile)
 
-    val privateProfile = repository.getUserProfile(currentUserId)
-    assertEquals(profile.email, privateProfile.email)
-    assertEquals(profile, privateProfile)
-  }
+        // CRITICAL: Wait for Firestore write to complete
+        advanceUntilIdle()
+
+        val privateProfile = repository.getUserProfile(currentUserId)
+
+        // Add better error message for debugging
+        assertEquals(
+            "Email mismatch. Expected: ${profile.email}, Got: ${privateProfile.email}",
+            profile.email,
+            privateProfile.email)
+        assertEquals(profile, privateProfile)
+      }
 
   @Test
   fun cannotAddProfileWithMismatchedUserId() = runTest {
@@ -161,27 +204,38 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
   }
 
   @Test
-  fun getUserProfileReturnsPublicVersionForOtherUsers() = runTest {
-    val profile = testProfile1.copy(id = currentUserId)
-    val currentUserId =
-        auth.currentUser?.uid
-            ?: throw IllegalStateException("No authenticated user") // Copy current user ID
-    repository.addUserProfile(profile)
+  fun getUserProfileReturnsPublicVersionForOtherUsers() =
+      runTest(timeout = 15.seconds) {
+        // Store the original user ID BEFORE any operations
+        val originalUserId = currentUserId
+        val profile = testProfile1.copy(id = originalUserId)
 
-    signInUser("otheremail@mail.com", "password")
-    val otherUserId = auth.currentUser?.uid ?: throw IllegalStateException("No authenticated user")
-    val otherUserProfile = testProfile2.copy(id = otherUserId)
-    repository.addUserProfile(otherUserProfile)
+        repository.addUserProfile(profile)
+        advanceUntilIdle() // Wait for write
 
-    val retrievedProfile = repository.getUserProfile(currentUserId)
-    assertEquals(profile.id, retrievedProfile.id)
-    assertEquals(profile.name, retrievedProfile.name)
-    assertEquals(null, retrievedProfile.email) // Email should be blurred
-    assertNotEquals(profile.email, retrievedProfile.email)
+        // Sign in as different user
+        signInUser("otheremail@mail.com", "password")
+        advanceUntilIdle() // Wait for auth
 
-    // Return to default user
-    signInUser()
-  }
+        val otherUserId =
+            auth.currentUser?.uid
+                ?: throw IllegalStateException("No authenticated user after sign in")
+        val otherUserProfile = testProfile2.copy(id = otherUserId)
+
+        repository.addUserProfile(otherUserProfile)
+        advanceUntilIdle() // Wait for write
+
+        // Retrieve the ORIGINAL user's profile (not current user)
+        val retrievedProfile = repository.getUserProfile(originalUserId)
+
+        assertEquals("Expected original user ID", originalUserId, retrievedProfile.id)
+        assertEquals("Expected original user name", profile.name, retrievedProfile.name)
+        assertNull("Email should be null for other users", retrievedProfile.email)
+
+        // Return to default user
+        signInUser()
+        advanceUntilIdle()
+      }
 
   @Test
   fun canUpdateUserProfile() = runTest {
@@ -348,16 +402,27 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
     assertTrue(repository.searchUserProfiles("a").isEmpty())
   }
 
+  @OptIn(ExperimentalCoroutinesApi::class)
   @Test
-  fun search_findsByFirstNamePrefix() = runTest {
-    // Seed two users: John Doe and Jane Smith
-    addProfileFor(DEFAULT_USER_EMAIL, name = "John", lastName = "Doe")
-    addProfileFor(SECOND_USER_EMAIL, name = "Jane", lastName = "Smith")
+  fun search_findsByFirstNamePrefix() =
+      runTest(timeout = 15.seconds) {
+        // Seed two users
+        addProfileFor(DEFAULT_USER_EMAIL, name = "John", lastName = "Doe")
+        addProfileFor(SECOND_USER_EMAIL, name = "Jane", lastName = "Smith")
 
-    val results = repository.searchUserProfiles("joh")
-    assertTrue(results.any { it.name == "John" && it.lastName == "Doe" })
-    assertFalse(results.any { it.name == "Jane" && it.lastName == "Smith" })
-  }
+        advanceUntilIdle()
+
+        kotlinx.coroutines.delay(500) // Real delay for Firestore indexing
+
+        val results = repository.searchUserProfiles("joh")
+
+        assertTrue(
+            "Expected to find John Doe in results. Found: ${results.map { "${it.name} ${it.lastName}" }}",
+            results.any { it.name == "John" && it.lastName == "Doe" })
+        assertFalse(
+            "Should not find Jane Smith in results",
+            results.any { it.name == "Jane" && it.lastName == "Smith" })
+      }
 
   @Test
   fun search_findsByLastNamePrefix_whenFirstNameDoesNotMatch() = runTest {
@@ -408,25 +473,29 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
   }
 
   @Test
-  fun search_largeDatabase_performance() =
-      runTest(timeout = 30.seconds) { // Extended timeout for seeding
-        // Seed 200 users with varying names
-        repeat(200) { idx ->
-          val name = "$idx" + "User"
-          val lastName = "LastName$idx"
-          val email = "${name.lowercase()}.${lastName.lowercase()}@example.com"
-          addProfileFor(email, name = name, lastName = lastName)
-        }
+  fun search_largeDatabase_performance() = runBlocking {
+    // Real timeout, not virtual timeout
+    withTimeout(30_000) {
 
-        val objective = 500L // milliseconds
+      // Seed 200 users
+      repeat(200) { idx ->
+        val name = "$idx" + "User"
+        val lastName = "LastName$idx"
+        val email = "${name.lowercase()}.${lastName.lowercase()}@example.com"
 
-        val startTime = System.currentTimeMillis()
-        val results =
-            repository.searchUserProfiles("11", limit = 9) // 10 results expected but limit 9
-        val endTime = System.currentTimeMillis()
-
-        val duration = endTime - startTime
-        assertTrue(duration < objective)
-        assertEquals(9, results.size)
+        // sign in and add profile
+        addProfileFor(email, name = name, lastName = lastName)
       }
+
+      // Allow Firestore indexing to catch up
+      delay(800)
+
+      val start = System.currentTimeMillis()
+      val results = repository.searchUserProfiles("11", limit = 9)
+      val duration = System.currentTimeMillis() - start
+
+      assertTrue("Query took too long: $duration ms", duration < 500)
+      assertEquals(9, results.size)
+    }
+  }
 }
