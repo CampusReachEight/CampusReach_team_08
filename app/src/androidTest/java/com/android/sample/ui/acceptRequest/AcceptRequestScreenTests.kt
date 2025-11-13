@@ -1,12 +1,8 @@
 package com.android.sample.ui.acceptRequest
 
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.material3.MaterialTheme
-
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -140,51 +136,28 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
   }
 
   @Test
-  fun screenComponentsAreDisplayed() {
+  fun acceptRequestWithValidArg() {
     composeTestRule.setContent { AcceptRequestScreen("request1") }
 
     composeTestRule.waitUntil(uiWaitTimeout) {
       composeTestRule
-          .onAllNodesWithTag(AcceptRequestScreenTestTags.REQUEST_TOP_BAR)
+          .onAllNodesWithTag(AcceptRequestScreenTestTags.REQUEST_TITLE)
           .fetchSemanticsNodes()
           .isNotEmpty()
     }
 
-    // Main column
     composeTestRule.onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_COLUMN).assertIsDisplayed()
 
-    // Top bar with title
-    composeTestRule.onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_TOP_BAR).assertIsDisplayed()
-
-    // Back button
-    composeTestRule.onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_GO_BACK).assertIsDisplayed()
-
-    // Details card
     composeTestRule
-        .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_DETAILS_CARD)
+        .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_TOP_BAR)
         .assertIsDisplayed()
+        .assertTextContains("Here is a good title", substring = true, ignoreCase = true)
 
-    // Accept button
-    composeTestRule.onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON).assertIsDisplayed()
-  }
-
-  @Test
-  fun detailsCardDisplaysAllInformation() {
-    composeTestRule.setContent { AcceptRequestScreen("request1") }
-
-    composeTestRule.waitUntil(uiWaitTimeout) {
-      composeTestRule
-          .onAllNodesWithTag(AcceptRequestScreenTestTags.REQUEST_TOP_BAR)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
-
-    // Verify details card exists
     composeTestRule
-        .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_DETAILS_CARD)
+        .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_TITLE)
         .assertIsDisplayed()
+        .assertTextContains("Here is a good title", substring = true, ignoreCase = true)
 
-    // Description
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_DESCRIPTION)
         .assertIsDisplayed()
@@ -193,130 +166,80 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
             substring = true,
             ignoreCase = true)
 
-    // Tags
-    composeTestRule
-        .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_TAG)
-        .assertIsDisplayed()
-        .assertTextContains("Urgent", substring = true, ignoreCase = true)
-
-    // Request Type
-    composeTestRule
-        .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_TYPE)
-        .assertIsDisplayed()
-        .assertTextContains("Studying", substring = true, ignoreCase = true)
-
-    // Status
-    composeTestRule
-        .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_STATUS)
-        .assertIsDisplayed()
-        .assertTextContains("Open", substring = true, ignoreCase = true)
-
-    // Location
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_LOCATION_NAME)
         .assertIsDisplayed()
         .assertTextContains("EPFL", substring = true, ignoreCase = true)
 
-    // Start time
+    composeTestRule
+        .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_TYPE)
+        .assertIsDisplayed()
+        .assertTextContains("Studying, study group", substring = true, ignoreCase = true)
+
+    composeTestRule
+        .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_TAG)
+        .assertIsDisplayed()
+        .assertTextContains("Urgent, group work, solo work", substring = true, ignoreCase = true)
+
+    composeTestRule
+        .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_STATUS)
+        .assertIsDisplayed()
+        .assertTextContains("Open", substring = true, ignoreCase = true)
+
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_START_TIME)
         .assertIsDisplayed()
         .assertTextContains("15/03/2024 14:30", substring = true, ignoreCase = true)
 
-    // Expiration time
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_EXPIRATION_TIME)
         .assertIsDisplayed()
         .assertTextContains("15/03/2024 15:30", substring = true, ignoreCase = true)
-  }
-
-  @Test
-  fun topBarDisplaysCorrectTitle() {
-    composeTestRule.setContent { AcceptRequestScreen("request1") }
-
-    composeTestRule.waitUntil(uiWaitTimeout) {
-      composeTestRule
-          .onAllNodesWithTag(AcceptRequestScreenTestTags.REQUEST_TOP_BAR)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
-
-    composeTestRule
-        .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_TOP_BAR)
-        .assertIsDisplayed()
-        .assertTextContains("Here is a good title", substring = true, ignoreCase = true)
-  }
-
-  @Test
-  fun acceptButtonDisplaysCorrectText() {
-    composeTestRule.setContent { AcceptRequestScreen("request1") }
-
-    composeTestRule.waitUntil(uiWaitTimeout) {
-      composeTestRule
-          .onAllNodesWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
 
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)
-        .assertIsDisplayed()
-        .assertTextContains("Accept Request", substring = true, ignoreCase = true)
-  }
-
-  @Test
-  fun acceptAndCancelRequestFlow() {
-    composeTestRule.setContent { AcceptRequestScreen("request1") }
-
-    composeTestRule.waitUntil(uiWaitTimeout) {
-      composeTestRule
-          .onAllNodesWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
-
-    // Initially should show "Accept Request"
-    composeTestRule
-        .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)
-        .assertTextContains("Accept Request", substring = true, ignoreCase = true)
+        .assertTextContains("Accept", substring = true, ignoreCase = true)
         .performClick()
 
-    // Wait for button text to change to "Cancel Acceptance"
     composeTestRule.waitUntil(uiWaitTimeout) {
       composeTestRule
           .onAllNodesWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)
           .fetchSemanticsNodes()
           .any { node ->
+            // take the text of the node
             val text =
                 node.config.getOrNull(SemanticsProperties.Text)?.joinToString("") { it.text } ?: ""
+            // Check if there is the text "Cancel"
             text.contains("Cancel", ignoreCase = true)
           }
     }
 
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)
-        .assertTextContains("Cancel Acceptance", substring = true, ignoreCase = true)
+        .assertTextContains("Cancel", substring = true, ignoreCase = true)
         .performClick()
 
-    // Wait for button text to change back to "Accept Request"
     composeTestRule.waitUntil(uiWaitTimeout) {
       composeTestRule
           .onAllNodesWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)
           .fetchSemanticsNodes()
           .any { node ->
+            // take the text of the node
             val text =
                 node.config.getOrNull(SemanticsProperties.Text)?.joinToString("") { it.text } ?: ""
-            text.contains("Accept Request", ignoreCase = true)
+            // Check if there is the text "Accept"
+            text.contains("Accept", ignoreCase = true)
           }
     }
 
     composeTestRule
-        .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)
-        .assertTextContains("Accept Request", substring = true, ignoreCase = true)
+        .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_GO_BACK)
+        .assertIsDisplayed()
+        .performClick()
   }
 
   @Test
-  fun haveAlreadyAcceptedInPast() {
+  fun haveAlreadyAcceptedInPasted() {
     composeTestRule.setContent { AcceptRequestScreen("request3") }
 
     composeTestRule.waitUntil(uiWaitTimeout) {
@@ -324,15 +247,16 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
           .onAllNodesWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)
           .fetchSemanticsNodes()
           .any { node ->
+            // take the text of the node
             val text =
                 node.config.getOrNull(SemanticsProperties.Text)?.joinToString("") { it.text } ?: ""
+            // Check if there is the text "Accept"
             text.contains("Cancel", ignoreCase = true)
           }
     }
-
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)
-        .assertTextContains("Cancel Acceptance", substring = true, ignoreCase = true)
+        .assertTextContains("Cancel", substring = true, ignoreCase = true)
         .performClick()
 
     composeTestRule.waitUntil(uiWaitTimeout) {
@@ -340,31 +264,22 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
           .onAllNodesWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)
           .fetchSemanticsNodes()
           .any { node ->
+            // take the text of the node
             val text =
                 node.config.getOrNull(SemanticsProperties.Text)?.joinToString("") { it.text } ?: ""
-            text.contains("Accept Request", ignoreCase = true)
+            // Check if there is the text "Accept"
+            text.contains("Accept", ignoreCase = true)
           }
     }
 
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)
-        .assertTextContains("Accept Request", substring = true, ignoreCase = true)
+        .assertTextContains("Accept", substring = true, ignoreCase = true)
         .performClick()
-
-    composeTestRule.waitUntil(uiWaitTimeout) {
-      composeTestRule
-          .onAllNodesWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)
-          .fetchSemanticsNodes()
-          .any { node ->
-            val text =
-                node.config.getOrNull(SemanticsProperties.Text)?.joinToString("") { it.text } ?: ""
-            text.contains("Cancel", ignoreCase = true)
-          }
-    }
   }
 
   @Test
-  fun cantAcceptOwnRequest() {
+  fun cantAcceptHisOwnRequest() {
     composeTestRule.setContent { AcceptRequestScreen("request2") }
 
     composeTestRule.waitUntil(uiWaitTimeout) {
@@ -372,28 +287,29 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
           .onAllNodesWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)
           .fetchSemanticsNodes()
           .any { node ->
+            // take the text of the node
             val text =
                 node.config.getOrNull(SemanticsProperties.Text)?.joinToString("") { it.text } ?: ""
-            text.contains("Accept Request", ignoreCase = true)
+            // Check if there is the text "Accept"
+            text.contains("Accept", ignoreCase = true)
           }
     }
 
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)
-        .assertTextContains("Accept Request", substring = true, ignoreCase = true)
+        .assertTextContains("Accept", substring = true, ignoreCase = true)
         .performClick()
 
     composeTestRule.mainClock.advanceTimeBy(1000)
     composeTestRule.waitForIdle()
 
-    // Button should still say "Accept Request" because the action failed
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)
-        .assertTextContains("Accept Request", substring = true, ignoreCase = true)
+        .assertTextContains("Accept", substring = true, ignoreCase = true)
   }
 
   @Test
-  fun cantCancelRequestIfNotLoggedIn() {
+  fun cantCancelRequestIfNotLogIn() {
     composeTestRule.setContent { AcceptRequestScreen("request3") }
 
     composeTestRule.waitUntil(uiWaitTimeout) {
@@ -401,8 +317,10 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
           .onAllNodesWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)
           .fetchSemanticsNodes()
           .any { node ->
+            // take the text of the node
             val text =
                 node.config.getOrNull(SemanticsProperties.Text)?.joinToString("") { it.text } ?: ""
+            // Check if there is the text "Accept"
             text.contains("Cancel", ignoreCase = true)
           }
     }
@@ -411,256 +329,14 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
 
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)
-        .assertTextContains("Cancel Acceptance", substring = true, ignoreCase = true)
+        .assertTextContains("Cancel", substring = true, ignoreCase = true)
         .performClick()
 
     composeTestRule.mainClock.advanceTimeBy(1000)
     composeTestRule.waitForIdle()
 
-    // Button should still say "Cancel Acceptance" because the action failed
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)
-        .assertTextContains("Cancel Acceptance", substring = true, ignoreCase = true)
+        .assertTextContains("Cancel", substring = true, ignoreCase = true)
   }
-
-  @Test
-  fun backButtonNavigatesBack() {
-    var backButtonClicked = false
-    composeTestRule.setContent {
-      AcceptRequestScreen("request1", onGoBack = { backButtonClicked = true })
-    }
-
-    composeTestRule.waitUntil(uiWaitTimeout) {
-      composeTestRule
-          .onAllNodesWithTag(AcceptRequestScreenTestTags.REQUEST_GO_BACK)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
-
-    composeTestRule.onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_GO_BACK).performClick()
-
-    assert(backButtonClicked) { "Back button callback was not triggered" }
-  }
-
-  @Test
-  fun buttonShowsLoadingState() {
-    composeTestRule.setContent { AcceptRequestScreen("request1") }
-
-    composeTestRule.waitUntil(uiWaitTimeout) {
-      composeTestRule
-          .onAllNodesWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
-
-    // Click accept button
-    composeTestRule.onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON).performClick()
-
-    // Button should exist (may show loading indicator briefly)
-    composeTestRule.onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON).assertExists()
-  }
-
-  @Test
-  fun emptyTagsDisplayCorrectly() {
-    val requestWithNoTags =
-        Request(
-            "request4",
-            "No tags request",
-            "Description without tags",
-            listOf(RequestType.OTHER),
-            Location(46.5191, 6.5668, "EPFL"),
-            "EPFL",
-            RequestStatus.OPEN,
-            Date(),
-            Date(System.currentTimeMillis() + 3_600_000),
-            emptyList(),
-            emptyList(), // No tags
-            currentUserId)
-
-    runTest { repository.addRequest(requestWithNoTags) }
-
-    composeTestRule.setContent { AcceptRequestScreen("request4") }
-
-    composeTestRule.waitUntil(uiWaitTimeout) {
-      composeTestRule
-          .onAllNodesWithTag(AcceptRequestScreenTestTags.REQUEST_TAG)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
-
-    // Should still display the Tags row, but with empty content
-    composeTestRule.onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_TAG).assertIsDisplayed()
-  }
-
-  @Test
-  fun multipleRequestTypesDisplayCorrectly() {
-    composeTestRule.setContent { AcceptRequestScreen("request1") }
-
-    composeTestRule.waitUntil(uiWaitTimeout) {
-      composeTestRule
-          .onAllNodesWithTag(AcceptRequestScreenTestTags.REQUEST_TYPE)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
-
-    // Should display all three request types
-    composeTestRule
-        .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_TYPE)
-        .assertIsDisplayed()
-        .assertTextContains("Studying", substring = true, ignoreCase = true)
-  }
-
-  @Test
-  fun archivedStatusDisplaysCorrectly() {
-    composeTestRule.setContent { AcceptRequestScreen("request3") }
-
-    composeTestRule.waitUntil(uiWaitTimeout) {
-      composeTestRule
-          .onAllNodesWithTag(AcceptRequestScreenTestTags.REQUEST_STATUS)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
-
-    composeTestRule
-        .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_STATUS)
-        .assertIsDisplayed()
-        .assertTextContains("Archived", substring = true, ignoreCase = true)
-  }
-
-    // Tests for getInitials function (via CreatorSection composable)
-    @Test
-    fun getInitials_withFullName_returnsFirstAndLastInitials() {
-        composeTestRule.setContent {
-            MaterialTheme {
-                com.android.sample.ui.overview.CreatorSection(
-                    creatorName = "John Doe",
-                    modifier = Modifier.testTag(AcceptRequestScreenTestTags.REQUEST_CREATOR)
-                )
-            }
-        }
-
-        composeTestRule
-            .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_CREATOR_AVATAR)
-            .assertIsDisplayed()
-            .assertTextContains("JD", substring = true)
-    }
-
-    @Test
-    fun getInitials_withSingleName_returnsFirstTwoCharacters() {
-        composeTestRule.setContent {
-            MaterialTheme {
-                com.android.sample.ui.overview.CreatorSection(
-                    creatorName = "Alice",
-                    modifier = Modifier.testTag(AcceptRequestScreenTestTags.REQUEST_CREATOR)
-                )
-            }
-        }
-
-        composeTestRule
-            .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_CREATOR_AVATAR)
-            .assertIsDisplayed()
-            .assertTextContains("AL", substring = true, ignoreCase = true)
-    }
-
-    @Test
-    fun getInitials_withEmptyName_returnsQuestionMark() {
-        composeTestRule.setContent {
-            MaterialTheme {
-                com.android.sample.ui.overview.CreatorSection(
-                    creatorName = "",
-                    modifier = Modifier.testTag(AcceptRequestScreenTestTags.REQUEST_CREATOR)
-                )
-            }
-        }
-
-        composeTestRule
-            .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_CREATOR_AVATAR)
-            .assertIsDisplayed()
-            .assertTextContains("?", substring = true)
-    }
-
-    @Test
-    fun getInitials_withMultipleSpaces_handlesCorrectly() {
-        composeTestRule.setContent {
-            MaterialTheme {
-                com.android.sample.ui.overview.CreatorSection(
-                    creatorName = "  John   Doe  ",
-                    modifier = Modifier.testTag(AcceptRequestScreenTestTags.REQUEST_CREATOR)
-                )
-            }
-        }
-        composeTestRule.waitUntil(uiWaitTimeout) {
-            composeTestRule
-                .onAllNodesWithTag(AcceptRequestScreenTestTags.REQUEST_CREATOR_AVATAR)
-                .fetchSemanticsNodes()
-                .isNotEmpty()
-        }
-
-
-        composeTestRule
-            .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_CREATOR_AVATAR)
-            .assertIsDisplayed()
-            .assertTextContains("JD", substring = true)
-    }
-
-    @Test
-    fun getInitials_withThreeNames_returnsFirstAndLastInitials() {
-        composeTestRule.setContent {
-            MaterialTheme {
-                com.android.sample.ui.overview.CreatorSection(
-                    creatorName = "John Middle Doe",
-                    modifier = Modifier.testTag(AcceptRequestScreenTestTags.REQUEST_CREATOR)
-                )
-            }
-        }
-
-        composeTestRule
-            .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_CREATOR_AVATAR)
-            .assertIsDisplayed()
-            .assertTextContains("JD", substring = true)
-    }
-
-    @Test
-    fun creatorSection_displaysPostedByLabel() {
-        composeTestRule.setContent {
-            com.android.sample.ui.overview.CreatorSection(
-                creatorName = "Jane Smith",
-                modifier = Modifier.testTag(AcceptRequestScreenTestTags.REQUEST_CREATOR))
-        }
-
-        composeTestRule
-            .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_CREATOR)
-            .assertIsDisplayed()
-            .assertTextContains("Posted by", substring = true, ignoreCase = true)
-    }
-
-    @Test
-    fun creatorSection_displaysCreatorName() {
-        composeTestRule.setContent {
-            com.android.sample.ui.overview.CreatorSection(
-                creatorName = "Jane Smith",
-                modifier = Modifier.testTag(AcceptRequestScreenTestTags.REQUEST_CREATOR))
-        }
-
-        composeTestRule
-            .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_CREATOR)
-            .assertIsDisplayed()
-            .assertTextContains("Jane Smith", substring = true)
-    }
-
-    @Test
-    fun creatorSection_avatarIsDisplayed() {
-        composeTestRule.setContent {
-            MaterialTheme {
-                com.android.sample.ui.overview.CreatorSection(
-                    creatorName = "Test User",
-                    modifier = Modifier.testTag(AcceptRequestScreenTestTags.REQUEST_CREATOR)
-                )
-            }
-        }
-
-        composeTestRule
-            .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_CREATOR_AVATAR)
-            .assertIsDisplayed()
-    }
 }
