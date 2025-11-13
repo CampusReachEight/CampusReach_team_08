@@ -20,6 +20,7 @@ fun ProfileContent(
     state: ProfileState,
     modifier: Modifier = Modifier,
     onLogoutRequested: () -> Unit = {},
+    onMyRequestAction: () -> Unit,
     onEditRequested: () -> Unit = {}
 ) {
   Column(modifier = modifier.verticalScroll(rememberScrollState())) {
@@ -34,6 +35,6 @@ fun ProfileContent(
     Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
     ProfileInformation(state = state)
     Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
-    ProfileActions(onLogoutClick = onLogoutRequested)
+    ProfileActions(onLogoutClick = onLogoutRequested, onMyRequestClick = onMyRequestAction)
   }
 }

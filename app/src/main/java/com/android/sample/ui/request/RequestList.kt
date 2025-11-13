@@ -3,6 +3,8 @@ package com.android.sample.ui.request
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -72,11 +74,24 @@ object RequestListTestTags {
   fun getRequestStatusFilterTag(status: String): String = getFilterTag("requestStatus", status)
 }
 
+private const val NO_REQUEST_NOW = "No requests at the moment"
+
+private const val NO_REQUEST_YET = "You don't have any requests yet"
+
+private const val MY_REQUESTS = "My Requests"
+
+private const val TEXT_BACK = "Back"
+
+private const val TEXT_TODO = "TODO"
+
 /** Request List screen scaffold: top bar, filters section, list, bottom bar, and error dialog. */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RequestListScreen(
     modifier: Modifier = Modifier,
-    requestListViewModel: RequestListViewModel = viewModel(),
+    showOnlyMyRequests: Boolean = false,
+    requestListViewModel: RequestListViewModel =
+        viewModel(factory = RequestListViewModelFactory(showOnlyMyRequests = showOnlyMyRequests)),
     navigationActions: NavigationActions? = null,
 ) {
   val searchFilterViewModel: RequestSearchFilterViewModel = viewModel()
@@ -99,14 +114,28 @@ fun RequestListScreen(
   Scaffold(
       modifier = modifier.fillMaxSize().testTag(NavigationTestTags.REQUESTS_SCREEN),
       topBar = {
-        TopNavigationBar(
-            selectedTab = NavigationTab.Requests,
-            onProfileClick = { navigationActions?.navigateTo(Screen.Profile("TODO")) },
-        )
+        if (showOnlyMyRequests) {
+          // Simple back button for My Requests
+          TopAppBar(
+              title = { Text(MY_REQUESTS) },
+              navigationIcon = {
+                IconButton(onClick = { navigationActions?.goBack() }) {
+                  Icon(Icons.Default.ArrowBack, contentDescription = TEXT_BACK)
+                }
+              })
+        } else {
+          // Full navigation bar for All Requests
+          TopNavigationBar(
+              selectedTab = NavigationTab.Requests,
+              onProfileClick = { navigationActions?.navigateTo(Screen.Profile(TEXT_TODO)) },
+          )
+        }
       },
       bottomBar = {
-        BottomNavigationMenu(
-            selectedNavigationTab = NavigationTab.Requests, navigationActions = navigationActions)
+        if (!showOnlyMyRequests) {
+          BottomNavigationMenu(
+              selectedNavigationTab = NavigationTab.Requests, navigationActions = navigationActions)
+        }
       },
       floatingActionButton = { AddButton(navigationActions) }) { innerPadding ->
 
@@ -131,7 +160,7 @@ fun RequestListScreen(
 
           if (!state.isLoading && toShow.isEmpty()) {
             Text(
-                text = "No requests at the moment",
+                text = if (showOnlyMyRequests) NO_REQUEST_YET else NO_REQUEST_NOW,
                 modifier =
                     Modifier.fillMaxSize()
                         .wrapContentSize()
@@ -173,6 +202,10 @@ fun RequestList(
   }
 }
 
+private const val WEIGHT = 1f
+
+private const val MAX_PARAM = 2
+
 /** One request list item: title, compact type labels, truncated description, and optional icon. */
 @Composable
 fun RequestListItem(
@@ -203,9 +236,9 @@ fun RequestListItem(
         Row(Modifier.fillMaxWidth()) {
           Text(
               request.title,
-              modifier = Modifier.testTag(RequestListTestTags.REQUEST_ITEM_TITLE).weight(1f))
+              modifier = Modifier.testTag(RequestListTestTags.REQUEST_ITEM_TITLE).weight(WEIGHT))
           Text(
-              request.requestType.toCompactLabel(max = 2),
+              request.requestType.toCompactLabel(max = MAX_PARAM),
               textAlign = TextAlign.End,
               maxLines = 1,
               overflow = TextOverflow.Clip)
@@ -213,7 +246,7 @@ fun RequestListItem(
         Text(
             request.description,
             modifier = Modifier.testTag(RequestListTestTags.REQUEST_ITEM_DESCRIPTION),
-            maxLines = 2,
+            maxLines = MAX_PARAM,
             overflow = TextOverflow.Ellipsis)
       }
     }
@@ -230,12 +263,16 @@ fun AddButton(navigationActions: NavigationActions?) {
       }
 }
 
+private const val DIALOG_ERROR_OCCURED = "An error occurred"
+
+private const val DIALOG_OK = "OK"
+
 /** Simple alert dialog to surface user-facing errors. */
 @Composable
 private fun ErrorDialog(message: String, onDismiss: () -> Unit) {
   AlertDialog(
       onDismissRequest = onDismiss,
-      title = { Text("An error occurred") },
+      title = { Text(DIALOG_ERROR_OCCURED) },
       text = {
         Text(message, modifier = Modifier.testTag(RequestListTestTags.ERROR_MESSAGE_DIALOG))
       },
@@ -243,13 +280,13 @@ private fun ErrorDialog(message: String, onDismiss: () -> Unit) {
         TextButton(
             onClick = onDismiss,
             modifier = Modifier.testTag(RequestListTestTags.OK_BUTTON_ERROR_DIALOG)) {
-              Text("OK")
+              Text(DIALOG_OK)
             }
       })
 }
 
 /** Formats a list of request types into a compact label like `SPORT | EATING | ...`. */
-private fun List<RequestType>.toCompactLabel(max: Int = 2): String {
+private fun List<RequestType>.toCompactLabel(max: Int = MAX_PARAM): String {
   if (isEmpty()) return ""
   val head = take(max).joinToString(" | ") { it.displayString() }
   return if (size > max) "$head | ..." else head
