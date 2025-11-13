@@ -42,7 +42,8 @@ fun TopNavigationBar(
         ProfilePicture(
             profileId = FirebaseAuth.getInstance().currentUser?.uid ?: "",
             onClick = onProfileClick,
-            modifier = Modifier.size(UiDimens.IconMedium).testTag(NavigationTestTags.PROFILE_BUTTON))
+            modifier =
+                Modifier.size(UiDimens.IconMedium).testTag(NavigationTestTags.PROFILE_BUTTON))
       },
       colors =
           TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = appPalette().surface))
