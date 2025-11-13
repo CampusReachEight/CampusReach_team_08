@@ -336,16 +336,14 @@ class MapsTest : BaseEmulatorTest() {
         .assertIsDisplayed()
         .performClick()
 
-      composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
-          composeTestRule
-              .onAllNodesWithTag(MapTestTags.PROFILE_NAME)
-              .fetchSemanticsNodes()
-              .any { node ->
-                  node.config
-                      .getOrNull(SemanticsProperties.Text)
-                      ?.any { it.text.contains("$name2 $firstName2") } == true
-              }
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule.onAllNodesWithTag(MapTestTags.PROFILE_NAME).fetchSemanticsNodes().any { node
+        ->
+        node.config.getOrNull(SemanticsProperties.Text)?.any {
+          it.text.contains("$name2 $firstName2")
+        } == true
       }
+    }
 
     composeTestRule.onNodeWithTag(MapTestTags.PROFILE_EDIT_BUTTON).assertDoesNotExist()
   }
