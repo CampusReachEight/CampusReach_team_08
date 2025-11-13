@@ -47,7 +47,7 @@ abstract class BaseEmulatorTest {
     db = FirebaseEmulator.firestore
     auth = FirebaseEmulator.auth
 
-    //maybe remove
+    // maybe remove
     runTest {
       // Clear auth state to avoid password mismatches from previous runs
       FirebaseEmulator.clearAuthEmulator()
