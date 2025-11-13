@@ -1,16 +1,12 @@
 package com.android.sample.ui.profile.composables
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import com.android.sample.ui.profile.ProfileDimens
 import com.android.sample.ui.profile.ProfilePicture
@@ -41,10 +37,8 @@ fun ProfileHeader(
       elevation = CardDefaults.cardElevation(defaultElevation = ProfileDimens.CardElevation)) {
         Box(modifier = Modifier.padding(ProfileDimens.HeaderPadding)) {
           Row(verticalAlignment = Alignment.CenterVertically) {
-              ProfilePicture(
-                  profileId = state.profileId,
-                  modifier = Modifier.size(ProfileDimens.ProfilePicture)
-              )
+            ProfilePicture(
+                profileId = state.profileId, modifier = Modifier.size(ProfileDimens.ProfilePicture))
             Spacer(modifier = Modifier.width(ProfileDimens.HeaderSpacer))
             Column {
               Text(

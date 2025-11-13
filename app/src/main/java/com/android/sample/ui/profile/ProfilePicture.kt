@@ -87,7 +87,7 @@ fun ProfilePicture(
     onClick: () -> Unit = {},
     modifier: Modifier = Modifier,
     withName: Boolean = false,
-    withNameImageSize : Dp = ConstantRequestList.RequestItemIconSize
+    withNameImageSize: Dp = ConstantRequestList.RequestItemIconSize
 ) {
   var loading: Boolean by remember { mutableStateOf(true) }
   var bitmap: Bitmap? by remember { mutableStateOf(null) }
@@ -155,14 +155,14 @@ fun ProfilePicture(
       verticalArrangement = Arrangement.Center,
       horizontalAlignment = Alignment.CenterHorizontally,
       modifier = modifier.fillMaxSize()) {
-      val sizeMod = if (withName) {
-        Modifier.size(withNameImageSize)} else {Modifier.fillMaxSize()}
+        val sizeMod =
+            if (withName) {
+              Modifier.size(withNameImageSize)
+            } else {
+              Modifier.fillMaxSize()
+            }
         Surface(
-            modifier =
-                sizeMod
-                    .aspectRatio(1f)
-                    .clip(CircleShape)
-                    .clickable() { onClick() },
+            modifier = sizeMod.aspectRatio(1f).clip(CircleShape).clickable() { onClick() },
             shape = CircleShape,
         ) {
           if (loading) {

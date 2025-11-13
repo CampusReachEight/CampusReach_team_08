@@ -2,12 +2,8 @@ package com.android.sample.ui.theme
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
@@ -18,7 +14,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.android.sample.ui.navigation.NavigationTab
 import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.profile.ProfilePicture
-import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -44,12 +39,11 @@ fun TopNavigationBar(
             color = appPalette().onSurface)
       },
       actions = {
-          ProfilePicture(
-              profileId = FirebaseAuth.getInstance().currentUser?.uid ?: "",
-              onClick = onProfileClick,
-              modifier = Modifier.size(UiDimens.IconMedium)
-          )
-          /*
+        ProfilePicture(
+            profileId = FirebaseAuth.getInstance().currentUser?.uid ?: "",
+            onClick = onProfileClick,
+            modifier = Modifier.size(UiDimens.IconMedium))
+        /*
         IconButton(
             onClick = onProfileClick,
             modifier = Modifier.testTag(NavigationTestTags.PROFILE_BUTTON)) {
