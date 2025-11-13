@@ -11,10 +11,12 @@ import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
+import androidx.test.espresso.Espresso
 import com.android.sample.AppNavigation
 import com.android.sample.model.map.Location
 import com.android.sample.model.request.Request
@@ -556,4 +558,261 @@ class EndToEndTests : BaseEmulatorTest() {
         .assertTextContains("Cancel", substring = true, ignoreCase = true)
         .performClick()
   }
+
+    @Test
+    fun canCreateRequestGoToProfileViewMyRequestsEditAndLogout() {
+        val TAG = "EndToEndTests"
+
+        // 1. Sign in
+        val testName = "78901"
+        val testEmail = "myrequest@example.com"
+        initialize(testName, testEmail)
+
+        // 2. Create request
+        goAddRequest()
+        addElementOfRequest()
+
+        composeTestRule.waitForIdle()
+        composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+            composeTestRule
+                .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM)
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+
+        // 3. Navigate to Profile
+        composeTestRule
+            .onNodeWithTag(NavigationTestTags.PROFILE_BUTTON)
+            .assertIsDisplayed()
+            .performClick()
+
+        composeTestRule.waitForIdle()
+        composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+            composeTestRule
+                .onAllNodesWithTag(ProfileTestTags.PROFILE_ACTION_MY_REQUEST)
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+
+        // 4. Click My Request button
+        composeTestRule
+            .onNodeWithTag(ProfileTestTags.PROFILE_ACTION_MY_REQUEST)
+            .assertIsDisplayed()
+            .performClick()
+
+        composeTestRule.waitForIdle()
+        composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+            composeTestRule
+                .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM)
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+
+        // 5. Click request item to edit
+        composeTestRule
+            .onNodeWithTag(RequestListTestTags.REQUEST_ITEM)
+            .assertIsDisplayed()
+            .performClick()
+
+        composeTestRule.waitForIdle()
+        composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+            composeTestRule
+                .onAllNodesWithTag(EditRequestScreenTestTags.INPUT_TITLE)
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+
+        // 6. Edit the title
+        composeTestRule
+            .onNodeWithTag(EditRequestScreenTestTags.INPUT_TITLE)
+            .performScrollTo()
+            .assertIsDisplayed()
+            .performTextClearance()
+
+        composeTestRule
+            .onNodeWithTag(EditRequestScreenTestTags.INPUT_TITLE)
+            .performTextInput(anotherTitle)
+
+        composeTestRule.waitForIdle()
+        Thread.sleep(500)
+
+        composeTestRule
+            .onNodeWithTag(EditRequestScreenTestTags.SAVE_BUTTON)
+            .performScrollTo()
+            .assertIsDisplayed()
+            .performClick()
+
+        // 7. Wait for return to My Requests screen
+        composeTestRule.waitForIdle()
+        composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+            composeTestRule
+                .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM)
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+
+        // 8. Verify edited title is displayed
+        composeTestRule.onNodeWithText(anotherTitle).assertIsDisplayed()
+
+        // 9. Press back to return to Profile screen
+        Espresso.pressBack()
+
+        composeTestRule.waitForIdle()
+        composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+            composeTestRule
+                .onAllNodesWithTag(ProfileTestTags.PROFILE_ACTION_LOG_OUT)
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+
+        // 10. Logout (now we're on profile screen with logout button)
+        composeTestRule
+            .onNodeWithTag(ProfileTestTags.PROFILE_ACTION_LOG_OUT)
+            .assertIsDisplayed()
+            .performClick()
+
+        composeTestRule.waitForIdle()
+        composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+            composeTestRule
+                .onAllNodesWithTag(ProfileTestTags.LOG_OUT_DIALOG)
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+
+        composeTestRule
+            .onNodeWithTag(ProfileTestTags.LOG_OUT_DIALOG_CONFIRM)
+            .assertIsDisplayed()
+            .performClick()
+
+        composeTestRule.waitForIdle()
+        composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+            composeTestRule
+                .onAllNodesWithTag(SignInScreenTestTags.LOGIN_BUTTON)
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+
+        composeTestRule.onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON).assertIsDisplayed()
+    }
+
+    @Test
+    fun canLoginGoToProfileEditProfileAndLogout() {
+        val TAG = "EndToEndTests"
+
+        // 1. Sign in
+        val testName = "12345"
+        val testEmail = "editprofile@example.com"
+        initialize(testName, testEmail)
+
+        // 2. Navigate to Profile
+        composeTestRule
+            .onNodeWithTag(NavigationTestTags.PROFILE_BUTTON)
+            .assertIsDisplayed()
+            .performClick()
+
+        composeTestRule.waitForIdle()
+        composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+            composeTestRule
+                .onAllNodesWithTag(ProfileTestTags.PROFILE_HEADER_EDIT_BUTTON)
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+
+        // 3. Click Edit Profile button
+        composeTestRule
+            .onNodeWithTag(ProfileTestTags.PROFILE_HEADER_EDIT_BUTTON)
+            .assertIsDisplayed()
+            .performClick()
+
+        composeTestRule.waitForIdle()
+        composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+            composeTestRule
+                .onAllNodesWithTag(ProfileTestTags.EDIT_PROFILE_DIALOG)
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+
+        // 4. Edit name
+        val newName = "John Smith"
+        composeTestRule
+            .onNodeWithTag(ProfileTestTags.EDIT_PROFILE_NAME_INPUT)
+            .assertIsDisplayed()
+            .performTextClearance()
+
+        composeTestRule.onNodeWithTag(ProfileTestTags.EDIT_PROFILE_NAME_INPUT).performTextInput(newName)
+
+        // 5. Click section dropdown
+        composeTestRule
+            .onNodeWithTag(ProfileTestTags.SECTION_DROPDOWN)
+            .assertIsDisplayed()
+            .performClick()
+
+        composeTestRule.waitForIdle()
+        Thread.sleep(500) // Wait for bottom sheet to appear
+
+        // 6. Select Computer Science
+        val sectionTag = ProfileTestTags.SECTION_OPTION_PREFIX + "Computer_Science"
+        composeTestRule.onNodeWithTag(sectionTag).assertIsDisplayed().performClick()
+
+        composeTestRule.waitForIdle()
+        Thread.sleep(500)
+
+        // 7. Save changes
+        composeTestRule
+            .onNodeWithTag(ProfileTestTags.EDIT_PROFILE_DIALOG_SAVE_BUTTON)
+            .assertIsDisplayed()
+            .performClick()
+
+        // 8. Wait for dialog to close and profile to update
+        composeTestRule.waitForIdle()
+        composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+            composeTestRule
+                .onAllNodesWithTag(ProfileTestTags.EDIT_PROFILE_DIALOG)
+                .fetchSemanticsNodes()
+                .isEmpty()
+        }
+
+        Thread.sleep(500) // Let UI settle
+        composeTestRule.waitForIdle()
+
+        // 9. Verify profile information is updated on screen
+        composeTestRule
+            .onNodeWithTag(ProfileTestTags.PROFILE_HEADER_NAME)
+            .assertIsDisplayed()
+            .assertTextContains(newName, ignoreCase = false)
+
+        composeTestRule
+            .onNodeWithTag(ProfileTestTags.PROFILE_INFO_SECTION)
+            .assertIsDisplayed()
+            .assertTextContains("Computer Science", ignoreCase = false)
+
+        // 10. Logout
+        composeTestRule
+            .onNodeWithTag(ProfileTestTags.PROFILE_ACTION_LOG_OUT)
+            .assertIsDisplayed()
+            .performClick()
+
+        composeTestRule.waitForIdle()
+        composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+            composeTestRule
+                .onAllNodesWithTag(ProfileTestTags.LOG_OUT_DIALOG)
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+
+        composeTestRule
+            .onNodeWithTag(ProfileTestTags.LOG_OUT_DIALOG_CONFIRM)
+            .assertIsDisplayed()
+            .performClick()
+
+        composeTestRule.waitForIdle()
+        composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+            composeTestRule
+                .onAllNodesWithTag(SignInScreenTestTags.LOGIN_BUTTON)
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+
+        composeTestRule.onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON).assertIsDisplayed()
+    }
 }
