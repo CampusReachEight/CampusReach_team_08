@@ -31,12 +31,16 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import com.android.sample.model.profile.UserProfile
 import com.android.sample.model.profile.UserProfileRepository
+import com.android.sample.model.profile.UserProfileRepositoryFirestore
 import com.android.sample.ui.request.ConstantRequestList
 import com.android.sample.ui.theme.AppColors.SecondaryColor
 import com.android.sample.ui.theme.AppColors.SecondaryDark
 import com.android.sample.ui.theme.AppColors.WhiteColor
+import com.google.firebase.Firebase
+import com.google.firebase.firestore.firestore
 import java.net.URL
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -46,10 +50,6 @@ object ProfilePictureTestTags {
   const val PROFILE_PICTURE_LOADING = "profile_picture_loading"
   const val PROFILE_PICTURE_DEFAULT = "profile_picture_default"
   const val PROFILE_PICTURE_NAME = "profile_picture_name"
-}
-
-object ProfilePictureConstants {
-  val imageTextRatio = 0.8f
 }
 
 object ProfileIconCache {
@@ -82,11 +82,12 @@ object ProfileCache {
 
 @Composable
 fun ProfilePicture(
-    profileRepository: UserProfileRepository,
+    profileRepository: UserProfileRepository = UserProfileRepositoryFirestore(Firebase.firestore),
     profileId: String,
-    onClick: () -> Unit,
+    onClick: () -> Unit = {},
     modifier: Modifier = Modifier,
     withName: Boolean = false,
+    withNameImageSize : Dp = ConstantRequestList.RequestItemIconSize
 ) {
   var loading: Boolean by remember { mutableStateOf(true) }
   var bitmap: Bitmap? by remember { mutableStateOf(null) }
@@ -154,9 +155,11 @@ fun ProfilePicture(
       verticalArrangement = Arrangement.Center,
       horizontalAlignment = Alignment.CenterHorizontally,
       modifier = modifier.fillMaxSize()) {
+      val sizeMod = if (withName) {
+        Modifier.size(withNameImageSize)} else {Modifier.fillMaxSize()}
         Surface(
             modifier =
-                Modifier.size(ConstantRequestList.RequestItemIconSize)
+                sizeMod
                     .aspectRatio(1f)
                     .clip(CircleShape)
                     .clickable() { onClick() },

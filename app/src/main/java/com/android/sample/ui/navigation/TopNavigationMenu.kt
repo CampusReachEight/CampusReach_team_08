@@ -1,5 +1,6 @@
 package com.android.sample.ui.theme
 
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
@@ -16,6 +17,9 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import com.android.sample.ui.navigation.NavigationTab
 import com.android.sample.ui.navigation.NavigationTestTags
+import com.android.sample.ui.profile.ProfilePicture
+import com.google.firebase.Firebase
+import com.google.firebase.auth.FirebaseAuth
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,7 +36,7 @@ fun TopNavigationBar(
       }
 
   CenterAlignedTopAppBar(
-      modifier = modifier.testTag(NavigationTestTags.TOP_NAVIGATION_BAR),
+      modifier = modifier.testTag(NavigationTestTags.TOP_NAVIGATION_BAR).padding(),
       title = {
         Text(
             text = title,
@@ -40,6 +44,12 @@ fun TopNavigationBar(
             color = appPalette().onSurface)
       },
       actions = {
+          ProfilePicture(
+              profileId = FirebaseAuth.getInstance().currentUser?.uid ?: "",
+              onClick = onProfileClick,
+              modifier = Modifier.size(UiDimens.IconMedium)
+          )
+          /*
         IconButton(
             onClick = onProfileClick,
             modifier = Modifier.testTag(NavigationTestTags.PROFILE_BUTTON)) {
@@ -49,6 +59,8 @@ fun TopNavigationBar(
                   modifier = Modifier.size(UiDimens.IconMedium),
                   tint = appPalette().accent)
             }
+
+           */
       },
       colors =
           TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = appPalette().surface))
