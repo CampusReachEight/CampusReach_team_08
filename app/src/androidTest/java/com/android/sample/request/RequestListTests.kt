@@ -279,8 +279,10 @@ class RequestListTests : BaseEmulatorTest() {
     composeTestRule.waitUntil(WAIT_TIMEOUT_MS) { vm.profileIcons.value.containsKey(fail) }
 
     composeTestRule
-        .onAllNodesWithTag(ProfilePictureTestTags.PROFILE_PICTURE_DEFAULT, useUnmergedTree = true)
-        .assertCountEquals(1)
+        .onNodeWithTag(RequestListTestTags.REQUEST_LIST, useUnmergedTree = true)
+        .onChildren()
+        .filter(hasAnyDescendant(hasTestTag(ProfilePictureTestTags.PROFILE_PICTURE_DEFAULT)))
+        .assertCountEquals(COUNT_ONE)
   }
 
   @Test
