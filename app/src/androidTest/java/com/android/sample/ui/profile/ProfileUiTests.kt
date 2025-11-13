@@ -14,6 +14,9 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.navigation.compose.rememberNavController
+import com.android.sample.ui.navigation.NavigationActions
+import com.android.sample.ui.navigation.Screen
 import com.android.sample.ui.profile.composables.ErrorBanner
 import com.android.sample.ui.profile.composables.InfoRow
 import com.android.sample.ui.profile.composables.LoadingIndicator
@@ -570,7 +573,9 @@ class ProfileUiTests {
   @Test
   fun profileContent_showsErrorBanner_and_disappears_whenStateCleared() {
     val state = mutableStateOf(ProfileState.withError())
-    composeTestRule.setContent { ProfileContent(state = state.value, onLogoutRequested = {}) }
+    composeTestRule.setContent {
+      ProfileContent(state = state.value, onLogoutRequested = {}, onMyRequestAction = {})
+    }
 
     // initially present
     composeTestRule.onAllNodesWithTag("profile_error").assertCountEquals(1)
@@ -584,7 +589,9 @@ class ProfileUiTests {
   @Test
   fun errorBanner_singleInstance_inProfileContent() {
     val state = ProfileState.withError()
-    composeTestRule.setContent { ProfileContent(state = state, onLogoutRequested = {}) }
+    composeTestRule.setContent {
+      ProfileContent(state = state, onLogoutRequested = {}, onMyRequestAction = {})
+    }
 
     // ensure exactly one error banner node is present
     composeTestRule.onAllNodesWithTag("profile_error").assertCountEquals(1)
@@ -596,7 +603,8 @@ class ProfileUiTests {
     var logoutRequested = false
     val s = ProfileState.default()
     composeTestRule.setContent {
-      ProfileContent(state = s, onLogoutRequested = { logoutRequested = true })
+      ProfileContent(
+          state = s, onLogoutRequested = { logoutRequested = true }, onMyRequestAction = {})
     }
 
     composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_HEADER).assertIsDisplayed()
@@ -646,5 +654,54 @@ class ProfileUiTests {
   @Test
   fun fromLabel_unknownReturnsNone() {
     assertEquals(UserSections.NONE, UserSections.fromLabel("non_existent_label_123"))
+  }
+
+  // ----- My Request Action -----
+  @Test
+  fun myRequest_action_isDisplayed_and_hasClickAction() {
+    composeTestRule.setContent { ProfileActions() }
+
+    composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_ACTION_MY_REQUEST).assertIsDisplayed()
+    composeTestRule.onNodeWithText("My Request").assertIsDisplayed()
+    composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_ACTION_MY_REQUEST).assertHasClickAction()
+  }
+
+  @Test
+  fun myRequest_action_triggersCallback() {
+    var triggered = false
+    composeTestRule.setContent { ProfileActions(onMyRequestClick = { triggered = true }) }
+
+    composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_ACTION_MY_REQUEST).performClick()
+    composeTestRule.runOnIdle { assertTrue(triggered) }
+  }
+
+  @Test
+  fun myRequest_button_callsViewModel_onMyRequestsClick() = runTest {
+    var navigationCalled = false
+    var correctScreen = false
+
+    composeTestRule.setContent {
+      val navController = rememberNavController()
+      val mockNavigationActions =
+          object : NavigationActions(navController) {
+            override fun navigateTo(screen: Screen) {
+              navigationCalled = true
+              if (screen is Screen.MyRequest) {
+                correctScreen = true
+              }
+            }
+          }
+
+      val viewModel = ProfileViewModel(attachAuthListener = false)
+
+      ProfileActions(onMyRequestClick = { viewModel.onMyRequestsClick(mockNavigationActions) })
+    }
+
+    composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_ACTION_MY_REQUEST).performClick()
+
+    composeTestRule.runOnIdle {
+      assertTrue("Expected navigation to be called", navigationCalled)
+      assertTrue("Expected navigation to MyRequest screen", correctScreen)
+    }
   }
 }

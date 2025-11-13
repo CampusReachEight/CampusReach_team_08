@@ -111,4 +111,15 @@ class RequestRepositoryFirestore(
     val currentUserId = Firebase.auth.currentUser?.uid ?: notAuthenticated()
     return currentUserId == request.creatorId
   }
+
+  override suspend fun getMyRequests(): List<Request> {
+    val currentUserId = Firebase.auth.currentUser?.uid ?: notAuthenticated()
+
+    return collectionRef
+        .whereEqualTo("creatorId", currentUserId)
+        .get()
+        .await()
+        .documents
+        .mapNotNull { doc -> doc.data?.let { Request.fromMap(it) } }
+  }
 }
