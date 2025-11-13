@@ -3,6 +3,7 @@ package com.android.sample.ui.overview
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,15 +13,21 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.*
-import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -30,16 +37,15 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.model.request.displayString
 import com.android.sample.ui.navigation.NavigationTestTags
-import com.android.sample.ui.overview.ConstantAcceptRequest.TEXT_SIZE
-import com.android.sample.ui.theme.appPalette
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -58,22 +64,9 @@ object AcceptRequestScreenTestTags {
   const val REQUEST_COLUMN = "requestColumn"
   const val REQUEST_TOP_BAR = "requestTopBar"
   const val REQUEST_GO_BACK = "requestGoBack"
-}
-
-object AcceptRequestConstUI {
-  val ICON_SIZE = 24.dp
-  val ICON_PADDING = 2.dp
-  val PADDING_ROW_HOR = 16.dp
-  val PADDING_ROW_VER = 12.dp
-  val SPACER_WIDTH = 24.dp
-  val HORIZONTAL_DIVIDER_PADDING = 72.dp
-  val BOTTOM_TEXT_PADDING = 2.dp
-  val BOTTOM_TEXT_TRANSPARENCY = 0.6f
-  val HORIZONTAL_DIVIDER_TRANSPARENCY = 0.1f
-  val HORIZONTAL_DIVIDER_THICKNESS = 0.5.dp
-  val INNER_COLUMN_WEIGHT = 1f
-  val UPPER_TEXT_FONT_SIZE = 17.sp
-  val BOTTOM_TEXT_FONT_SIZE = 15.sp
+  const val REQUEST_CREATOR = "requestCreator"
+  const val REQUEST_CREATOR_AVATAR = "requestCreatorAvatar"
+  const val REQUEST_DETAILS_CARD = "requestDetailsCard"
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -122,355 +115,84 @@ fun AcceptRequestScreen(
                 Modifier.fillMaxSize()
                     .padding(pd)
                     .padding(
-                        top = ConstantAcceptRequest.BIG_PADDING,
-                        start = ConstantAcceptRequest.SMALL_PADDING,
-                        end = ConstantAcceptRequest.SMALL_PADDING,
-                        bottom = ConstantAcceptRequest.SMALL_PADDING)
+                        horizontal = AcceptRequestScreenConstants.SCREEN_HORIZONTAL_PADDING,
+                        vertical = AcceptRequestScreenConstants.SCREEN_VERTICAL_PADDING)
+                    .verticalScroll(rememberScrollState())
                     .testTag(AcceptRequestScreenTestTags.REQUEST_COLUMN),
-            verticalArrangement = Arrangement.spacedBy(ConstantAcceptRequest.SPACE_BETWEEN_TEXT)) {
+            verticalArrangement =
+                Arrangement.spacedBy(AcceptRequestScreenConstants.SECTION_SPACING)) {
               requestState.request?.let { request ->
-                Column(modifier = Modifier.fillMaxWidth().background(appPalette().primary)) {
-                  // Description
-                  Row(
-                      modifier =
-                          Modifier.fillMaxWidth()
-                              .padding(
-                                  horizontal = AcceptRequestConstUI.PADDING_ROW_HOR,
-                                  vertical = AcceptRequestConstUI.PADDING_ROW_VER)
-                              .testTag(AcceptRequestScreenTestTags.REQUEST_DESCRIPTION),
-                      verticalAlignment = Alignment.Top) {
-                        Icon(
-                            imageVector = Icons.Outlined.ChatBubbleOutline,
-                            contentDescription = "Description",
-                            modifier =
-                                Modifier.size(AcceptRequestConstUI.ICON_SIZE).padding(top = 2.dp),
-                            tint = appPalette().text)
-                        Spacer(modifier = Modifier.width(AcceptRequestConstUI.SPACER_WIDTH))
-                        Column(
-                            modifier = Modifier.weight(AcceptRequestConstUI.INNER_COLUMN_WEIGHT)) {
-                              Text(
-                                  text = "Description",
-                                  fontSize = AcceptRequestConstUI.UPPER_TEXT_FONT_SIZE,
-                                  fontWeight = FontWeight.Normal,
-                                  color = appPalette().text)
-                              Text(
-                                  text = request.description,
-                                  fontSize = AcceptRequestConstUI.BOTTOM_TEXT_FONT_SIZE,
-                                  fontWeight = FontWeight.Normal,
-                                  color =
-                                      appPalette()
-                                          .text
-                                          .copy(
-                                              alpha =
-                                                  AcceptRequestConstUI.BOTTOM_TEXT_TRANSPARENCY),
-                                  modifier =
-                                      Modifier.padding(
-                                          top = AcceptRequestConstUI.BOTTOM_TEXT_PADDING))
-                            }
-                      }
+                // Main Details Card
+                Card(
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .testTag(AcceptRequestScreenTestTags.REQUEST_DETAILS_CARD),
+                    elevation =
+                        CardDefaults.cardElevation(
+                            defaultElevation = AcceptRequestScreenConstants.CARD_ELEVATION),
+                    shape = RoundedCornerShape(AcceptRequestScreenConstants.CARD_CORNER_RADIUS)) {
+                      Column(
+                          modifier =
+                              Modifier.fillMaxWidth()
+                                  .padding(AcceptRequestScreenConstants.CARD_PADDING),
+                          verticalArrangement =
+                              Arrangement.spacedBy(AcceptRequestScreenConstants.SECTION_SPACING)) {
+                            // Description
+                            RequestDetailRow(
+                                icon = Icons.Outlined.ChatBubbleOutline,
+                                label = "Description",
+                                content = request.description,
+                                testTag = AcceptRequestScreenTestTags.REQUEST_DESCRIPTION)
 
-                  HorizontalDivider(
-                      modifier =
-                          Modifier.padding(start = AcceptRequestConstUI.HORIZONTAL_DIVIDER_PADDING),
-                      thickness = AcceptRequestConstUI.HORIZONTAL_DIVIDER_THICKNESS,
-                      color =
-                          appPalette()
-                              .text
-                              .copy(alpha = AcceptRequestConstUI.BOTTOM_TEXT_TRANSPARENCY))
+                            // Tags
+                            RequestDetailRow(
+                                icon = Icons.Outlined.LocalOffer,
+                                label = "Tags",
+                                content = request.tags.joinToString(", ") { it.displayString() },
+                                testTag = AcceptRequestScreenTestTags.REQUEST_TAG)
 
-                  // Tags
-                  Row(
-                      modifier =
-                          Modifier.fillMaxWidth()
-                              .padding(
-                                  horizontal = AcceptRequestConstUI.PADDING_ROW_HOR,
-                                  vertical = AcceptRequestConstUI.PADDING_ROW_VER)
-                              .testTag(AcceptRequestScreenTestTags.REQUEST_TAG),
-                      verticalAlignment = Alignment.Top) {
-                        Icon(
-                            imageVector = Icons.Outlined.LocalOffer,
-                            contentDescription = "Tags",
-                            modifier =
-                                Modifier.size(AcceptRequestConstUI.ICON_SIZE)
-                                    .padding(top = AcceptRequestConstUI.ICON_PADDING),
-                            tint = appPalette().text)
-                        Spacer(modifier = Modifier.width(AcceptRequestConstUI.SPACER_WIDTH))
-                        Column(
-                            modifier = Modifier.weight(AcceptRequestConstUI.INNER_COLUMN_WEIGHT)) {
-                              Text(
-                                  text = "Tags",
-                                  fontSize = AcceptRequestConstUI.UPPER_TEXT_FONT_SIZE,
-                                  fontWeight = FontWeight.Normal,
-                                  color = appPalette().text,
-                              )
-                              Text(
-                                  text = request.tags.joinToString(", ") { it.displayString() },
-                                  fontSize = AcceptRequestConstUI.BOTTOM_TEXT_FONT_SIZE,
-                                  fontWeight = FontWeight.Normal,
-                                  color =
-                                      appPalette()
-                                          .text
-                                          .copy(
-                                              alpha =
-                                                  AcceptRequestConstUI.BOTTOM_TEXT_TRANSPARENCY),
-                                  modifier =
-                                      Modifier.padding(
-                                          top = AcceptRequestConstUI.BOTTOM_TEXT_PADDING))
-                            }
-                      }
+                            // Request type
+                            RequestDetailRow(
+                                icon = Icons.Outlined.BookmarkBorder,
+                                label = "Request type",
+                                content =
+                                    request.requestType.joinToString(", ") { it.displayString() },
+                                testTag = AcceptRequestScreenTestTags.REQUEST_TYPE)
 
-                  HorizontalDivider(
-                      modifier =
-                          Modifier.padding(start = AcceptRequestConstUI.HORIZONTAL_DIVIDER_PADDING),
-                      thickness = AcceptRequestConstUI.HORIZONTAL_DIVIDER_THICKNESS,
-                      color =
-                          appPalette()
-                              .text
-                              .copy(alpha = AcceptRequestConstUI.BOTTOM_TEXT_TRANSPARENCY))
+                            // Status
+                            RequestDetailRow(
+                                icon = Icons.Outlined.Notifications,
+                                label = "Status",
+                                content = request.status.displayString(),
+                                testTag = AcceptRequestScreenTestTags.REQUEST_STATUS)
 
-                  // Request type
-                  Row(
-                      modifier =
-                          Modifier.fillMaxWidth()
-                              .padding(
-                                  horizontal = AcceptRequestConstUI.PADDING_ROW_HOR,
-                                  vertical = AcceptRequestConstUI.PADDING_ROW_VER)
-                              .testTag(AcceptRequestScreenTestTags.REQUEST_TYPE),
-                      verticalAlignment = Alignment.Top) {
-                        Icon(
-                            imageVector = Icons.Outlined.BookmarkBorder,
-                            contentDescription = "Request type",
-                            modifier =
-                                Modifier.size(AcceptRequestConstUI.ICON_SIZE)
-                                    .padding(top = AcceptRequestConstUI.ICON_PADDING),
-                            tint = appPalette().text)
-                        Spacer(modifier = Modifier.width(AcceptRequestConstUI.SPACER_WIDTH))
-                        Column(
-                            modifier = Modifier.weight(AcceptRequestConstUI.INNER_COLUMN_WEIGHT)) {
-                              Text(
-                                  text = "Request type",
-                                  fontSize = AcceptRequestConstUI.UPPER_TEXT_FONT_SIZE,
-                                  fontWeight = FontWeight.Normal,
-                                  color = appPalette().text,
-                              )
-                              Text(
-                                  text =
-                                      request.requestType.joinToString(", ") { it.displayString() },
-                                  fontSize = AcceptRequestConstUI.BOTTOM_TEXT_FONT_SIZE,
-                                  fontWeight = FontWeight.Normal,
-                                  color =
-                                      appPalette()
-                                          .text
-                                          .copy(
-                                              alpha =
-                                                  AcceptRequestConstUI.BOTTOM_TEXT_TRANSPARENCY),
-                                  modifier =
-                                      Modifier.padding(
-                                          top = AcceptRequestConstUI.BOTTOM_TEXT_PADDING))
-                            }
-                      }
+                            // Location
+                            RequestDetailRow(
+                                icon = Icons.Outlined.LocationOn,
+                                label = "Location",
+                                content = request.locationName,
+                                testTag = AcceptRequestScreenTestTags.REQUEST_LOCATION_NAME)
 
-                  HorizontalDivider(
-                      modifier =
-                          Modifier.padding(start = AcceptRequestConstUI.HORIZONTAL_DIVIDER_PADDING),
-                      thickness = AcceptRequestConstUI.HORIZONTAL_DIVIDER_THICKNESS,
-                      color =
-                          appPalette()
-                              .text
-                              .copy(alpha = AcceptRequestConstUI.BOTTOM_TEXT_TRANSPARENCY))
+                            // Start time
+                            RequestDetailRow(
+                                icon = Icons.Outlined.AccessTime,
+                                label = "Start time",
+                                content = request.startTimeStamp.toDisplayString(),
+                                testTag = AcceptRequestScreenTestTags.REQUEST_START_TIME)
 
-                  // Status
-                  Row(
-                      modifier =
-                          Modifier.fillMaxWidth()
-                              .padding(
-                                  horizontal = AcceptRequestConstUI.PADDING_ROW_HOR,
-                                  vertical = AcceptRequestConstUI.PADDING_ROW_VER)
-                              .testTag(AcceptRequestScreenTestTags.REQUEST_STATUS),
-                      verticalAlignment = Alignment.Top) {
-                        Icon(
-                            imageVector = Icons.Outlined.Notifications,
-                            contentDescription = "Status",
-                            modifier =
-                                Modifier.size(AcceptRequestConstUI.ICON_SIZE)
-                                    .padding(top = AcceptRequestConstUI.ICON_PADDING),
-                            tint = appPalette().text)
-                        Spacer(modifier = Modifier.width(AcceptRequestConstUI.SPACER_WIDTH))
-                        Column(
-                            modifier = Modifier.weight(AcceptRequestConstUI.INNER_COLUMN_WEIGHT)) {
-                              Text(
-                                  text = "Status",
-                                  fontSize = AcceptRequestConstUI.UPPER_TEXT_FONT_SIZE,
-                                  fontWeight = FontWeight.Normal,
-                                  color = appPalette().text,
-                              )
-                              Text(
-                                  text = request.status.displayString(),
-                                  fontSize = AcceptRequestConstUI.BOTTOM_TEXT_FONT_SIZE,
-                                  fontWeight = FontWeight.Normal,
-                                  color =
-                                      appPalette()
-                                          .text
-                                          .copy(
-                                              alpha =
-                                                  AcceptRequestConstUI.BOTTOM_TEXT_TRANSPARENCY),
-                                  modifier =
-                                      Modifier.padding(
-                                          top = AcceptRequestConstUI.BOTTOM_TEXT_PADDING))
-                            }
-                      }
+                            // Expiration time
+                            RequestDetailRow(
+                                icon = Icons.Outlined.WatchLater,
+                                label = "Expiration time",
+                                content = request.expirationTime.toDisplayString(),
+                                testTag = AcceptRequestScreenTestTags.REQUEST_EXPIRATION_TIME)
+                          }
+                    }
 
-                  HorizontalDivider(
-                      modifier =
-                          Modifier.padding(start = AcceptRequestConstUI.HORIZONTAL_DIVIDER_PADDING),
-                      thickness = AcceptRequestConstUI.HORIZONTAL_DIVIDER_THICKNESS,
-                      color =
-                          appPalette()
-                              .text
-                              .copy(alpha = AcceptRequestConstUI.BOTTOM_TEXT_TRANSPARENCY))
+                Spacer(modifier = Modifier.height(AcceptRequestScreenConstants.BUTTON_TOP_SPACING))
 
-                  // Location
-                  Row(
-                      modifier =
-                          Modifier.fillMaxWidth()
-                              .padding(
-                                  horizontal = AcceptRequestConstUI.PADDING_ROW_HOR,
-                                  vertical = AcceptRequestConstUI.PADDING_ROW_VER)
-                              .testTag(AcceptRequestScreenTestTags.REQUEST_LOCATION_NAME),
-                      verticalAlignment = Alignment.Top) {
-                        Icon(
-                            imageVector = Icons.Outlined.LocationOn,
-                            contentDescription = "Location",
-                            modifier =
-                                Modifier.size(AcceptRequestConstUI.ICON_SIZE)
-                                    .padding(top = AcceptRequestConstUI.ICON_PADDING),
-                            tint = appPalette().text)
-                        Spacer(modifier = Modifier.width(AcceptRequestConstUI.SPACER_WIDTH))
-                        Column(
-                            modifier = Modifier.weight(AcceptRequestConstUI.INNER_COLUMN_WEIGHT)) {
-                              Text(
-                                  text = "Location",
-                                  fontSize = AcceptRequestConstUI.UPPER_TEXT_FONT_SIZE,
-                                  fontWeight = FontWeight.Normal,
-                                  color = appPalette().text)
-                              Text(
-                                  text = request.locationName,
-                                  fontSize = AcceptRequestConstUI.BOTTOM_TEXT_FONT_SIZE,
-                                  fontWeight = FontWeight.Normal,
-                                  color =
-                                      appPalette()
-                                          .text
-                                          .copy(
-                                              alpha =
-                                                  AcceptRequestConstUI.BOTTOM_TEXT_TRANSPARENCY),
-                                  modifier =
-                                      Modifier.padding(
-                                          top = AcceptRequestConstUI.BOTTOM_TEXT_PADDING))
-                            }
-                      }
-
-                  HorizontalDivider(
-                      modifier =
-                          Modifier.padding(start = AcceptRequestConstUI.HORIZONTAL_DIVIDER_PADDING),
-                      thickness = AcceptRequestConstUI.HORIZONTAL_DIVIDER_THICKNESS,
-                      color =
-                          appPalette()
-                              .text
-                              .copy(alpha = AcceptRequestConstUI.BOTTOM_TEXT_TRANSPARENCY))
-
-                  // Start time
-                  Row(
-                      modifier =
-                          Modifier.fillMaxWidth()
-                              .padding(
-                                  horizontal = AcceptRequestConstUI.PADDING_ROW_HOR,
-                                  vertical = AcceptRequestConstUI.PADDING_ROW_VER)
-                              .testTag(AcceptRequestScreenTestTags.REQUEST_START_TIME),
-                      verticalAlignment = Alignment.Top) {
-                        Icon(
-                            imageVector = Icons.Outlined.AccessTime,
-                            contentDescription = "Start time",
-                            modifier =
-                                Modifier.size(AcceptRequestConstUI.ICON_SIZE)
-                                    .padding(top = AcceptRequestConstUI.ICON_PADDING),
-                            tint = appPalette().text)
-                        Spacer(modifier = Modifier.width(AcceptRequestConstUI.SPACER_WIDTH))
-                        Column(
-                            modifier = Modifier.weight(AcceptRequestConstUI.INNER_COLUMN_WEIGHT)) {
-                              Text(
-                                  text = "Start time",
-                                  fontSize = AcceptRequestConstUI.UPPER_TEXT_FONT_SIZE,
-                                  fontWeight = FontWeight.Normal,
-                                  color = appPalette().text)
-                              Text(
-                                  text = request.startTimeStamp.toDisplayString(),
-                                  fontSize = AcceptRequestConstUI.BOTTOM_TEXT_FONT_SIZE,
-                                  fontWeight = FontWeight.Normal,
-                                  color =
-                                      appPalette()
-                                          .text
-                                          .copy(
-                                              alpha =
-                                                  AcceptRequestConstUI.BOTTOM_TEXT_TRANSPARENCY),
-                                  modifier =
-                                      Modifier.padding(
-                                          top = AcceptRequestConstUI.BOTTOM_TEXT_PADDING))
-                            }
-                      }
-
-                  HorizontalDivider(
-                      modifier =
-                          Modifier.padding(start = AcceptRequestConstUI.HORIZONTAL_DIVIDER_PADDING),
-                      thickness = AcceptRequestConstUI.HORIZONTAL_DIVIDER_THICKNESS,
-                      color =
-                          appPalette()
-                              .text
-                              .copy(alpha = AcceptRequestConstUI.BOTTOM_TEXT_TRANSPARENCY))
-
-                  // Expiration time
-                  Row(
-                      modifier =
-                          Modifier.fillMaxWidth()
-                              .padding(
-                                  horizontal = AcceptRequestConstUI.PADDING_ROW_HOR,
-                                  vertical = AcceptRequestConstUI.PADDING_ROW_VER)
-                              .testTag(AcceptRequestScreenTestTags.REQUEST_EXPIRATION_TIME),
-                      verticalAlignment = Alignment.Top) {
-                        Icon(
-                            imageVector = Icons.Outlined.WatchLater,
-                            contentDescription = "Expiration time",
-                            modifier =
-                                Modifier.size(AcceptRequestConstUI.ICON_SIZE)
-                                    .padding(top = AcceptRequestConstUI.ICON_PADDING),
-                            tint = appPalette().text)
-                        Spacer(modifier = Modifier.width(AcceptRequestConstUI.SPACER_WIDTH))
-                        Column(
-                            modifier = Modifier.weight(AcceptRequestConstUI.INNER_COLUMN_WEIGHT)) {
-                              Text(
-                                  text = "Expiration time",
-                                  fontSize = AcceptRequestConstUI.UPPER_TEXT_FONT_SIZE,
-                                  fontWeight = FontWeight.Normal,
-                                  color = appPalette().text)
-                              Text(
-                                  text = request.expirationTime.toDisplayString(),
-                                  fontSize = AcceptRequestConstUI.BOTTOM_TEXT_FONT_SIZE,
-                                  fontWeight = FontWeight.Normal,
-                                  color =
-                                      appPalette()
-                                          .text
-                                          .copy(
-                                              alpha =
-                                                  AcceptRequestConstUI.BOTTOM_TEXT_TRANSPARENCY),
-                                  modifier =
-                                      Modifier.padding(
-                                          top = AcceptRequestConstUI.BOTTOM_TEXT_PADDING))
-                            }
-                      }
-                }
-
-                Spacer(modifier = Modifier.height(AcceptRequestConstUI.SPACER_WIDTH))
-
-                Button(
+                // Accept/Cancel Button
+                FilledTonalButton(
                     onClick = {
                       if (requestState.accepted) {
                         acceptRequestViewModel.cancelAcceptanceToRequest(requestId)
@@ -480,22 +202,149 @@ fun AcceptRequestScreen(
                     },
                     enabled = !requestState.isLoading,
                     modifier =
-                        Modifier.align(Alignment.CenterHorizontally)
+                        Modifier.fillMaxWidth()
+                            .height(AcceptRequestScreenConstants.BUTTON_HEIGHT)
                             .testTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)) {
                       if (requestState.isLoading) {
                         CircularProgressIndicator(
-                            modifier = Modifier.size(ConstantAcceptRequest.CIRCULAR_LOAD_SIZE))
+                            modifier =
+                                Modifier.size(AcceptRequestScreenConstants.CIRCULAR_PROGRESS_SIZE),
+                            color = MaterialTheme.colorScheme.onSecondaryContainer)
                       } else {
-                        Text(if (requestState.accepted) "Cancel" else "Accept")
+                        Text(
+                            text =
+                                if (requestState.accepted) "Cancel Acceptance"
+                                else "Accept Request",
+                            style = MaterialTheme.typography.labelLarge)
                       }
                     }
               }
                   ?: Text(
-                      text = "An error occurred. Please, reload window or go back",
-                      fontSize = TEXT_SIZE,
-                      modifier = Modifier.testTag(AcceptRequestScreenTestTags.NO_REQUEST))
+                      text = "An error occurred. Please reload or go back",
+                      fontSize = AcceptRequestScreenConstants.ERROR_TEXT_FONT_SIZE,
+                      color = MaterialTheme.colorScheme.error,
+                      textAlign = TextAlign.Center,
+                      modifier =
+                          Modifier.fillMaxWidth()
+                              .padding(AcceptRequestScreenConstants.CARD_PADDING)
+                              .testTag(AcceptRequestScreenTestTags.NO_REQUEST))
             }
       })
+}
+
+@Composable
+private fun CreatorSection(creatorName: String, modifier: Modifier = Modifier) {
+  Row(
+      modifier =
+          modifier
+              .fillMaxWidth()
+              .clip(RoundedCornerShape(AcceptRequestScreenConstants.CARD_CORNER_RADIUS))
+              .background(MaterialTheme.colorScheme.surfaceVariant)
+              .padding(AcceptRequestScreenConstants.CREATOR_SECTION_PADDING),
+      verticalAlignment = Alignment.CenterVertically) {
+        // Avatar with initials
+        Box(
+            modifier =
+                Modifier.size(AcceptRequestScreenConstants.CREATOR_AVATAR_SIZE)
+                    .clip(CircleShape)
+                    .background(
+                        MaterialTheme.colorScheme.primary.copy(
+                            alpha = AcceptRequestScreenConstants.AVATAR_BACKGROUND_ALPHA))
+                    .testTag(AcceptRequestScreenTestTags.REQUEST_CREATOR_AVATAR),
+            contentAlignment = Alignment.Center) {
+              Text(
+                  text = getInitials(creatorName),
+                  style = MaterialTheme.typography.titleMedium,
+                  fontWeight = FontWeight.SemiBold,
+                  color = MaterialTheme.colorScheme.primary)
+            }
+
+        Spacer(modifier = Modifier.width(AcceptRequestScreenConstants.CREATOR_AVATAR_TEXT_SPACING))
+
+        Column {
+          Text(
+              text = "Posted by",
+              style = MaterialTheme.typography.labelSmall,
+              color =
+                  MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                      alpha = AcceptRequestScreenConstants.SECONDARY_TEXT_ALPHA),
+              fontSize = AcceptRequestScreenConstants.CREATOR_LABEL_FONT_SIZE)
+          Text(
+              text = creatorName,
+              style = MaterialTheme.typography.titleMedium,
+              fontWeight = FontWeight.Medium,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
+              fontSize = AcceptRequestScreenConstants.CREATOR_NAME_FONT_SIZE)
+        }
+      }
+}
+
+@Composable
+private fun RequestDetailRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    content: String,
+    testTag: String,
+    modifier: Modifier = Modifier
+) {
+  Row(
+      modifier =
+          modifier
+              .fillMaxWidth()
+              .padding(
+                  vertical = AcceptRequestScreenConstants.ROW_VERTICAL_PADDING,
+                  horizontal = AcceptRequestScreenConstants.ROW_HORIZONTAL_PADDING)
+              .semantics(mergeDescendants = true) {}
+              .testTag(testTag),
+      verticalAlignment = Alignment.Top) {
+        Icon(
+            imageVector = icon,
+            contentDescription = label,
+            modifier =
+                Modifier.size(AcceptRequestScreenConstants.ICON_SIZE)
+                    .padding(top = AcceptRequestScreenConstants.ICON_TOP_PADDING),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant)
+
+        Spacer(modifier = Modifier.width(AcceptRequestScreenConstants.ICON_TEXT_SPACING))
+
+        Column(modifier = Modifier.weight(AcceptRequestScreenConstants.TEXT_COLUMN_WEIGHT)) {
+          Text(
+              text = label,
+              style = MaterialTheme.typography.titleSmall,
+              fontWeight = FontWeight.Medium,
+              color = MaterialTheme.colorScheme.onSurface,
+              fontSize = AcceptRequestScreenConstants.SECTION_TITLE_FONT_SIZE)
+
+          Spacer(modifier = Modifier.height(AcceptRequestScreenConstants.CONTENT_TOP_SPACING))
+
+          Text(
+              text = content,
+              style = MaterialTheme.typography.bodyMedium,
+              color =
+                  MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                      alpha = AcceptRequestScreenConstants.SECONDARY_TEXT_ALPHA),
+              fontSize = AcceptRequestScreenConstants.SECTION_CONTENT_FONT_SIZE)
+        }
+      }
+}
+
+/**
+ * Extracts initials from a full name for display in the avatar.
+ *
+ * @param name The full name of the user
+ * @return A string containing up to 2 uppercase initials
+ */
+private fun getInitials(name: String): String {
+  val parts = name.trim().split(" ").filter { it.isNotEmpty() }
+  return when {
+    parts.isEmpty() -> "?"
+    parts.size == 1 -> parts[0].take(2).uppercase(Locale.ROOT)
+    else -> {
+      val firstInitial = parts[0].firstOrNull()?.toString() ?: ""
+      val lastInitial = parts.lastOrNull()?.firstOrNull()?.toString() ?: ""
+      (firstInitial + lastInitial).uppercase(Locale.ROOT)
+    }
+  }
 }
 
 fun Date.toDisplayString(): String {

@@ -10,13 +10,13 @@ import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.sample.model.map.Location
-import com.android.sample.model.profile.Section
 import com.android.sample.model.profile.UserProfile
 import com.android.sample.model.profile.UserProfileRepository
 import com.android.sample.model.profile.UserProfileRepositoryFirestore
@@ -28,6 +28,7 @@ import com.android.sample.model.request.RequestType
 import com.android.sample.model.request.Tags
 import com.android.sample.model.request.displayString
 import com.android.sample.ui.profile.ProfilePictureTestTags
+import com.android.sample.ui.profile.UserSections
 import com.android.sample.ui.request.RequestListScreen
 import com.android.sample.ui.request.RequestListTestTags
 import com.android.sample.ui.request.RequestListViewModel
@@ -112,7 +113,7 @@ class RequestListTests : BaseEmulatorTest() {
               email = null,
               photo = null,
               kudos = 0,
-              section = Section.OTHER,
+              section = UserSections.NONE,
               arrivalDate = Date())
       if (userId in withImage) {
         val uri =
@@ -705,6 +706,23 @@ class RequestListTests : BaseEmulatorTest() {
           .onAllNodesWithTag(ProfilePictureTestTags.PROFILE_PICTURE, useUnmergedTree = true)
           .fetchSemanticsNodes()
           .size == 3
+    }
+  }
+
+  fun loadsProfileNameSuccessfully() {
+    val requests = sampleRequests(listOf("special_profile4"))
+    val vm =
+        RequestListViewModel(
+            FakeRequestRepository(requests),
+            FakeUserProfileRepository(withImage = setOf("special_profile4")))
+
+    composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
+    composeTestRule.waitForIdle()
+    composeTestRule.waitUntil(OFFSET_5_S_MS) {
+      composeTestRule
+          .onAllNodesWithText("John", useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .size == 1
     }
   }
 }

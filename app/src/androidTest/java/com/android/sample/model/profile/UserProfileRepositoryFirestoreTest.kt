@@ -2,6 +2,7 @@ package com.android.sample.model.profile
 
 import android.util.Log
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.android.sample.ui.profile.UserSections
 import com.android.sample.utils.BaseEmulatorTest
 import com.android.sample.utils.FirebaseEmulator
 import com.google.firebase.auth.ktx.auth
@@ -26,7 +27,7 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
       name: String,
       lastName: String,
       email: String,
-      section: Section
+      section: UserSections
   ): UserProfile {
     return UserProfile(
         id = id,
@@ -45,7 +46,7 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
           name = "John",
           lastName = "Doe",
           email = "john.doe@example.com",
-          section = Section.CYBER_SECURITY,
+          section = UserSections.COMPUTER_SCIENCE,
       )
 
   private val testProfile2 =
@@ -54,7 +55,7 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
           name = "Jane",
           lastName = "Smith",
           email = "jane.smith@example.com",
-          section = Section.OTHER)
+          section = UserSections.NONE)
 
   private val testProfile3 =
       generateProfile(
@@ -62,7 +63,7 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
           name = "Bob",
           lastName = "Johnson",
           email = "bob.johnson@example.com",
-          section = Section.CYBER_SECURITY)
+          section = UserSections.COMPUTER_SCIENCE)
 
   @Before
   override fun setUp() {
@@ -336,7 +337,7 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
             name = name,
             lastName = lastName,
             email = email,
-            section = Section.OTHER)
+            section = UserSections.NONE)
     repository.addUserProfile(p)
   }
 

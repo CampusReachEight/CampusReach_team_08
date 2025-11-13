@@ -8,6 +8,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -25,7 +26,6 @@ import com.android.sample.ui.authentication.SignInScreenTestTags
 import com.android.sample.ui.map.MapTestTags
 import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.overview.AcceptRequestScreenTestTags
-import com.android.sample.ui.overview.toDisplayString
 import com.android.sample.ui.profile.ProfileTestTags
 import com.android.sample.ui.request.LocationSearchFieldTestTags
 import com.android.sample.ui.request.RequestListTestTags
@@ -196,8 +196,6 @@ class EndToEndTests : BaseEmulatorTest() {
       description: String = descriptions,
       type: RequestType = RequestType.SPORT,
       location: String = locations,
-      startDate: Date = Date(),
-      expireDate: Date = Date(System.currentTimeMillis() + 3_600_000),
       tags: Tags = Tags.GROUP_WORK
   ) {
     // title
@@ -242,27 +240,59 @@ class EndToEndTests : BaseEmulatorTest() {
         .onFirst()
         .performClick()
 
-    // clear start date
+    // SELECT START DATE
     composeTestRule
         .onNodeWithTag(EditRequestScreenTestTags.INPUT_START_DATE)
         .performScrollTo()
         .assertIsDisplayed()
-        .performTextClearance()
+        .performClick()
 
-    // put start date
-    composeTestRule
-        .onNodeWithTag(EditRequestScreenTestTags.INPUT_START_DATE)
-        .performTextInput(startDate.toDisplayString())
+    // Wait for date picker dialog to appear
+    composeTestRule.waitForIdle()
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule.onAllNodesWithText("OK").fetchSemanticsNodes().isNotEmpty()
+    }
 
+    // Click OK on date picker
+    composeTestRule.onAllNodesWithText("OK").onFirst().performClick()
+
+    // Wait for time picker dialog to appear
+    composeTestRule.waitForIdle()
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule.onAllNodesWithText("OK").fetchSemanticsNodes().isNotEmpty()
+    }
+
+    // Click OK on time picker
+    composeTestRule.onAllNodesWithText("OK").onFirst().performClick()
+
+    composeTestRule.waitForIdle()
+
+    // SELECT EXPIRATION DATE
     composeTestRule
         .onNodeWithTag(EditRequestScreenTestTags.INPUT_EXPIRATION_DATE)
         .performScrollTo()
         .assertIsDisplayed()
-        .performTextClearance()
+        .performClick()
 
-    composeTestRule
-        .onNodeWithTag(EditRequestScreenTestTags.INPUT_EXPIRATION_DATE)
-        .performTextInput(expireDate.toDisplayString())
+    // Wait for date picker dialog to appear
+    composeTestRule.waitForIdle()
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule.onAllNodesWithText("OK").fetchSemanticsNodes().isNotEmpty()
+    }
+
+    // Click OK on date picker
+    composeTestRule.onAllNodesWithText("OK").onFirst().performClick()
+
+    // Wait for time picker dialog to appear
+    composeTestRule.waitForIdle()
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule.onAllNodesWithText("OK").fetchSemanticsNodes().isNotEmpty()
+    }
+
+    // Click OK on time picker
+    composeTestRule.onAllNodesWithText("OK").onFirst().performClick()
+
+    composeTestRule.waitForIdle()
 
     // put a tag
     composeTestRule

@@ -18,8 +18,9 @@ import com.android.sample.ui.profile.ProfileState
 @Composable
 fun ProfileContent(
     state: ProfileState,
-    onLogoutRequested: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onLogoutRequested: () -> Unit = {},
+    onEditRequested: () -> Unit = {}
 ) {
   Column(modifier = modifier.verticalScroll(rememberScrollState())) {
     state.errorMessage?.let {
@@ -27,7 +28,7 @@ fun ProfileContent(
       Spacer(modifier = Modifier.height(ProfileDimens.Vertical))
     }
 
-    ProfileHeader(state = state)
+    ProfileHeader(state = state, onEditRequested = onEditRequested)
     Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
     ProfileStats(state = state)
     Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))

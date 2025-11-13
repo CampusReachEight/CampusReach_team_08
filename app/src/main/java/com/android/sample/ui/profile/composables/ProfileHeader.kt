@@ -23,7 +23,7 @@ import com.android.sample.ui.theme.appPalette
 fun ProfileHeader(
     state: ProfileState,
     modifier: Modifier = Modifier,
-    onEditClick: () -> Unit = {},
+    onEditRequested: () -> Unit = {},
     palette: AppPalette = appPalette()
 ) {
   val accent = palette.accent
@@ -62,9 +62,11 @@ fun ProfileHeader(
                   modifier = Modifier.testTag(ProfileTestTags.PROFILE_HEADER_EMAIL))
             }
             Spacer(modifier = Modifier.weight(1f))
-            IconButton(onClick = onEditClick) {
-              Icon(Icons.Default.Edit, contentDescription = "Edit", tint = surface)
-            }
+            IconButton(
+                onClick = onEditRequested,
+                modifier = Modifier.testTag(ProfileTestTags.PROFILE_HEADER_EDIT_BUTTON)) {
+                  Icon(Icons.Default.Edit, contentDescription = "Edit", tint = surface)
+                }
           }
         }
       }

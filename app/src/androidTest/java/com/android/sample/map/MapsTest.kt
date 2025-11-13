@@ -12,6 +12,9 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import com.android.sample.model.map.Location
+import com.android.sample.model.profile.UserProfile
+import com.android.sample.model.profile.UserProfileRepository
+import com.android.sample.model.profile.UserProfileRepositoryFirestore
 import com.android.sample.model.request.Request
 import com.android.sample.model.request.RequestRepository
 import com.android.sample.model.request.RequestRepositoryFirestore
@@ -22,7 +25,9 @@ import com.android.sample.ui.map.ConstantMap
 import com.android.sample.ui.map.MapScreen
 import com.android.sample.ui.map.MapTestTags
 import com.android.sample.ui.map.MapViewModel
+import com.android.sample.ui.map.toDisplayStringWithoutHours
 import com.android.sample.ui.overview.toDisplayString
+import com.android.sample.ui.profile.UserSections
 import com.android.sample.utils.BaseEmulatorTest
 import com.android.sample.utils.UI_WAIT_TIMEOUT
 import java.util.Calendar
@@ -37,11 +42,16 @@ class MapsTest : BaseEmulatorTest() {
   @get:Rule val composeTestRule = createComposeRule()
 
   private lateinit var repository: RequestRepository
+  private lateinit var profileRepository: UserProfileRepository
 
   private lateinit var viewModel: MapViewModel
   private lateinit var mapsUtil: MapsUtil
   private lateinit var request1: Request
   private lateinit var request2: Request
+  private lateinit var profile1: UserProfile
+  private lateinit var profile2: UserProfile
+  private lateinit var date: Date
+  private lateinit var datePlusOneHour: Date
   private val location1: Location = Location(26.5191, 6.5668, "IDK place")
   private val location2: Location = Location(46.5191, 6.5668, "EPFL")
 
@@ -51,11 +61,20 @@ class MapsTest : BaseEmulatorTest() {
   private val title2 = "Another one"
   private val description2 = "Very good description"
   private val description1 = "In here we will do a lot of things, like being good persons"
+  private val name1 = "Random"
+  private val name2 = "Other"
+  private val firstname1 = "Name"
+  private val firstName2 = "Mama"
+  private val kudos1 = 0
+  private val kudos2 = 11
+  private val section1 = UserSections.NONE
+  private val section2 = UserSections.MATHEMATICS
 
   @Before
   override fun setUp() {
     super.setUp()
     repository = RequestRepositoryFirestore(db)
+    profileRepository = UserProfileRepositoryFirestore(db)
     mapsUtil = MapsUtil(composeTestRule)
     viewModel = MapViewModel(repository)
 
@@ -69,8 +88,8 @@ class MapsTest : BaseEmulatorTest() {
           MapsTestConst.RANDOM_MINUTE,
           MapsTestConst.RANDOM_SECOND)
       calendar.set(Calendar.MILLISECOND, MapsTestConst.ZERO_MILLISECONDS)
-      val date = Date(calendar.timeInMillis)
-      val datePlusOneHour = Date(calendar.timeInMillis + MapsTestConst.ONE_HOUR)
+      date = Date(calendar.timeInMillis)
+      datePlusOneHour = Date(calendar.timeInMillis + MapsTestConst.ONE_HOUR)
 
       request2 =
           Request(
@@ -88,6 +107,19 @@ class MapsTest : BaseEmulatorTest() {
               currentUserId)
 
       repository.addRequest(request2)
+
+      profile2 =
+          UserProfile(
+              currentUserId,
+              firstName2,
+              name2,
+              DEFAULT_USER_EMAIL,
+              null,
+              kudos2,
+              section2,
+              datePlusOneHour)
+
+      profileRepository.addUserProfile(profile2)
 
       signInUser(SECOND_USER_EMAIL, SECOND_USER_PASSWORD)
       request1 =
@@ -112,6 +144,12 @@ class MapsTest : BaseEmulatorTest() {
               currentUserId)
 
       repository.addRequest(request1)
+
+      profile1 =
+          UserProfile(
+              currentUserId, firstname1, name1, SECOND_USER_EMAIL, null, kudos1, section1, date)
+
+      profileRepository.addUserProfile(profile1)
     }
     composeTestRule.setContent { MapScreen(viewModel) }
     composeTestRule.waitForIdle()
@@ -159,9 +197,13 @@ class MapsTest : BaseEmulatorTest() {
 
   // check that all components displayed correctly
   @Test
-  fun clickOnOwnRequest() {
+  fun clickOnOwnRequestDetails() {
     viewModel.updateCurrentRequest(request1)
     composeTestRule.waitForIdle()
+
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule.onAllNodesWithTag(MapTestTags.DRAG).fetchSemanticsNodes().isNotEmpty()
+    }
 
     composeTestRule.onNodeWithTag(MapTestTags.DRAG).assertIsDisplayed()
     composeTestRule.onNodeWithTag(MapTestTags.DRAG_DOWN_MENU).assertIsDisplayed()
@@ -208,8 +250,6 @@ class MapsTest : BaseEmulatorTest() {
         .assertIsDisplayed()
         .performClick()
 
-    composeTestRule.onNodeWithTag(MapTestTags.PROFILE_TEXT).assertIsDisplayed()
-
     composeTestRule
         .onNodeWithTag(MapTestTags.testTagForTab(ConstantMap.DETAILS))
         .assertIsDisplayed()
@@ -222,11 +262,121 @@ class MapsTest : BaseEmulatorTest() {
         .assertTextContains(ConstantMap.TEXT_EDIT)
   }
 
+  @Test
+  fun clickOnOwnRequestProfileDetails() {
+    viewModel.updateCurrentRequest(request1)
+    viewModel.updateCurrentProfile(request1.creatorId)
+    composeTestRule.waitForIdle()
+
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule
+          .onAllNodesWithTag(MapTestTags.testTagForTab(ConstantMap.PROFILE))
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    composeTestRule
+        .onNodeWithTag(MapTestTags.testTagForTab(ConstantMap.PROFILE))
+        .assertIsDisplayed()
+        .performClick()
+
+    composeTestRule
+        .onNodeWithTag(MapTestTags.PROFILE_NAME)
+        .assertIsDisplayed()
+        .assertTextContains("$name1 $firstname1")
+
+    composeTestRule
+        .onNodeWithTag(MapTestTags.PROFILE_SECTION_TEXT)
+        .assertIsDisplayed()
+        .assertTextContains(ConstantMap.SECTION)
+
+    composeTestRule
+        .onNodeWithTag(MapTestTags.PROFILE_SECTION)
+        .assertIsDisplayed()
+        .assertTextContains(section1.label)
+
+    composeTestRule
+        .onNodeWithTag(MapTestTags.PROFILE_KUDOS_TEXT)
+        .assertIsDisplayed()
+        .assertTextContains(ConstantMap.KUDOS)
+
+    composeTestRule
+        .onNodeWithTag(MapTestTags.PROFILE_KUDOS)
+        .assertIsDisplayed()
+        .assertTextContains(kudos1.toString())
+
+    composeTestRule
+        .onNodeWithTag(MapTestTags.PROFILE_CREATION_DATE)
+        .performScrollTo()
+        .assertIsDisplayed()
+        .assertTextContains(date.toDisplayStringWithoutHours())
+
+    composeTestRule
+        .onNodeWithTag(MapTestTags.PROFILE_EDIT_BUTTON)
+        .performScrollTo()
+        .assertIsDisplayed()
+        .performClick()
+  }
+
+  @Test
+  fun clickOnOtherRequestProfileDetails() {
+    viewModel.updateCurrentRequest(request2)
+    viewModel.updateCurrentProfile(request2.creatorId)
+    composeTestRule.waitForIdle()
+
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule
+          .onAllNodesWithTag(MapTestTags.testTagForTab(ConstantMap.PROFILE))
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    composeTestRule
+        .onNodeWithTag(MapTestTags.testTagForTab(ConstantMap.PROFILE))
+        .assertIsDisplayed()
+        .performClick()
+
+    composeTestRule
+        .onNodeWithTag(MapTestTags.PROFILE_NAME)
+        .assertIsDisplayed()
+        .assertTextContains("$name2 $firstName2")
+
+    composeTestRule.onNodeWithTag(MapTestTags.PROFILE_EDIT_BUTTON).assertDoesNotExist()
+  }
+
+  @Test
+  fun clickOnOtherRequestAndProfileDetailsFail() {
+    viewModel.updateCurrentRequest(request2)
+    composeTestRule.waitForIdle()
+
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule
+          .onAllNodesWithTag(MapTestTags.testTagForTab(ConstantMap.PROFILE))
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    composeTestRule
+        .onNodeWithTag(MapTestTags.testTagForTab(ConstantMap.PROFILE))
+        .assertIsDisplayed()
+        .performClick()
+
+    composeTestRule.onNodeWithTag(MapTestTags.PROFILE_NAME).assertDoesNotExist()
+
+    composeTestRule
+        .onNodeWithTag(MapTestTags.PROFILE_EDIT_BUTTON)
+        .assertIsDisplayed()
+        .assertTextContains(ConstantMap.PROBLEM_OCCUR)
+  }
+
   // check if the name of the button has changed, and the button x works
   @Test
   fun clickOnAnotherRequestThenClose() {
     viewModel.updateCurrentRequest(request2)
     composeTestRule.waitForIdle()
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule.onAllNodesWithTag(MapTestTags.DRAG).fetchSemanticsNodes().isNotEmpty()
+    }
 
     composeTestRule.onNodeWithTag(MapTestTags.DRAG).assertIsDisplayed()
 
