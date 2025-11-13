@@ -5,11 +5,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -52,17 +48,17 @@ fun NavigationScreen(
     navigationActions: NavigationActions = NavigationActions(navController),
     credentialManager: CredentialManager = CredentialManager.create(LocalContext.current)
 ) {
+  var isSignedIn by remember { mutableStateOf(FirebaseAuth.getInstance().currentUser != null) }
 
-  val user = FirebaseAuth.getInstance().currentUser
-  var isSignedIn by rememberSaveable { mutableStateOf(user != null) }
-  val startDestination = if (!isSignedIn) "login" else "requests"
+  val signInViewModel: SignInViewModel = viewModel()
+  val startDestination = if (isSignedIn) "requests" else "login"
+
   // repositories
   val requestRepository = RequestRepositoryFirestore(Firebase.firestore)
   val locationRepository = NominatimLocationRepository(client = OkHttpClient())
   val fusedLocationProvider = FusedLocationProvider(LocalContext.current)
 
   // ViewModels
-  val signInViewModel: SignInViewModel = viewModel()
   val profileViewModel: ProfileViewModel = viewModel()
   val mapViewModel: MapViewModel = viewModel()
   val requestListViewModel: RequestListViewModel = viewModel()
@@ -80,12 +76,10 @@ fun NavigationScreen(
       startDestination = startDestination,
       modifier = modifier,
   ) {
+    // Login navigation
     navigation(startDestination = Screen.Login.route, route = "login") {
       composable(Screen.Login.route) {
-        SignInScreen(
-            viewModel = signInViewModel,
-            onSignInSuccess = { isSignedIn = true },
-            credentialManager = credentialManager)
+        SignInScreen(viewModel = signInViewModel, onSignInSuccess = { isSignedIn = true })
       }
     }
 
@@ -96,7 +90,7 @@ fun NavigationScreen(
       }
       composable(Screen.AddRequest.route) {
         EditRequestScreen(
-            requestId = null, // launch in add mode
+            requestId = null,
             onNavigateBack = { navigationActions.goBack() },
             viewModel = editRequestViewModel)
       }
@@ -150,9 +144,8 @@ fun NavigationScreen(
                 ProfileViewModel(
                     onLogout = {
                       isSignedIn = false
-                      navController.navigate(Screen.Login.route) {
-                        popUpTo(0) // Clears the back stack
-                      }
+                      FirebaseAuth.getInstance().signOut()
+                      navController.navigate(Screen.Login.route) { popUpTo(0) { inclusive = true } }
                     }),
             onBackClick = { navigationActions.goBack() },
             navigationActions = navigationActions)
