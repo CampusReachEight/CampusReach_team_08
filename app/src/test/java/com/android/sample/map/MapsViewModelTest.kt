@@ -1,10 +1,13 @@
 package com.android.sample.map
 
 import com.android.sample.model.map.Location
+import com.android.sample.model.profile.UserProfile
+import com.android.sample.model.profile.UserProfileRepository
 import com.android.sample.model.request.Request
 import com.android.sample.model.request.RequestRepository
 import com.android.sample.model.request.RequestStatus
 import com.android.sample.ui.map.MapViewModel
+import com.android.sample.ui.profile.UserSections
 import com.google.android.gms.maps.model.LatLng
 import java.util.Date
 import java.util.UUID
@@ -20,6 +23,8 @@ import org.junit.After
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
+
+const val DEFAULT_USER_ID = "test_current_user_id"
 
 class MapsViewModelTest {
 
@@ -87,9 +92,38 @@ class MapsViewModelTest {
     override suspend fun cancelAcceptance(requestId: String) {}
 
     override suspend fun isOwnerOfRequest(request: Request): Boolean = false
+
+    override suspend fun getMyRequests(): List<Request> {
+      return emptyList()
+    }
+  }
+
+  private class FakeProfileRepository : UserProfileRepository {
+    override fun getNewUid(): String {
+      return ""
+    }
+
+    override suspend fun getAllUserProfiles(): List<UserProfile> {
+      return listOf()
+    }
+
+    override suspend fun getUserProfile(userId: String): UserProfile {
+      return UserProfile("", "", "", "", null, 0, UserSections.COMPUTER_SCIENCE, Date(0L))
+    }
+
+    override suspend fun addUserProfile(userProfile: UserProfile) {}
+
+    override suspend fun updateUserProfile(userId: String, updatedProfile: UserProfile) {}
+
+    override suspend fun deleteUserProfile(userId: String) {}
+
+    override suspend fun searchUserProfiles(query: String, limit: Int): List<UserProfile> {
+      return listOf()
+    }
   }
 
   private lateinit var fakeRepository: FakeRequestRepository
+  private lateinit var fakeProfileRepository: FakeProfileRepository
   private lateinit var viewModel: MapViewModel
   private val testDispatcher = StandardTestDispatcher()
 
@@ -142,6 +176,7 @@ class MapsViewModelTest {
   @Before
   fun setup() {
     fakeRepository = FakeRequestRepository()
+    fakeProfileRepository = FakeProfileRepository()
     Dispatchers.setMain(testDispatcher)
   }
 
@@ -156,7 +191,7 @@ class MapsViewModelTest {
   fun handleError_is_good() {
     fakeRepository.setShouldThrowError(false)
 
-    viewModel = MapViewModel(fakeRepository)
+    viewModel = MapViewModel(fakeRepository, fakeProfileRepository)
 
     TestCase.assertNull(viewModel.uiState.value.errorMsg)
 
@@ -178,7 +213,7 @@ class MapsViewModelTest {
   @Test
   fun baseRequestsIsGood() {
     fakeRepository.setShouldThrowError(false)
-    viewModel = MapViewModel(fakeRepository)
+    viewModel = MapViewModel(fakeRepository, fakeProfileRepository)
 
     runTest {
       viewModel.refreshUIState()
@@ -193,7 +228,7 @@ class MapsViewModelTest {
   @Test
   fun addRequestsIsGood() {
     fakeRepository.setShouldThrowError(false)
-    viewModel = MapViewModel(fakeRepository)
+    viewModel = MapViewModel(fakeRepository, fakeProfileRepository)
     runTest {
       fakeRepository.addRequest(request1)
       viewModel.refreshUIState()
@@ -208,7 +243,7 @@ class MapsViewModelTest {
   @Test
   fun editRequestsIsGood() {
     fakeRepository.setShouldThrowError(false)
-    viewModel = MapViewModel(fakeRepository)
+    viewModel = MapViewModel(fakeRepository, fakeProfileRepository)
     runTest {
       fakeRepository.addRequest(request1)
       fakeRepository.updateRequest("1", request3)
@@ -224,7 +259,7 @@ class MapsViewModelTest {
   @Test
   fun deleteRequestsIsGood() {
     fakeRepository.setShouldThrowError(false)
-    viewModel = MapViewModel(fakeRepository)
+    viewModel = MapViewModel(fakeRepository, fakeProfileRepository)
     runTest {
       fakeRepository.addRequest(request3)
       fakeRepository.addRequest(request2)

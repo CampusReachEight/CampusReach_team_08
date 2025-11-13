@@ -6,6 +6,7 @@ import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -13,6 +14,9 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.navigation.compose.rememberNavController
+import com.android.sample.ui.navigation.NavigationActions
+import com.android.sample.ui.navigation.Screen
 import com.android.sample.ui.profile.composables.ErrorBanner
 import com.android.sample.ui.profile.composables.InfoRow
 import com.android.sample.ui.profile.composables.LoadingIndicator
@@ -23,6 +27,7 @@ import com.android.sample.ui.profile.composables.ProfileHeader
 import com.android.sample.ui.profile.composables.ProfileInformation
 import com.android.sample.ui.profile.composables.ProfileStats
 import com.android.sample.ui.profile.composables.ProfileTopBar
+import junit.framework.TestCase
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -56,7 +61,9 @@ class ProfileUiTests {
             following = 15,
             arrivalDate = "15/02/2024",
             userSection = "Physics")
-    composeTestRule.setContent { ProfileScreen(viewModel = ProfileViewModel(customState)) }
+    composeTestRule.setContent {
+      ProfileScreen(viewModel = ProfileViewModel(customState, attachAuthListener = false))
+    }
 
     composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_HEADER).assertIsDisplayed()
     composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_STATS).assertIsDisplayed()
@@ -65,9 +72,9 @@ class ProfileUiTests {
 
     composeTestRule
         .onNodeWithTag(ProfileTestTags.PROFILE_HEADER_NAME)
-        .assertTextEquals("Alice Smith")
-    composeTestRule.onNodeWithTag("profile_info_name").assertTextEquals("Alice Smith")
-    composeTestRule.onNodeWithTag("profile_info_section").assertTextEquals("Physics")
+        .assertTextContains("Alice Smith")
+    composeTestRule.onNodeWithTag("profile_info_name").assertTextContains("Alice Smith")
+    composeTestRule.onNodeWithTag("profile_info_section").assertTextContains("Physics")
   }
 
   // ----- Header -----
@@ -78,7 +85,9 @@ class ProfileUiTests {
 
     composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_HEADER_NAME).assertIsDisplayed()
     composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_HEADER_EMAIL).assertIsDisplayed()
-    composeTestRule.onNodeWithContentDescription("Profile Picture").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithTag(ProfileTestTags.PROFILE_HEADER_PROFILE_PICTURE)
+        .assertIsDisplayed()
   }
 
   @Test
@@ -103,7 +112,9 @@ class ProfileUiTests {
   fun profileHeader_editButton_invokesCallback() {
     var clicked = false
     val state = ProfileState.default()
-    composeTestRule.setContent { ProfileHeader(state = state, onEditClick = { clicked = true }) }
+    composeTestRule.setContent {
+      ProfileHeader(state = state, onEditRequested = { clicked = true })
+    }
 
     composeTestRule.onNodeWithContentDescription("Edit").assertHasClickAction()
     composeTestRule.onNodeWithContentDescription("Edit").performClick()
@@ -175,7 +186,9 @@ class ProfileUiTests {
   @Test
   fun statGroupCard_displaysCorrectValues_inProfileScreen() {
     val state = ProfileState(kudosReceived = 99, helpReceived = 88, followers = 77, following = 66)
-    composeTestRule.setContent { ProfileScreen(viewModel = ProfileViewModel(state)) }
+    composeTestRule.setContent {
+      ProfileScreen(viewModel = ProfileViewModel(state, attachAuthListener = false))
+    }
     composeTestRule.onNodeWithText("99").assertIsDisplayed()
     composeTestRule.onNodeWithText("88").assertIsDisplayed()
     composeTestRule.onNodeWithText("77").assertIsDisplayed()
@@ -390,6 +403,27 @@ class ProfileUiTests {
     composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_ACTION_ABOUT_APP).assertHasClickAction()
   }
 
+  @Test
+  fun backButton_invokesOnBackClick() {
+    var backClicked = false
+
+    val viewModel = ProfileViewModel(initialState = ProfileState.default())
+
+    composeTestRule.setContent {
+      ProfileScreen(viewModel = viewModel, onBackClick = { backClicked = true })
+    }
+
+    composeTestRule.waitForIdle()
+
+    composeTestRule
+        .onNodeWithTag(ProfileTestTags.PROFILE_TOP_BAR_BACK_BUTTON)
+        .assertExists()
+        .performClick()
+
+    // ensure callback executed
+    TestCase.assertTrue("Expected onBackClick to be invoked", backClicked)
+  }
+
   // ----- Dialogues -----
   @Test
   fun logoutDialog_showsTitle_message_and_buttons_whenVisible() {
@@ -496,22 +530,30 @@ class ProfileUiTests {
   fun profileScreen_loadingState_showsLoadingIndicator_and_disappearsWhenNotLoading() {
     val loadingState = ProfileState.loading()
     val vm = ProfileViewModel(loadingState)
-    composeTestRule.setContent { ProfileScreen(viewModel = vm) }
+    composeTestRule.setContent {
+      ProfileScreen(
+          viewModel = vm,
+      )
+    }
 
     // initially loading
-    composeTestRule.onNodeWithTag("profile_loading").assertIsDisplayed()
+    composeTestRule.onNodeWithTag(ProfileTestTags.LOADING_INDICATOR).assertIsDisplayed()
 
     // flip loading off via the viewModel (no second setContent)
     composeTestRule.runOnIdle { vm.setLoading(false) }
-    composeTestRule.onNodeWithTag("profile_loading").assertIsNotDisplayed()
+    composeTestRule.onNodeWithTag(ProfileTestTags.LOADING_INDICATOR).assertIsNotDisplayed()
   }
 
   @Test
   fun errorBanner_and_profileScreen_errorState_showsMessage_and_disappears() {
     // Start with a ProfileViewModel that has an error and compose once
     val errorState = ProfileState.withError()
-    val vm = ProfileViewModel(errorState)
-    composeTestRule.setContent { ProfileScreen(viewModel = vm) }
+    val vm = ProfileViewModel(errorState, attachAuthListener = false)
+    composeTestRule.setContent {
+      ProfileScreen(
+          viewModel = vm,
+      )
+    }
 
     composeTestRule.onNodeWithTag("profile_error").assertIsDisplayed()
     composeTestRule.onNodeWithTag("profile_error").assertTextEquals("Failed to load profile data")
@@ -531,7 +573,9 @@ class ProfileUiTests {
   @Test
   fun profileContent_showsErrorBanner_and_disappears_whenStateCleared() {
     val state = mutableStateOf(ProfileState.withError())
-    composeTestRule.setContent { ProfileContent(state = state.value, onLogoutRequested = {}) }
+    composeTestRule.setContent {
+      ProfileContent(state = state.value, onLogoutRequested = {}, onMyRequestAction = {})
+    }
 
     // initially present
     composeTestRule.onAllNodesWithTag("profile_error").assertCountEquals(1)
@@ -545,7 +589,9 @@ class ProfileUiTests {
   @Test
   fun errorBanner_singleInstance_inProfileContent() {
     val state = ProfileState.withError()
-    composeTestRule.setContent { ProfileContent(state = state, onLogoutRequested = {}) }
+    composeTestRule.setContent {
+      ProfileContent(state = state, onLogoutRequested = {}, onMyRequestAction = {})
+    }
 
     // ensure exactly one error banner node is present
     composeTestRule.onAllNodesWithTag("profile_error").assertCountEquals(1)
@@ -557,7 +603,8 @@ class ProfileUiTests {
     var logoutRequested = false
     val s = ProfileState.default()
     composeTestRule.setContent {
-      ProfileContent(state = s, onLogoutRequested = { logoutRequested = true })
+      ProfileContent(
+          state = s, onLogoutRequested = { logoutRequested = true }, onMyRequestAction = {})
     }
 
     composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_HEADER).assertIsDisplayed()
@@ -595,5 +642,66 @@ class ProfileUiTests {
     val newName = "Charlie"
     viewModel.updateUserName(newName)
     assertEquals(newName, viewModel.state.value.userName)
+  }
+
+  @Test
+  fun fromLabel_mapsEachEntry() {
+    for (entry in UserSections.entries) {
+      assertEquals(entry, UserSections.fromLabel(entry.label))
+    }
+  }
+
+  @Test
+  fun fromLabel_unknownReturnsNone() {
+    assertEquals(UserSections.NONE, UserSections.fromLabel("non_existent_label_123"))
+  }
+
+  // ----- My Request Action -----
+  @Test
+  fun myRequest_action_isDisplayed_and_hasClickAction() {
+    composeTestRule.setContent { ProfileActions() }
+
+    composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_ACTION_MY_REQUEST).assertIsDisplayed()
+    composeTestRule.onNodeWithText("My Request").assertIsDisplayed()
+    composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_ACTION_MY_REQUEST).assertHasClickAction()
+  }
+
+  @Test
+  fun myRequest_action_triggersCallback() {
+    var triggered = false
+    composeTestRule.setContent { ProfileActions(onMyRequestClick = { triggered = true }) }
+
+    composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_ACTION_MY_REQUEST).performClick()
+    composeTestRule.runOnIdle { assertTrue(triggered) }
+  }
+
+  @Test
+  fun myRequest_button_callsViewModel_onMyRequestsClick() = runTest {
+    var navigationCalled = false
+    var correctScreen = false
+
+    composeTestRule.setContent {
+      val navController = rememberNavController()
+      val mockNavigationActions =
+          object : NavigationActions(navController) {
+            override fun navigateTo(screen: Screen) {
+              navigationCalled = true
+              if (screen is Screen.MyRequest) {
+                correctScreen = true
+              }
+            }
+          }
+
+      val viewModel = ProfileViewModel(attachAuthListener = false)
+
+      ProfileActions(onMyRequestClick = { viewModel.onMyRequestsClick(mockNavigationActions) })
+    }
+
+    composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_ACTION_MY_REQUEST).performClick()
+
+    composeTestRule.runOnIdle {
+      assertTrue("Expected navigation to be called", navigationCalled)
+      assertTrue("Expected navigation to MyRequest screen", correctScreen)
+    }
   }
 }

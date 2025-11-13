@@ -2,6 +2,7 @@ package com.android.sample.model.profile
 
 import android.graphics.Bitmap
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.android.sample.ui.profile.UserSections
 import java.util.Date
 import org.junit.Assert.*
 import org.junit.Test
@@ -57,7 +58,7 @@ class UserProfileTest {
             email = "john.doe@example.com",
             photo = null,
             kudos = 42,
-            section = Section.SOFTWARE_ENGINEERING,
+            section = UserSections.COMPUTER_SCIENCE,
             arrivalDate = Date())
 
     val map = profile.toMap()

@@ -6,13 +6,18 @@ import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -24,11 +29,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import com.android.sample.model.profile.UserProfile
 import com.android.sample.model.profile.UserProfileRepository
+import com.android.sample.model.profile.UserProfileRepositoryFirestore
+import com.android.sample.ui.request.ConstantRequestList
 import com.android.sample.ui.theme.AppColors.SecondaryColor
 import com.android.sample.ui.theme.AppColors.SecondaryDark
 import com.android.sample.ui.theme.AppColors.WhiteColor
+import com.google.firebase.Firebase
+import com.google.firebase.firestore.firestore
 import java.net.URL
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -37,6 +49,7 @@ object ProfilePictureTestTags {
   const val PROFILE_PICTURE = "profile_picture"
   const val PROFILE_PICTURE_LOADING = "profile_picture_loading"
   const val PROFILE_PICTURE_DEFAULT = "profile_picture_default"
+  const val PROFILE_PICTURE_NAME = "profile_picture_name"
 }
 
 object ProfileIconCache {
@@ -69,13 +82,16 @@ object ProfileCache {
 
 @Composable
 fun ProfilePicture(
-    profileRepository: UserProfileRepository,
+    profileRepository: UserProfileRepository = UserProfileRepositoryFirestore(Firebase.firestore),
     profileId: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    onClick: () -> Unit = {},
+    modifier: Modifier = Modifier,
+    withName: Boolean = false,
+    withNameImageSize: Dp = ConstantRequestList.RequestItemIconSize
 ) {
   var loading: Boolean by remember { mutableStateOf(true) }
   var bitmap: Bitmap? by remember { mutableStateOf(null) }
+  var name: String by remember { mutableStateOf("") }
 
   LaunchedEffect(profileId) {
     loading = true
@@ -103,6 +119,7 @@ fun ProfilePicture(
     }
 
     val photoUriObj: Uri? = profile.photo
+    name = profile.name
 
     if (photoUriObj != null && photoUriObj.toString().isNotBlank()) {
       val uri = photoUriObj
@@ -134,42 +151,64 @@ fun ProfilePicture(
     loading = false
   }
 
-  Surface(
-      modifier = modifier.clip(CircleShape).clickable() { onClick() },
-      shape = CircleShape,
-  ) {
-    if (loading) {
-      Box(
-          modifier =
+  Column(
+      verticalArrangement = Arrangement.Center,
+      horizontalAlignment = Alignment.CenterHorizontally,
+      modifier = modifier.fillMaxSize()) {
+        val sizeMod =
+            if (withName) {
+              Modifier.size(withNameImageSize)
+            } else {
               Modifier.fillMaxSize()
-                  .background(SecondaryDark.copy(alpha = 0.3f))
-                  .testTag(ProfilePictureTestTags.PROFILE_PICTURE_LOADING),
-      )
-      return@Surface
-    }
-
-    // Error loading image fallback
-    if (bitmap == null) {
-      Box(
-          modifier =
-              Modifier.fillMaxSize()
-                  .background(SecondaryColor)
-                  .testTag(ProfilePictureTestTags.PROFILE_PICTURE_DEFAULT),
-          contentAlignment = Alignment.Center) {
-            Icon(
-                imageVector = Icons.Default.Person,
-                contentDescription = "Default profile picture",
-                modifier = Modifier.fillMaxSize(0.6f),
-                tint = WhiteColor)
+            }
+        Surface(
+            modifier = sizeMod.aspectRatio(1f).clip(CircleShape).clickable() { onClick() },
+            shape = CircleShape,
+        ) {
+          if (loading) {
+            Box(
+                modifier =
+                    Modifier.fillMaxSize()
+                        .background(SecondaryDark.copy(alpha = 0.3f))
+                        .testTag(ProfilePictureTestTags.PROFILE_PICTURE_LOADING),
+            )
+            return@Surface
           }
-      return@Surface
-    }
 
-    Image(
-        bitmap = bitmap!!.asImageBitmap(),
-        contentDescription = "Profile picture",
-        modifier.fillMaxSize().testTag(ProfilePictureTestTags.PROFILE_PICTURE))
-  }
+          // Error loading image fallback
+          if (bitmap == null) {
+            Box(
+                modifier =
+                    Modifier.fillMaxSize()
+                        .background(SecondaryColor)
+                        .testTag(ProfilePictureTestTags.PROFILE_PICTURE_DEFAULT),
+                contentAlignment = Alignment.Center) {
+                  Icon(
+                      imageVector = Icons.Default.Person,
+                      contentDescription = "Default profile picture",
+                      modifier = Modifier.fillMaxSize(0.6f),
+                      tint = WhiteColor)
+                }
+            return@Surface
+          }
+
+          Image(
+              bitmap = bitmap!!.asImageBitmap(),
+              contentDescription = "Profile picture",
+              Modifier.fillMaxSize().testTag(ProfilePictureTestTags.PROFILE_PICTURE))
+        }
+
+        if (withName && name.isNotBlank()) {
+          Text(
+              text = name,
+              fontSize = ConstantRequestList.RequestItemNameFontSize,
+              maxLines = 1,
+              overflow = TextOverflow.Ellipsis,
+              textAlign = TextAlign.Center,
+              modifier =
+                  Modifier.fillMaxSize().testTag(ProfilePictureTestTags.PROFILE_PICTURE_NAME))
+        }
+      }
 }
 
 private suspend fun loadBitmapFromUri(uri: Uri): Bitmap? =
