@@ -9,6 +9,7 @@ import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import java.util.Date
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -188,6 +189,8 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
     val profile = testProfile1.copy(id = currentUserId)
     repository.addUserProfile(profile)
 
+    delay(1000)
+
     val updatedProfile = profile.copy(name = "UpdatedName", lastName = "UpdatedLastName")
     repository.updateUserProfile(currentUserId, updatedProfile)
 
@@ -200,8 +203,12 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
     val profile = testProfile1.copy(id = currentUserId)
     repository.addUserProfile(profile)
 
+    delay(1000)
+
     val updatedProfile = profile.copy(name = "UpdatedName")
     repository.updateUserProfile(currentUserId, updatedProfile)
+
+    delay(1000)
 
     val publicProfiles = repository.getAllUserProfiles()
     val publicProfile = publicProfiles.first()
@@ -213,6 +220,8 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
   fun cannotUpdateOtherUsersProfile() = runTest {
     val profile = testProfile1.copy(id = currentUserId)
     repository.addUserProfile(profile)
+
+    delay(1000)
 
     val otherProfile = testProfile2
     try {
@@ -228,10 +237,14 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
     val profile = testProfile1.copy(id = currentUserId)
     repository.addUserProfile(profile)
 
+    delay(1000)
+
     assertEquals(1, getPublicProfilesCount())
     assertEquals(1, getPrivateProfilesCount())
 
     repository.deleteUserProfile(currentUserId)
+
+    delay(1000)
 
     assertEquals(0, getPublicProfilesCount())
     assertEquals(0, getPrivateProfilesCount())
@@ -241,6 +254,7 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
   fun cannotDeleteOtherUsersProfile() = runTest {
     try {
       repository.deleteUserProfile("some-other-user-id")
+      delay(1000)
       fail("Expected IllegalArgumentException when deleting another user's profile")
     } catch (_: IllegalArgumentException) {
       // Expected exception
@@ -257,6 +271,7 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
 
     try {
       repository.addUserProfile(profile)
+      delay(1000)
       fail("Expected IllegalStateException when adding profile while not authenticated")
     } catch (_: IllegalStateException) {
       // Expected exception
@@ -264,6 +279,7 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
 
     try {
       repository.getUserProfile("some-user-id")
+      delay(1000)
       fail("Expected IllegalStateException when getting profile while not authenticated")
     } catch (_: NoSuchElementException) {
       // Expected exception
@@ -271,6 +287,7 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
 
     try {
       repository.updateUserProfile("some-user-id", profile)
+      delay(1000)
       fail("Expected IllegalStateException when updating profile while not authenticated")
     } catch (_: IllegalStateException) {
       // Expected exception
@@ -278,6 +295,7 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
 
     try {
       repository.deleteUserProfile("some-user-id")
+      delay(1000)
       fail("Expected IllegalStateException when deleting profile while not authenticated")
     } catch (_: IllegalStateException) {
       Log.d("UserProfileRepoTest", "Caught expected exception")
@@ -288,23 +306,29 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
     // Add profile
     val profile = testProfile1.copy(id = currentUserId)
     repository.addUserProfile(profile)
+    delay(1000)
 
     // Retrieve and verify
     var retrievedProfile = repository.getUserProfile(currentUserId)
+    delay(1000)
     assertEquals(profile, retrievedProfile)
 
     // Update profile
     val updatedProfile = profile.copy(name = "UpdatedName", lastName = "UpdatedLastName")
     repository.updateUserProfile(currentUserId, updatedProfile)
+    delay(1000)
 
     // Retrieve and verify update
     retrievedProfile = repository.getUserProfile(currentUserId)
+    delay(1000)
     assertEquals(updatedProfile, retrievedProfile)
 
     // Delete profile
     repository.deleteUserProfile(currentUserId)
+    delay(1000)
     try {
       repository.getUserProfile(currentUserId)
+      delay(1000)
       fail("Expected NoSuchElementException when retrieving deleted profile")
     } catch (_: NoSuchElementException) {
       // Expected exception
@@ -316,6 +340,7 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
     FirebaseEmulator.signOut()
     try {
       repository.getNewUid()
+      delay(1000)
       fail("Expected IllegalStateException when getting new ID unauthenticated")
     } catch (_: IllegalStateException) {
       // Expected exception
@@ -339,6 +364,7 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
             email = email,
             section = UserSections.NONE)
     repository.addUserProfile(p)
+    delay(1000)
   }
 
   @Test
@@ -355,6 +381,7 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
     addProfileFor(SECOND_USER_EMAIL, name = "Jane", lastName = "Smith")
 
     val results = repository.searchUserProfiles("joh")
+    delay(1000)
     assertTrue(results.any { it.name == "John" && it.lastName == "Doe" })
     assertFalse(results.any { it.name == "Jane" && it.lastName == "Smith" })
   }
@@ -365,6 +392,7 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
     addProfileFor(DEFAULT_USER_EMAIL, name = "Alice", lastName = "Smith")
 
     val results = repository.searchUserProfiles("smi")
+    delay(1000)
     assertTrue(results.any { it.name == "Alice" && it.lastName == "Smith" })
     assertFalse(results.any { it.name == "John" && it.lastName == "Doe" })
   }
@@ -375,6 +403,7 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
     addProfileFor(DEFAULT_USER_EMAIL, name = "Jo", lastName = "Johnson")
 
     val results = repository.searchUserProfiles("jo")
+    delay(1000)
     val distinctIds = results.map { it.id }.toSet()
     assertEquals(distinctIds.size, results.size)
   }
@@ -386,6 +415,7 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
       addProfileFor("test_limit_$idx@example.com", name = "Test$idx", lastName = "User$idx")
     }
     val results = repository.searchUserProfiles("test", limit = 3)
+    delay(1000)
     assertEquals(3, results.size)
   }
 
@@ -393,6 +423,7 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
   fun search_isCaseInsensitive() = runTest {
     addProfileFor(DEFAULT_USER_EMAIL, name = "John", lastName = "Doe")
     val results = repository.searchUserProfiles("JOHN")
+    delay(1000)
     assertTrue(results.any { it.name == "John" && it.lastName == "Doe" })
   }
 
@@ -402,6 +433,7 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
     addProfileFor("alice.johnson@example.com", name = "Alice", lastName = "Johnson")
 
     val results = repository.searchUserProfiles("john")
+    delay(1000)
 
     assertTrue(results.any { it.name == "Johnny" && it.lastName == "Alpha" })
     assertTrue(results.any { it.lastName == "Johnson" && it.name == "Alice" })
@@ -423,6 +455,7 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
         val startTime = System.currentTimeMillis()
         val results =
             repository.searchUserProfiles("11", limit = 9) // 10 results expected but limit 9
+        delay(1000)
         val endTime = System.currentTimeMillis()
 
         val duration = endTime - startTime
