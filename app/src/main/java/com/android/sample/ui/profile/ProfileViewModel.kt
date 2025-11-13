@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.android.sample.model.profile.UserProfile
 import com.android.sample.model.profile.UserProfileRepository
 import com.android.sample.model.profile.UserProfileRepositoryFirestore
+import com.android.sample.ui.navigation.NavigationActions
+import com.android.sample.ui.navigation.Screen
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
@@ -212,5 +214,9 @@ class ProfileViewModel(
         setLoading(false)
       }
     }
+  }
+
+  fun onMyRequestsClick(navigationActions: NavigationActions?) {
+    navigationActions?.navigateTo(Screen.MyRequest)
   }
 }

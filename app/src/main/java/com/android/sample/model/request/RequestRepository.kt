@@ -74,6 +74,13 @@ interface RequestRepository {
    * @throws Exception if there is no current user
    */
   suspend fun isOwnerOfRequest(request: Request): Boolean
+
+  /**
+   * Retrieves all requests created by the current user.
+   *
+   * @return A list of requests created by the current user.
+   */
+  suspend fun getMyRequests(): List<Request>
 }
 
 // Commented out mockup for testing purposes

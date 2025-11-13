@@ -361,4 +361,102 @@ class RequestRepositoryFirestoreTest : BaseEmulatorTest() {
       } catch (_: IllegalStateException) {}
     }
   }
+
+  // ----- getMyRequests() Tests -----
+
+  @Test
+  fun getMyRequests_returnsOnlyCurrentUsersRequests() = runTest {
+    // User A creates requests
+    addRequestTracking(request1)
+    addRequestTracking(request2)
+
+    // User B creates their request
+    signInUser(SECOND_USER_EMAIL, SECOND_USER_PASSWORD)
+    val userBRequest = generateRequest("user-b-request", "User B", "B's request", currentUserId)
+    addRequestTracking(userBRequest)
+
+    // User B should only see their own request
+    val userBRequests = repository.getMyRequests()
+    assertEquals(1, userBRequests.size)
+    assertEquals(userBRequest.requestId, userBRequests.first().requestId)
+    assertFalse(userBRequests.any { it.requestId == request1.requestId })
+    assertFalse(userBRequests.any { it.requestId == request2.requestId })
+
+    // Switch back to User A
+    signInUser(DEFAULT_USER_EMAIL, DEFAULT_USER_PASSWORD)
+    val userARequests = repository.getMyRequests()
+    assertEquals(2, userARequests.size)
+    assertTrue(userARequests.any { it.requestId == request1.requestId })
+    assertTrue(userARequests.any { it.requestId == request2.requestId })
+    assertFalse(userARequests.any { it.requestId == userBRequest.requestId })
+  }
+
+  @Test
+  fun getMyRequests_returnsEmptyListWhenUserHasNoRequests() = runTest {
+    // User A creates requests
+    addRequestTracking(request1)
+    addRequestTracking(request2)
+
+    // User B has no requests
+    signInUser(SECOND_USER_EMAIL, SECOND_USER_PASSWORD)
+    val userBRequests = repository.getMyRequests()
+
+    assertEquals(0, userBRequests.size)
+    assertTrue(userBRequests.isEmpty())
+  }
+
+  @Test
+  fun getMyRequests_returnsAllUserRequestsCorrectly() = runTest {
+    // Create multiple requests for current user
+    addRequestTracking(request1)
+    addRequestTracking(request2)
+    addRequestTracking(request3)
+
+    val myRequests = repository.getMyRequests()
+
+    assertEquals(3, myRequests.size)
+    val myRequestIds = myRequests.map { it.requestId }.toSet()
+    assertTrue(
+        myRequestIds.containsAll(
+            listOf(request1.requestId, request2.requestId, request3.requestId)))
+
+    // Verify all returned requests have correct creatorId
+    myRequests.forEach { request -> assertEquals(currentUserId, request.creatorId) }
+  }
+
+  @Test
+  fun getMyRequests_excludesOtherUsersRequestsCompletely() = runTest {
+    // User A creates one request
+    addRequestTracking(request1)
+
+    signInUser(SECOND_USER_EMAIL, SECOND_USER_PASSWORD)
+    val userBRequest1 = generateRequest("user-b-req-1", "B1", "B's first", currentUserId)
+    val userBRequest2 = generateRequest("user-b-req-2", "B2", "B's second", currentUserId)
+    addRequestTracking(userBRequest1)
+    addRequestTracking(userBRequest2)
+
+    signInUser(DEFAULT_USER_EMAIL, DEFAULT_USER_PASSWORD)
+    val userARequests = repository.getMyRequests()
+
+    assertEquals(1, userARequests.size)
+    assertEquals(request1.requestId, userARequests.first().requestId)
+
+    val allRequests = repository.getAllRequests()
+    assertEquals(3, allRequests.size)
+    assertEquals(1, userARequests.size)
+  }
+
+  @Test
+  fun getMyRequests_throwsWhenUnauthenticated() = runTest {
+    addRequestTracking(request1)
+
+    FirebaseEmulator.signOut()
+
+    try {
+      repository.getMyRequests()
+      fail("Expected IllegalStateException when calling getMyRequests() unauthenticated")
+    } catch (_: IllegalStateException) {}
+
+    signInUser(DEFAULT_USER_EMAIL, DEFAULT_USER_PASSWORD)
+  }
 }
