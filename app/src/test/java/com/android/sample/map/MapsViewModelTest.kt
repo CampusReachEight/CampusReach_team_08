@@ -24,6 +24,8 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 
+const val DEFAULT_USER_ID = "test_current_user_id"
+
 class MapsViewModelTest {
 
   // Fake repository used for testing/development because the real one is not implemented yet
@@ -92,7 +94,7 @@ class MapsViewModelTest {
     override suspend fun isOwnerOfRequest(request: Request): Boolean = false
 
     override suspend fun getMyRequests(): List<Request> {
-      TODO("Not yet implemented")
+      return emptyList()
     }
   }
 
