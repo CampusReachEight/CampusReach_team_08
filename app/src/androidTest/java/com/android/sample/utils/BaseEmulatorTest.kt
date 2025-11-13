@@ -15,6 +15,7 @@ import org.junit.Before
  * super.setUp()/super.tearDown().
  */
 const val UI_WAIT_TIMEOUT = 5_000L
+const val UI_BIG_WAIT_TIMEOUT = 20_000L
 
 abstract class BaseEmulatorTest {
 

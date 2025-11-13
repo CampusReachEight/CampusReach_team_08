@@ -90,4 +90,9 @@ object ConstantMap {
   val FONT_SIZE_BIG = 18.sp
   val FONT_SIZE_MID = 15.sp
   const val ALPHA_KUDOS_DIVIDER = 0.17f
+
+  // ======================
+  // Test
+  // ======================
+  val BOX_SIZE = 48.dp
 }

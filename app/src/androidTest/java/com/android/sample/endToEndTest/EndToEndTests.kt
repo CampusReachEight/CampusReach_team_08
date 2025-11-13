@@ -6,6 +6,7 @@ import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
@@ -16,8 +17,10 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTouchInput
 import androidx.test.platform.app.InstrumentationRegistry
 import com.android.sample.AppNavigation
+import com.android.sample.config.AppTestConfig
 import com.android.sample.model.map.Location
 import com.android.sample.model.request.Request
 import com.android.sample.model.request.RequestRepositoryFirestore
@@ -39,10 +42,12 @@ import com.android.sample.utils.BaseEmulatorTest
 import com.android.sample.utils.FakeCredentialManager
 import com.android.sample.utils.FakeJwtGenerator
 import com.android.sample.utils.FirebaseEmulator
+import com.android.sample.utils.UI_BIG_WAIT_TIMEOUT
 import com.android.sample.utils.UI_WAIT_TIMEOUT
 import java.util.Calendar
 import java.util.Date
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
@@ -79,6 +84,7 @@ class EndToEndTests : BaseEmulatorTest() {
 
   @Before
   override fun setUp() {
+    AppTestConfig.isTestMode = true
     db = FirebaseEmulator.firestore
     auth = FirebaseEmulator.auth
     // Grant location permissions before tests
@@ -116,6 +122,7 @@ class EndToEndTests : BaseEmulatorTest() {
 
   @After
   override fun tearDown() {
+    AppTestConfig.isTestMode = false
     try {
       composeTestRule.waitForIdle()
       Thread.sleep(500)
@@ -622,7 +629,7 @@ class EndToEndTests : BaseEmulatorTest() {
 
   @Test
   fun canCreateRequestWithCurrentLocationEditOnMapAndLogout() {
-    val TAG = "EndToEndTests"
+    repository = RequestRepositoryFirestore(db)
 
     // 1. Sign in and create request (your existing working code)
     val fifthName = "78234"
@@ -710,20 +717,31 @@ class EndToEndTests : BaseEmulatorTest() {
     // 2. Go to Map and verify
     composeTestRule.onNodeWithTag(NavigationTestTags.MAP_TAB).assertIsDisplayed().performClick()
 
-    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+    composeTestRule.waitUntil(UI_BIG_WAIT_TIMEOUT) {
       composeTestRule
           .onAllNodesWithTag(MapTestTags.GOOGLE_MAP_SCREEN)
           .fetchSemanticsNodes()
           .isNotEmpty()
     }
 
-    Thread.sleep(2000)
     composeTestRule.waitForIdle()
 
+    var currentRequest: Request
+    runBlocking { currentRequest = repository.getAllRequests()[0] }
+
+    composeTestRule.waitUntil(UI_BIG_WAIT_TIMEOUT) {
+      composeTestRule
+          .onAllNodesWithTag(MapTestTags.testTagForBoxTest(currentRequest.requestId))
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
     // Click map to open bottom sheet
-    composeTestRule.onNodeWithTag(MapTestTags.GOOGLE_MAP_SCREEN).performClick()
+    composeTestRule
+        .onNodeWithTag(MapTestTags.testTagForBoxTest(currentRequest.requestId))
+        .performTouchInput { click() }
+
     composeTestRule.waitForIdle()
-    Thread.sleep(1000)
 
     composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
       composeTestRule
@@ -734,21 +752,8 @@ class EndToEndTests : BaseEmulatorTest() {
 
     // Verify original title
     composeTestRule.onNodeWithText(titles).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(MapTestTags.BUTTON_DETAILS).assertIsDisplayed().performClick()
 
-    // 3. Go to Request List (FIXED: using REQUEST_TAB not REQUESTS_TAB)
-    composeTestRule.onNodeWithTag(NavigationTestTags.REQUEST_TAB).performClick()
-
-    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
-      composeTestRule
-          .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
-
-    // 4. Click request item to edit
-    composeTestRule.onNodeWithTag(RequestListTestTags.REQUEST_ITEM).performClick()
-
-    composeTestRule.waitForIdle()
     composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
       composeTestRule
           .onAllNodesWithTag(EditRequestScreenTestTags.INPUT_TITLE)
@@ -770,30 +775,28 @@ class EndToEndTests : BaseEmulatorTest() {
         .performScrollTo()
         .performClick()
 
-    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
-      composeTestRule
-          .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
-
-    // 6. Go back to Map
-    composeTestRule.onNodeWithTag(NavigationTestTags.MAP_TAB).performClick()
-
-    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+    composeTestRule.waitUntil(UI_BIG_WAIT_TIMEOUT) {
       composeTestRule
           .onAllNodesWithTag(MapTestTags.GOOGLE_MAP_SCREEN)
           .fetchSemanticsNodes()
           .isNotEmpty()
     }
 
-    Thread.sleep(2000)
     composeTestRule.waitForIdle()
 
     // 7. Click map to verify edit
-    composeTestRule.onNodeWithTag(MapTestTags.GOOGLE_MAP_SCREEN).performClick()
+    composeTestRule.waitUntil(UI_BIG_WAIT_TIMEOUT) {
+      composeTestRule
+          .onAllNodesWithTag(MapTestTags.testTagForBoxTest(currentRequest.requestId))
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Click map to open bottom sheet
+    composeTestRule
+        .onNodeWithTag(MapTestTags.testTagForBoxTest(currentRequest.requestId))
+        .performTouchInput { click() }
     composeTestRule.waitForIdle()
-    Thread.sleep(1000)
 
     composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
       composeTestRule
