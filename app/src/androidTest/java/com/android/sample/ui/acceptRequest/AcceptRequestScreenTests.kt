@@ -1,8 +1,12 @@
 package com.android.sample.ui.acceptRequest
 
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -522,4 +526,141 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
         .assertIsDisplayed()
         .assertTextContains("Archived", substring = true, ignoreCase = true)
   }
+
+    // Tests for getInitials function (via CreatorSection composable)
+    @Test
+    fun getInitials_withFullName_returnsFirstAndLastInitials() {
+        composeTestRule.setContent {
+            MaterialTheme {
+                com.android.sample.ui.overview.CreatorSection(
+                    creatorName = "John Doe",
+                    modifier = Modifier.testTag(AcceptRequestScreenTestTags.REQUEST_CREATOR)
+                )
+            }
+        }
+
+        composeTestRule
+            .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_CREATOR_AVATAR)
+            .assertIsDisplayed()
+            .assertTextContains("JD", substring = true)
+    }
+
+    @Test
+    fun getInitials_withSingleName_returnsFirstTwoCharacters() {
+        composeTestRule.setContent {
+            MaterialTheme {
+                com.android.sample.ui.overview.CreatorSection(
+                    creatorName = "Alice",
+                    modifier = Modifier.testTag(AcceptRequestScreenTestTags.REQUEST_CREATOR)
+                )
+            }
+        }
+
+        composeTestRule
+            .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_CREATOR_AVATAR)
+            .assertIsDisplayed()
+            .assertTextContains("AL", substring = true, ignoreCase = true)
+    }
+
+    @Test
+    fun getInitials_withEmptyName_returnsQuestionMark() {
+        composeTestRule.setContent {
+            MaterialTheme {
+                com.android.sample.ui.overview.CreatorSection(
+                    creatorName = "",
+                    modifier = Modifier.testTag(AcceptRequestScreenTestTags.REQUEST_CREATOR)
+                )
+            }
+        }
+
+        composeTestRule
+            .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_CREATOR_AVATAR)
+            .assertIsDisplayed()
+            .assertTextContains("?", substring = true)
+    }
+
+    @Test
+    fun getInitials_withMultipleSpaces_handlesCorrectly() {
+        composeTestRule.setContent {
+            MaterialTheme {
+                com.android.sample.ui.overview.CreatorSection(
+                    creatorName = "  John   Doe  ",
+                    modifier = Modifier.testTag(AcceptRequestScreenTestTags.REQUEST_CREATOR)
+                )
+            }
+        }
+        composeTestRule.waitUntil(uiWaitTimeout) {
+            composeTestRule
+                .onAllNodesWithTag(AcceptRequestScreenTestTags.REQUEST_CREATOR_AVATAR)
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+
+
+        composeTestRule
+            .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_CREATOR_AVATAR)
+            .assertIsDisplayed()
+            .assertTextContains("JD", substring = true)
+    }
+
+    @Test
+    fun getInitials_withThreeNames_returnsFirstAndLastInitials() {
+        composeTestRule.setContent {
+            MaterialTheme {
+                com.android.sample.ui.overview.CreatorSection(
+                    creatorName = "John Middle Doe",
+                    modifier = Modifier.testTag(AcceptRequestScreenTestTags.REQUEST_CREATOR)
+                )
+            }
+        }
+
+        composeTestRule
+            .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_CREATOR_AVATAR)
+            .assertIsDisplayed()
+            .assertTextContains("JD", substring = true)
+    }
+
+    @Test
+    fun creatorSection_displaysPostedByLabel() {
+        composeTestRule.setContent {
+            com.android.sample.ui.overview.CreatorSection(
+                creatorName = "Jane Smith",
+                modifier = Modifier.testTag(AcceptRequestScreenTestTags.REQUEST_CREATOR))
+        }
+
+        composeTestRule
+            .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_CREATOR)
+            .assertIsDisplayed()
+            .assertTextContains("Posted by", substring = true, ignoreCase = true)
+    }
+
+    @Test
+    fun creatorSection_displaysCreatorName() {
+        composeTestRule.setContent {
+            com.android.sample.ui.overview.CreatorSection(
+                creatorName = "Jane Smith",
+                modifier = Modifier.testTag(AcceptRequestScreenTestTags.REQUEST_CREATOR))
+        }
+
+        composeTestRule
+            .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_CREATOR)
+            .assertIsDisplayed()
+            .assertTextContains("Jane Smith", substring = true)
+    }
+
+    @Test
+    fun creatorSection_avatarIsDisplayed() {
+        composeTestRule.setContent {
+            MaterialTheme {
+                com.android.sample.ui.overview.CreatorSection(
+                    creatorName = "Test User",
+                    modifier = Modifier.testTag(AcceptRequestScreenTestTags.REQUEST_CREATOR)
+                )
+            }
+        }
+
+        composeTestRule
+            .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_CREATOR_AVATAR)
+            .assertIsDisplayed()
+    }
 }
