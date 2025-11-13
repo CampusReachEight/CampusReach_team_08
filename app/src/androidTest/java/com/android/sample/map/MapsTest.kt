@@ -91,6 +91,8 @@ class MapsTest : BaseEmulatorTest() {
       date = Date(calendar.timeInMillis)
       datePlusOneHour = Date(calendar.timeInMillis + MapsTestConst.ONE_HOUR)
 
+      val creatorIdForRequest2 = currentUserId
+
       request2 =
           Request(
               requestId2,
@@ -104,13 +106,14 @@ class MapsTest : BaseEmulatorTest() {
               datePlusOneHour,
               listOf(),
               emptyList(),
-              currentUserId)
+              creatorIdForRequest2 // <-- USE FIXED ID
+              )
 
       repository.addRequest(request2)
 
       profile2 =
           UserProfile(
-              currentUserId,
+              creatorIdForRequest2,
               firstName2,
               name2,
               DEFAULT_USER_EMAIL,
