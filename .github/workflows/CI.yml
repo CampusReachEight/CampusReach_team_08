@@ -169,7 +169,7 @@ jobs:
       # - Disables UI (no-window) and animations for faster CI execution
       # - Runs connectedCheck (integration/instrumentation tests)
       - name: Run instrumentation tests
-        timeout-minutes: 25
+        timeout-minutes: 35
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 36

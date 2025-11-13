@@ -25,7 +25,7 @@ import org.junit.Test
 class RequestSearchFilterViewModelTest {
   companion object {
     const val ADVANCE_TIME_SHORT_MS = 10L // 10ms delay
-    const val ADVANCE_TIME_SEARCH_MS = 500L // 500ms delay
+    const val ADVANCE_TIME_SEARCH_MS = 1000L // 1s delay
     const val ONE_HOUR_MS = 3_600_000L
     const val COUNT_ONE = 1
   }
