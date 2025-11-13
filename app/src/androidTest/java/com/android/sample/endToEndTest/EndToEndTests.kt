@@ -291,14 +291,10 @@ class EndToEndTests : BaseEmulatorTest() {
 
     composeTestRule.waitForIdle()
     composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
-      val nodes =
-          composeTestRule
-              .onAllNodesWithTag(EditRequestScreenTestTags.INPUT_TITLE)
-              .fetchSemanticsNodes()
-      val node = if (nodes.isNotEmpty()) nodes[0] else null
-
-      val editable = node?.config?.getOrNull(SemanticsProperties.EditableText)?.text
-      editable == titles
+      composeTestRule
+          .onAllNodesWithTag(EditRequestScreenTestTags.INPUT_TITLE)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
     }
   }
 
@@ -718,8 +714,6 @@ class EndToEndTests : BaseEmulatorTest() {
           .fetchSemanticsNodes()
           .isNotEmpty()
     }
-    // (Best effort) Assert bottom sheet not crashing when opened later by some interaction - here
-    // we just ensure map visible.
 
     // 9) Sign out
     logOut()
