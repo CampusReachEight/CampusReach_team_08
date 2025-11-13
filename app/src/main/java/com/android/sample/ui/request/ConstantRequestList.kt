@@ -1,6 +1,7 @@
 package com.android.sample.ui.request
 
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 /**
  * Constants for RequestList UI. Avoid magic numbers: use these values for sizing/spacing. Mirrors
@@ -16,7 +17,9 @@ object ConstantRequestList {
   // List and items
   val ListPadding = 16.dp
   val ListItemSpacing = 8.dp
-  val RequestItemIconSize = 40.dp
+  val RequestItemIconSize = 47.dp
+  val RequestItemNameFontSize = 11.sp
+  val RequestItemCreatorSectionSize = 65.dp
   val RequestItemInnerPadding = 8.dp
 
   // Search bar
