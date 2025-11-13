@@ -31,7 +31,6 @@ import com.android.sample.model.request.RequestRepositoryFirestore
 import com.android.sample.model.request.RequestStatus
 import com.android.sample.model.request.RequestType
 import com.android.sample.model.request.Tags
-import com.android.sample.model.request.displayString
 import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.profile.ProfilePictureTestTags
 import com.android.sample.ui.profile.UserSections
