@@ -319,11 +319,11 @@ class RequestListTests : BaseEmulatorTest() {
     composeTestRule
         .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM_DESCRIPTION, useUnmergedTree = true)
         .assertCountEquals(COUNT_THREE)
-      composeTestRule
-          .onNodeWithTag(RequestListTestTags.REQUEST_LIST, useUnmergedTree = true)
-          .onChildren()
-          .filter(hasAnyDescendant(hasTestTag(ProfilePictureTestTags.PROFILE_PICTURE_DEFAULT)))
-          .assertCountEquals(COUNT_THREE)
+    composeTestRule
+        .onNodeWithTag(RequestListTestTags.REQUEST_LIST, useUnmergedTree = true)
+        .onChildren()
+        .filter(hasAnyDescendant(hasTestTag(ProfilePictureTestTags.PROFILE_PICTURE_DEFAULT)))
+        .assertCountEquals(COUNT_THREE)
   }
 
   @Test
@@ -689,11 +689,12 @@ class RequestListTests : BaseEmulatorTest() {
     composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
     composeTestRule.waitForIdle()
     composeTestRule.waitUntil(OFFSET_5_S_MS) {
-        composeTestRule
-            .onNodeWithTag(RequestListTestTags.REQUEST_LIST, useUnmergedTree = true)
-            .onChildren()
-            .filter(hasAnyDescendant(hasTestTag(ProfilePictureTestTags.PROFILE_PICTURE)))
-            .fetchSemanticsNodes().size == COUNT_THREE
+      composeTestRule
+          .onNodeWithTag(RequestListTestTags.REQUEST_LIST, useUnmergedTree = true)
+          .onChildren()
+          .filter(hasAnyDescendant(hasTestTag(ProfilePictureTestTags.PROFILE_PICTURE)))
+          .fetchSemanticsNodes()
+          .size == COUNT_THREE
     }
   }
 

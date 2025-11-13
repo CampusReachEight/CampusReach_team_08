@@ -29,7 +29,7 @@ object RequestListTestTags {
 
   const val OK_BUTTON_ERROR_DIALOG = "okButtonErrorDialog"
 
-    const val REQUEST_LIST = "requestList"
+  const val REQUEST_LIST = "requestList"
 
   const val REQUEST_ITEM = "requestItem"
   const val REQUEST_ITEM_TITLE = "requestItemTitle"
@@ -165,12 +165,16 @@ fun RequestList(
     onRequestClick: (Request) -> Unit,
     modifier: Modifier = Modifier
 ) {
-  LazyColumn(modifier = modifier.padding(ConstantRequestList.ListPadding).testTag(RequestListTestTags.REQUEST_LIST)) {
-    items(state.requests.size) { index ->
-      val request = state.requests[index]
-      RequestListItem(viewModel = viewModel, request = request, onClick = onRequestClick)
-    }
-  }
+  LazyColumn(
+      modifier =
+          modifier
+              .padding(ConstantRequestList.ListPadding)
+              .testTag(RequestListTestTags.REQUEST_LIST)) {
+        items(state.requests.size) { index ->
+          val request = state.requests[index]
+          RequestListItem(viewModel = viewModel, request = request, onClick = onRequestClick)
+        }
+      }
 }
 
 /** One request list item: title, compact type labels, truncated description, and optional icon. */
