@@ -3,6 +3,9 @@ package com.android.sample.ui.map
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.sample.model.map.Location
+import com.android.sample.model.profile.UserProfile
+import com.android.sample.model.profile.UserProfileRepository
+import com.android.sample.model.profile.UserProfileRepositoryFirestore
 import com.android.sample.model.request.Request
 import com.android.sample.model.request.RequestRepository
 import com.android.sample.model.request.RequestRepositoryFirestore
@@ -28,7 +31,8 @@ data class MapUIState(
     val request: List<Request> = emptyList(),
     val errorMsg: String? = null,
     var currentRequest: Request? = null,
-    var isOwner: Boolean? = null
+    var isOwner: Boolean? = null,
+    val currentProfile: UserProfile? = null
 )
 
 /**
@@ -39,7 +43,9 @@ data class MapUIState(
  */
 class MapViewModel(
     private val requestRepository: RequestRepository =
-        RequestRepositoryFirestore(Firebase.firestore)
+        RequestRepositoryFirestore(Firebase.firestore),
+    val profileRepository: UserProfileRepository =
+        UserProfileRepositoryFirestore(Firebase.firestore)
 ) : ViewModel() {
   companion object {
     val EPFL_LOCATION = Location(46.5191, 6.5668, "EPFL")
@@ -49,6 +55,7 @@ class MapViewModel(
   val uiState: StateFlow<MapUIState> = _uiState.asStateFlow()
 
   private var isHisRequestJob: Job? = null
+  private var updateCurrentProfileJob: Job? = null
 
   init {
     fetchAcceptedRequest()
@@ -77,6 +84,29 @@ class MapViewModel(
   fun updateCurrentRequest(request: Request?) {
     _uiState.value = _uiState.value.copy(currentRequest = request)
     isHisRequest(request)
+  }
+
+  /**
+   * Update the UI by updating the current profile
+   *
+   * @param profileId the id of the owner of the current request
+   */
+  fun updateCurrentProfile(profileId: String?) {
+    updateCurrentProfileJob?.cancel()
+    updateCurrentProfileJob =
+        viewModelScope.launch {
+          try {
+            if (profileId == null) {
+              _uiState.value = _uiState.value.copy(currentProfile = null)
+            } else {
+              val currentProfile = profileRepository.getUserProfile(profileId)
+              _uiState.value = _uiState.value.copy(currentProfile = currentProfile)
+            }
+          } catch (e: Exception) {
+            setErrorMsg("Failed to get current profile: ${e.message}")
+            _uiState.value = _uiState.value.copy(currentProfile = null)
+          }
+        }
   }
 
   /** Refreshes the UI by updating the isOwner */

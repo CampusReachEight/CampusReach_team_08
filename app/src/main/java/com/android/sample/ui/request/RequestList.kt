@@ -193,8 +193,9 @@ fun RequestListItem(
           profileId = request.creatorId,
           onClick = {},
           modifier =
-              Modifier.size(ConstantRequestList.RequestItemIconSize)
-                  .align(Alignment.CenterVertically))
+              Modifier.size(ConstantRequestList.RequestItemCreatorSectionSize)
+                  .align(Alignment.CenterVertically),
+          withName = true)
       Spacer(Modifier.width(ConstantRequestList.RowSpacing))
       Column(Modifier.fillMaxWidth()) {
         Row(Modifier.fillMaxWidth()) {
