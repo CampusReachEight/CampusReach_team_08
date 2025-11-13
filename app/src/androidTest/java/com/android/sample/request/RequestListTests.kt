@@ -10,8 +10,8 @@ import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
-import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -992,20 +992,21 @@ class RequestListTests : BaseEmulatorTest() {
     composeTestRule
         .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM, useUnmergedTree = true)
         .assertCountEquals(2)
-  fun loadsProfileNameSuccessfully() {
-    val requests = sampleRequests(listOf("special_profile4"))
-    val vm =
-        RequestListViewModel(
-            FakeRequestRepository(requests),
-            FakeUserProfileRepository(withImage = setOf("special_profile4")))
+    fun loadsProfileNameSuccessfully() {
+      val requests = sampleRequests(listOf("special_profile4"))
+      val vm =
+          RequestListViewModel(
+              FakeRequestRepository(requests),
+              FakeUserProfileRepository(withImage = setOf("special_profile4")))
 
-    composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
-    composeTestRule.waitForIdle()
-    composeTestRule.waitUntil(OFFSET_5_S_MS) {
-      composeTestRule
-          .onAllNodesWithText("John", useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .size == 1
+      composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
+      composeTestRule.waitForIdle()
+      composeTestRule.waitUntil(OFFSET_5_S_MS) {
+        composeTestRule
+            .onAllNodesWithText("John", useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .size == 1
+      }
     }
   }
 }
