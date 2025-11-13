@@ -50,6 +50,7 @@ abstract class BaseEmulatorTest {
     runTest {
       // Clear auth state to avoid password mismatches from previous runs
       FirebaseEmulator.clearAuthEmulator()
+      FirebaseEmulator.clearFirestoreEmulator()
       signInUser()
     }
   }
