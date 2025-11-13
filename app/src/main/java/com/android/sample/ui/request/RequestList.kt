@@ -12,7 +12,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.model.request.Request
+import com.android.sample.model.request.RequestStatus
 import com.android.sample.model.request.RequestType
+import com.android.sample.model.request.Tags
 import com.android.sample.model.request.displayString
 import com.android.sample.ui.navigation.BottomNavigationMenu
 import com.android.sample.ui.navigation.NavigationActions
@@ -34,7 +36,10 @@ object RequestListTestTags {
   const val REQUEST_ITEM_DESCRIPTION = "requestItemDescription"
   const val EMPTY_LIST_MESSAGE = "emptyListMessage"
 
+  /** Tags for the search bar at the top of the request list screen */
   const val REQUEST_SEARCH_BAR = "requestSearchBar"
+
+  const val CLEAR_SEARCH_BUTTON = "clearSearchButton"
 
   /**
    * Tags for the filter dropdown buttons When clicked, they open the respective filter dropdown
@@ -56,6 +61,18 @@ object RequestListTestTags {
   const val REQUEST_TAG_FILTER_SEARCH_BAR = "requestTagFilterSearchBar"
   const val REQUEST_STATUS_FILTER_SEARCH_BAR = "requestStatusFilterSearchBar"
 
+  /** Tags for the sort button and menu */
+  const val REQUEST_SORT_DROPDOWN_BUTTON = "requestSortDropdown"
+  // Added explicit sort button/menu tags used by SortCriteriaButton
+  const val SORT_BUTTON = "sortButton"
+  const val SORT_MENU = "sortMenu"
+
+  const val REQUEST_SEARCH_PROGRESS = "requestSearchProgress"
+
+  fun getSortingCriteriaTag(sort: RequestSort): String = "sortingCriteria_${sort.name}"
+  // Added helper to tag each sort option in dropdown
+  fun getSortOptionTag(sort: RequestSort): String = "sortOption_${sort.name}"
+
   /**
    * Generates a tag for a given filter type and value within dropdown menus. These tags are
    * dynamically created based on filter values.
@@ -65,9 +82,12 @@ object RequestListTestTags {
   fun getRequestTypeFilterTag(requestType: RequestType): String =
       getFilterTag("requestType", requestType.displayString())
 
-  fun getRequestTagFilterTag(tag: String): String = getFilterTag("requestTag", tag)
+  fun getRequestTagFilterTag(tag: Tags): String = getFilterTag("requestTag", tag.displayString())
 
-  fun getRequestStatusFilterTag(status: String): String = getFilterTag("requestStatus", status)
+  fun getRequestStatusFilterTag(status: RequestStatus): String =
+      getFilterTag("requestStatus", status.displayString())
+
+  const val FILTER_BAR = "filterBarRow"
 }
 
 /** Request List screen scaffold: top bar, filters section, list, bottom bar, and error dialog. */

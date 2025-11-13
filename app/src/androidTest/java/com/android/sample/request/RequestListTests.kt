@@ -26,12 +26,10 @@ import com.android.sample.model.request.RequestRepositoryFirestore
 import com.android.sample.model.request.RequestStatus
 import com.android.sample.model.request.RequestType
 import com.android.sample.model.request.Tags
-import com.android.sample.model.request.displayString
 import com.android.sample.ui.profile.ProfilePictureTestTags
 import com.android.sample.ui.request.RequestListScreen
 import com.android.sample.ui.request.RequestListTestTags
 import com.android.sample.ui.request.RequestListViewModel
-import com.android.sample.ui.request.RequestSearchFilterTestTags
 import com.android.sample.utils.BaseEmulatorTest
 import java.util.Date
 import java.util.UUID
@@ -417,8 +415,8 @@ class RequestListTests : BaseEmulatorTest() {
         .onNodeWithTag(RequestListTestTags.REQUEST_TAG_FILTER_SEARCH_BAR)
         .performTextInput("ind")
 
-    val indoorTag = RequestListTestTags.getRequestTagFilterTag(Tags.INDOOR.displayString())
-    val outdoorTag = RequestListTestTags.getRequestTagFilterTag(Tags.OUTDOOR.displayString())
+    val indoorTag = RequestListTestTags.getRequestTagFilterTag(Tags.INDOOR)
+    val outdoorTag = RequestListTestTags.getRequestTagFilterTag(Tags.OUTDOOR)
 
     composeTestRule.onNodeWithTag(indoorTag).assertExists()
     composeTestRule.onAllNodesWithTag(outdoorTag).assertCountEquals(COUNT_ZERO)
@@ -644,7 +642,7 @@ class RequestListTests : BaseEmulatorTest() {
 
     // Open sort menu using dedicated test tag
     composeTestRule
-        .onNodeWithTag(RequestSearchFilterTestTags.SORT_BUTTON)
+        .onNodeWithTag(RequestListTestTags.SORT_BUTTON)
         .assertExists()
         .assertIsDisplayed()
         .performClick()
@@ -662,7 +660,7 @@ class RequestListTests : BaseEmulatorTest() {
     }
 
     // Switch to Most participants
-    composeTestRule.onNodeWithTag(RequestSearchFilterTestTags.SORT_BUTTON).performClick()
+    composeTestRule.onNodeWithTag(RequestListTestTags.SORT_BUTTON).performClick()
     composeTestRule.onNodeWithText("Most participants", ignoreCase = true).performClick()
 
     // Expect request with 5 participants (A Alpha) first.

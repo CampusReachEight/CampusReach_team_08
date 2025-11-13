@@ -6,12 +6,14 @@ import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import com.android.sample.AppNavigation
@@ -525,5 +527,201 @@ class EndToEndTests : BaseEmulatorTest() {
         .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)
         .assertTextContains("Cancel", substring = true, ignoreCase = true)
         .performClick()
+  }
+
+  // full end-to-end flow test covering sign in, search, accept existing request, create own
+  // request, filter, edit, re-filter, map check, and logout.
+  @Test
+  fun fullFlow_search_accept_create_filter_edit_map_logout() {
+    // Prepare an existing request under another account to accept & search for
+    hadARequestWithOtherAccount()
+
+    // Initialize (sign in) with a fresh user
+    initialize(fourthName, fourthEmail)
+
+    // 2) Search existing request using keyword from description + location name
+    val searchQuery = "beeing EPFL" // combines word from description + location name
+    composeTestRule
+        .onNodeWithTag(RequestListTestTags.REQUEST_SEARCH_BAR)
+        .assertIsDisplayed()
+        .performTextInput(searchQuery)
+
+    // Wait until only 1 request matches (the seeded one)
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule
+          .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM_TITLE, useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .size == 1
+    }
+
+    // 3) Accept that request
+    composeTestRule
+        .onNodeWithTag(RequestListTestTags.REQUEST_ITEM)
+        .assertIsDisplayed()
+        .performClick()
+
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule
+          .onAllNodesWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    composeTestRule
+        .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)
+        .assertIsDisplayed()
+        .performClick() // Accept
+
+    // Go back to list
+    composeTestRule
+        .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_GO_BACK)
+        .assertIsDisplayed()
+        .performClick()
+
+    // Clear search so creation list logic is simpler
+    composeTestRule.waitForIdle()
+    composeTestRule
+        .onNodeWithTag(RequestListTestTags.CLEAR_SEARCH_BUTTON)
+        .assertIsDisplayed()
+        .performClick()
+
+    // 4) Create own request
+    goAddRequest()
+    val myTitle = "My Created Request"
+    val myDescription = "Collaborate at EPFL campus"
+    addElementOfRequest(
+        title = myTitle,
+        description = myDescription,
+        type = RequestType.STUDY_GROUP,
+        location = "EPFL",
+        tags = Tags.GROUP_WORK)
+
+    // Wait for it to appear in list
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule
+          .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM_TITLE, true)
+          .fetchSemanticsNodes()
+          .any { node ->
+            node.config.getOrNull(SemanticsProperties.Text)?.any { it.text.contains(myTitle) } ==
+                true
+          }
+    }
+
+    // Ensure filter bar itself is present
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule
+          .onAllNodesWithTag(RequestListTestTags.FILTER_BAR)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    Thread.sleep(250)
+
+    // 5) Filters (scroll the FILTER_BAR LazyRow to reveal each button as needed)
+    val typeBtnTag = RequestListTestTags.REQUEST_TYPE_FILTER_DROPDOWN_BUTTON
+    val tagBtnTag = RequestListTestTags.REQUEST_TAG_FILTER_DROPDOWN_BUTTON
+    val statusBtnTag = RequestListTestTags.REQUEST_STATUS_FILTER_DROPDOWN_BUTTON
+
+    // Scroll to type button then click
+    composeTestRule
+        .onNodeWithTag(RequestListTestTags.FILTER_BAR)
+        .performScrollToNode(hasTestTag(typeBtnTag))
+    composeTestRule.onNodeWithTag(typeBtnTag).assertIsDisplayed().performClick()
+    val studyGroupTag = RequestListTestTags.getRequestTypeFilterTag(RequestType.STUDY_GROUP)
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule.onAllNodesWithTag(studyGroupTag).fetchSemanticsNodes().isNotEmpty()
+    }
+    composeTestRule.onNodeWithTag(studyGroupTag).assertExists().performClick()
+    composeTestRule.onNodeWithTag(typeBtnTag).performClick()
+    Thread.sleep(150)
+
+    // Scroll to tag button then click
+    composeTestRule
+        .onNodeWithTag(RequestListTestTags.FILTER_BAR)
+        .performScrollToNode(hasTestTag(tagBtnTag))
+    composeTestRule.onNodeWithTag(tagBtnTag).assertIsDisplayed().performClick()
+    val groupWorkTag = RequestListTestTags.getRequestTagFilterTag(Tags.GROUP_WORK)
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule.onAllNodesWithTag(groupWorkTag).fetchSemanticsNodes().isNotEmpty()
+    }
+    composeTestRule.onNodeWithTag(groupWorkTag).assertExists().performClick()
+    composeTestRule.onNodeWithTag(tagBtnTag).performClick()
+    Thread.sleep(150)
+
+    // Scroll to status button then click
+    composeTestRule
+        .onNodeWithTag(RequestListTestTags.FILTER_BAR)
+        .performScrollToNode(hasTestTag(statusBtnTag))
+    composeTestRule.onNodeWithTag(statusBtnTag).assertIsDisplayed().performClick()
+    val openStatusTag = RequestListTestTags.getRequestStatusFilterTag(RequestStatus.IN_PROGRESS)
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule.onAllNodesWithTag(openStatusTag).fetchSemanticsNodes().isNotEmpty()
+    }
+    composeTestRule.onNodeWithTag(openStatusTag).assertExists().performClick()
+    composeTestRule.onNodeWithTag(statusBtnTag).performClick()
+
+    // Expect only our request remains
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      val nodes =
+          composeTestRule
+              .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM_TITLE, useUnmergedTree = true)
+              .fetchSemanticsNodes()
+      nodes.size == 1 &&
+          nodes.first().config.getOrNull(SemanticsProperties.Text)?.any {
+            it.text.contains(myTitle)
+          } == true
+    }
+
+    // 6) Edit my request
+    goToEditScreen()
+    val editedTitle = "My Edited Request"
+    composeTestRule.onNodeWithTag(EditRequestScreenTestTags.INPUT_TITLE).performTextClearance()
+    composeTestRule
+        .onNodeWithTag(EditRequestScreenTestTags.INPUT_TITLE)
+        .performTextInput(editedTitle)
+    composeTestRule
+        .onNodeWithTag(EditRequestScreenTestTags.SAVE_BUTTON)
+        .performScrollTo()
+        .performClick()
+
+    // Wait for updated title in list
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule
+          .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM_TITLE, useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .any {
+            it.config.getOrNull(SemanticsProperties.Text)?.any { s ->
+              s.text.contains(editedTitle)
+            } == true
+          }
+    }
+
+    // 7) Update filters (re-apply search on edited title + location) and confirm visibility
+    composeTestRule
+        .onNodeWithTag(RequestListTestTags.REQUEST_SEARCH_BAR)
+        .performTextInput("Edited EPFL")
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      val count =
+          composeTestRule
+              .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM_TITLE, useUnmergedTree = true)
+              .fetchSemanticsNodes()
+              .size
+      count == 1
+    }
+
+    // 8) Open map and verify request title appears after selecting marker list (cannot click marker
+    // directly -> ensure map screen loads)
+    composeTestRule.onNodeWithTag(NavigationTestTags.MAP_TAB).assertIsDisplayed().performClick()
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule
+          .onAllNodesWithTag(MapTestTags.GOOGLE_MAP_SCREEN)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+    // (Best effort) Assert bottom sheet not crashing when opened later by some interaction - here
+    // we just ensure map visible.
+
+    // 9) Sign out
+    logOut()
   }
 }

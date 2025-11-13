@@ -1,19 +1,44 @@
 package com.android.sample.ui.request
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
 
 /** Centralized filter UI consuming dynamic facets from ViewModel. */
@@ -44,7 +69,10 @@ internal fun FiltersSection(
 
   // Horizontal scrollable bar of buttons: sort first, then filters
   LazyRow(
-      modifier = Modifier.fillMaxWidth().padding(horizontal = ConstantRequestList.PaddingLarge),
+      modifier =
+          Modifier.fillMaxWidth()
+              .padding(horizontal = ConstantRequestList.PaddingLarge)
+              .testTag(RequestListTestTags.FILTER_BAR),
       horizontalArrangement = Arrangement.spacedBy(ConstantRequestList.RowSpacing)) {
         // Sorting button first
         item {
@@ -91,11 +119,12 @@ private fun FilterMenuButton(
 ) {
   OutlinedButton(onClick = onClick, modifier = modifier.testTag(testTag)) {
     Row(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(ConstantRequestList.RowSpacing),
         verticalAlignment = Alignment.CenterVertically) {
           val label = if (selectedCount > 0) "$title ($selectedCount)" else title
           Text(label)
-          Icon(imageVector = Icons.Filled.ArrowDropDown, contentDescription = null)
+          androidx.compose.material3.Icon(
+              imageVector = Icons.Filled.ArrowDropDown, contentDescription = null)
         }
   }
 }
@@ -112,27 +141,24 @@ private fun FilterMenuPanel(
 ) {
   Column(
       modifier = Modifier.fillMaxWidth().padding(horizontal = ConstantRequestList.PaddingLarge)) {
-        Spacer(modifier = Modifier.height(ConstantRequestList.PaddingSmall))
-        Surface(
-            shape = MaterialTheme.shapes.medium, tonalElevation = 2.dp, shadowElevation = 2.dp) {
-              Column(
-                  modifier = Modifier.fillMaxWidth().padding(ConstantRequestList.PaddingMedium)) {
-                    var localQuery by rememberSaveable { mutableStateOf("") }
-                    FilterMenuSearchBar(
-                        query = localQuery,
-                        onQueryChange = { localQuery = it },
-                        dropdownSearchBarTestTag = dropdownSearchBarTestTag)
-                    Spacer(modifier = Modifier.height(ConstantRequestList.PaddingSmall))
-                    FilterMenuValuesList(
-                        values = values,
-                        selected = selected,
-                        counts = counts,
-                        labelOf = labelOf,
-                        onToggle = onToggle,
-                        localQuery = localQuery,
-                        rowTestTagOf = rowTestTagOf)
-                  }
-            }
+        Surface(shape = MaterialTheme.shapes.medium) {
+          Column(modifier = Modifier.fillMaxWidth().padding(ConstantRequestList.PaddingMedium)) {
+            var localQuery by rememberSaveable { mutableStateOf("") }
+            FilterMenuSearchBar(
+                query = localQuery,
+                onQueryChange = { localQuery = it },
+                dropdownSearchBarTestTag = dropdownSearchBarTestTag)
+            Spacer(modifier = Modifier.height(ConstantRequestList.PaddingSmall))
+            FilterMenuValuesList(
+                values = values,
+                selected = selected,
+                counts = counts,
+                labelOf = labelOf,
+                onToggle = onToggle,
+                localQuery = localQuery,
+                rowTestTagOf = rowTestTagOf)
+          }
+        }
       }
 }
 
@@ -206,18 +232,23 @@ private fun RequestSearchBar(
       singleLine = true,
       placeholder = { Text("Search") },
       trailingIcon = {
-        if (query.isNotEmpty()) {
-          TextButton(onClick = onClear) { Text("Clear") }
-        } else if (isSearching) {
-          CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+        when {
+          query.isNotEmpty() -> {
+            TextButton(
+                onClick = onClear,
+                modifier = Modifier.testTag(RequestListTestTags.CLEAR_SEARCH_BUTTON)) {
+                  Text("Clear")
+                }
+          }
+          isSearching -> {
+            CircularProgressIndicator(
+                modifier =
+                    Modifier.size(ConstantRequestList.SearchBarSize)
+                        .testTag(RequestListTestTags.REQUEST_SEARCH_PROGRESS),
+                strokeWidth = ConstantRequestList.SearchBarStrokeWidth)
+          }
         }
       })
-}
-
-// --- Sorting UI ---
-object RequestSearchFilterTestTags {
-  const val SORT_BUTTON = "requestSortButton"
-  const val SORT_MENU = "requestSortMenu"
 }
 
 /**
@@ -238,20 +269,24 @@ internal fun SortCriteriaButton(
   Box(modifier = modifier) {
     FilledTonalButton(
         onClick = { expanded = true },
-        modifier = Modifier.testTag(RequestSearchFilterTestTags.SORT_BUTTON),
-        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)) {
+        modifier = Modifier.testTag(RequestListTestTags.SORT_BUTTON),
+        contentPadding =
+            PaddingValues(
+                horizontal = ConstantRequestList.PaddingMedium,
+                vertical = ConstantRequestList.PaddingSmall)) {
           Text(labelOf(current))
-          Spacer(Modifier.width(4.dp))
-          Icon(Icons.Filled.ArrowDropDown, contentDescription = null)
+          Spacer(Modifier.width(ConstantRequestList.RowSpacing))
+          androidx.compose.material3.Icon(Icons.Filled.ArrowDropDown, contentDescription = null)
         }
 
     DropdownMenu(
         expanded = expanded,
         onDismissRequest = { expanded = false },
         properties = PopupProperties(focusable = false),
-        modifier = Modifier.testTag(RequestSearchFilterTestTags.SORT_MENU)) {
+        modifier = Modifier.testTag(RequestListTestTags.SORT_MENU)) {
           RequestSort.entries.forEach { option ->
             DropdownMenuItem(
+                modifier = Modifier.testTag(RequestListTestTags.getSortOptionTag(option)),
                 text = { Text(labelOf(option)) },
                 onClick = {
                   expanded = false
@@ -259,7 +294,10 @@ internal fun SortCriteriaButton(
                 },
                 leadingIcon =
                     if (option == current) {
-                      { Icon(Icons.Filled.ArrowDropDown, contentDescription = null) }
+                      {
+                        androidx.compose.material3.Icon(
+                            Icons.Filled.ArrowDropDown, contentDescription = null)
+                      }
                     } else null)
           }
         }

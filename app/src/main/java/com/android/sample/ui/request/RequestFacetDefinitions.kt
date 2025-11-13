@@ -45,9 +45,7 @@ object RequestFacetDefinitions {
               extract = { listOf(it.status) },
               dropdownButtonTag = RequestListTestTags.REQUEST_STATUS_FILTER_DROPDOWN_BUTTON,
               searchBarTag = RequestListTestTags.REQUEST_STATUS_FILTER_SEARCH_BAR,
-              rowTagOf = { v ->
-                RequestListTestTags.getRequestStatusFilterTag((v as RequestStatus).displayString())
-              },
+              rowTagOf = { v -> RequestListTestTags.getRequestStatusFilterTag(v as RequestStatus) },
               labelOf = { (it as RequestStatus).displayString() },
           ),
           FacetDefinition(
@@ -57,9 +55,7 @@ object RequestFacetDefinitions {
               extract = { it.tags },
               dropdownButtonTag = RequestListTestTags.REQUEST_TAG_FILTER_DROPDOWN_BUTTON,
               searchBarTag = RequestListTestTags.REQUEST_TAG_FILTER_SEARCH_BAR,
-              rowTagOf = { v ->
-                RequestListTestTags.getRequestTagFilterTag((v as Tags).displayString())
-              },
+              rowTagOf = { v -> RequestListTestTags.getRequestTagFilterTag(v as Tags) },
               labelOf = { (it as Tags).displayString() },
           ),
       )

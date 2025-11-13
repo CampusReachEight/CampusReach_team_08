@@ -20,8 +20,8 @@ object ConstantRequestList {
   val RequestItemInnerPadding = 8.dp
 
   // Search bar
-  val SearchBarHeight = 56.dp
-  val SearchBarCornerRadius = 12.dp
+  val SearchBarSize = 18.dp
+  val SearchBarStrokeWidth = 2.dp
 
   // Filter buttons (collapsed headers)
   val FilterButtonHeight = 40.dp
