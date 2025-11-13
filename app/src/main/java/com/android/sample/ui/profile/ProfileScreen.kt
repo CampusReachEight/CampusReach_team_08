@@ -3,15 +3,14 @@ package com.android.sample.ui.profile
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.profile.composables.EditProfileDialog
-import com.android.sample.ui.profile.composables.LoadingIndicator
 import com.android.sample.ui.profile.composables.LogoutDialog
 import com.android.sample.ui.profile.composables.ProfileContent
+import com.android.sample.ui.profile.composables.ProfileLoadingBuffer
 import com.android.sample.ui.profile.composables.ProfileTopBar
 import com.android.sample.ui.theme.appPalette
 
@@ -31,12 +30,12 @@ fun ProfileScreen(viewModel: ProfileViewModel = viewModel(), onBackClick: () -> 
       topBar = { ProfileTopBar(onBackClick) }) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
           when {
-            state.isLoading ->
-                LoadingIndicator(Modifier.align(Alignment.Center).testTag("profile_loading"))
+            state.isLoading -> ProfileLoadingBuffer(Modifier.fillMaxSize())
             else ->
                 ProfileContent(
                     state = state,
                     onLogoutRequested = { viewModel.showLogoutDialog() },
+                    onEditRequested = { viewModel.setEditMode(true) },
                     modifier = Modifier.fillMaxSize())
           }
 
@@ -52,8 +51,8 @@ fun ProfileScreen(viewModel: ProfileViewModel = viewModel(), onBackClick: () -> 
               initialName = state.userName,
               initialSection = state.userSection,
               onSave = { newName, newSection ->
-                viewModel.updateUserName(newName)
-                viewModel.updateSection(newSection)
+                // Persist to Firestore and update UI when done
+                viewModel.saveProfileChanges(newName, newSection)
                 viewModel.setEditMode(false)
               },
               onCancel = { viewModel.setEditMode(false) })
