@@ -10,9 +10,12 @@ import com.google.firebase.ktx.Firebase
 import java.util.Date
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
@@ -69,14 +72,16 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
 
   @Before
   override fun setUp() {
-    super.setUp()
+    super.setUp() // Initialize auth and db
 
     runTest {
       auth.signOut()
       signInUser()
+
+      // CRITICAL: Clear any existing data BEFORE creating repository
+      clearAllTestData()
     }
 
-    // NOW create repository with correct auth context (outside runTest)
     repository = UserProfileRepositoryFirestore(db)
   }
 
@@ -88,7 +93,6 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
 
   private suspend fun clearAllTestData() {
     try {
-      // Delete ALL documents from both collections, not just current user
       val publicSnapshot = db.collection(PUBLIC_PROFILES_PATH).get().await()
       val privateSnapshot = db.collection(PRIVATE_PROFILES_PATH).get().await()
 
@@ -100,8 +104,8 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
 
       batch.commit().await()
 
-      // Sign out to ensure clean state
-      auth.signOut()
+      // Small delay to ensure deletion completes
+      kotlinx.coroutines.delay(100)
     } catch (e: Exception) {
       Log.e("TestCleanup", "Error clearing test data", e)
     }
@@ -469,25 +473,29 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
   }
 
   @Test
-  fun search_largeDatabase_performance() =
-      runTest(timeout = 30.seconds) { // Extended timeout for seeding
-        // Seed 200 users with varying names
-        repeat(200) { idx ->
-          val name = "$idx" + "User"
-          val lastName = "LastName$idx"
-          val email = "${name.lowercase()}.${lastName.lowercase()}@example.com"
-          addProfileFor(email, name = name, lastName = lastName)
-        }
+  fun search_largeDatabase_performance() = runBlocking {
+    // Real timeout, not virtual timeout
+    withTimeout(30_000) {
 
-        val objective = 500L // milliseconds
+      // Seed 200 users
+      repeat(200) { idx ->
+        val name = "$idx" + "User"
+        val lastName = "LastName$idx"
+        val email = "${name.lowercase()}.${lastName.lowercase()}@example.com"
 
-        val startTime = System.currentTimeMillis()
-        val results =
-            repository.searchUserProfiles("11", limit = 9) // 10 results expected but limit 9
-        val endTime = System.currentTimeMillis()
-
-        val duration = endTime - startTime
-        assertTrue(duration < objective)
-        assertEquals(9, results.size)
+        // sign in and add profile
+        addProfileFor(email, name = name, lastName = lastName)
       }
+
+      // Allow Firestore indexing to catch up
+      delay(800)
+
+      val start = System.currentTimeMillis()
+      val results = repository.searchUserProfiles("11", limit = 9)
+      val duration = System.currentTimeMillis() - start
+
+      assertTrue("Query took too long: $duration ms", duration < 500)
+      assertEquals(9, results.size)
+    }
+  }
 }
