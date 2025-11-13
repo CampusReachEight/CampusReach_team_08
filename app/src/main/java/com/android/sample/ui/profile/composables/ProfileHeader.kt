@@ -38,7 +38,8 @@ fun ProfileHeader(
         Box(modifier = Modifier.padding(ProfileDimens.HeaderPadding)) {
           Row(verticalAlignment = Alignment.CenterVertically) {
             ProfilePicture(
-                profileId = state.profileId, modifier = Modifier.size(ProfileDimens.ProfilePicture))
+                profileId = state.profileId, modifier = Modifier.size(ProfileDimens.ProfilePicture).testTag(
+                    ProfileTestTags.PROFILE_HEADER_PROFILE_PICTURE))
             Spacer(modifier = Modifier.width(ProfileDimens.HeaderSpacer))
             Column {
               Text(

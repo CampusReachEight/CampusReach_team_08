@@ -17,7 +17,6 @@ object ProfileTestTags {
   // Header
   const val PROFILE_HEADER = "profile_header"
   const val PROFILE_HEADER_PROFILE_PICTURE = "profile_header_profile_picture"
-  const val PROFILE_HEADER_PICTURE = "profile_header_picture" // alternate/common name
   const val PROFILE_HEADER_NAME = "profile_header_name"
   const val PROFILE_HEADER_EMAIL = "profile_header_email"
   const val PROFILE_HEADER_EDIT_BUTTON = "profile_header_edit_button"

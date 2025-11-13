@@ -82,7 +82,7 @@ class ProfileUiTests {
 
     composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_HEADER_NAME).assertIsDisplayed()
     composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_HEADER_EMAIL).assertIsDisplayed()
-    composeTestRule.onNodeWithContentDescription("Profile Picture").assertIsDisplayed()
+    composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_HEADER_PROFILE_PICTURE).assertIsDisplayed()
   }
 
   @Test

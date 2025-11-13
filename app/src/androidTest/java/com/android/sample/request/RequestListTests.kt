@@ -8,9 +8,13 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.filter
+import androidx.compose.ui.test.hasAnyDescendant
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onChildren
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -315,9 +319,11 @@ class RequestListTests : BaseEmulatorTest() {
     composeTestRule
         .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM_DESCRIPTION, useUnmergedTree = true)
         .assertCountEquals(COUNT_THREE)
-    composeTestRule
-        .onAllNodesWithTag(ProfilePictureTestTags.PROFILE_PICTURE_DEFAULT, useUnmergedTree = true)
-        .assertCountEquals(COUNT_THREE)
+      composeTestRule
+          .onNodeWithTag(RequestListTestTags.REQUEST_LIST, useUnmergedTree = true)
+          .onChildren()
+          .filter(hasAnyDescendant(hasTestTag(ProfilePictureTestTags.PROFILE_PICTURE_DEFAULT)))
+          .assertCountEquals(COUNT_THREE)
   }
 
   @Test
@@ -683,10 +689,11 @@ class RequestListTests : BaseEmulatorTest() {
     composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
     composeTestRule.waitForIdle()
     composeTestRule.waitUntil(OFFSET_5_S_MS) {
-      composeTestRule
-          .onAllNodesWithTag(ProfilePictureTestTags.PROFILE_PICTURE, useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .size == 3
+        composeTestRule
+            .onNodeWithTag(RequestListTestTags.REQUEST_LIST, useUnmergedTree = true)
+            .onChildren()
+            .filter(hasAnyDescendant(hasTestTag(ProfilePictureTestTags.PROFILE_PICTURE)))
+            .fetchSemanticsNodes().size == COUNT_THREE
     }
   }
 
