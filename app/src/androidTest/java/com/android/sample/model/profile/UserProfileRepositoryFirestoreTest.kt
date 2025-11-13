@@ -69,6 +69,8 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
   override fun setUp() {
     super.setUp()
     repository = UserProfileRepositoryFirestore(db)
+    FirebaseEmulator.clearFirestoreEmulator()
+    FirebaseEmulator.clearAuthEmulator()
   }
 
   @After

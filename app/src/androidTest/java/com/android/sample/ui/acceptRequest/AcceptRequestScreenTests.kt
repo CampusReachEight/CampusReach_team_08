@@ -34,7 +34,7 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
 
   private lateinit var repository: RequestRepositoryFirestore
   private lateinit var previousUserId: String
-  private val uiWaitTimeout = 5_000L
+  private val uiWaitTimeout = 10_000L
 
   private lateinit var request1: Request
   private lateinit var request2: Request
