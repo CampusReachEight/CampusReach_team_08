@@ -69,7 +69,7 @@ class AcceptRequestViewModel(
             Log.d(
                 "AcceptRequest",
                 "Profile fetched - name: ${creatorProfile.name}, lastName: ${creatorProfile.lastName}")
-            creatorName = "${creatorProfile.name} ${creatorProfile.lastName}"
+            creatorName = "${creatorProfile.name} ${creatorProfile.lastName}".trim()
             Log.d("AcceptRequest", "SUCCESS - Final creator name: $creatorName")
           } catch (e: Exception) {
             Log.e("AcceptRequest", "FAILED - Exception: ${e.message}", e)
