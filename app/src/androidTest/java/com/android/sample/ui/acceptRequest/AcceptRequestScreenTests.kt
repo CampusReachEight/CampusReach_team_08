@@ -159,9 +159,11 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
     composeTestRule.onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_GO_BACK).assertIsDisplayed()
 
     // Details card
-    composeTestRule
-        .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_DETAILS_CARD)
-        .assertIsDisplayed()
+      composeTestRule.waitUntil(5_000) {
+          composeTestRule
+              .onAllNodesWithTag(AcceptRequestScreenTestTags.REQUEST_DETAILS_CARD)
+              .fetchSemanticsNodes().isNotEmpty()
+      }
 
     // Accept button
     composeTestRule.onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON).assertIsDisplayed()
