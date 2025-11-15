@@ -1,0 +1,13 @@
+{
+  "name": "campusreach-automation",
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "update": "node scripts/update-request-statuses.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.0.0"
+  }
+}
