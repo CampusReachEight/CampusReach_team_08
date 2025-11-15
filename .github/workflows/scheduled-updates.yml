@@ -2,7 +2,8 @@ name: Update requests status
 
 on:
   schedule:
-    - cron: '5 * * * *'
+    # Triggers every 15min
+    - cron: '*/15 * * * *'
   workflow_dispatch:
 
 jobs:
