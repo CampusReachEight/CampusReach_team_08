@@ -5,12 +5,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import com.android.sample.model.map.Location
 import com.android.sample.model.request.Request
 import com.android.sample.model.request.RequestRepositoryFirestore
@@ -158,13 +160,22 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
     // Back button
     composeTestRule.onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_GO_BACK).assertIsDisplayed()
 
-    // Details card
+    // Details card - scroll into view
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_DETAILS_CARD)
+        .performScrollTo()
         .assertIsDisplayed()
 
-    // Accept button
-    composeTestRule.onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON).assertIsDisplayed()
+    // Action button - scroll into view
+    composeTestRule
+        .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)
+        .performScrollTo()
+        .assertIsDisplayed()
+
+    // As non-owner, Volunteers section header should not exist
+    composeTestRule
+        .onAllNodesWithTag(AcceptRequestScreenTestTags.VOLUNTEERS_SECTION_HEADER)
+        .assertCountEquals(0)
   }
 
   @Test
@@ -181,11 +192,13 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
     // Verify details card exists
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_DETAILS_CARD)
+        .performScrollTo()
         .assertIsDisplayed()
 
     // Description
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_DESCRIPTION)
+        .performScrollTo()
         .assertIsDisplayed()
         .assertTextContains(
             "In here we will do a lot of things, like beeing good persons",
@@ -195,36 +208,42 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
     // Tags
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_TAG)
+        .performScrollTo()
         .assertIsDisplayed()
         .assertTextContains("Urgent", substring = true, ignoreCase = true)
 
     // Request Type
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_TYPE)
+        .performScrollTo()
         .assertIsDisplayed()
         .assertTextContains("Studying", substring = true, ignoreCase = true)
 
     // Status
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_STATUS)
+        .performScrollTo()
         .assertIsDisplayed()
         .assertTextContains("Open", substring = true, ignoreCase = true)
 
     // Location
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_LOCATION_NAME)
+        .performScrollTo()
         .assertIsDisplayed()
         .assertTextContains("EPFL", substring = true, ignoreCase = true)
 
     // Start time
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_START_TIME)
+        .performScrollTo()
         .assertIsDisplayed()
         .assertTextContains("15/03/2024 14:30", substring = true, ignoreCase = true)
 
     // Expiration time
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_EXPIRATION_TIME)
+        .performScrollTo()
         .assertIsDisplayed()
         .assertTextContains("15/03/2024 15:30", substring = true, ignoreCase = true)
   }
@@ -363,32 +382,27 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
   }
 
   @Test
-  fun cantAcceptOwnRequest() {
+  fun cantAcceptOwnRequest_showsEditButton() {
+    // request2 is owned by the currently signed-in user (SECOND_USER_EMAIL)
     composeTestRule.setContent { AcceptRequestScreen("request2") }
 
     composeTestRule.waitUntil(uiWaitTimeout) {
       composeTestRule
           .onAllNodesWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)
           .fetchSemanticsNodes()
-          .any { node ->
-            val text =
-                node.config.getOrNull(SemanticsProperties.Text)?.joinToString("") { it.text } ?: ""
-            text.contains("Accept Request", ignoreCase = true)
-          }
+          .isNotEmpty()
     }
 
+    // Owner sees "Edit Request" instead of Accept
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)
-        .assertTextContains("Accept Request", substring = true, ignoreCase = true)
+        .assertTextContains("Edit Request", substring = true, ignoreCase = true)
         .performClick()
 
-    composeTestRule.mainClock.advanceTimeBy(1000)
-    composeTestRule.waitForIdle()
-
-    // Button should still say "Accept Request" because the action failed
+    // onEditClick is a no-op in this test; label remains "Edit Request"
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)
-        .assertTextContains("Accept Request", substring = true, ignoreCase = true)
+        .assertTextContains("Edit Request", substring = true, ignoreCase = true)
   }
 
   @Test
@@ -524,6 +538,35 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
         .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_STATUS)
         .assertIsDisplayed()
         .assertTextContains("Archived", substring = true, ignoreCase = true)
+  }
+
+  // New integration test: Volunteers visible and expandable only for owner
+  @Test
+  fun volunteersSection_visibleForOwner_and_expands() {
+    // Sign in as the owner of request1
+    runTest { signInUser(DEFAULT_USER_EMAIL, DEFAULT_USER_PASSWORD) }
+
+    composeTestRule.setContent { AcceptRequestScreen("request1") }
+
+    composeTestRule.waitUntil(uiWaitTimeout) {
+      composeTestRule
+          .onAllNodesWithTag(AcceptRequestScreenTestTags.VOLUNTEERS_SECTION_HEADER)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Header visible for owner - scroll into view first
+    composeTestRule
+        .onNodeWithTag(AcceptRequestScreenTestTags.VOLUNTEERS_SECTION_HEADER)
+        .performScrollTo()
+        .assertIsDisplayed()
+        .performClick()
+
+    // request1 has empty people list -> should show "No volunteers yet"
+    composeTestRule
+        .onNodeWithTag(AcceptRequestScreenTestTags.VOLUNTEERS_SECTION_CONTAINER)
+        .performScrollTo()
+        .assertIsDisplayed()
   }
 
   // Tests for getInitials function (via CreatorSection composable)

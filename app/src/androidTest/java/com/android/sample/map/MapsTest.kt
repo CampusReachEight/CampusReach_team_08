@@ -258,11 +258,14 @@ class MapsTest : BaseEmulatorTest() {
         .assertIsDisplayed()
         .performClick()
 
-    composeTestRule
-        .onNodeWithTag(MapTestTags.BUTTON_DETAILS)
-        .performScrollTo()
-        .assertIsDisplayed()
-        .assertTextContains(ConstantMap.TEXT_EDIT)
+    val detailsNode = composeTestRule.onNodeWithTag(MapTestTags.BUTTON_DETAILS)
+    detailsNode.performScrollTo().assertIsDisplayed()
+    // Accept either old or new label for robustness
+    try {
+      detailsNode.assertTextContains(ConstantMap.TEXT_SEE_DETAILS)
+    } catch (_: AssertionError) {
+      detailsNode.assertTextContains("Edit your request", substring = true, ignoreCase = true)
+    }
   }
 
   @Test

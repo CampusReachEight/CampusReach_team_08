@@ -2,6 +2,7 @@ package com.android.sample.ui.overview
 
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -35,6 +36,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,6 +50,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.model.request.displayString
 import com.android.sample.ui.navigation.NavigationTestTags
+import com.android.sample.ui.profile.ProfilePicture
+import com.google.firebase.auth.FirebaseAuth
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -67,6 +73,8 @@ object AcceptRequestScreenTestTags {
   const val REQUEST_CREATOR = "requestCreator"
   const val REQUEST_CREATOR_AVATAR = "requestCreatorAvatar"
   const val REQUEST_DETAILS_CARD = "requestDetailsCard"
+  const val VOLUNTEERS_SECTION_HEADER = "volunteersHeader"
+  const val VOLUNTEERS_SECTION_CONTAINER = "volunteersContainer"
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -74,7 +82,8 @@ object AcceptRequestScreenTestTags {
 fun AcceptRequestScreen(
     requestId: String,
     acceptRequestViewModel: AcceptRequestViewModel = viewModel(),
-    onGoBack: () -> Unit = {}
+    onGoBack: () -> Unit = {},
+    onEditClick: (String) -> Unit = {}
 ) {
   LaunchedEffect(requestId) { acceptRequestViewModel.loadRequest(requestId) }
 
@@ -89,6 +98,9 @@ fun AcceptRequestScreen(
       acceptRequestViewModel.clearErrorMsg()
     }
   }
+
+  // UI local state
+  var volunteersExpanded by rememberSaveable { mutableStateOf(false) }
 
   Scaffold(
       modifier = Modifier.testTag(NavigationTestTags.ACCEPT_REQUEST_SCREEN),
@@ -122,6 +134,7 @@ fun AcceptRequestScreen(
             verticalArrangement =
                 Arrangement.spacedBy(AcceptRequestScreenConstants.SECTION_SPACING)) {
               requestState.request?.let { request ->
+                val isOwner = FirebaseAuth.getInstance().currentUser?.uid == request.creatorId
                 // Main Details Card
                 Card(
                     modifier =
@@ -191,10 +204,12 @@ fun AcceptRequestScreen(
 
                 Spacer(modifier = Modifier.height(AcceptRequestScreenConstants.BUTTON_TOP_SPACING))
 
-                // Accept/Cancel Button
+                // Action Button (Accept/Cancel for non-owners, Edit for owners)
                 FilledTonalButton(
                     onClick = {
-                      if (requestState.accepted) {
+                      if (isOwner) {
+                        onEditClick(requestId)
+                      } else if (requestState.accepted) {
                         acceptRequestViewModel.cancelAcceptanceToRequest(requestId)
                       } else {
                         acceptRequestViewModel.acceptRequest(requestId)
@@ -213,11 +228,79 @@ fun AcceptRequestScreen(
                       } else {
                         Text(
                             text =
-                                if (requestState.accepted) "Cancel Acceptance"
+                                if (isOwner) "Edit Request"
+                                else if (requestState.accepted) "Cancel Acceptance"
                                 else "Accept Request",
                             style = MaterialTheme.typography.labelLarge)
                       }
                     }
+
+                // Volunteers expandable section (owners only)
+                if (isOwner) {
+                  Column(
+                      modifier =
+                          Modifier.fillMaxWidth()
+                              .testTag(AcceptRequestScreenTestTags.VOLUNTEERS_SECTION_CONTAINER)) {
+                        Row(
+                            modifier =
+                                Modifier.fillMaxWidth()
+                                    .clip(
+                                        RoundedCornerShape(
+                                            AcceptRequestScreenConstants.CARD_CORNER_RADIUS))
+                                    .clickable { volunteersExpanded = !volunteersExpanded }
+                                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                                    .padding(AcceptRequestScreenConstants.CREATOR_SECTION_PADDING)
+                                    .semantics(mergeDescendants = true) {}
+                                    .testTag(AcceptRequestScreenTestTags.VOLUNTEERS_SECTION_HEADER),
+                            verticalAlignment = Alignment.CenterVertically) {
+                              Icon(
+                                  imageVector = Icons.Outlined.Group,
+                                  contentDescription = "Volunteers",
+                                  tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                              Spacer(
+                                  modifier =
+                                      Modifier.width(
+                                          AcceptRequestScreenConstants.ICON_TEXT_SPACING))
+                              Text(
+                                  text = "Volunteers",
+                                  style = MaterialTheme.typography.titleMedium,
+                                  color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                  modifier =
+                                      Modifier.weight(
+                                          AcceptRequestScreenConstants.TEXT_COLUMN_WEIGHT))
+                              Icon(
+                                  imageVector =
+                                      if (volunteersExpanded) Icons.Outlined.KeyboardArrowUp
+                                      else Icons.Outlined.KeyboardArrowDown,
+                                  contentDescription =
+                                      if (volunteersExpanded) "Collapse" else "Expand",
+                                  tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+
+                        if (volunteersExpanded) {
+                          Spacer(
+                              modifier =
+                                  Modifier.height(AcceptRequestScreenConstants.SECTION_SPACING))
+                          if (request.people.isEmpty()) {
+                            Text(
+                                text = "No volunteers yet",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                          } else {
+                            Column(
+                                verticalArrangement =
+                                    Arrangement.spacedBy(
+                                        AcceptRequestScreenConstants.SECTION_SPACING)) {
+                                  request.people.forEach { userId ->
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                      ProfilePicture(profileId = userId, withName = true)
+                                    }
+                                  }
+                                }
+                          }
+                        }
+                      }
+                }
               }
                   ?: Text(
                       text = "An error occurred. Please reload or go back",

@@ -612,16 +612,11 @@ fun ButtonDetails(
 ) {
   Button(
       onClick = {
+        // Always navigate to the view-only details (Accept) page; edit is accessible from there
         when (isOwner) {
-          true -> {
-            navigationActions?.navigateTo(Screen.EditRequest(request.requestId))
-          }
-          false -> {
-            navigationActions?.navigateTo(Screen.RequestAccept(request.requestId))
-          }
-          else -> {
-            mapViewModel.isHisRequest(request)
-          }
+          true,
+          false -> navigationActions?.navigateTo(Screen.RequestAccept(request.requestId))
+          else -> mapViewModel.isHisRequest(request)
         }
       },
       colors =
@@ -633,7 +628,7 @@ fun ButtonDetails(
               .testTag(MapTestTags.BUTTON_DETAILS)) {
         Text(
             when (isOwner) {
-              true -> ConstantMap.TEXT_EDIT
+              true -> ConstantMap.TEXT_SEE_DETAILS
               false -> ConstantMap.TEXT_SEE_DETAILS
               else -> ConstantMap.PROBLEM_OCCUR
             })

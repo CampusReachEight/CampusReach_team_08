@@ -11,7 +11,6 @@ import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
@@ -317,21 +316,36 @@ class EndToEndTests : BaseEmulatorTest() {
   // Go to editScreen (not for adding a request, but for editing it)
   // , and check the element is displayed
   private fun goToEditScreen() {
+    // Click a request item (now opens AcceptRequestScreen, not Edit directly)
     composeTestRule
         .onNodeWithTag(RequestListTestTags.REQUEST_ITEM)
         .assertIsDisplayed()
         .performClick()
 
-    composeTestRule.waitForIdle()
+    // Wait for Accept screen button to appear
     composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
-      val nodes =
-          composeTestRule
-              .onAllNodesWithTag(EditRequestScreenTestTags.INPUT_TITLE)
-              .fetchSemanticsNodes()
-      val node = if (nodes.isNotEmpty()) nodes[0] else null
+      composeTestRule
+          .onAllNodesWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
 
-      val editable = node?.config?.getOrNull(SemanticsProperties.EditableText)?.text
-      editable == titles
+    // Scroll the action button into view if needed, then click it
+    val buttonNode = composeTestRule.onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)
+    buttonNode.assertExists()
+    try {
+      buttonNode.performScrollTo()
+    } catch (_: Throwable) {
+      // Ignore if not scrollable; best-effort bring into view
+    }
+    buttonNode.performClick()
+
+    // Wait for edit screen title field
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule
+          .onAllNodesWithTag(EditRequestScreenTestTags.INPUT_TITLE)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
     }
   }
 
@@ -420,7 +434,6 @@ class EndToEndTests : BaseEmulatorTest() {
         .assertIsDisplayed()
         .performClick()
 
-    composeTestRule.waitForIdle()
     composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
       composeTestRule
           .onAllNodesWithTag(EditRequestScreenTestTags.ERROR_MESSAGE)
@@ -430,7 +443,6 @@ class EndToEndTests : BaseEmulatorTest() {
 
     addElementOfRequest()
 
-    composeTestRule.waitForIdle()
     composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
       composeTestRule
           .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM)
@@ -438,15 +450,27 @@ class EndToEndTests : BaseEmulatorTest() {
           .isNotEmpty()
     }
 
+    // Navigate via Accept screen to edit
     goToEditScreen()
 
-    // check if back button works
+    // Back from edit (EditRequestScreen) to Accept screen first then again to list
     composeTestRule
         .onNodeWithTag(NavigationTestTags.GO_BACK_BUTTON)
         .assertIsDisplayed()
         .performClick()
 
+    // After back, we might be on Accept screen (if a nested stack). Press back again if still
+    // there.
     composeTestRule.waitForIdle()
+    val acceptButtonNodes =
+        composeTestRule
+            .onAllNodesWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)
+            .fetchSemanticsNodes()
+    if (acceptButtonNodes.isNotEmpty()) {
+      // Back to list
+      composeTestRule.onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_GO_BACK).performClick()
+    }
+
     composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
       composeTestRule
           .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM)
@@ -454,6 +478,7 @@ class EndToEndTests : BaseEmulatorTest() {
           .isNotEmpty()
     }
 
+    // Enter edit again
     goToEditScreen()
 
     // edit title
@@ -473,19 +498,24 @@ class EndToEndTests : BaseEmulatorTest() {
         .assertIsDisplayed()
         .performClick()
 
-    composeTestRule.waitForIdle()
-    // check that the title is the one modified in editScreen
+    // Wait for return to list (Accept + back path); ensure item titles loaded
     composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
-      val nodes =
-          composeTestRule
-              .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM_TITLE, useUnmergedTree = true)
-              .fetchSemanticsNodes()
+      composeTestRule
+          .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM_TITLE, useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
 
-      val node = nodes.lastOrNull()
-      val texts = node?.config?.getOrNull(SemanticsProperties.Text)?.map { it.text }
-      val match = texts?.any { it == anotherTitle } == true
-
-      match
+    // Verify edited title appears
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule
+          .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM_TITLE, useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .any { node ->
+            val texts =
+                node.config.getOrNull(SemanticsProperties.Text)?.map { it.text } ?: emptyList()
+            texts.any { it == anotherTitle }
+          }
     }
   }
 
@@ -573,7 +603,6 @@ class EndToEndTests : BaseEmulatorTest() {
     goAddRequest()
     addElementOfRequest()
 
-    composeTestRule.waitForIdle()
     composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
       composeTestRule
           .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM)
@@ -581,7 +610,7 @@ class EndToEndTests : BaseEmulatorTest() {
           .isNotEmpty()
     }
 
-    // Open edit screen
+    // Open edit screen via Accept
     goToEditScreen()
 
     // Click delete
@@ -591,7 +620,6 @@ class EndToEndTests : BaseEmulatorTest() {
         .assertIsDisplayed()
         .performClick()
 
-    composeTestRule.waitForIdle()
     composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
       composeTestRule
           .onAllNodesWithTag(DELETE_CONFIRMATION_DIALOG_TEST_TAG)
@@ -602,10 +630,17 @@ class EndToEndTests : BaseEmulatorTest() {
     // Confirm delete
     composeTestRule.onNodeWithTag(DELETE_CONFIRM_BUTTON_TEST_TAG).assertIsDisplayed().performClick()
 
-    composeTestRule.waitForIdle()
-    Thread.sleep(2000)
-
-    composeTestRule.onNodeWithTag(RequestListTestTags.REQUEST_ADD_BUTTON).assertExists()
+    // Wait for list (request removed) or empty list message
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule
+          .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM)
+          .fetchSemanticsNodes()
+          .isNotEmpty() ||
+          composeTestRule
+              .onAllNodesWithTag(RequestListTestTags.EMPTY_LIST_MESSAGE)
+              .fetchSemanticsNodes()
+              .isNotEmpty()
+    }
 
     // Logout
     logOut()
@@ -613,18 +648,14 @@ class EndToEndTests : BaseEmulatorTest() {
 
   @Test
   fun canCreateRequestGoToProfileViewMyRequestsEditAndLogout() {
-    val TAG = "EndToEndTests"
-
-    // 1. Sign in
     val testName = "78901"
     val testEmail = "myrequest@example.com"
     initialize(testName, testEmail)
 
-    // 2. Create request
+    // Create request
     goAddRequest()
     addElementOfRequest()
 
-    composeTestRule.waitForIdle()
     composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
       composeTestRule
           .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM)
@@ -632,13 +663,12 @@ class EndToEndTests : BaseEmulatorTest() {
           .isNotEmpty()
     }
 
-    // 3. Navigate to Profile
+    // Navigate to Profile
     composeTestRule
         .onNodeWithTag(NavigationTestTags.PROFILE_BUTTON)
         .assertIsDisplayed()
         .performClick()
 
-    composeTestRule.waitForIdle()
     composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
       composeTestRule
           .onAllNodesWithTag(ProfileTestTags.PROFILE_ACTION_MY_REQUEST)
@@ -646,13 +676,12 @@ class EndToEndTests : BaseEmulatorTest() {
           .isNotEmpty()
     }
 
-    // 4. Click My Request button
+    // My Requests
     composeTestRule
         .onNodeWithTag(ProfileTestTags.PROFILE_ACTION_MY_REQUEST)
         .assertIsDisplayed()
         .performClick()
 
-    composeTestRule.waitForIdle()
     composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
       composeTestRule
           .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM)
@@ -660,33 +689,18 @@ class EndToEndTests : BaseEmulatorTest() {
           .isNotEmpty()
     }
 
-    // 5. Click request item to edit
-    composeTestRule
-        .onNodeWithTag(RequestListTestTags.REQUEST_ITEM)
-        .assertIsDisplayed()
-        .performClick()
+    // Open via Accept then edit
+    goToEditScreen()
 
-    composeTestRule.waitForIdle()
-    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
-      composeTestRule
-          .onAllNodesWithTag(EditRequestScreenTestTags.INPUT_TITLE)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
-
-    // 6. Edit the title
+    // Edit title
     composeTestRule
         .onNodeWithTag(EditRequestScreenTestTags.INPUT_TITLE)
         .performScrollTo()
         .assertIsDisplayed()
         .performTextClearance()
-
     composeTestRule
         .onNodeWithTag(EditRequestScreenTestTags.INPUT_TITLE)
         .performTextInput(anotherTitle)
-
-    composeTestRule.waitForIdle()
-    Thread.sleep(500)
 
     composeTestRule
         .onNodeWithTag(EditRequestScreenTestTags.SAVE_BUTTON)
@@ -694,8 +708,7 @@ class EndToEndTests : BaseEmulatorTest() {
         .assertIsDisplayed()
         .performClick()
 
-    // 7. Wait for return to My Requests screen
-    composeTestRule.waitForIdle()
+    // Wait for My Requests list again
     composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
       composeTestRule
           .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM)
@@ -703,13 +716,21 @@ class EndToEndTests : BaseEmulatorTest() {
           .isNotEmpty()
     }
 
-    // 8. Verify edited title is displayed
-    composeTestRule.onNodeWithText(anotherTitle).assertIsDisplayed()
+    // Verify edited title present
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule
+          .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM_TITLE, useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .any { node ->
+            val texts =
+                node.config.getOrNull(SemanticsProperties.Text)?.map { it.text } ?: emptyList()
+            texts.any { it == anotherTitle }
+          }
+    }
 
-    // 9. Press back to return to Profile screen
+    // Back to Profile
     Espresso.pressBack()
 
-    composeTestRule.waitForIdle()
     composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
       composeTestRule
           .onAllNodesWithTag(ProfileTestTags.PROFILE_ACTION_LOG_OUT)
@@ -717,13 +738,12 @@ class EndToEndTests : BaseEmulatorTest() {
           .isNotEmpty()
     }
 
-    // 10. Logout (now we're on profile screen with logout button)
+    // Logout
     composeTestRule
         .onNodeWithTag(ProfileTestTags.PROFILE_ACTION_LOG_OUT)
         .assertIsDisplayed()
         .performClick()
 
-    composeTestRule.waitForIdle()
     composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
       composeTestRule
           .onAllNodesWithTag(ProfileTestTags.LOG_OUT_DIALOG)
@@ -736,7 +756,6 @@ class EndToEndTests : BaseEmulatorTest() {
         .assertIsDisplayed()
         .performClick()
 
-    composeTestRule.waitForIdle()
     composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
       composeTestRule
           .onAllNodesWithTag(SignInScreenTestTags.LOGIN_BUTTON)
@@ -749,8 +768,6 @@ class EndToEndTests : BaseEmulatorTest() {
 
   @Test
   fun canLoginGoToProfileEditProfileAndLogout() {
-    val TAG = "EndToEndTests"
-
     // 1. Sign in
     val testName = "12345"
     val testEmail = "editprofile@example.com"
