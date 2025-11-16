@@ -106,6 +106,9 @@ fun NavigationScreen(
           AcceptRequestScreen(
               requestId = id,
               onGoBack = { navigationActions.goBack() },
+              onEditClick = { requestIdForEdit ->
+                navigationActions.navigateTo(Screen.EditRequest(requestIdForEdit))
+              },
               acceptRequestViewModel = acceptRequestViewModel)
         }
       }
