@@ -12,6 +12,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import com.android.sample.model.map.Location
 import com.android.sample.model.request.Request
 import com.android.sample.model.request.RequestRepositoryFirestore
@@ -159,13 +160,17 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
     // Back button
     composeTestRule.onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_GO_BACK).assertIsDisplayed()
 
-    // Details card
+    // Details card - scroll into view
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_DETAILS_CARD)
+        .performScrollTo()
         .assertIsDisplayed()
 
-    // Action button visible
-    composeTestRule.onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON).assertIsDisplayed()
+    // Action button - scroll into view
+    composeTestRule
+        .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)
+        .performScrollTo()
+        .assertIsDisplayed()
 
     // As non-owner, Volunteers section header should not exist
     composeTestRule
@@ -187,11 +192,13 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
     // Verify details card exists
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_DETAILS_CARD)
+        .performScrollTo()
         .assertIsDisplayed()
 
     // Description
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_DESCRIPTION)
+        .performScrollTo()
         .assertIsDisplayed()
         .assertTextContains(
             "In here we will do a lot of things, like beeing good persons",
@@ -201,36 +208,42 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
     // Tags
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_TAG)
+        .performScrollTo()
         .assertIsDisplayed()
         .assertTextContains("Urgent", substring = true, ignoreCase = true)
 
     // Request Type
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_TYPE)
+        .performScrollTo()
         .assertIsDisplayed()
         .assertTextContains("Studying", substring = true, ignoreCase = true)
 
     // Status
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_STATUS)
+        .performScrollTo()
         .assertIsDisplayed()
         .assertTextContains("Open", substring = true, ignoreCase = true)
 
     // Location
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_LOCATION_NAME)
+        .performScrollTo()
         .assertIsDisplayed()
         .assertTextContains("EPFL", substring = true, ignoreCase = true)
 
     // Start time
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_START_TIME)
+        .performScrollTo()
         .assertIsDisplayed()
         .assertTextContains("15/03/2024 14:30", substring = true, ignoreCase = true)
 
     // Expiration time
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_EXPIRATION_TIME)
+        .performScrollTo()
         .assertIsDisplayed()
         .assertTextContains("15/03/2024 15:30", substring = true, ignoreCase = true)
   }
@@ -542,22 +555,17 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
           .isNotEmpty()
     }
 
-    // Header visible for owner
+    // Header visible for owner - scroll into view first
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.VOLUNTEERS_SECTION_HEADER)
+        .performScrollTo()
         .assertIsDisplayed()
         .performClick()
 
     // request1 has empty people list -> should show "No volunteers yet"
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.VOLUNTEERS_SECTION_CONTAINER)
-        .assertIsDisplayed()
-    composeTestRule
-        .onNodeWithTag(AcceptRequestScreenTestTags.VOLUNTEERS_SECTION_CONTAINER)
-        .assertIsDisplayed()
-    // Rely on text shown inside the expanded section
-    composeTestRule
-        .onNodeWithTag(AcceptRequestScreenTestTags.VOLUNTEERS_SECTION_CONTAINER)
+        .performScrollTo()
         .assertIsDisplayed()
   }
 
