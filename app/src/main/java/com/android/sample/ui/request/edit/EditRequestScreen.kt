@@ -137,7 +137,12 @@ fun EditRequestScreen(
           onSearchLocations = viewModel::searchLocations,
           onClearLocationSearch = viewModel::clearLocationSearch,
           onDeleteClick = viewModel::confirmDelete,
-          onConfirmDelete = { viewModel.deleteRequest(requestId ?: "") { onNavigateBack() } },
+          onConfirmDelete = {
+            viewModel.deleteRequest(requestId ?: "") {
+              onNavigateBack()
+              onNavigateBack() // Second time to go to Request list screen
+            }
+          },
           onCancelDelete = viewModel::cancelDelete,
           onUseCurrentLocation = {
             handleLocationPermissionCheck(context, viewModel, permissionLauncher)
