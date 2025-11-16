@@ -25,6 +25,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
+          # Uses node 18 and not 17 for firebase-admin support
           node-version: 18
           cache: npm
 
