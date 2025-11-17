@@ -11,7 +11,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
@@ -31,14 +32,13 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import com.android.sample.model.profile.UserProfile
 import com.android.sample.model.profile.UserProfileRepository
 import com.android.sample.model.profile.UserProfileRepositoryFirestore
 import com.android.sample.ui.request.ConstantRequestList
-import com.android.sample.ui.theme.AppColors.SecondaryColor
 import com.android.sample.ui.theme.AppColors.SecondaryDark
 import com.android.sample.ui.theme.AppColors.WhiteColor
+import com.android.sample.ui.theme.appPalette
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
 import java.net.URL
@@ -80,6 +80,8 @@ object ProfileCache {
   }
 }
 
+const val PictureNameRatio = 0.8f
+
 @Composable
 fun ProfilePicture(
     profileRepository: UserProfileRepository = UserProfileRepositoryFirestore(Firebase.firestore),
@@ -87,7 +89,6 @@ fun ProfilePicture(
     onClick: () -> Unit = {},
     modifier: Modifier = Modifier,
     withName: Boolean = false,
-    withNameImageSize: Dp = ConstantRequestList.RequestItemIconSize
 ) {
   var loading: Boolean by remember { mutableStateOf(true) }
   var bitmap: Bitmap? by remember { mutableStateOf(null) }
@@ -98,19 +99,16 @@ fun ProfilePicture(
 
     val cachedProfile = ProfileCache.get(profileId)
     val profile: UserProfile? =
-        if (cachedProfile != null) {
-          cachedProfile
-        } else {
-          try {
-            val p = profileRepository.getUserProfile(profileId)
-            ProfileCache.put(profileId, p)
-            p
-          } catch (e: Exception) {
-            // couldn't fetch profile
-            ProfileCache.put(profileId, null)
-            null
-          }
-        }
+        cachedProfile
+            ?: try {
+                val p = profileRepository.getUserProfile(profileId)
+                ProfileCache.put(profileId, p)
+                p
+            } catch (e: Exception) {
+                // couldn't fetch profile
+                ProfileCache.put(profileId, null)
+                null
+            }
 
     if (profile == null) {
       bitmap = null
@@ -155,12 +153,8 @@ fun ProfilePicture(
       verticalArrangement = Arrangement.Center,
       horizontalAlignment = Alignment.CenterHorizontally,
       modifier = modifier.fillMaxSize()) {
-        val sizeMod =
-            if (withName) {
-              Modifier.size(withNameImageSize)
-            } else {
-              Modifier.fillMaxSize()
-            }
+        val sizeMod = Modifier.weight(PictureNameRatio, fill = true)
+
         Surface(
             modifier = sizeMod.aspectRatio(1f).clip(CircleShape).clickable() { onClick() },
             shape = CircleShape,
@@ -180,7 +174,7 @@ fun ProfilePicture(
             Box(
                 modifier =
                     Modifier.fillMaxSize()
-                        .background(SecondaryColor)
+                        .background(appPalette().secondary)
                         .testTag(ProfilePictureTestTags.PROFILE_PICTURE_DEFAULT),
                 contentAlignment = Alignment.Center) {
                   Icon(
@@ -202,11 +196,15 @@ fun ProfilePicture(
           Text(
               text = name,
               fontSize = ConstantRequestList.RequestItemNameFontSize,
+              lineHeight = ConstantRequestList.RequestItemNameFontSize,
               maxLines = 1,
               overflow = TextOverflow.Ellipsis,
               textAlign = TextAlign.Center,
+              color = appPalette().text.copy(alpha = 0.8f),
               modifier =
-                  Modifier.fillMaxSize().testTag(ProfilePictureTestTags.PROFILE_PICTURE_NAME))
+                  Modifier.wrapContentHeight()
+                      .padding(top = ConstantRequestList.RequestItemNameTopPadding)
+                      .testTag(ProfilePictureTestTags.PROFILE_PICTURE_NAME))
         }
       }
 }
