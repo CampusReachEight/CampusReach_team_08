@@ -5,6 +5,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.ui.navigation.NavigationActions
 import com.android.sample.ui.navigation.NavigationTestTags
@@ -67,8 +68,8 @@ fun ProfileScreen(
 }
 
 // Simple preview for quick visual checks during development (not covered)
-// @Preview(showBackground = true)
-// @Composable
-// fun ProfilePreview() {
-//  ProfileScreen()
-// }
+ @Preview(showBackground = true)
+ @Composable
+ fun ProfilePreview() {
+  ProfileScreen()
+ }
