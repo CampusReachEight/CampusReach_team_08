@@ -21,6 +21,19 @@ data class Request(
     val tags: List<Tags>,
     val creatorId: String
 ) {
+
+  val viewStatus: RequestStatus
+    get() {
+      val now = Date()
+
+      return when {
+        status == RequestStatus.CANCELLED || status == RequestStatus.ARCHIVED -> status
+        now.before(startTimeStamp) -> RequestStatus.OPEN
+        now.after(expirationTime) -> RequestStatus.COMPLETED
+        else -> RequestStatus.IN_PROGRESS
+      }
+    }
+
   companion object {
     fun fromMap(map: Map<String, Any?>): Request {
       // Basic presence validation (will throw if missing)
