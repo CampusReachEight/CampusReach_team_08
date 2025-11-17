@@ -71,5 +71,21 @@ fun ProfileScreen(
  @Preview(showBackground = true)
  @Composable
  fun ProfilePreview() {
-  ProfileScreen()
+    val sampleState = ProfileState(
+        profileId = "preview-id",
+        userName = "ThisIsAnExceptionallyLongUserNameThatShouldBeTruncatedInTheHeaderToAvoidOverlappingUI",
+        userEmail = "very.long.email.address.which.will.overlap.the.edit.button.if.not.truncated@example.com",
+        userSection = UserSections.ARCHITECTURE.label,
+        isLoading = false,
+        isLoggingOut = false,
+        isEditMode = false
+    )
+
+    ProfileContent(
+        state = sampleState,
+        onLogoutRequested = {},
+        onMyRequestAction = {},
+        onEditRequested = {},
+        modifier = Modifier.fillMaxSize()
+    )
  }
