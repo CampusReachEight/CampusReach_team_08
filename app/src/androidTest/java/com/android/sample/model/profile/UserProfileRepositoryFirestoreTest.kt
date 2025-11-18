@@ -3,6 +3,8 @@ package com.android.sample.model.profile
 import android.util.Log
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.sample.ui.profile.UserSections
+import com.android.sample.ui.request_validation.KudosConstants
+import com.android.sample.ui.request_validation.KudosException
 import com.android.sample.utils.BaseEmulatorTest
 import com.android.sample.utils.FirebaseEmulator
 import com.google.firebase.auth.ktx.auth
@@ -497,5 +499,251 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
       assertTrue("Query took too long: $duration ms", duration < 500)
       assertEquals(9, results.size)
     }
+  }
+  // ==================== Award Kudos Tests ====================
+
+  @Test
+  fun awardKudos_awards_kudos_successfully_to_existing_user() = runTest {
+    // Given
+    val profile = testProfile1.copy(id = currentUserId) // Use current authenticated user
+    repository.addUserProfile(profile)
+    val initialKudos = profile.kudos
+    val awardAmount = 50
+
+    // When
+    repository.awardKudos(profile.id, awardAmount)
+
+    // Then
+    val updatedProfile = repository.getUserProfile(profile.id)
+    assertEquals(initialKudos + awardAmount, updatedProfile.kudos)
+  }
+
+  @Test
+  fun awardKudos_updates_both_public_and_private_profiles() = runTest {
+    // Given
+    val profile = testProfile1.copy(id = currentUserId)
+    repository.addUserProfile(profile)
+    val awardAmount = 100
+
+    // When
+    repository.awardKudos(profile.id, awardAmount)
+
+    // Then - Verify public profile
+    val publicDoc = db.collection(PUBLIC_PROFILES_PATH).document(profile.id).get().await()
+    assertTrue(publicDoc.exists())
+    assertEquals(awardAmount, (publicDoc.get("kudos") as Number).toInt())
+
+    // Verify private profile
+    val privateDoc = db.collection(PRIVATE_PROFILES_PATH).document(profile.id).get().await()
+    assertTrue(privateDoc.exists())
+    assertEquals(awardAmount, (privateDoc.get("kudos") as Number).toInt())
+  }
+
+  @Test
+  fun awardKudos_throws_InvalidAmount_for_zero_amount() = runTest {
+    // Given
+    val profile = testProfile1.copy(id = currentUserId)
+    repository.addUserProfile(profile)
+
+    // When/Then
+    assertThrows(KudosException.InvalidAmount::class.java) {
+      runBlocking { repository.awardKudos(profile.id, 0) }
+    }
+  }
+
+  @Test
+  fun awardKudos_throws_InvalidAmount_for_negative_amount() = runTest {
+    // Given
+    val profile = testProfile1.copy(id = currentUserId)
+    repository.addUserProfile(profile)
+
+    // When/Then
+    assertThrows(KudosException.InvalidAmount::class.java) {
+      runBlocking { repository.awardKudos(profile.id, -50) }
+    }
+  }
+
+  @Test
+  fun awardKudos_throws_InvalidAmount_when_exceeding_MAX_KUDOS_PER_TRANSACTION() = runTest {
+    // Given
+    val profile = testProfile1.copy(id = currentUserId)
+    repository.addUserProfile(profile)
+    val excessiveAmount = KudosConstants.MAX_KUDOS_PER_TRANSACTION + 1
+
+    // When/Then
+    assertThrows(KudosException.InvalidAmount::class.java) {
+      runBlocking { repository.awardKudos(profile.id, excessiveAmount) }
+    }
+  }
+
+  @Test
+  fun awardKudos_throws_UserNotFound_for_non_existent_user() = runTest {
+    // Given - no user added, but use a valid format user ID
+    val nonExistentUserId = "non-existent-user-id"
+
+    // When/Then
+    assertThrows(KudosException.UserNotFound::class.java) {
+      runBlocking { repository.awardKudos(nonExistentUserId, 50) }
+    }
+  }
+
+  @Test
+  fun awardKudos_accumulates_kudos_across_multiple_awards() = runTest {
+    // Given
+    val profile = testProfile1.copy(id = currentUserId)
+    repository.addUserProfile(profile)
+
+    // When
+    repository.awardKudos(profile.id, 25)
+    repository.awardKudos(profile.id, 35)
+    repository.awardKudos(profile.id, 40)
+
+    // Then
+    val updatedProfile = repository.getUserProfile(profile.id)
+    assertEquals(100, updatedProfile.kudos)
+  }
+
+  // ==================== Award Kudos Batch Tests ====================
+
+  @Test
+  fun awardKudosBatch_awards_kudos_to_single_user_atomically() = runTest {
+    // Given - Use only the current authenticated user
+    val profile = testProfile1.copy(id = currentUserId)
+    repository.addUserProfile(profile)
+
+    val awards = mapOf(profile.id to 100)
+
+    // When
+    repository.awardKudosBatch(awards)
+
+    // Then
+    assertEquals(100, repository.getUserProfile(profile.id).kudos)
+  }
+
+  @Test
+  fun awardKudosBatch_updates_both_public_and_private_profiles() = runTest {
+    // Given
+    val profile = testProfile1.copy(id = currentUserId)
+    repository.addUserProfile(profile)
+
+    val awards = mapOf(profile.id to 60)
+
+    // When
+    repository.awardKudosBatch(awards)
+
+    val publicDoc = db.collection(PUBLIC_PROFILES_PATH).document(profile.id).get().await()
+    assertEquals(60, (publicDoc.get("kudos") as Number).toInt())
+
+    // Verify private profile
+    val privateDoc = db.collection(PRIVATE_PROFILES_PATH).document(profile.id).get().await()
+    assertEquals(60, (privateDoc.get("kudos") as Number).toInt())
+  }
+
+  @Test
+  fun awardKudosBatch_throws_InvalidAmount_for_any_zero_amount() = runTest {
+    // Given
+    val profile = testProfile1.copy(id = currentUserId)
+    repository.addUserProfile(profile)
+
+    val awards = mapOf(profile.id to 0)
+
+    assertThrows(KudosException.InvalidAmount::class.java) {
+      runBlocking { repository.awardKudosBatch(awards) }
+    }
+  }
+
+  @Test
+  fun awardKudosBatch_throws_InvalidAmount_for_any_negative_amount() = runTest {
+    // Given
+    val profile = testProfile1.copy(id = currentUserId)
+    repository.addUserProfile(profile)
+
+    val awards = mapOf(profile.id to -25)
+
+    assertThrows(KudosException.InvalidAmount::class.java) {
+      runBlocking { repository.awardKudosBatch(awards) }
+    }
+  }
+
+  @Test
+  fun awardKudosBatch_throws_InvalidAmount_when_individual_amount_exceeds_MAX() = runTest {
+    // Given
+    val profile = testProfile1.copy(id = currentUserId)
+    repository.addUserProfile(profile)
+
+    val excessiveAmount = KudosConstants.MAX_KUDOS_PER_TRANSACTION + 1
+    val awards = mapOf(profile.id to excessiveAmount)
+
+    assertThrows(KudosException.InvalidAmount::class.java) {
+      runBlocking { repository.awardKudosBatch(awards) }
+    }
+  }
+
+  @Test
+  fun awardKudosBatch_throws_InvalidAmount_when_total_kudos_exceeds_MAX() = runTest {
+    // Given
+    val profile = testProfile1.copy(id = currentUserId)
+    repository.addUserProfile(profile)
+
+    val excessiveAmount = KudosConstants.MAX_KUDOS_PER_TRANSACTION + 1
+    val awards = mapOf(profile.id to excessiveAmount)
+
+    // When/Then
+    assertThrows(KudosException.InvalidAmount::class.java) {
+      runBlocking { repository.awardKudosBatch(awards) }
+    }
+  }
+
+  @Test
+  fun awardKudosBatch_throws_UserNotFound_if_user_does_not_exist() = runTest {
+    val nonExistentUserId = "non-existent-user-id"
+    val awards = mapOf(nonExistentUserId to 75)
+
+    assertThrows(KudosException.UserNotFound::class.java) {
+      runBlocking { repository.awardKudosBatch(awards) }
+    }
+  }
+
+  @Test
+  fun awardKudosBatch_is_atomic_no_changes_if_user_not_found() = runTest {
+    // Given
+    val profile = testProfile1.copy(id = currentUserId)
+    repository.addUserProfile(profile)
+    val initialKudos = profile.kudos
+
+    val awards = mapOf(profile.id to 50, "non-existent-user" to 75)
+
+    // When/Then
+    assertThrows(KudosException.UserNotFound::class.java) {
+      runBlocking { repository.awardKudosBatch(awards) }
+    }
+
+    // Verify no changes were made due to atomic transaction
+    val updatedProfile = repository.getUserProfile(profile.id)
+    assertEquals(initialKudos, updatedProfile.kudos)
+  }
+
+  @Test
+  fun awardKudosBatch_handles_empty_map_successfully() = runTest {
+    // Given
+    val awards = emptyMap<String, Int>()
+
+    repository.awardKudosBatch(awards)
+  }
+
+  @Test
+  fun awardKudosBatch_accumulates_with_existing_kudos() = runTest {
+    // Given
+    val profile = testProfile1.copy(id = currentUserId)
+    repository.addUserProfile(profile)
+    repository.awardKudos(profile.id, 30)
+
+    val awards = mapOf(profile.id to 70)
+
+    // When
+    repository.awardKudosBatch(awards)
+
+    // Then
+    assertEquals(100, repository.getUserProfile(profile.id).kudos)
   }
 }

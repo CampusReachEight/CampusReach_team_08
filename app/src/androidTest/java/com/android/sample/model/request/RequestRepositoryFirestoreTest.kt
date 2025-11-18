@@ -5,6 +5,7 @@ import com.android.sample.model.map.Location
 import com.android.sample.utils.BaseEmulatorTest
 import com.android.sample.utils.FirebaseEmulator
 import java.util.Date
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.*
@@ -458,5 +459,215 @@ class RequestRepositoryFirestoreTest : BaseEmulatorTest() {
     } catch (_: IllegalStateException) {}
 
     signInUser(DEFAULT_USER_EMAIL, DEFAULT_USER_PASSWORD)
+  }
+
+  // ==================== Close Request Tests ====================
+
+  @Test
+  fun closeRequest_successfully_closes_OPEN_request_with_helpers() = runTest {
+    // Given
+    val requestWithHelpers = request1.copy(people = listOf("helper1", "helper2"))
+    addRequestTracking(requestWithHelpers)
+
+    val selectedHelpers = listOf("helper1")
+
+    // When
+    val shouldAwardCreator = repository.closeRequest(requestWithHelpers.requestId, selectedHelpers)
+
+    // Then
+    assertTrue(shouldAwardCreator) // Should return true when helpers selected
+    val updatedRequest = repository.getRequest(requestWithHelpers.requestId)
+    assertEquals(RequestStatus.COMPLETED, updatedRequest.status)
+  }
+
+  @Test
+  fun closeRequest_successfully_closes_IN_PROGRESS_request() = runTest {
+    // Given
+    val inProgressRequest =
+        request1.copy(status = RequestStatus.IN_PROGRESS, people = listOf("helper1"))
+    addRequestTracking(inProgressRequest)
+
+    // When
+    val shouldAwardCreator = repository.closeRequest(inProgressRequest.requestId, listOf("helper1"))
+
+    // Then
+    assertTrue(shouldAwardCreator)
+    val updatedRequest = repository.getRequest(inProgressRequest.requestId)
+    assertEquals(RequestStatus.COMPLETED, updatedRequest.status)
+  }
+
+  @Test
+  fun closeRequest_returns_false_when_no_helpers_selected() = runTest {
+    // Given
+    addRequestTracking(request1)
+
+    // When
+    val shouldAwardCreator = repository.closeRequest(request1.requestId, emptyList())
+
+    // Then
+    assertFalse(shouldAwardCreator) // Should return false when no helpers
+    val updatedRequest = repository.getRequest(request1.requestId)
+    assertEquals(RequestStatus.COMPLETED, updatedRequest.status)
+  }
+
+  @Test
+  fun closeRequest_returns_true_with_multiple_helpers_selected() = runTest {
+    // Given
+    val requestWithMultipleHelpers = request1.copy(people = listOf("helper1", "helper2", "helper3"))
+    addRequestTracking(requestWithMultipleHelpers)
+
+    // When
+    val shouldAwardCreator =
+        repository.closeRequest(requestWithMultipleHelpers.requestId, listOf("helper1", "helper2"))
+
+    // Then
+    assertTrue(shouldAwardCreator)
+    val updatedRequest = repository.getRequest(requestWithMultipleHelpers.requestId)
+    assertEquals(RequestStatus.COMPLETED, updatedRequest.status)
+  }
+
+  @Test
+  fun closeRequest_throws_InvalidStatus_for_COMPLETED_request() = runTest {
+    // Given
+    val completedRequest = request1.copy(status = RequestStatus.COMPLETED)
+    addRequestTracking(completedRequest)
+
+    // When/Then
+    val exception =
+        assertThrows(RequestClosureException.InvalidStatus::class.java) {
+          runBlocking { repository.closeRequest(completedRequest.requestId, emptyList()) }
+        }
+    assertNotNull(exception.message)
+    assertTrue(exception.message!!.contains("COMPLETED"))
+  }
+
+  @Test
+  fun closeRequest_throws_InvalidStatus_for_CANCELLED_request() = runTest {
+    // Given
+    val cancelledRequest = request1.copy(status = RequestStatus.CANCELLED)
+    addRequestTracking(cancelledRequest)
+
+    // When/Then
+    assertThrows(RequestClosureException.InvalidStatus::class.java) {
+      runBlocking { repository.closeRequest(cancelledRequest.requestId, emptyList()) }
+    }
+  }
+
+  @Test
+  fun closeRequest_throws_InvalidStatus_for_ARCHIVED_request() = runTest {
+    // Given
+    val archivedRequest = request1.copy(status = RequestStatus.ARCHIVED)
+    addRequestTracking(archivedRequest)
+
+    // When/Then
+    assertThrows(RequestClosureException.InvalidStatus::class.java) {
+      runBlocking { repository.closeRequest(archivedRequest.requestId, emptyList()) }
+    }
+  }
+
+  @Test
+  fun closeRequest_throws_UserNotHelper_when_selected_user_not_in_request() = runTest {
+    // Given
+    val requestWithHelpers = request1.copy(people = listOf("helper1", "helper2"))
+    addRequestTracking(requestWithHelpers)
+
+    // When/Then - Try to close with a helper not in the list
+    assertThrows(RequestClosureException.UserNotHelper::class.java) {
+      runBlocking { repository.closeRequest(requestWithHelpers.requestId, listOf("helper3")) }
+    }
+  }
+
+  @Test
+  fun closeRequest_throws_UserNotHelper_when_one_of_multiple_helpers_invalid() = runTest {
+    // Given
+    val requestWithHelpers = request1.copy(people = listOf("helper1", "helper2"))
+    addRequestTracking(requestWithHelpers)
+
+    // When/Then - Mix of valid and invalid helpers
+    assertThrows(RequestClosureException.UserNotHelper::class.java) {
+      runBlocking {
+        repository.closeRequest(
+            requestWithHelpers.requestId, listOf("helper1", "helper3") // helper3 not in people list
+            )
+      }
+    }
+  }
+
+  @Test
+  fun closeRequest_throws_exception_when_user_not_authenticated() = runTest {
+    // Given
+    addRequestTracking(request1)
+    auth.signOut()
+
+    // When/Then
+    assertThrows(IllegalStateException::class.java) {
+      runBlocking { repository.closeRequest(request1.requestId, emptyList()) }
+    }
+
+    // Restore authentication for cleanup
+    signInUser()
+  }
+
+  @Test
+  fun closeRequest_throws_exception_when_user_not_owner() = runTest {
+    // Given - Create request as current user
+    addRequestTracking(request1)
+
+    // Switch to different user
+    val otherUserEmail = "other@test.com"
+    val otherUserPassword = "password123"
+    createAndSignInUser(otherUserEmail, otherUserPassword)
+
+    // When/Then - Try to close someone else's request
+    assertThrows(IllegalArgumentException::class.java) {
+      runBlocking { repository.closeRequest(request1.requestId, emptyList()) }
+    }
+
+    // Restore original user
+    signInUser(DEFAULT_USER_EMAIL, DEFAULT_USER_PASSWORD)
+  }
+
+  @Test
+  fun closeRequest_throws_exception_for_non_existent_request() = runTest {
+    // Given
+    val nonExistentRequestId = "non-existent-request"
+
+    // When/Then
+    assertThrows(Exception::class.java) {
+      runBlocking { repository.closeRequest(nonExistentRequestId, emptyList()) }
+    }
+  }
+
+  @Test
+  fun closeRequest_allows_closing_with_subset_of_helpers() = runTest {
+    // Given
+    val requestWithManyHelpers =
+        request1.copy(people = listOf("helper1", "helper2", "helper3", "helper4"))
+    addRequestTracking(requestWithManyHelpers)
+
+    // When - Select only 2 out of 4 helpers
+    val shouldAwardCreator =
+        repository.closeRequest(requestWithManyHelpers.requestId, listOf("helper2", "helper4"))
+
+    // Then
+    assertTrue(shouldAwardCreator)
+    val updatedRequest = repository.getRequest(requestWithManyHelpers.requestId)
+    assertEquals(RequestStatus.COMPLETED, updatedRequest.status)
+  }
+
+  @Test
+  fun closeRequest_allows_closing_with_all_helpers_selected() = runTest {
+    // Given
+    val requestWithHelpers = request1.copy(people = listOf("helper1", "helper2", "helper3"))
+    addRequestTracking(requestWithHelpers)
+
+    // When - Select all helpers
+    val shouldAwardCreator =
+        repository.closeRequest(
+            requestWithHelpers.requestId, listOf("helper1", "helper2", "helper3"))
+
+    assertTrue(shouldAwardCreator)
+    val updatedRequest = repository.getRequest(requestWithHelpers.requestId)
+    assertEquals(RequestStatus.COMPLETED, updatedRequest.status)
   }
 }
