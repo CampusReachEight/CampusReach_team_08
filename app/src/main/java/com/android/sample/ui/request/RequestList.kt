@@ -4,16 +4,20 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.model.request.Request
+import com.android.sample.model.request.RequestStatus
 import com.android.sample.model.request.RequestType
 import com.android.sample.model.request.displayString
 import com.android.sample.ui.navigation.BottomNavigationMenu
@@ -23,6 +27,7 @@ import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.navigation.Screen
 import com.android.sample.ui.profile.ProfilePicture
 import com.android.sample.ui.theme.TopNavigationBar
+import com.android.sample.ui.theme.appPalette
 
 // removed local magic number vals; use ConstantRequestList instead
 
@@ -201,7 +206,7 @@ fun RequestList(
               .testTag(RequestListTestTags.REQUEST_LIST)) {
         items(state.requests.size) { index ->
           val request = state.requests[index]
-          RequestListItem(viewModel = viewModel, request = request, onClick = onRequestClick)
+          RequestListItem(request = request, onClick = onRequestClick)
         }
       }
 }
@@ -212,34 +217,35 @@ private const val MAX_PARAM = 2
 
 /** One request list item: title, compact type labels, truncated description, and optional icon. */
 @Composable
-fun RequestListItem(
-    viewModel: RequestListViewModel,
-    request: Request,
-    onClick: (Request) -> Unit,
-    modifier: Modifier = Modifier
-) {
+fun RequestListItem(request: Request, onClick: (Request) -> Unit, modifier: Modifier = Modifier) {
   Card(
       modifier =
           modifier
               .padding(bottom = ConstantRequestList.ListItemSpacing)
               .fillMaxWidth()
+              .height(ConstantRequestList.RequestItemHeight)
               .clickable(onClick = { onClick(request) })
               .testTag(RequestListTestTags.REQUEST_ITEM),
   ) {
-    Row(modifier = Modifier.fillMaxWidth().padding(ConstantRequestList.RequestItemInnerPadding)) {
+    Row(modifier = Modifier.fillMaxSize().padding(ConstantRequestList.RequestItemInnerPadding)) {
       ProfilePicture(
-          profileRepository = viewModel.profileRepository,
           profileId = request.creatorId,
           onClick = {},
           modifier =
-              Modifier.size(ConstantRequestList.RequestItemCreatorSectionSize)
-                  .align(Alignment.CenterVertically),
+              Modifier.width(ConstantRequestList.RequestItemCreatorSectionSize)
+                  .fillMaxHeight()
+                  .align(Alignment.CenterVertically)
+                  .padding(vertical = ConstantRequestList.RequestItemProfileHeightPadding),
           withName = true)
       Spacer(Modifier.width(ConstantRequestList.RowSpacing))
-      Column(Modifier.fillMaxWidth()) {
-        Row(Modifier.fillMaxWidth()) {
+      Column(Modifier.fillMaxSize()) {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
           Text(
               request.title,
+              maxLines = 1,
+              overflow = TextOverflow.Clip,
+              fontSize = ConstantRequestList.RequestItemTitleFontSize,
+              fontWeight = FontWeight.SemiBold,
               modifier = Modifier.testTag(RequestListTestTags.REQUEST_ITEM_TITLE).weight(WEIGHT))
           Text(
               request.requestType.toCompactLabel(max = MAX_PARAM),
@@ -247,9 +253,12 @@ fun RequestListItem(
               maxLines = 1,
               overflow = TextOverflow.Clip)
         }
+        Spacer(modifier = Modifier.height(ConstantRequestList.RequestItemDescriptionSpacing))
         Text(
             request.description,
-            modifier = Modifier.testTag(RequestListTestTags.REQUEST_ITEM_DESCRIPTION),
+            color = appPalette().text.copy(alpha = 0.8f),
+            fontSize = ConstantRequestList.RequestItemDescriptionFontSize,
+            modifier = Modifier.fillMaxSize().testTag(RequestListTestTags.REQUEST_ITEM_DESCRIPTION),
             maxLines = MAX_PARAM,
             overflow = TextOverflow.Ellipsis)
       }
@@ -262,8 +271,13 @@ fun RequestListItem(
 fun AddButton(navigationActions: NavigationActions?) {
   FloatingActionButton(
       onClick = { navigationActions?.navigateTo(Screen.AddRequest) },
+      containerColor = appPalette().accent,
       modifier = Modifier.testTag(RequestListTestTags.REQUEST_ADD_BUTTON)) {
-        Text("+")
+        Icon(
+            imageVector = Icons.Default.Add,
+            contentDescription = "Add Request",
+            tint = appPalette().white
+        )
       }
 }
 
@@ -297,23 +311,23 @@ private fun List<RequestType>.toCompactLabel(max: Int = MAX_PARAM): String {
 }
 
 // Preview for rendering improvements during development
-// @Preview
-// @Composable
-// fun RequestListItemPreview() {
-//  val sampleRequest =
-//      Request(
-//          requestId = "1",
-//          title = "Sample Request",
-//          description = "This is a sample request description.",
-//          creatorId = "user1",
-//          location = com.android.sample.model.map.Location(0.0, 0.0, "knowhere"),
-//          locationName = "No where",
-//          requestType = RequestType.entries, // 2 values should appear and the rest should be
-// truncated
-//          status = RequestStatus.OPEN,
-//          startTimeStamp = java.util.Date(),
-//          expirationTime = java.util.Date(),
-//          people = listOf(),
-//          tags = listOf())
-//  RequestListItem(request = sampleRequest, icon = null, onClick = {})
-// }
+@Preview
+@Composable
+fun RequestListItemPreview() {
+  val sampleRequest =
+      Request(
+          requestId = "1",
+          title = "Sample Request",
+          description = "This is a sample request description.",
+          creatorId = "user1",
+          location = com.android.sample.model.map.Location(0.0, 0.0, "nowhere"),
+          locationName = "No where",
+          requestType =
+              RequestType.entries, // 2 values should appear and the rest should be truncated
+          status = RequestStatus.OPEN,
+          startTimeStamp = java.util.Date(),
+          expirationTime = java.util.Date(),
+          people = listOf(),
+          tags = listOf())
+  RequestListItem(request = sampleRequest, onClick = {})
+}

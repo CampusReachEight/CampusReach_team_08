@@ -17,10 +17,15 @@ object ConstantRequestList {
   // List and items
   val ListPadding = 16.dp
   val ListItemSpacing = 8.dp
-  val RequestItemIconSize = 47.dp
-  val RequestItemNameFontSize = 11.sp
+  val RequestItemHeight = 95.dp
+  val RequestItemNameFontSize = 13.sp
+  val RequestItemNameTopPadding = 2.dp
+  val RequestItemTitleFontSize = 18.sp
+  val RequestItemDescriptionFontSize = 16.sp
+  val RequestItemDescriptionSpacing = 2.dp
   val RequestItemCreatorSectionSize = 65.dp
   val RequestItemInnerPadding = 8.dp
+  val RequestItemProfileHeightPadding = 5.dp
 
   // Search bar
   val SearchBarHeight = 56.dp
