@@ -1,6 +1,9 @@
 package com.android.sample.model.profile
 
+import com.android.sample.ui.request_validation.KudosConstants
+import com.android.sample.ui.request_validation.KudosException
 import com.google.firebase.auth.ktx.auth
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.tasks.await
@@ -153,6 +156,86 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
     } catch (e: Exception) {
       // Graceful degradation: return empty list on any error
       emptyList()
+    }
+  }
+
+  override suspend fun awardKudos(userId: String, amount: Int) {
+    // Validation
+    if (amount <= 0) {
+      throw KudosException.InvalidAmount(amount)
+    }
+
+    if (amount > KudosConstants.MAX_KUDOS_PER_TRANSACTION) {
+      throw KudosException.InvalidAmount(amount)
+    }
+
+    try {
+      // Check if user exists before awarding (check public profile)
+      val userDoc = publicCollectionRef.document(userId).get().await()
+      if (!userDoc.exists()) {
+        throw KudosException.UserNotFound(userId)
+      }
+
+      // Award kudos atomically using FieldValue.increment
+      // Update both public and private profiles
+      publicCollectionRef
+          .document(userId)
+          .update("kudos", FieldValue.increment(amount.toLong()))
+          .await()
+
+      privateCollectionRef
+          .document(userId)
+          .update("kudos", FieldValue.increment(amount.toLong()))
+          .await()
+    } catch (e: KudosException) {
+      throw e
+    } catch (e: Exception) {
+      throw KudosException.TransactionFailed(userId, e)
+    }
+  }
+
+  override suspend fun awardKudosBatch(awards: Map<String, Int>) {
+    // Validate all amounts first
+    awards.forEach { (userId, amount) ->
+      if (amount <= 0) {
+        throw KudosException.InvalidAmount(amount)
+      }
+      if (amount > KudosConstants.MAX_KUDOS_PER_TRANSACTION) {
+        throw KudosException.InvalidAmount(amount)
+      }
+    }
+
+    // Calculate total kudos to prevent abuse
+    val totalKudos = awards.values.sum()
+    if (totalKudos > KudosConstants.MAX_KUDOS_PER_TRANSACTION) {
+      throw KudosException.InvalidAmount(totalKudos)
+    }
+
+    try {
+      // Use Firestore batch for atomic transaction
+      val batch = db.batch()
+
+      awards.forEach { (userId, amount) ->
+        // Verify user exists first
+        val userDoc = publicCollectionRef.document(userId).get().await()
+        if (!userDoc.exists()) {
+          throw KudosException.UserNotFound(userId)
+        }
+
+        // Add updates to batch for both collections
+        val publicDocRef = publicCollectionRef.document(userId)
+        val privateDocRef = privateCollectionRef.document(userId)
+
+        batch.update(publicDocRef, "kudos", FieldValue.increment(amount.toLong()))
+        batch.update(privateDocRef, "kudos", FieldValue.increment(amount.toLong()))
+      }
+
+      // Commit all updates atomically
+      batch.commit().await()
+    } catch (e: KudosException) {
+      throw e
+    } catch (e: Exception) {
+      throw KudosException.TransactionFailed("batch_operation", e)
     }
   }
 }

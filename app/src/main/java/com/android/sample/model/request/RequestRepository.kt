@@ -81,6 +81,45 @@ interface RequestRepository {
    * @return A list of requests created by the current user.
    */
   suspend fun getMyRequests(): List<Request>
+
+  /**
+   * Closes a request and marks it as completed. This operation can only be performed by the request
+   * creator and only if the request status is OPEN or IN_PROGRESS.
+   *
+   * This method:
+   * 1. Validates that the current user is the creator
+   * 2. Validates that the request status allows closing (OPEN or IN_PROGRESS)
+   * 3. Validates that all selected users actually accepted the request
+   * 4. Updates the request status to COMPLETED
+   *
+   * Note: Kudos awarding is handled separately through the UserProfileRepository to maintain
+   * separation of concerns.
+   *
+   * @param requestId The unique identifier of the request to close.
+   * @param selectedHelperIds List of user IDs who should receive kudos. Can be empty.
+   * @return true if the creator should receive kudos (when at least one helper is selected).
+   * @throws IllegalStateException if no user is authenticated.
+   * @throws IllegalArgumentException if user is not the creator or request status is invalid.
+   * @throws RequestClosureException if the closure operation fails for any reason.
+   */
+  suspend fun closeRequest(requestId: String, selectedHelperIds: List<String>): Boolean
+}
+
+/** Exception thrown when request closure operations fail. */
+sealed class RequestClosureException(message: String, cause: Throwable? = null) :
+    Exception(message, cause) {
+
+  class InvalidStatus(currentStatus: RequestStatus) :
+      RequestClosureException(
+          "Cannot close request with status: $currentStatus. " +
+              "Only OPEN or IN_PROGRESS requests can be closed.")
+
+  class UserNotHelper(userId: String) :
+      RequestClosureException(
+          "User $userId is not in the list of people who accepted this request.")
+
+  class UpdateFailed(requestId: String, cause: Throwable) :
+      RequestClosureException("Failed to update request $requestId to COMPLETED status", cause)
 }
 
 // Commented out mockup for testing purposes

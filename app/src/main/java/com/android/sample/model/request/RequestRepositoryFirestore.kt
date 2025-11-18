@@ -122,4 +122,40 @@ class RequestRepositoryFirestore(
         .documents
         .mapNotNull { doc -> doc.data?.let { Request.fromMap(it) } }
   }
+
+  override suspend fun closeRequest(requestId: String, selectedHelperIds: List<String>): Boolean {
+    val currentUserId = Firebase.auth.currentUser?.uid ?: notAuthenticated()
+
+    // Verify the request exists
+    val existingRequest = getRequest(requestId)
+
+    // Check ownership
+    if (existingRequest.creatorId != currentUserId) {
+      notAuthorized()
+    }
+
+    // Check status - can only close OPEN or IN_PROGRESS requests
+    if (existingRequest.status != RequestStatus.OPEN &&
+        existingRequest.status != RequestStatus.IN_PROGRESS) {
+      throw RequestClosureException.InvalidStatus(existingRequest.status)
+    }
+
+    // Validate that all selected helpers actually accepted the request
+    selectedHelperIds.forEach { helperId ->
+      if (helperId !in existingRequest.people) {
+        throw RequestClosureException.UserNotHelper(helperId)
+      }
+    }
+
+    try {
+      // Update status to COMPLETED
+      val updatedRequest = existingRequest.copy(status = RequestStatus.COMPLETED)
+      collectionRef.document(requestId).set(updatedRequest.toMap()).await()
+
+      // Return true if creator should receive kudos (at least one helper selected)
+      return selectedHelperIds.isNotEmpty()
+    } catch (e: Exception) {
+      throw RequestClosureException.UpdateFailed(requestId, e)
+    }
+  }
 }

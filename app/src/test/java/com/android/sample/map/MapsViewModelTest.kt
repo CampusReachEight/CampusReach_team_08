@@ -96,6 +96,10 @@ class MapsViewModelTest {
     override suspend fun getMyRequests(): List<Request> {
       return emptyList()
     }
+
+    override suspend fun closeRequest(requestId: String, selectedHelperIds: List<String>): Boolean {
+      TODO("Not yet implemented")
+    }
   }
 
   private class FakeProfileRepository : UserProfileRepository {
@@ -119,6 +123,14 @@ class MapsViewModelTest {
 
     override suspend fun searchUserProfiles(query: String, limit: Int): List<UserProfile> {
       return listOf()
+    }
+
+    override suspend fun awardKudos(userId: String, amount: Int) {
+      TODO("Not yet implemented")
+    }
+
+    override suspend fun awardKudosBatch(awards: Map<String, Int>) {
+      TODO("Not yet implemented")
     }
   }
 
