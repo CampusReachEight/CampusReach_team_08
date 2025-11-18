@@ -10,6 +10,10 @@ on:
         description: "Branch or tag to run against"
         required: false
         default: "main"
+      dry_run:
+        description: "Run in dry-run mode (no writes)"
+        required: false
+        default: "false"
 
 jobs:
   run-status-update:
@@ -44,7 +48,14 @@ jobs:
           test -s service-account.json || { echo "::error::Decoded service-account.json is empty"; exit 1; }
 
       - name: Run request status updater
-        run: npm run update
+        shell: bash
+        run: |
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            echo "Running in dry-run mode";
+            npm run update -- --dry-run;
+          else
+            npm run update;
+          fi
 
       - name: Upload logs on failure
         if: failure()
@@ -55,3 +66,8 @@ jobs:
             npm-debug.log
             scripts/update-request-statuses.log
           retention-days: 3
+
+      - name: Cleanup credentials
+        if: always()
+        shell: bash
+        run: rm -f service-account.json
