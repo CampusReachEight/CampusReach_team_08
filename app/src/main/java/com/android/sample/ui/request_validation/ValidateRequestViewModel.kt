@@ -77,10 +77,8 @@ class ValidateRequestViewModel(
       state = ValidationState.Loading
 
       try {
-        // Load the request
         val request = requestRepository.getRequest(requestId)
 
-        // Verify ownership
         if (!requestRepository.isOwnerOfRequest(request)) {
           state =
               ValidationState.Error(
@@ -88,7 +86,6 @@ class ValidateRequestViewModel(
           return@launch
         }
 
-        // Verify status
         if (request.status != RequestStatus.OPEN && request.status != RequestStatus.IN_PROGRESS) {
           state =
               ValidationState.Error(
@@ -98,14 +95,12 @@ class ValidateRequestViewModel(
           return@launch
         }
 
-        // Load all helper profiles
         val helpers =
             if (request.people.isNotEmpty()) {
-              request.people.mapNotNull { userId ->
+              request.people.toList().mapNotNull { userId ->
                 try {
                   userProfileRepository.getUserProfile(userId)
                 } catch (e: Exception) {
-                  // Log error but continue with other profiles
                   null
                 }
               }
@@ -113,7 +108,6 @@ class ValidateRequestViewModel(
               emptyList()
             }
 
-        // Check if we have any helpers
         if (helpers.isEmpty() && request.people.isNotEmpty()) {
           state =
               ValidationState.Error(

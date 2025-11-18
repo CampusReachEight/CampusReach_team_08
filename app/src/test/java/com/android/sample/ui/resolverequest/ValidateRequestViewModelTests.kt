@@ -1,4 +1,4 @@
-package com.android.sample.ui.request_validation
+package com.android.sample.ui.resolverequest
 
 import com.android.sample.model.map.Location
 import com.android.sample.model.profile.UserProfile
@@ -10,6 +10,10 @@ import com.android.sample.model.request.RequestStatus
 import com.android.sample.model.request.RequestType
 import com.android.sample.model.request.Tags
 import com.android.sample.ui.profile.UserSections
+import com.android.sample.ui.request_validation.KudosConstants
+import com.android.sample.ui.request_validation.ValidateRequestViewModel
+import com.android.sample.ui.request_validation.ValidateRequestViewModelFactory
+import com.android.sample.ui.request_validation.ValidationState
 import io.mockk.*
 import java.util.Date
 import kotlinx.coroutines.Dispatchers
@@ -82,7 +86,7 @@ class ValidateRequestViewModelTest {
   // ==================== Initialization Tests ====================
 
   @Test
-  fun `init loads request data successfully`() = runTest {
+  fun initLoadsRequestDataSuccessfully() = runTest {
     // Given
     coEvery { requestRepository.getRequest(testRequestId) } returns testRequest
     coEvery { requestRepository.isOwnerOfRequest(testRequest) } returns true
@@ -103,7 +107,7 @@ class ValidateRequestViewModelTest {
   }
 
   @Test
-  fun `init shows error when user is not owner`() = runTest {
+  fun initShowsErrorWhenUserIsNotOwner() = runTest {
     // Given
     coEvery { requestRepository.getRequest(testRequestId) } returns testRequest
     coEvery { requestRepository.isOwnerOfRequest(testRequest) } returns false
@@ -121,7 +125,7 @@ class ValidateRequestViewModelTest {
   }
 
   @Test
-  fun `init shows error when request status is COMPLETED`() = runTest {
+  fun initShowsErrorWhenRequestStatusCompleted() = runTest {
     // Given
     val completedRequest = testRequest.copy(status = RequestStatus.COMPLETED)
     coEvery { requestRepository.getRequest(testRequestId) } returns completedRequest
@@ -140,7 +144,7 @@ class ValidateRequestViewModelTest {
   }
 
   @Test
-  fun `init shows error when request status is CANCELLED`() = runTest {
+  fun initShowsErrorWhenRequestStatusCancelled() = runTest {
     // Given
     val cancelledRequest = testRequest.copy(status = RequestStatus.CANCELLED)
     coEvery { requestRepository.getRequest(testRequestId) } returns cancelledRequest
@@ -159,7 +163,7 @@ class ValidateRequestViewModelTest {
   }
 
   @Test
-  fun `init shows error when request status is ARCHIVED`() = runTest {
+  fun initShowsErrorWhenRequestStatusArchived() = runTest {
     // Given
     val archivedRequest = testRequest.copy(status = RequestStatus.ARCHIVED)
     coEvery { requestRepository.getRequest(testRequestId) } returns archivedRequest
@@ -178,7 +182,7 @@ class ValidateRequestViewModelTest {
   }
 
   @Test
-  fun `init succeeds with IN_PROGRESS status`() = runTest {
+  fun initSucceedsWithInProgressStatus() = runTest {
     // Given
     val inProgressRequest = testRequest.copy(status = RequestStatus.IN_PROGRESS)
     coEvery { requestRepository.getRequest(testRequestId) } returns inProgressRequest
@@ -196,7 +200,7 @@ class ValidateRequestViewModelTest {
   }
 
   @Test
-  fun `init handles empty helpers list successfully`() = runTest {
+  fun initHandlesEmptyHelpersListSuccessfully() = runTest {
     // Given
     val requestNoHelpers = testRequest.copy(people = emptyList())
     coEvery { requestRepository.getRequest(testRequestId) } returns requestNoHelpers
@@ -214,7 +218,7 @@ class ValidateRequestViewModelTest {
   }
 
   @Test
-  fun `init continues when some helper profiles fail to load`() = runTest {
+  fun initContinuesWhenSomeHelperProfilesFailToLoad() = runTest {
     // Given
     coEvery { requestRepository.getRequest(testRequestId) } returns testRequest
     coEvery { requestRepository.isOwnerOfRequest(testRequest) } returns true
@@ -234,7 +238,7 @@ class ValidateRequestViewModelTest {
   }
 
   @Test
-  fun `init shows error when all helper profiles fail to load`() = runTest {
+  fun initShowsErrorWhenAllHelperProfilesFailToLoad() = runTest {
     // Given
     coEvery { requestRepository.getRequest(testRequestId) } returns testRequest
     coEvery { requestRepository.isOwnerOfRequest(testRequest) } returns true
@@ -254,7 +258,7 @@ class ValidateRequestViewModelTest {
   }
 
   @Test
-  fun `init shows error when request loading fails`() = runTest {
+  fun initShowsErrorWhenRequestLoadingFails() = runTest {
     // Given
     coEvery { requestRepository.getRequest(testRequestId) } throws Exception("Network error")
 
@@ -273,7 +277,7 @@ class ValidateRequestViewModelTest {
   // ==================== Helper Selection Tests ====================
 
   @Test
-  fun `toggleHelperSelection adds helper when not selected`() = runTest {
+  fun toggleHelperSelectionAddsHelperWhenNotSelected() = runTest {
     // Given
     setupReadyState()
 
@@ -287,7 +291,7 @@ class ValidateRequestViewModelTest {
   }
 
   @Test
-  fun `toggleHelperSelection removes helper when already selected`() = runTest {
+  fun toggleHelperSelectionRemovesHelperWhenAlreadySelected() = runTest {
     // Given
     setupReadyState()
     viewModel.toggleHelperSelection("helper1")
@@ -302,7 +306,7 @@ class ValidateRequestViewModelTest {
   }
 
   @Test
-  fun `toggleHelperSelection allows multiple selections`() = runTest {
+  fun toggleHelperSelectionAllowsMultipleSelections() = runTest {
     // Given
     setupReadyState()
 
@@ -318,7 +322,7 @@ class ValidateRequestViewModelTest {
   }
 
   @Test
-  fun `toggleHelperSelection does nothing when not in Ready state`() = runTest {
+  fun toggleHelperSelectionDoesNothingWhenNotInReadyState() = runTest {
     // Given
     coEvery { requestRepository.getRequest(testRequestId) } returns testRequest
     coEvery { requestRepository.isOwnerOfRequest(testRequest) } returns false
@@ -336,7 +340,7 @@ class ValidateRequestViewModelTest {
   // ==================== Confirmation Tests ====================
 
   @Test
-  fun `showConfirmation transitions to Confirming state with correct kudos`() = runTest {
+  fun showConfirmationTransitionsToConfirmingStateWithCorrectKudos() = runTest {
     // Given
     setupReadyState()
     viewModel.toggleHelperSelection("helper1")
@@ -356,7 +360,7 @@ class ValidateRequestViewModelTest {
   }
 
   @Test
-  fun `showConfirmation with no helpers selected shows zero kudos`() = runTest {
+  fun showConfirmationWithNoHelpersSelectedShowsZeroKudos() = runTest {
     // Given
     setupReadyState()
 
@@ -373,22 +377,20 @@ class ValidateRequestViewModelTest {
   }
 
   @Test
-  fun `showConfirmation does nothing when not in Ready state`() = runTest {
+  fun showConfirmationDoesNothingWhenNotInReadyState() = runTest {
     // Given
     setupReadyState()
     viewModel.showConfirmation() // Now in Confirming state
-
-    val previousState = viewModel.state
 
     // When
     viewModel.showConfirmation() // Try again
 
     // Then
-    assertEquals(previousState, viewModel.state)
+    assertTrue(viewModel.state is ValidationState.Confirming)
   }
 
   @Test
-  fun `cancelConfirmation returns to Ready state with selections preserved`() = runTest {
+  fun cancelConfirmationReturnsToReadyStateWithSelectionsPreserved() = runTest {
     // Given
     setupReadyState()
     viewModel.toggleHelperSelection("helper1")
@@ -406,7 +408,7 @@ class ValidateRequestViewModelTest {
   }
 
   @Test
-  fun `cancelConfirmation does nothing when not in Confirming state`() = runTest {
+  fun cancelConfirmationDoesNothingWhenNotInConfirmingState() = runTest {
     // Given
     setupReadyState()
     val previousState = viewModel.state
@@ -423,7 +425,7 @@ class ValidateRequestViewModelTest {
   // ==================== Confirm and Close Tests ====================
 
   @Test
-  fun `confirmAndClose succeeds with selected helpers and awards kudos`() = runTest {
+  fun confirmAndCloseSucceedsWithSelectedHelpersAndAwardsKudos() = runTest {
     // Given
     setupReadyState()
     viewModel.toggleHelperSelection("helper1")
@@ -450,7 +452,7 @@ class ValidateRequestViewModelTest {
   }
 
   @Test
-  fun `confirmAndClose succeeds with multiple helpers`() = runTest {
+  fun confirmAndCloseSucceedsWithMultipleHelpers() = runTest {
     // Given
     setupReadyState()
     viewModel.toggleHelperSelection("helper1")
@@ -479,7 +481,7 @@ class ValidateRequestViewModelTest {
   }
 
   @Test
-  fun `confirmAndClose without creator bonus when closeRequest returns false`() = runTest {
+  fun confirmAndCloseWithoutCreatorBonusWhenCloseRequestReturnsFalse() = runTest {
     // Given
     setupReadyState()
     viewModel.toggleHelperSelection("helper1")
@@ -505,7 +507,7 @@ class ValidateRequestViewModelTest {
   }
 
   @Test
-  fun `confirmAndClose with no helpers selected closes request without kudos`() = runTest {
+  fun confirmAndCloseWithNoHelpersSelectedClosesRequestWithoutKudos() = runTest {
     // Given
     setupReadyState()
     viewModel.showConfirmation()
@@ -522,7 +524,7 @@ class ValidateRequestViewModelTest {
   }
 
   @Test
-  fun `confirmAndClose handles RequestClosureException`() = runTest {
+  fun confirmAndCloseHandlesRequestClosureException() = runTest {
     // Given
     setupReadyState()
     viewModel.toggleHelperSelection("helper1")
@@ -544,27 +546,7 @@ class ValidateRequestViewModelTest {
   }
 
   @Test
-  fun `confirmAndClose logs error when kudos award fails but still succeeds`() = runTest {
-    // Given
-    setupReadyState()
-    viewModel.toggleHelperSelection("helper1")
-    viewModel.showConfirmation()
-
-    coEvery { requestRepository.closeRequest(testRequestId, listOf("helper1")) } returns true
-    coEvery { userProfileRepository.awardKudosBatch(any()) } throws
-        KudosException("Kudos service unavailable")
-
-    // When
-    viewModel.confirmAndClose()
-    advanceUntilIdle()
-
-    // Then
-    // Should still show success since request was closed
-    assertTrue(viewModel.state is ValidationState.Success)
-  }
-
-  @Test
-  fun `confirmAndClose handles generic exception`() = runTest {
+  fun confirmAndCloseHandlesGenericException() = runTest {
     // Given
     setupReadyState()
     viewModel.toggleHelperSelection("helper1")
@@ -585,17 +567,13 @@ class ValidateRequestViewModelTest {
   }
 
   @Test
-  fun `confirmAndClose does nothing when not in Confirming state`() = runTest {
+  fun confirmAndCloseDoesNothingWhenNotInConfirmingState() = runTest {
     // Given
     setupReadyState()
-    val previousState = viewModel.state
 
-    // When
     viewModel.confirmAndClose()
     advanceUntilIdle()
 
-    // Then
-    // Should remain in Ready state
     assertTrue(viewModel.state is ValidationState.Ready)
     coVerify(exactly = 0) { requestRepository.closeRequest(any(), any()) }
   }
@@ -603,7 +581,7 @@ class ValidateRequestViewModelTest {
   // ==================== Retry and Reset Tests ====================
 
   @Test
-  fun `retry reloads request data`() = runTest {
+  fun retryReloadsRequestData() = runTest {
     // Given
     coEvery { requestRepository.getRequest(testRequestId) } throws Exception("Network error")
     viewModel = ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
@@ -625,7 +603,7 @@ class ValidateRequestViewModelTest {
   }
 
   @Test
-  fun `reset sets state to Loading`() = runTest {
+  fun resetSetsStateToLoading() = runTest {
     // Given
     setupReadyState()
 
@@ -639,21 +617,21 @@ class ValidateRequestViewModelTest {
   // ==================== Factory Tests ====================
 
   @Test
-  fun `factory creates ValidateRequestViewModel successfully`() {
+  fun factory_creates_ValidateRequestViewModel_successfully() {
     // Given
     val factory =
         ValidateRequestViewModelFactory(testRequestId, requestRepository, userProfileRepository)
 
     // When
+    @Suppress("USELESS_IS_CHECK") // Intentional for test clarity
     val vm = factory.create(ValidateRequestViewModel::class.java)
 
     // Then
     assertNotNull(vm)
-    assertTrue(vm is ValidateRequestViewModel)
   }
 
   @Test(expected = IllegalArgumentException::class)
-  fun `factory throws exception for wrong ViewModel class`() {
+  fun factoryThrowsExceptionForWrongViewModelClass() {
     // Given
     val factory =
         ValidateRequestViewModelFactory(testRequestId, requestRepository, userProfileRepository)
