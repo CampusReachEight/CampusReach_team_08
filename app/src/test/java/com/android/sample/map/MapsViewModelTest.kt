@@ -98,7 +98,7 @@ class MapsViewModelTest {
     }
 
     override suspend fun closeRequest(requestId: String, selectedHelperIds: List<String>): Boolean {
-      TODO("Not yet implemented")
+      return true
     }
   }
 
@@ -126,11 +126,11 @@ class MapsViewModelTest {
     }
 
     override suspend fun awardKudos(userId: String, amount: Int) {
-      TODO("Not yet implemented")
+      return
     }
 
     override suspend fun awardKudosBatch(awards: Map<String, Int>) {
-      TODO("Not yet implemented")
+      return
     }
   }
 
