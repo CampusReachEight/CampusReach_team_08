@@ -276,8 +276,7 @@ fun AddButton(navigationActions: NavigationActions?) {
         Icon(
             imageVector = Icons.Default.Add,
             contentDescription = "Add Request",
-            tint = appPalette().white
-        )
+            tint = appPalette().white)
       }
 }
 

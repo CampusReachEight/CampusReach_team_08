@@ -101,13 +101,13 @@ fun ProfilePicture(
     val profile: UserProfile? =
         cachedProfile
             ?: try {
-                val p = profileRepository.getUserProfile(profileId)
-                ProfileCache.put(profileId, p)
-                p
+              val p = profileRepository.getUserProfile(profileId)
+              ProfileCache.put(profileId, p)
+              p
             } catch (e: Exception) {
-                // couldn't fetch profile
-                ProfileCache.put(profileId, null)
-                null
+              // couldn't fetch profile
+              ProfileCache.put(profileId, null)
+              null
             }
 
     if (profile == null) {

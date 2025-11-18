@@ -5,8 +5,8 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 
 interface AppPalette {
-  val white : Color
-  val black : Color
+  val white: Color
+  val black: Color
   val primary: Color
   val secondary: Color
   val accent: Color
@@ -21,8 +21,8 @@ interface AppPalette {
 }
 
 object LightPalette : AppPalette {
-  override val white : Color = AppColors.WhiteColor
-  override val black : Color = AppColors.BlackColor
+  override val white: Color = AppColors.WhiteColor
+  override val black: Color = AppColors.BlackColor
   override val primary: Color = AppColors.PrimaryColor
   override val secondary: Color = AppColors.SecondaryColor
   override val accent: Color = AppColors.AccentColor
@@ -37,8 +37,8 @@ object LightPalette : AppPalette {
 }
 
 object DarkPalette : AppPalette {
-  override val white : Color = AppColors.WhiteColor
-  override val black : Color = AppColors.BlackColor
+  override val white: Color = AppColors.WhiteColor
+  override val black: Color = AppColors.BlackColor
   override val primary: Color = AppColors.PrimaryDark
   override val secondary: Color = AppColors.SecondaryDark
   override val accent: Color = AppColors.AccentDark
