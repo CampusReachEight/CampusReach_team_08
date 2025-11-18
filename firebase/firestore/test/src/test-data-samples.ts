@@ -174,4 +174,3 @@ export const sampleUserProfileDocs: { private: Record<string, UserProfileDoc>; p
 // Convenience arrays (if you prefer arrays instead of maps)
 export const sampleUserPrivateDocsArray: UserProfileDoc[] = Object.values(sampleUserProfileDocs.private);
 export const sampleUserPublicDocsArray: UserProfileDoc[] = Object.values(sampleUserProfileDocs.public);
-
