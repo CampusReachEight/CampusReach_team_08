@@ -196,7 +196,7 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
 
   override suspend fun awardKudosBatch(awards: Map<String, Int>) {
     // Validate all amounts first
-    awards.forEach { (userId, amount) ->
+    awards.forEach { (_, amount) ->
       if (amount <= 0) {
         throw KudosException.InvalidAmount(amount)
       }
