@@ -107,7 +107,7 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
       batch.commit().await()
 
       // Small delay to ensure deletion completes
-      kotlinx.coroutines.delay(100)
+      kotlinx.coroutines.delay(500)
     } catch (e: Exception) {
       Log.e("TestCleanup", "Error clearing test data", e)
     }
@@ -134,6 +134,7 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
     }
 
     batch.commit().await()
+    delay(200)
   }
 
   private suspend fun getPublicProfilesCount(): Int {
@@ -148,10 +149,13 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
   @Test
   fun getNewIdReturnsCorrectId() = runTest { assertEquals(currentUserId, repository.getNewUid()) }
 
+  @OptIn(ExperimentalCoroutinesApi::class)
   @Test
   fun canAddUserProfileToRepository() = runTest {
     val profile = testProfile1.copy(id = currentUserId)
     repository.addUserProfile(profile)
+    advanceUntilIdle()
+    delay(200)
 
     assertEquals(1, getPublicProfilesCount())
     assertEquals(1, getPrivateProfilesCount())
@@ -165,14 +169,15 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
     assertEquals(null, storedProfile.email)
   }
 
+  @OptIn(ExperimentalCoroutinesApi::class)
   @Test
   fun addUserProfileStoresFullDetailsInPrivateCollection() =
       runTest(timeout = 10.seconds) {
         val profile = testProfile1.copy(id = currentUserId)
         repository.addUserProfile(profile)
 
-        // CRITICAL: Wait for Firestore write to complete
         advanceUntilIdle()
+        delay(300)
 
         val privateProfile = repository.getUserProfile(currentUserId)
 
@@ -426,11 +431,14 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
             results.any { it.name == "Jane" && it.lastName == "Smith" })
       }
 
+  @OptIn(ExperimentalCoroutinesApi::class)
   @Test
   fun search_findsByLastNamePrefix_whenFirstNameDoesNotMatch() = runTest {
     // Seed user with last name matching prefix only
     addProfileFor(DEFAULT_USER_EMAIL, name = "Alice", lastName = "Smith")
-
+    addProfileFor(DEFAULT_USER_EMAIL, name = "Alice", lastName = "Smith")
+    advanceUntilIdle()
+    delay(200)
     val results = repository.searchUserProfiles("smi")
     assertTrue(results.any { it.name == "Alice" && it.lastName == "Smith" })
     assertFalse(results.any { it.name == "John" && it.lastName == "Doe" })
