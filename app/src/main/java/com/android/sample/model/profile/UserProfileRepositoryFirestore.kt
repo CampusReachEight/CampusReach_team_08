@@ -11,6 +11,8 @@ import kotlinx.coroutines.tasks.await
 const val PUBLIC_PROFILES_PATH = "public_profiles"
 const val PRIVATE_PROFILES_PATH = "private_profiles"
 
+private const val ZERO = 0
+
 /**
  * Repository interface for managing user profiles.
  *
@@ -131,7 +133,7 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
       val remaining = limit - byName.size
 
       val byLastName =
-          if (remaining > 0) {
+          if (remaining > ZERO) {
             // Second: prefix search on lastNameLowercase if we still need more results
             val lastNameSnapshot =
                 publicCollectionRef
@@ -161,7 +163,7 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
 
   override suspend fun awardKudos(userId: String, amount: Int) {
     // Validation
-    if (amount <= 0) {
+    if (amount <= ZERO) {
       throw KudosException.InvalidAmount(amount)
     }
 
@@ -197,7 +199,7 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
   override suspend fun awardKudosBatch(awards: Map<String, Int>) {
     // Validate all amounts first
     awards.forEach { (_, amount) ->
-      if (amount <= 0) {
+      if (amount <= ZERO) {
         throw KudosException.InvalidAmount(amount)
       }
       if (amount > KudosConstants.MAX_KUDOS_PER_TRANSACTION) {
