@@ -41,6 +41,12 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
   private lateinit var request2: Request
   private lateinit var request3: Request
 
+  companion object {
+    const val request1_id = "request1"
+    const val request2_id = "request2"
+    const val request3_id = "request3"
+  }
+
   private fun signIn(email: String = DEFAULT_USER_EMAIL, password: String = DEFAULT_USER_PASSWORD) {
     previousUserId = currentUserId
 
@@ -67,7 +73,7 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
 
       request1 =
           Request(
-              "request1",
+              request1_id,
               "Here is a good title",
               "In here we will do a lot of things, like beeing good persons",
               listOf(RequestType.STUDYING, RequestType.STUDY_GROUP, RequestType.SPORT),
@@ -141,7 +147,7 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
 
   @Test
   fun screenComponentsAreDisplayed() {
-    composeTestRule.setContent { AcceptRequestScreen("request1") }
+    composeTestRule.setContent { AcceptRequestScreen(request1_id) }
 
     composeTestRule.waitUntil(uiWaitTimeout) {
       composeTestRule
@@ -175,7 +181,7 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
 
   @Test
   fun detailsCardDisplaysAllInformation() {
-    composeTestRule.setContent { AcceptRequestScreen("request1") }
+    composeTestRule.setContent { AcceptRequestScreen(request1_id) }
 
     composeTestRule.waitUntil(uiWaitTimeout) {
       composeTestRule
@@ -237,7 +243,7 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
 
   @Test
   fun topBarDisplaysCorrectTitle() {
-    composeTestRule.setContent { AcceptRequestScreen("request1") }
+    composeTestRule.setContent { AcceptRequestScreen(request1_id) }
 
     composeTestRule.waitUntil(uiWaitTimeout) {
       composeTestRule
@@ -254,7 +260,7 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
 
   @Test
   fun acceptButtonDisplaysCorrectText() {
-    composeTestRule.setContent { AcceptRequestScreen("request1") }
+    composeTestRule.setContent { AcceptRequestScreen(request1_id) }
 
     composeTestRule.waitUntil(uiWaitTimeout) {
       composeTestRule
@@ -271,7 +277,7 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
 
   @Test
   fun acceptAndCancelRequestFlow() {
-    composeTestRule.setContent { AcceptRequestScreen("request1") }
+    composeTestRule.setContent { AcceptRequestScreen(request1_id) }
 
     composeTestRule.waitUntil(uiWaitTimeout) {
       composeTestRule
@@ -427,7 +433,7 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
   fun backButtonNavigatesBack() {
     var backButtonClicked = false
     composeTestRule.setContent {
-      AcceptRequestScreen("request1", onGoBack = { backButtonClicked = true })
+      AcceptRequestScreen(request1_id, onGoBack = { backButtonClicked = true })
     }
 
     composeTestRule.waitUntil(uiWaitTimeout) {
@@ -444,7 +450,7 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
 
   @Test
   fun buttonShowsLoadingState() {
-    composeTestRule.setContent { AcceptRequestScreen("request1") }
+    composeTestRule.setContent { AcceptRequestScreen(request1_id) }
 
     composeTestRule.waitUntil(uiWaitTimeout) {
       composeTestRule
@@ -494,7 +500,7 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
 
   @Test
   fun multipleRequestTypesDisplayCorrectly() {
-    composeTestRule.setContent { AcceptRequestScreen("request1") }
+    composeTestRule.setContent { AcceptRequestScreen(request1_id) }
 
     composeTestRule.waitUntil(uiWaitTimeout) {
       composeTestRule
@@ -533,7 +539,7 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
     // Sign in as the owner of request1
     runTest { signInUser(DEFAULT_USER_EMAIL, DEFAULT_USER_PASSWORD) }
 
-    composeTestRule.setContent { AcceptRequestScreen("request1") }
+    composeTestRule.setContent { AcceptRequestScreen(request1_id) }
 
     composeTestRule.waitUntil(uiWaitTimeout) {
       composeTestRule
@@ -549,13 +555,6 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
         .performClick()
 
     // request1 has empty people list -> should show "No volunteers yet"
-    composeTestRule
-        .onNodeWithTag(AcceptRequestScreenTestTags.VOLUNTEERS_SECTION_CONTAINER)
-        .assertIsDisplayed()
-    composeTestRule
-        .onNodeWithTag(AcceptRequestScreenTestTags.VOLUNTEERS_SECTION_CONTAINER)
-        .assertIsDisplayed()
-    // Rely on text shown inside the expanded section
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.VOLUNTEERS_SECTION_CONTAINER)
         .assertIsDisplayed()
