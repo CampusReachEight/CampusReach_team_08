@@ -1,34 +1,38 @@
 import { initializeTestEnvironment, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
 import { readFile } from 'fs/promises';
+import path from 'path';
 
-const HOST = '127.0.0.1';
-const FIRESTORE_PORT = 8080;
+// Derive emulator host/port from env if provided; fallback to defaults.
+const DEFAULT_HOST = '127.0.0.1';
+const DEFAULT_PORT = 8080;
 
-export async function checkIfEmulatorsAreRunning() {
-  try {
-    await fetch(`http://${HOST}:${FIRESTORE_PORT}`);
-  } catch (e) {
-    throw new Error('Emulators are not running, please start them before running tests.');
-  }
+function parseEmulatorHost(envVal?: string): { host: string; port: number } {
+  if (!envVal) return { host: DEFAULT_HOST, port: DEFAULT_PORT };
+  const [host, portStr] = envVal.split(':');
+  const port = Number(portStr);
+  if (!host || Number.isNaN(port)) return { host: DEFAULT_HOST, port: DEFAULT_PORT };
+  return { host, port };
 }
 
 export async function setupEnvironment(): Promise<RulesTestEnvironment> {
-  process.env['FIRESTORE_EMULATOR_HOST'] = `${HOST}:${FIRESTORE_PORT}`;
-  process.env['FIREBASE_PROJECT_ID'] = 'demo-unit-tests';
+  const { host, port } = parseEmulatorHost(process.env.FIRESTORE_EMULATOR_HOST);
+  process.env['FIRESTORE_EMULATOR_HOST'] = `${host}:${port}`;
+  process.env['FIREBASE_PROJECT_ID'] = process.env['FIREBASE_PROJECT_ID'] || 'demo-unit-tests';
+
+  // Resolve rules file relative to this file to avoid CWD issues
+  const rulesPath = path.resolve(__dirname, '../../firestore.rules');
 
   return await initializeTestEnvironment({
-    projectId: 'demo-unit-tests',
+    projectId: process.env['FIREBASE_PROJECT_ID']!,
     firestore: {
-      rules: await readFile('../firestore.rules', 'utf-8'),
-      host: HOST,
-      port: FIRESTORE_PORT,
+      rules: await readFile(rulesPath, 'utf-8'),
+      host,
+      port,
     },
   });
 }
 
 export async function setup() {
-  // Ensure emulators are running
-  await checkIfEmulatorsAreRunning();
-  // Initialize testing environment
+  // Initialize testing environment (emulators are managed by firebase emulators:exec during CI)
   return await setupEnvironment();
 }
