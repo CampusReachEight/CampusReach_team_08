@@ -130,8 +130,8 @@ jobs:
           if [ -e "firestore.rules" ]; then
             if [ -d "firebase/firestore/test" ]; then
               pushd firebase/firestore/test
-              npm ci
-              npx vitest run
+              npm install
+              firebase emulators:exec --only firestore --project demo-unit-tests "npx vitest run"
               popd
             else
               echo "No firebase/firestore/test directory; skipping Firestore tests."
