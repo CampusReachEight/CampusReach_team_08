@@ -21,6 +21,7 @@ interface AppPalette {
   val onSurface: Color
 
   fun getRequestTypeColor(type : RequestType): Color
+  fun getRequestTypeBackgroundColor(type : RequestType): Color
 }
 
 object LightPalette : AppPalette {
@@ -39,14 +40,26 @@ object LightPalette : AppPalette {
   override val onSurface: Color = AppColors.BlackColor
   override fun getRequestTypeColor(type: RequestType): Color {
     return when (type) {
-        RequestType.STUDYING -> Color(0xFF4A90E2) // Bleu calme
-        RequestType.STUDY_GROUP -> Color(0xFF5B9BD5) // Bleu moyen
-        RequestType.HANGING_OUT -> Color(0xFFFF9800) // Orange chaleureux
-        RequestType.EATING -> Color(0xFFE91E63) // Rose/Rouge
-        RequestType.SPORT -> Color(0xFF4CAF50) // Vert actif
-        RequestType.HARDWARE -> Color(0xFF9C27B0) // Violet
-        RequestType.LOST_AND_FOUND -> Color(0xFFF44336) // Rouge attention
-        RequestType.OTHER -> Color(0xFF757575) // Gris neutre
+        RequestType.STUDYING -> Color(0xFF1247F8) // Bleu accent principal (matching AccentColor)
+        RequestType.STUDY_GROUP -> Color(0xFF4A7FE8) // Bleu plus doux
+        RequestType.HANGING_OUT -> Color(0xFFFF8C42) // Orange harmonieux
+        RequestType.EATING -> Color(0xFFE63946) // Rouge/Rose plus doux
+        RequestType.SPORT -> Color(0xFF2ECC71) // Vert vif mais pas trop
+        RequestType.HARDWARE -> Color(0xFF9B59B6) // Violet équilibré
+        RequestType.LOST_AND_FOUND -> Color(0xFFE74C3C) // Rouge attention mais doux
+        RequestType.OTHER -> Color(0xFF6C757D) // Gris neutre
+    }
+  }
+  override fun getRequestTypeBackgroundColor(type: RequestType): Color {
+    return when (type) {
+        RequestType.STUDYING -> Color(0xFFE8EFFE) // Bleu très clair (proche de PrimaryColor)
+        RequestType.STUDY_GROUP -> Color(0xFFD8E4FF) // Bleu clair (matching SecondaryColor)
+        RequestType.HANGING_OUT -> Color(0xFFFFECE0) // Orange très clair
+        RequestType.EATING -> Color(0xFFFFE5E8) // Rose très clair
+        RequestType.SPORT -> Color(0xFFE8F8F0) // Vert très clair
+        RequestType.HARDWARE -> Color(0xFFF3EAF8) // Violet très clair
+        RequestType.LOST_AND_FOUND -> Color(0xFFFFE9E8) // Rouge très clair
+        RequestType.OTHER -> Color(0xFFF5F6F7) // Gris très clair
     }
   }
 }
@@ -68,14 +81,26 @@ object DarkPalette : AppPalette {
 
   override fun getRequestTypeColor(type: RequestType): Color {
     return when (type) {
-        RequestType.STUDYING -> Color(0xFF64B5F6) // Bleu plus clair pour dark mode
-        RequestType.STUDY_GROUP -> Color(0xFF81C4E8) // Bleu ciel
-        RequestType.HANGING_OUT -> Color(0xFFFFB74D) // Orange plus doux
-        RequestType.EATING -> Color(0xFFF48FB1) // Rose plus clair
-        RequestType.SPORT -> Color(0xFF81C784) // Vert plus clair
-        RequestType.HARDWARE -> Color(0xFFBA68C8) // Violet plus clair
-        RequestType.LOST_AND_FOUND -> Color(0xFFEF5350) // Rouge plus doux
-        RequestType.OTHER -> Color(0xFF9E9E9E) // Gris plus clair
+        RequestType.STUDYING -> Color(0xFF5A8FFF) // Bleu clair (proche de AccentDark)
+        RequestType.STUDY_GROUP -> Color(0xFF7BA5FF) // Bleu ciel plus doux
+        RequestType.HANGING_OUT -> Color(0xFFFFAA6B) // Orange clair
+        RequestType.EATING -> Color(0xFFFF7B8A) // Rose clair
+        RequestType.SPORT -> Color(0xFF6FDA9A) // Vert clair
+        RequestType.HARDWARE -> Color(0xFFC48FD9) // Violet clair
+        RequestType.LOST_AND_FOUND -> Color(0xFFFF6B6B) // Rouge clair (matching ErrorDark)
+        RequestType.OTHER -> Color(0xFFADB5BD) // Gris clair
+    }
+  }
+  override fun getRequestTypeBackgroundColor(type: RequestType): Color {
+    return when (type) {
+        RequestType.STUDYING -> Color(0xFF1A2744) // Bleu foncé (proche de PrimaryDark)
+        RequestType.STUDY_GROUP -> Color(0xFF2B3650) // Bleu foncé (matching PrimaryDark)
+        RequestType.HANGING_OUT -> Color(0xFF3D2A1A) // Orange foncé
+        RequestType.EATING -> Color(0xFF3D1A22) // Rose/Rouge foncé
+        RequestType.SPORT -> Color(0xFF1A3D28) // Vert foncé
+        RequestType.HARDWARE -> Color(0xFF3A1A44) // Violet foncé
+        RequestType.LOST_AND_FOUND -> Color(0xFF3D1A1A) // Rouge foncé
+        RequestType.OTHER -> Color(0xFF2E3238) // Gris foncé (proche de SecondaryDark)
     }
   }
 }
