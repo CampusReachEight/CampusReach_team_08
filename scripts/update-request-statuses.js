@@ -28,14 +28,22 @@
 
 const fs = require('fs');
 const admin = require('firebase-admin');
-const { Timestamp } = require('firebase-admin/firestore');
+const { Timestamp, FieldPath } = require('firebase-admin/firestore');
 
 // Collection and batching configuration
 const REQUESTS_COLLECTION_PATH = 'requests';
 const MAX_BATCH_SIZE = 500; // Firestore limit per batch
+const PAGE_SIZE = 1000; // pagination for reading
+const PREVIEW_LIMIT = 10; // max transitions preview lines
+const MAX_RETRIES = 3; // retry attempts for transient errors
+const BACKOFF_BASE_MS = 1000; // base backoff delay in ms
 
 // The credentials file the workflow writes to disk before execution
 const SERVICE_ACCOUNT_FILE = 'service-account.json';
+
+// Simple CLI args parsing for flags like --dry-run
+const argv = process.argv.slice(2);
+const DRY_RUN = argv.includes('--dry-run') || process.env.DRY_RUN === 'true';
 
 // Loads and parses the service account JSON from disk. Throws on failure.
 function loadServiceAccount() {
@@ -50,7 +58,15 @@ function loadServiceAccount() {
 // Initializes Firebase Admin SDK once and returns a Firestore instance.
 function initFirebase() {
   if (admin.apps.length === 0) {
-    admin.initializeApp({ credential: admin.credential.cert(loadServiceAccount()) });
+    const usingEmulator = !!process.env.FIRESTORE_EMULATOR_HOST;
+    if (usingEmulator) {
+      const projectId = process.env.FIREBASE_PROJECT_ID || 'demo-project';
+      admin.initializeApp({ projectId });
+    } else {
+      const sa = loadServiceAccount();
+      const projectId = process.env.FIREBASE_PROJECT_ID || sa.project_id;
+      admin.initializeApp({ credential: admin.credential.cert(sa), projectId });
+    }
   }
   return admin.firestore();
 }
@@ -99,12 +115,49 @@ function determineNewStatus(docData, nowMs) {
   return null;
 }
 
-// Commits updates in batches of at most MAX_BATCH_SIZE operations.
-// Returns an array containing the size of each committed batch.
+// Retry helper with exponential backoff and jitter
+async function retryWithBackoff(fn, { maxRetries = MAX_RETRIES, baseMs = BACKOFF_BASE_MS } = {}) {
+  let lastError;
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+      if (attempt === maxRetries - 1) break;
+      const jitter = Math.floor(Math.random() * baseMs);
+      const delay = Math.pow(2, attempt) * baseMs + jitter;
+      console.warn(`Operation failed (attempt ${attempt + 1}/${maxRetries}): ${error.message}. Retrying in ${delay}ms...`);
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+  throw lastError;
+}
+
+// Commits updates in batches of at most MAX_BATCH_SIZE operations with retry and
+// improved error diagnostics. Returns an array containing the size of each committed batch.
 async function batchUpdateDocuments(db, updates) {
   let batch = db.batch();
   let opsInBatch = 0;
   const commitSizes = [];
+  let currentBatchStartIdx = 0;
+
+  const commitCurrent = async () => {
+    if (opsInBatch === 0) return;
+    try {
+      await retryWithBackoff(() => batch.commit());
+      commitSizes.push(opsInBatch);
+    } catch (error) {
+      const failedIds = updates
+        .slice(currentBatchStartIdx, currentBatchStartIdx + opsInBatch)
+        .map((u) => u.id);
+      console.error(`Batch commit failed for ${opsInBatch} ops. Failed document IDs:`, failedIds);
+      throw error;
+    } finally {
+      batch = db.batch();
+      opsInBatch = 0;
+      currentBatchStartIdx += commitSizes[commitSizes.length - 1] || 0;
+    }
+  };
 
   for (const update of updates) {
     batch.update(update.ref, update.data);
@@ -112,31 +165,34 @@ async function batchUpdateDocuments(db, updates) {
 
     // Commit and reset the batch once we reach the write limit.
     if (opsInBatch === MAX_BATCH_SIZE) {
-      await batch.commit();
-      commitSizes.push(opsInBatch);
-      batch = db.batch();
-      opsInBatch = 0;
+      await commitCurrent();
     }
   }
 
   // Commit any remaining writes.
   if (opsInBatch > 0) {
-    await batch.commit();
-    commitSizes.push(opsInBatch);
+    await commitCurrent();
   }
 
   return commitSizes;
 }
 
 // Prints a concise summary including counts per transition and a small preview.
-function printSummary({ total, updated, transitions, preview = [] }) {
+function printSummary({ total, updated, transitions, preview = [], dryRun = false, batchSizes = [] }) {
   console.log('\nUPDATE SUMMARY');
   console.log('----------------');
   console.log(`Total documents scanned: ${total}`);
-  console.log(`Total documents updated: ${updated}`);
+  if (dryRun) {
+    console.log(`Total documents that WOULD be updated (dry-run): ${updated}`);
+  } else {
+    console.log(`Total documents updated: ${updated}`);
+  }
   Object.entries(transitions).forEach(([transition, count]) => {
     console.log(`  ${transition}: ${count}`);
   });
+  if (batchSizes.length) {
+    console.log(`Committed ${batchSizes.length} batches: [${batchSizes.join(', ')}]`);
+  }
   if (preview.length) {
     console.log('\nPreview of transitions:');
     preview.forEach((item, idx) => {
@@ -145,91 +201,119 @@ function printSummary({ total, updated, transitions, preview = [] }) {
   }
 }
 
-// Orchestrates the full update flow:
-// 1) Initialize Firestore.
-// 2) Read all request documents.
-// 3) Compute desired transitions relative to now.
-// 4) Batch update changed documents with server timestamps.
-// 5) Log batch commits and a final summary.
+// Async generator to iterate over a collection in pages to avoid loading everything in memory.
+async function* fetchInBatches(collectionRef, pageSize = PAGE_SIZE) {
+  let lastDoc = null;
+  // Order by document ID for stable pagination
+  while (true) {
+    let query = collectionRef.orderBy(FieldPath.documentId()).limit(pageSize);
+    if (lastDoc) query = query.startAfter(lastDoc);
+    const snapshot = await query.get();
+    if (snapshot.empty) break;
+    yield snapshot;
+    lastDoc = snapshot.docs[snapshot.docs.length - 1];
+  }
+}
+
+// Orchestrates the full update flow with pagination and optional dry-run
 async function updateRequestStatuses() {
-  console.log(`[${new Date().toISOString()}] Starting Firebase Request Status Update`);
+  console.log(`[${new Date().toISOString()}] Starting Firebase Request Status Update${DRY_RUN ? ' (dry-run)' : ''}`);
   const db = initFirebase();
 
-  // Fetch all documents from the target collection.
-  const snapshot = await db.collection(REQUESTS_COLLECTION_PATH).get();
-  console.log(`Found ${snapshot.size} documents to process`);
+  const collectionRef = db.collection(REQUESTS_COLLECTION_PATH);
 
-  const nowMs = Date.now();
-  const updates = [];
+  let totalScanned = 0;
+  let totalUpdated = 0;
   const transitions = {
     'CANCELLED->ARCHIVED': 0,
     'OPEN->IN_PROGRESS': 0,
     'IN_PROGRESS->ARCHIVED': 0,
   };
   const preview = [];
+  const allBatchSizes = [];
 
-  // Determine which docs need updates and prepare their new values.
-  snapshot.forEach((doc) => {
-    const data = doc.data();
-    const newStatus = determineNewStatus(data, nowMs);
-    if (!newStatus || newStatus === data.status) return;
+  const nowMs = Date.now();
 
-    const transitionKey = `${data.status}->${newStatus}`;
-    if (transitions[transitionKey] !== undefined) {
-      transitions[transitionKey] += 1;
+  for await (const snapshot of fetchInBatches(collectionRef)) {
+    totalScanned += snapshot.size;
+
+    const updatesBuffer = [];
+
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      const newStatus = determineNewStatus(data, nowMs);
+      if (!newStatus || newStatus === data.status) return;
+
+      const transitionKey = `${data.status}->${newStatus}`;
+      if (transitions[transitionKey] !== undefined) {
+        transitions[transitionKey] += 1;
+      } else {
+        // Track unexpected transitions for visibility
+        transitions[transitionKey] = 1;
+      }
+
+      const updateEntry = {
+        ref: doc.ref,
+        data: {
+          status: newStatus,
+          // Use server-assigned timestamp to reflect the update time consistently.
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+        id: doc.id,
+        from: data.status,
+        to: newStatus,
+      };
+      updatesBuffer.push(updateEntry);
+
+      // Keep a small preview list for logs.
+      if (preview.length < PREVIEW_LIMIT) {
+        preview.push({ id: updateEntry.id, from: updateEntry.from, to: updateEntry.to });
+      }
+    });
+
+    console.log(`Page scheduled ${updatesBuffer.length} documents for update`);
+
+    if (!DRY_RUN && updatesBuffer.length > 0) {
+      const sizes = await batchUpdateDocuments(db, updatesBuffer);
+      sizes.forEach((s) => allBatchSizes.push(s));
     }
 
-    const updateEntry = {
-      ref: doc.ref,
-      data: {
-        status: newStatus,
-        // Use server-assigned timestamp to reflect the update time consistently.
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      },
-      id: doc.id,
-      from: data.status,
-      to: newStatus,
-    };
-    updates.push(updateEntry);
-
-    // Keep a small preview list for logs.
-    if (preview.length < 10) {
-      preview.push({ id: updateEntry.id, from: updateEntry.from, to: updateEntry.to });
-    }
-  });
-
-  // Log a quick preview of what's going to change.
-  console.log(`Scheduled ${updates.length} documents for update`);
-  updates.slice(0, 10).forEach((update, idx) => {
-    console.log(`  [${idx + 1}] ${update.id}: ${update.from} -> ${update.to}`);
-  });
-  if (updates.length > 10) {
-    console.log(`  ...and ${updates.length - 10} more`);
+    totalUpdated += updatesBuffer.length;
   }
 
-  // If nothing to update, print summary and exit early.
-  if (updates.length === 0) {
-    printSummary({ total: snapshot.size, updated: 0, transitions, preview: [] });
-    return;
+  // Log quick preview of what's going to change if there are more than preview limit
+  if (totalUpdated > PREVIEW_LIMIT) {
+    console.log(`  ...and ${totalUpdated - PREVIEW_LIMIT} more`);
   }
 
-  // Execute batched updates and log commit sizes.
-  const batchSizes = await batchUpdateDocuments(db, updates);
-  batchSizes.forEach((size, index) => {
-    console.log(`Batch ${index + 1} committed: ${size} documents updated`);
+  printSummary({
+    total: totalScanned,
+    updated: totalUpdated,
+    transitions,
+    preview,
+    dryRun: DRY_RUN,
+    batchSizes: allBatchSizes,
   });
-
-  // Final rollup of what happened during this run.
-  printSummary({ total: snapshot.size, updated: updates.length, transitions, preview });
 }
 
-// Run the updater and set a process exit code for CI consumption.
-updateRequestStatuses()
-  .then(() => {
-    console.log('Status update completed successfully');
-    process.exit(0);
-  })
-  .catch((error) => {
-    console.error('Status update failed:', error);
-    process.exit(1);
-  });
+// Run the updater only when executed directly (not when imported by tests)
+if (require.main === module) {
+  updateRequestStatuses()
+    .then(() => {
+      console.log('Status update completed successfully');
+      process.exit(0);
+    })
+    .catch((error) => {
+      console.error('Status update failed:', error);
+      process.exit(1);
+    });
+}
+
+module.exports = {
+  updateRequestStatuses,
+  determineNewStatus,
+  // Expose for tests if needed
+  _internal: {
+    initFirebase,
+  },
+};

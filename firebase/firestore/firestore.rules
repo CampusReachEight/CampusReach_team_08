@@ -1,0 +1,49 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Public profiles: everyone can read
+    match /public_profiles/{userId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Private profiles: only the owner can read/write
+    match /private_profiles/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /requests/{requestId} {
+          // Create: allow only if auth UID equals creatorId in the new document
+          allow create: if request.auth != null
+                        && request.auth.uid == request.resource.data.creatorId;
+
+
+          allow update: if request.auth != null && (
+                // Creator can change everything
+                request.auth.uid == resource.data.creatorId
+                ||
+                // Others can only add or remove their own UID from 'people'
+                  (
+                    request.resource.data.diff(resource.data).affectedKeys().hasOnly(['people']) &&
+                    (
+                      // Adding their UID
+                      (request.resource.data.people.hasAll(resource.data.people) &&
+                       request.resource.data.people.removeAll(resource.data.people) == [request.auth.uid])
+                      ||
+                      // Removing their UID
+                      (resource.data.people.hasAll(request.resource.data.people) &&
+                       resource.data.people.removeAll(request.resource.data.people) == [request.auth.uid])
+                    )
+                  )
+            )
+
+          // Delete: allow only if auth UID equals stored creatorId
+          allow delete: if request.auth != null
+                        && request.auth.uid == resource.data.creatorId;
+
+          // Read: Allow any user to read requests
+          allow read: if true;
+        }
+  }
+}
