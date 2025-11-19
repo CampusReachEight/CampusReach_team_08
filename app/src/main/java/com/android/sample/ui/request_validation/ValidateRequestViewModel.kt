@@ -209,21 +209,19 @@ class ValidateRequestViewModel(
         val selectedHelperIds = currentState.selectedHelpers.map { it.id }
 
         // Close the request first and check if creator should receive kudos
-        val shouldAwardCreator =
-            requestRepository.closeRequest(
-                requestId = requestId, selectedHelperIds = selectedHelperIds)
-
+        // This value is set to false for now and in the future can be set
+        // to award kudos to the creator upon resolution.
+        // this could incentivise users to actually credit their helpers
+        // val shouldAwardCreator = false
+        // requestRepository.closeRequest(
+        // requestId = requestId, selectedHelperIds = selectedHelperIds)
+        requestRepository.closeRequest(requestId = requestId, selectedHelperIds = selectedHelperIds)
         // Prepare kudos awards map
         val kudosAwards = mutableMapOf<String, Int>()
 
         // Add kudos for selected helpers
         selectedHelperIds.forEach { helperId ->
           kudosAwards[helperId] = KudosConstants.KUDOS_PER_HELPER
-        }
-
-        // Add creator bonus if applicable
-        if (shouldAwardCreator) {
-          kudosAwards[currentState.request.creatorId] = KudosConstants.KUDOS_FOR_CREATOR_RESOLUTION
         }
 
         // Award kudos

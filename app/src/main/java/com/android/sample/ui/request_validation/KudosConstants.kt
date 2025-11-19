@@ -8,7 +8,7 @@ package com.android.sample.ui.request_validation
  */
 object KudosConstants {
   /** Number of kudos awarded to each selected helper when a request is closed. */
-  const val KUDOS_PER_HELPER = 10
+  const val KUDOS_PER_HELPER = 1
 
   /** Number of kudos awarded to the request creator for successfully resolving their request. */
   const val KUDOS_FOR_CREATOR_RESOLUTION = 1

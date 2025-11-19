@@ -477,8 +477,34 @@ class ValidateRequestViewModelTest {
       userProfileRepository.awardKudosBatch(
           match {
             it[HELPER_1] == KudosConstants.KUDOS_PER_HELPER &&
-                it[testCreatorId] == KudosConstants.KUDOS_FOR_CREATOR_RESOLUTION &&
-                it.size == 2
+                !it.containsKey(testCreatorId) && // No creator kudos
+                it.size == 1 // Only 1 helper
+          })
+    }
+  }
+
+  @Test
+  fun confirmAndCloseWithoutCreatorBonusWhenCloseRequestReturnsFalse() = runTest {
+    // Given
+    setupReadyState()
+    viewModel.toggleHelperSelection(HELPER_1)
+    viewModel.showConfirmation()
+
+    coEvery { requestRepository.closeRequest(testRequestId, listOf(HELPER_1)) } returns false
+    coEvery { userProfileRepository.awardKudosBatch(any()) } returns Unit
+
+    // When
+    viewModel.confirmAndClose()
+    advanceUntilIdle()
+
+    // Then
+    assertTrue(viewModel.state is ValidationState.Success)
+    coVerify {
+      userProfileRepository.awardKudosBatch(
+          match {
+            it[HELPER_1] == KudosConstants.KUDOS_PER_HELPER &&
+                !it.containsKey(testCreatorId) &&
+                it.size == 1
           })
     }
   }
@@ -506,34 +532,8 @@ class ValidateRequestViewModelTest {
           match {
             it[HELPER_1] == KudosConstants.KUDOS_PER_HELPER &&
                 it[ID_HELPER2] == KudosConstants.KUDOS_PER_HELPER &&
-                it[testCreatorId] == KudosConstants.KUDOS_FOR_CREATOR_RESOLUTION &&
-                it.size == 3
-          })
-    }
-  }
-
-  @Test
-  fun confirmAndCloseWithoutCreatorBonusWhenCloseRequestReturnsFalse() = runTest {
-    // Given
-    setupReadyState()
-    viewModel.toggleHelperSelection(HELPER_1)
-    viewModel.showConfirmation()
-
-    coEvery { requestRepository.closeRequest(testRequestId, listOf(HELPER_1)) } returns false
-    coEvery { userProfileRepository.awardKudosBatch(any()) } returns Unit
-
-    // When
-    viewModel.confirmAndClose()
-    advanceUntilIdle()
-
-    // Then
-    assertTrue(viewModel.state is ValidationState.Success)
-    coVerify {
-      userProfileRepository.awardKudosBatch(
-          match {
-            it[HELPER_1] == KudosConstants.KUDOS_PER_HELPER &&
-                !it.containsKey(testCreatorId) &&
-                it.size == 1
+                !it.containsKey(testCreatorId) && // No creator kudos
+                it.size == 2 // Only 2 helpers
           })
     }
   }
