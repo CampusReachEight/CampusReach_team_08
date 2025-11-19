@@ -224,7 +224,12 @@ private const val MAX_PARAM = 2
 private const val ChipsDescriptionRatio = 0.4f
 
 @Composable
-fun RequestListItem(viewModel: RequestListViewModel, request: Request, onClick: (Request) -> Unit, modifier: Modifier = Modifier) {
+fun RequestListItem(
+    viewModel: RequestListViewModel,
+    request: Request,
+    onClick: (Request) -> Unit,
+    modifier: Modifier = Modifier
+) {
 
   Card(
       modifier =
@@ -245,7 +250,8 @@ fun RequestListItem(viewModel: RequestListViewModel, request: Request, onClick: 
                   .fillMaxHeight()
                   .align(Alignment.CenterVertically)
                   .padding(vertical = ConstantRequestList.RequestItemProfileHeightPadding),
-          withName = true,)
+          withName = true,
+      )
 
       Spacer(Modifier.width(ConstantRequestList.RowSpacing))
 
