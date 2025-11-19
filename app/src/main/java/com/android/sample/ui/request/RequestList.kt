@@ -12,13 +12,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -33,11 +31,10 @@ import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.navigation.Screen
 import com.android.sample.ui.profile.ProfilePicture
 import com.android.sample.ui.request.ConstantRequestList.TypeChipBorderWidth
-import com.android.sample.ui.request.ConstantRequestList.TypeChipTextPadding
 import com.android.sample.ui.request.ConstantRequestList.TypeChipColumnSpacing
+import com.android.sample.ui.request.ConstantRequestList.TypeChipTextPadding
 import com.android.sample.ui.theme.TopNavigationBar
 import com.android.sample.ui.theme.appPalette
-import org.apache.lucene.queryparser.flexible.standard.nodes.intervalfn.MaxWidth
 
 // removed local magic number vals; use ConstantRequestList instead
 
@@ -251,47 +248,43 @@ fun RequestListItem(request: Request, onClick: (Request) -> Unit, modifier: Modi
 
       TitleAndDescription(request, modifier = Modifier.weight(1f))
 
-        Spacer(Modifier.width(ConstantRequestList.RowSpacing))
-        LazyColumn(
-            modifier = Modifier.weight(ChipsDescriptionRatio),
-            verticalArrangement = Arrangement.spacedBy(TypeChipColumnSpacing)
-        ) {
+      Spacer(Modifier.width(ConstantRequestList.RowSpacing))
+      LazyColumn(
+          modifier = Modifier.weight(ChipsDescriptionRatio),
+          verticalArrangement = Arrangement.spacedBy(TypeChipColumnSpacing)) {
             val sortedRequestTypes = request.requestType.sortedBy { it.ordinal }
             items(sortedRequestTypes.size) { index ->
-                val requestType = sortedRequestTypes[index]
-                TypeChip(
-                    requestType = requestType,
-                )
+              val requestType = sortedRequestTypes[index]
+              TypeChip(
+                  requestType = requestType,
+              )
             }
-        }
+          }
     }
   }
 }
 
 @Composable
-fun TitleAndDescription(
-    request: Request,
-    modifier: Modifier = Modifier
-) {
-    Column(modifier = modifier) {
-        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
-            Text(
-                request.title,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                fontSize = ConstantRequestList.RequestItemTitleFontSize,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.testTag(RequestListTestTags.REQUEST_ITEM_TITLE).weight(WEIGHT))
-        }
-        Spacer(modifier = Modifier.height(ConstantRequestList.RequestItemDescriptionSpacing))
-        Text(
-            request.description,
-            color = appPalette().text.copy(alpha = 0.8f),
-            fontSize = ConstantRequestList.RequestItemDescriptionFontSize,
-            modifier = Modifier.fillMaxSize().testTag(RequestListTestTags.REQUEST_ITEM_DESCRIPTION),
-            maxLines = MAX_PARAM,
-            overflow = TextOverflow.Ellipsis)
+fun TitleAndDescription(request: Request, modifier: Modifier = Modifier) {
+  Column(modifier = modifier) {
+    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
+      Text(
+          request.title,
+          maxLines = 1,
+          overflow = TextOverflow.Ellipsis,
+          fontSize = ConstantRequestList.RequestItemTitleFontSize,
+          fontWeight = FontWeight.SemiBold,
+          modifier = Modifier.testTag(RequestListTestTags.REQUEST_ITEM_TITLE).weight(WEIGHT))
     }
+    Spacer(modifier = Modifier.height(ConstantRequestList.RequestItemDescriptionSpacing))
+    Text(
+        request.description,
+        color = appPalette().text.copy(alpha = 0.8f),
+        fontSize = ConstantRequestList.RequestItemDescriptionFontSize,
+        modifier = Modifier.fillMaxSize().testTag(RequestListTestTags.REQUEST_ITEM_DESCRIPTION),
+        maxLines = MAX_PARAM,
+        overflow = TextOverflow.Ellipsis)
+  }
 }
 
 @Composable
@@ -299,27 +292,22 @@ fun TypeChip(
     requestType: RequestType,
     modifier: Modifier = Modifier,
 ) {
-    Surface(
-        color = appPalette().getRequestTypeBackgroundColor(requestType),
-        shape = RoundedCornerShape(16.dp),
-        modifier = modifier.fillMaxWidth(),
-        border = BorderStroke(TypeChipBorderWidth, appPalette().getRequestTypeColor(requestType))
-    ) {
+  Surface(
+      color = appPalette().getRequestTypeBackgroundColor(requestType),
+      shape = RoundedCornerShape(16.dp),
+      modifier = modifier.fillMaxWidth(),
+      border = BorderStroke(TypeChipBorderWidth, appPalette().getRequestTypeColor(requestType))) {
         Box(
             contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .fillMaxHeight()
-                .padding(horizontal = TypeChipTextPadding)
-        ) {
-            Text(
-                text = requestType.displayString(),
-                color = appPalette().getRequestTypeColor(requestType),
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Medium,
-                maxLines = 1
-            )
-        }
-    }
+            modifier = Modifier.fillMaxHeight().padding(horizontal = TypeChipTextPadding)) {
+              Text(
+                  text = requestType.displayString(),
+                  color = appPalette().getRequestTypeColor(requestType),
+                  fontSize = 12.sp,
+                  fontWeight = FontWeight.Medium,
+                  maxLines = 1)
+            }
+      }
 }
 
 /** Floating add button to navigate to the add-request screen. */
