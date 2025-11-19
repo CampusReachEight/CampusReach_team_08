@@ -22,7 +22,10 @@ import kotlinx.coroutines.test.*
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TestWatcher
+import org.junit.runner.Description
 
 private const val HELPER_1 = "helper1"
 
@@ -102,16 +105,28 @@ class ValidateRequestViewModelTest {
           people = listOf(HELPER_1, ID_HELPER2),
           tags = listOf(Tags.URGENT))
 
+  @get:Rule
+  val mainDispatcherRule =
+      object : TestWatcher() {
+        override fun starting(description: Description) {
+          Dispatchers.setMain(testDispatcher)
+        }
+
+        override fun finished(description: Description) {
+          Dispatchers.resetMain()
+        }
+      }
+
   @Before
   fun setup() {
-    Dispatchers.setMain(testDispatcher)
+    // Dispatchers.setMain(testDispatcher)
     requestRepository = mockk()
     userProfileRepository = mockk()
   }
 
   @After
   fun tearDown() {
-    Dispatchers.resetMain()
+    // Dispatchers.resetMain()
     clearAllMocks()
   }
 
