@@ -159,10 +159,12 @@ class ProfileUiTests {
     val longState = ProfileState.default().copy(userName = longText, userEmail = longText)
     composeTestRule.setContent { ProfileHeader(state = longState) }
 
-    val visibleName = longText.take(25)
-    val visibleEmail = longText.take(30)
-    composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_HEADER_NAME).assertTextEquals(longText)
-    composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_HEADER_EMAIL).assertTextEquals(longText)
+    val visibleName = longText.take(22) + "..."
+    val visibleEmail = longText.take(27) + "..."
+    composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_HEADER_NAME).assertTextEquals(visibleName)
+    composeTestRule
+        .onNodeWithTag(ProfileTestTags.PROFILE_HEADER_EMAIL)
+        .assertTextEquals(visibleEmail)
   }
 
   // ----- Stats -----
