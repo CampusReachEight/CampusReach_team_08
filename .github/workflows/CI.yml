@@ -73,6 +73,7 @@ jobs:
         env:
           GOOGLE_SERVICES: ${{ secrets.GOOGLE_SERVICES }}
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: |
           if [ -n "$GOOGLE_SERVICES" ]; then
             echo "$GOOGLE_SERVICES" | base64 --decode > ./app/google-services.json
@@ -85,6 +86,16 @@ jobs:
             echo "✓ Keystore decoded successfully"
           else
             echo "::warning::KEYSTORE_BASE64 secret is not set. Keystore will not be created."
+          fi
+          # Decode service account (optional)
+          if [ -n "$FIREBASE_SERVICE_ACCOUNT" ]; then
+            echo "$FIREBASE_SERVICE_ACCOUNT" | base64 --decode > service-account.json
+            if [ ! -s service-account.json ]; then
+              echo "::error::Decoded service-account.json is empty"; exit 1;
+            fi
+            echo "✓ service-account.json created"
+          else
+            echo "::warning::FIREBASE_SERVICE_ACCOUNT secret is not set; skipping service-account.json creation."
           fi
 
       # Step 6: Ensure gradlew wrapper is executable
@@ -140,17 +151,24 @@ jobs:
             echo "Warning: Top-level 'firestore.rules' not found; skipping Firestore tests."
           fi
 
-      # Step 10: Run Kotlin formatting check
+      # Step 10: Cleanup credentials
+      # Remove service-account.json if it was created
+      - name: Cleanup credentials
+        if: always()
+        shell: bash
+        run: rm -f service-account.json
+
+      # Step 11: Run Kotlin formatting check
       # Enforces style rules via ktfmt plugin.
       - name: KTFmt Check
         run: ./gradlew ktfmtCheck
 
-      # Step 11: Run unit tests and verification tasks
+      # Step 12: Run unit tests and verification tasks
       # Executes tests defined in the Gradle check task (includes unit tests, lint, etc.).
       - name: Run tests
         run: ./gradlew check --parallel --build-cache
 
-      # Step 12: Start Firebase emulators (Auth + Firestore)
+      # Step 13: Start Firebase emulators (Auth + Firestore)
       # Runs in the background to support instrumentation tests.
       - name: Start Firebase emulators
         run: |
@@ -162,7 +180,7 @@ jobs:
             echo "Firebase emulators not configured, skipping emulator startup..."
           fi
 
-      # Step 13: Enable KVM for hardware acceleration
+      # Step 14: Enable KVM for hardware acceleration
       # Required for Android emulator to run efficiently on Linux
       - name: Enable KVM group perms
         run: |
@@ -170,7 +188,7 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      # Step 14: Run instrumentation tests on an Android emulator
+      # Step 15: Run instrumentation tests on an Android emulator
       # - Uses ReactiveCircus runner which handles SDK setup automatically
       # - Spins up an Android emulator (API 36, x86_64, Google APIs)
       # - Disables UI (no-window) and animations for faster CI execution
