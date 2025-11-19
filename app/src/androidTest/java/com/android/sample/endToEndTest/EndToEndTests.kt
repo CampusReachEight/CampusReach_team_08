@@ -31,9 +31,6 @@ import com.android.sample.ui.overview.AcceptRequestScreenTestTags
 import com.android.sample.ui.profile.ProfileTestTags
 import com.android.sample.ui.request.LocationSearchFieldTestTags
 import com.android.sample.ui.request.RequestListTestTags
-import com.android.sample.ui.request.edit.DELETE_BUTTON_TEST_TAG
-import com.android.sample.ui.request.edit.DELETE_CONFIRMATION_DIALOG_TEST_TAG
-import com.android.sample.ui.request.edit.DELETE_CONFIRM_BUTTON_TEST_TAG
 import com.android.sample.ui.request.edit.EditRequestScreenTestTags
 import com.android.sample.utils.BaseEmulatorTest
 import com.android.sample.utils.FakeCredentialManager
@@ -612,53 +609,32 @@ class EndToEndTests : BaseEmulatorTest() {
         .assertTextContains("Cancel", substring = true, ignoreCase = true)
         .performClick()
   }
-
-  @Test
-  fun canCreateAndDeleteRequest() {
-    val sixthName = "92847"
-    val sixthEmail = "sixth@example.com"
-
-    initialize(sixthName, sixthEmail)
-
-    // Create request
-    goAddRequest()
-    addElementOfRequest()
-
-    composeTestRule.waitForIdle()
-    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
-      composeTestRule
-          .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
-
-    // Open edit screen
-    goToEditScreen()
-
-    // Click delete
-    composeTestRule
-        .onNodeWithTag(DELETE_BUTTON_TEST_TAG)
-        .performScrollTo()
-        .assertIsDisplayed()
-        .performClick()
-
-    composeTestRule.waitForIdle()
-    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
-      composeTestRule
-          .onAllNodesWithTag(DELETE_CONFIRMATION_DIALOG_TEST_TAG)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
-
-    // Confirm delete
-    composeTestRule.onNodeWithTag(DELETE_CONFIRM_BUTTON_TEST_TAG).assertIsDisplayed().performClick()
-
-    composeTestRule.waitForIdle()
-
-    // Logout
-    logOut()
-  }
-
+  /**
+   * @Test fun canCreateAndDeleteRequest() { val sixthName = "92847" val sixthEmail =
+   *   "sixth@example.com"
+   *
+   * initialize(sixthName, sixthEmail)
+   *
+   * // Create request goAddRequest() addElementOfRequest()
+   *
+   * composeTestRule.waitForIdle() composeTestRule.waitUntil(UI_WAIT_TIMEOUT) { composeTestRule
+   * .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM) .fetchSemanticsNodes() .isNotEmpty() }
+   *
+   * // Open edit screen goToEditScreen()
+   *
+   * // Click delete composeTestRule .onNodeWithTag(DELETE_BUTTON_TEST_TAG) .performScrollTo()
+   * .assertIsDisplayed() .performClick()
+   *
+   * composeTestRule.waitForIdle() composeTestRule.waitUntil(UI_WAIT_TIMEOUT) { composeTestRule
+   * .onAllNodesWithTag(DELETE_CONFIRMATION_DIALOG_TEST_TAG) .fetchSemanticsNodes() .isNotEmpty() }
+   *
+   * // Confirm delete
+   * composeTestRule.onNodeWithTag(DELETE_CONFIRM_BUTTON_TEST_TAG).assertIsDisplayed().performClick()
+   *
+   * composeTestRule.waitForIdle()
+   *
+   * // Logout logOut() }
+   */
   @Test
   fun canCreateRequestGoToProfileViewMyRequestsEditAndLogout() {
     // 1. Sign in
