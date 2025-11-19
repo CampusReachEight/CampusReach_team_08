@@ -204,8 +204,8 @@ fun AcceptRequestScreen(
                             // Status
                             RequestDetailRow(
                                 icon = Icons.Outlined.Notifications,
-                                label = AcceptRequestScreenLabels.STATUS,
-                                content = request.status.displayString(),
+                                label = "Status",
+                                content = request.viewStatus.displayString(),
                                 testTag = AcceptRequestScreenTestTags.REQUEST_STATUS)
 
                             // Location

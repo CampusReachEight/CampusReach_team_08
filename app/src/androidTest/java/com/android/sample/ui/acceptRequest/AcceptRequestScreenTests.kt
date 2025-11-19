@@ -220,7 +220,7 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_STATUS)
         .assertIsDisplayed()
-        .assertTextContains("Open", substring = true, ignoreCase = true)
+        .assertTextContains("Completed", substring = true, ignoreCase = true)
 
     // Location
     composeTestRule
