@@ -180,6 +180,7 @@ fun RequestListScreen(
                 textAlign = TextAlign.Center)
           } else {
             RequestList(
+                viewModel = requestListViewModel,
                 state = state.copy(requests = toShow),
                 onRequestClick = {
                   requestListViewModel.handleRequestClick(
@@ -200,6 +201,7 @@ fun RequestListScreen(
 /** Renders the list of requests. */
 @Composable
 fun RequestList(
+    viewModel: RequestListViewModel,
     state: RequestListState,
     onRequestClick: (Request) -> Unit,
     modifier: Modifier = Modifier
@@ -211,7 +213,7 @@ fun RequestList(
               .testTag(RequestListTestTags.REQUEST_LIST)) {
         items(state.requests.size) { index ->
           val request = state.requests[index]
-          RequestListItem(request = request, onClick = onRequestClick)
+          RequestListItem(viewModel = viewModel, request = request, onClick = onRequestClick)
         }
       }
 }
@@ -222,7 +224,7 @@ private const val MAX_PARAM = 2
 private const val ChipsDescriptionRatio = 0.4f
 
 @Composable
-fun RequestListItem(request: Request, onClick: (Request) -> Unit, modifier: Modifier = Modifier) {
+fun RequestListItem(viewModel: RequestListViewModel, request: Request, onClick: (Request) -> Unit, modifier: Modifier = Modifier) {
 
   Card(
       modifier =
@@ -235,6 +237,7 @@ fun RequestListItem(request: Request, onClick: (Request) -> Unit, modifier: Modi
   ) {
     Row(modifier = Modifier.fillMaxSize().padding(ConstantRequestList.RequestItemInnerPadding)) {
       ProfilePicture(
+          profileRepository = viewModel.profileRepository,
           profileId = request.creatorId,
           onClick = {},
           modifier =
@@ -242,7 +245,7 @@ fun RequestListItem(request: Request, onClick: (Request) -> Unit, modifier: Modi
                   .fillMaxHeight()
                   .align(Alignment.CenterVertically)
                   .padding(vertical = ConstantRequestList.RequestItemProfileHeightPadding),
-          withName = true)
+          withName = true,)
 
       Spacer(Modifier.width(ConstantRequestList.RowSpacing))
 
@@ -365,5 +368,5 @@ fun RequestListItemPreview() {
           expirationTime = java.util.Date(),
           people = listOf(),
           tags = listOf())
-  RequestListItem(request = sampleRequest, onClick = {})
+  RequestListItem(request = sampleRequest, onClick = {}, viewModel = RequestListViewModel())
 }
