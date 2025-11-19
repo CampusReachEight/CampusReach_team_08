@@ -16,12 +16,10 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.model.request.Request
-import com.android.sample.model.request.RequestStatus
 import com.android.sample.model.request.RequestType
 import com.android.sample.model.request.displayString
 import com.android.sample.ui.navigation.BottomNavigationMenu
@@ -356,6 +354,7 @@ private fun ErrorDialog(message: String, onDismiss: () -> Unit) {
 }
 
 // Preview for rendering improvements during development
+/*
 @Preview
 @Composable
 fun RequestListItemPreview() {
@@ -376,3 +375,4 @@ fun RequestListItemPreview() {
           tags = listOf())
   RequestListItem(request = sampleRequest, onClick = {}, viewModel = RequestListViewModel())
 }
+ */
