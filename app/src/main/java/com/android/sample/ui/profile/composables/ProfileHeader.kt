@@ -27,19 +27,13 @@ fun ProfileHeader(
   val surface = palette.surface
   val textColor = AppColors.WhiteColor
 
-    // Text limits to avoid overflow in smaller devices
-    val maxNameLength = 25
-    val maxEmailLength = 30
+  // Text limits to avoid overflow in smaller devices
+  val maxNameLength = 25
+  val maxEmailLength = 30
 
-    val uiUtils = com.android.sample.ui.UiUtils()
-    val displayName = uiUtils.ellipsizeWithMiddle(
-        state.userName,
-        maxLength = maxNameLength
-    )
-    val displayEmail = uiUtils.ellipsizeWithMiddle(
-        state.userEmail,
-        maxLength = maxEmailLength
-    )
+  val uiUtils = com.android.sample.ui.UiUtils()
+  val displayName = uiUtils.ellipsizeWithMiddle(state.userName, maxLength = maxNameLength)
+  val displayEmail = uiUtils.ellipsizeWithMiddle(state.userEmail, maxLength = maxEmailLength)
 
   Card(
       modifier =

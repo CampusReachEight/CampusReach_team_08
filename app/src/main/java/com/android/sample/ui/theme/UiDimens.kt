@@ -4,6 +4,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 object UiDimens {
+  val SpacingXxs: Dp = 2.dp
   val SpacingXs: Dp = 4.dp
   val SpacingSm: Dp = 8.dp
   val SpacingMd: Dp = 16.dp
