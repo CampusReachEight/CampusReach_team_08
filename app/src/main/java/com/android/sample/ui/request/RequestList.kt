@@ -256,8 +256,9 @@ fun RequestListItem(request: Request, onClick: (Request) -> Unit, modifier: Modi
             modifier = Modifier.weight(ChipsDescriptionRatio),
             verticalArrangement = Arrangement.spacedBy(TypeChipColumnSpacing)
         ) {
-            items(request.requestType.size) { index ->
-                val requestType = request.requestType[index]
+            val sortedRequestTypes = request.requestType.sortedBy { it.ordinal }
+            items(sortedRequestTypes.size) { index ->
+                val requestType = sortedRequestTypes[index]
                 TypeChip(
                     requestType = requestType,
                 )
