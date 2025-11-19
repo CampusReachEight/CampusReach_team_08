@@ -28,8 +28,12 @@ data class Request(
 
       return when {
         status == RequestStatus.CANCELLED || status == RequestStatus.ARCHIVED -> status
-        now.before(startTimeStamp) -> RequestStatus.OPEN
-        now.after(expirationTime) -> RequestStatus.COMPLETED
+
+        // COMPLETED when expirationTime <= now
+        !expirationTime.after(now) -> RequestStatus.COMPLETED
+
+        // OPEN when start > now
+        startTimeStamp.after(now) -> RequestStatus.OPEN
         else -> RequestStatus.IN_PROGRESS
       }
     }
