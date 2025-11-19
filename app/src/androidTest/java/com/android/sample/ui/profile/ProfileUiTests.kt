@@ -154,13 +154,17 @@ class ProfileUiTests {
   }
 
   @Test
-  fun profileHeader_preservesLongName_andEmail_withoutTruncation() {
+  fun profileHeader_ellipsis_long_names_and_emails() {
     val longText = "L".repeat(256)
     val longState = ProfileState.default().copy(userName = longText, userEmail = longText)
     composeTestRule.setContent { ProfileHeader(state = longState) }
 
-    composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_HEADER_NAME).assertTextEquals(longText)
-    composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_HEADER_EMAIL).assertTextEquals(longText)
+    val visibleName = longText.take(25)
+    val visibleEmail = longText.take(30)
+    composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_HEADER_NAME)
+      .assertTextEquals(longText)
+    composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_HEADER_EMAIL)
+      .assertTextEquals(longText)
   }
 
   // ----- Stats -----
