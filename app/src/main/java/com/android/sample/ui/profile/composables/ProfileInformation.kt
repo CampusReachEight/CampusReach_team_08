@@ -37,20 +37,18 @@ fun InfoRow(label: String, value: String, palette: AppPalette = appPalette()) {
                 .fillMaxWidth()
                 .testTag("profile_info_row_${label.replace(" ", "_").lowercase()}"),
         colors = CardDefaults.cardColors(containerColor = palette.surface),
-        shape = RoundedCornerShape(ProfileDimens.InfoCornerRadius),
-        elevation = CardDefaults.cardElevation(defaultElevation = ProfileDimens.CardElevation)) {
+        shape = RoundedCornerShape(ProfileDimens.InfoCornerRadius)) {
         Row(
             modifier =
                 Modifier
                     .fillMaxWidth()
                     .padding(vertical = ProfileDimens.CardElevation, horizontal = ProfileDimens.Horizontal),
-            verticalAlignment = Alignment.CenterVertically) {
+            verticalAlignment = Alignment.Top) {
 
             Text(
                 text = label,
                 style = MaterialTheme.typography.bodyMedium,
                 color = palette.text,
-                maxLines = 1,
                 softWrap = false,
                 overflow = TextOverflow.Ellipsis,
                 modifier =
@@ -64,9 +62,7 @@ fun InfoRow(label: String, value: String, palette: AppPalette = appPalette()) {
                 text = value,
                 style = MaterialTheme.typography.bodyMedium,
                 color = palette.accent,
-                maxLines = 1,
-                softWrap = false,
-                overflow = TextOverflow.Ellipsis,
+                softWrap = true,
                 textAlign = TextAlign.End,
                 modifier =
                     Modifier
