@@ -96,31 +96,16 @@ class ValidateRequestViewModel(
       try {
         val request = requestRepository.getRequest(requestId)
 
-        if (!requestRepository.isOwnerOfRequest(request)) {
-          state = ValidationState.Error(message = NOT_OWNER, canRetry = false)
+        // Extract validation to separate method
+        validateRequestForClosure(request)?.let { errorState ->
+          state = errorState
           return@launch
         }
 
-        if (request.status != RequestStatus.OPEN && request.status != RequestStatus.IN_PROGRESS) {
-          state =
-              ValidationState.Error(
-                  message = "$CANNOT_BE_CLOSED ${request.status.displayString()}", canRetry = false)
-          return@launch
-        }
+        // Extract helper loading to separate method
+        val helpers = loadHelperProfiles(request.people)
 
-        val helpers =
-            if (request.people.isNotEmpty()) {
-              request.people.toList().mapNotNull { userId ->
-                try {
-                  userProfileRepository.getUserProfile(userId)
-                } catch (e: Exception) {
-                  null
-                }
-              }
-            } else {
-              emptyList()
-            }
-
+        // Validate helpers loaded successfully
         if (helpers.isEmpty() && request.people.isNotEmpty()) {
           state = ValidationState.Error(message = NOT_LOAD_PROFILES_ERROR, canRetry = true)
           return@launch
@@ -133,6 +118,42 @@ class ValidateRequestViewModel(
         state =
             ValidationState.Error(
                 message = "$FAILED_TO_LOAD_REQUESTS ${e.message}", canRetry = true)
+      }
+    }
+  }
+  /**
+   * Validates that the request can be closed.
+   *
+   * @return Error state if validation fails, null if valid
+   */
+  private suspend fun validateRequestForClosure(request: Request): ValidationState.Error? {
+    if (!requestRepository.isOwnerOfRequest(request)) {
+      return ValidationState.Error(message = NOT_OWNER, canRetry = false)
+    }
+
+    if (request.status != RequestStatus.OPEN && request.status != RequestStatus.IN_PROGRESS) {
+      return ValidationState.Error(
+          message = "$CANNOT_BE_CLOSED ${request.status.displayString()}", canRetry = false)
+    }
+
+    return null
+  }
+
+  /**
+   * Loads all helper profiles from the list of user IDs.
+   *
+   * @return List of successfully loaded profiles (empty if none could be loaded)
+   */
+  private suspend fun loadHelperProfiles(peopleIds: List<String>): List<UserProfile> {
+    if (peopleIds.isEmpty()) {
+      return emptyList()
+    }
+
+    return peopleIds.mapNotNull { userId ->
+      try {
+        userProfileRepository.getUserProfile(userId)
+      } catch (e: Exception) {
+        null
       }
     }
   }
