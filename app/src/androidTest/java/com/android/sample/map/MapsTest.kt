@@ -262,7 +262,7 @@ class MapsTest : BaseEmulatorTest() {
         .onNodeWithTag(MapTestTags.BUTTON_DETAILS)
         .performScrollTo()
         .assertIsDisplayed()
-        .assertTextContains(ConstantMap.TEXT_EDIT)
+        .assertTextContains(ConstantMap.TEXT_SEE_DETAILS)
   }
 
   @Test

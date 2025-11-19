@@ -12,15 +12,12 @@ import com.android.sample.model.profile.UserProfileRepositoryFirestore
 import com.android.sample.model.request.Request
 import com.android.sample.model.request.RequestRepository
 import com.android.sample.model.request.RequestRepositoryFirestore
-import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import java.net.URL
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -43,9 +40,6 @@ class RequestListViewModel(
 
   private val _profileIcons = MutableStateFlow<Map<String, Bitmap?>>(emptyMap())
   val profileIcons: StateFlow<Map<String, Bitmap?>> = _profileIcons
-
-  // Base list as a flow
-  private val allRequests = state.map { it.requests }.distinctUntilChanged()
 
   /** Loads all requests and their profile icons. Leaves previous list intact on error. */
   fun loadRequests() {
@@ -102,21 +96,6 @@ class RequestListViewModel(
   /** Clears the current error message, if any. */
   fun clearError() {
     _state.update { it.copy(errorMessage = null) }
-  }
-
-  /** Centralizes navigation decision based on current user id. */
-  fun handleRequestClick(
-      request: Request,
-      onNavigateEdit: (String) -> Unit,
-      onNavigateAccept: (String) -> Unit
-  ) {
-    Firebase.auth.currentUser?.uid?.let { id ->
-      if (request.creatorId == id) {
-        onNavigateEdit(request.requestId)
-      } else {
-        onNavigateAccept(request.requestId)
-      }
-    }
   }
 }
 

@@ -170,14 +170,8 @@ fun RequestListScreen(
             RequestList(
                 state = state.copy(requests = toShow),
                 onRequestClick = {
-                  requestListViewModel.handleRequestClick(
-                      request = it,
-                      onNavigateEdit = { id ->
-                        navigationActions?.navigateTo(Screen.EditRequest(id))
-                      },
-                      onNavigateAccept = { id ->
-                        navigationActions?.navigateTo(Screen.RequestAccept(id))
-                      })
+                  // Always go to view-only accept screen; owner-specific edit is inside details
+                  navigationActions?.navigateTo(Screen.RequestAccept(it.requestId))
                 },
                 modifier = Modifier.fillMaxSize(),
                 viewModel = requestListViewModel)
