@@ -2,13 +2,13 @@ import { describe, test, beforeAll, afterAll, expect } from 'vitest';
 import { setup } from './setup.js';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { readFile, writeFile, unlink } from 'node:fs/promises';
+import { unlink, readFile, writeFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import { spawn } from 'node:child_process';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { sampleRequestDocs } from './test-data-samples.js';
 
 // This test simulates the CI-scheduled job by:
-// - Ensuring a service-account.json exists at repo root
 // - Invoking the updater script as a CLI process with FIRESTORE_EMULATOR_HOST
 // - Verifying the expected status transitions in the emulator DB
 
@@ -18,7 +18,6 @@ describe('Scheduled updater script (CLI) against emulator', () => {
   // Resolve repo root from this test file location
   const here = path.dirname(fileURLToPath(new URL(import.meta.url)));
   const repoRoot = path.resolve(here, '../../../../');
-  const serviceAccountSrc = path.join(repoRoot, 'app', 'service-account.json');
   const serviceAccountDst = path.join(repoRoot, 'service-account.json');
   const updaterScript = path.join(repoRoot, 'scripts', 'update-request-statuses.js');
 
@@ -50,9 +49,7 @@ describe('Scheduled updater script (CLI) against emulator', () => {
     // Ensure we start clean
     await env.clearFirestore();
 
-    // Ensure a service-account.json exists at repo root (simulating CI workflow)
-    const content = await readFile(serviceAccountSrc);
-    await writeFile(serviceAccountDst, content);
+    // No need to copy credentials: CI creates service-account.json at repo root when needed.
 
     // Seed diverse data: include stable samples + targeted transition docs
     await env.withSecurityRulesDisabled(async (ctx) => {
@@ -111,8 +108,10 @@ describe('Scheduled updater script (CLI) against emulator', () => {
   afterAll(async () => {
     await env.clearFirestore();
     await env.cleanup();
-    // Clean up copied service account file
-    await unlink(serviceAccountDst).catch(() => void 0);
+    // Do not remove service-account.json in CI; workflow handles cleanup.
+    if (!process.env.CI && existsSync(serviceAccountDst)) {
+      await unlink(serviceAccountDst).catch(() => void 0);
+    }
   });
 
   test('applies expected transitions via CLI invocation', async () => {
