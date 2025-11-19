@@ -161,10 +161,8 @@ class ProfileUiTests {
 
     val visibleName = longText.take(25)
     val visibleEmail = longText.take(30)
-    composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_HEADER_NAME)
-      .assertTextEquals(longText)
-    composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_HEADER_EMAIL)
-      .assertTextEquals(longText)
+    composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_HEADER_NAME).assertTextEquals(longText)
+    composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_HEADER_EMAIL).assertTextEquals(longText)
   }
 
   // ----- Stats -----
