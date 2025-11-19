@@ -103,18 +103,16 @@ jobs:
         run: chmod +x ./gradlew
 
       # Step 7: Install NodeJS (version 22)
-      # Needed for Firebase CLI and Firestore emulator testing.
       - name: Setup NodeJS
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      # Step 8: Install Firebase CLI globally
-      # Used to run emulators and test Firestore security rules.
-      - name: Install Firebase CLI
-        run: npm install -g firebase-tools
+      # Merged Step 8+9: Install root Node dependencies (includes firebase-tools as devDependency)
+      - name: Install root Node dependencies
+        run: npm install
 
-      # Step 9: Validate Firestore configuration and run Firestore tests (if present)
+      # Step 10: Validate Firestore configuration and run Firestore tests (if present)
       # - Ensures firebase.json exists and includes emulator config
       # - Ensures Firestore rules are referenced correctly
       # - Runs tests in firebase/firestore/test with Vitest (no emulator spawn)
@@ -142,7 +140,7 @@ jobs:
             if [ -d "firebase/firestore/test" ]; then
               pushd firebase/firestore/test
               npm install
-              firebase emulators:exec --only firestore --project demo-unit-tests "npx vitest run"
+              ../../node_modules/.bin/firebase emulators:exec --only firestore --project demo-unit-tests "npx vitest run"
               popd
             else
               echo "No firebase/firestore/test directory; skipping Firestore tests."
@@ -151,24 +149,30 @@ jobs:
             echo "Warning: Top-level 'firestore.rules' not found; skipping Firestore tests."
           fi
 
-      # Step 10: Cleanup credentials
+      # Step 11: Cleanup credentials
       # Remove service-account.json if it was created
       - name: Cleanup credentials
         if: always()
         shell: bash
         run: rm -f service-account.json
 
-      # Step 11: Run Kotlin formatting check
+      # Step 12: Cleanup root node_modules to free space after tests
+      # Defer node_modules cleanup to the very end (Node used by later steps too)
+      # - name: Cleanup root node_modules
+      #   if: always()
+      #   run: rm -rf node_modules
+
+      # Step 13: Run Kotlin formatting check
       # Enforces style rules via ktfmt plugin.
       - name: KTFmt Check
         run: ./gradlew ktfmtCheck
 
-      # Step 12: Run unit tests and verification tasks
+      # Step 14: Run unit tests and verification tasks
       # Executes tests defined in the Gradle check task (includes unit tests, lint, etc.).
       - name: Run tests
         run: ./gradlew check --parallel --build-cache
 
-      # Step 13: Start Firebase emulators (Auth + Firestore)
+      # Step 15: Start Firebase emulators (Auth + Firestore)
       # Runs in the background to support instrumentation tests.
       - name: Start Firebase emulators
         run: |
@@ -180,7 +184,7 @@ jobs:
             echo "Firebase emulators not configured, skipping emulator startup..."
           fi
 
-      # Step 14: Enable KVM for hardware acceleration
+      # Step 16: Enable KVM for hardware acceleration
       # Required for Android emulator to run efficiently on Linux
       - name: Enable KVM group perms
         run: |
@@ -188,7 +192,7 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      # Step 15: Run instrumentation tests on an Android emulator
+      # Step 17: Run instrumentation tests on an Android emulator
       # - Uses ReactiveCircus runner which handles SDK setup automatically
       # - Spins up an Android emulator (API 36, x86_64, Google APIs)
       # - Disables UI (no-window) and animations for faster CI execution
@@ -206,12 +210,12 @@ jobs:
           disable-animations: true
           script: ./gradlew connectedCheck --parallel --build-cache
 
-      # Step 16: Generate code coverage report
+      # Step 18: Generate code coverage report
       # Uses Jacoco to collect test coverage metrics.
       - name: Generate coverage
         run: ./gradlew jacocoTestReport
 
-      # Step 17: Upload coverage report as an artifact
+      # Step 19: Upload coverage report as an artifact
       # Stores results in GitHub Actions for later download/inspection.
       - name: Upload coverage
         uses: actions/upload-artifact@v4
@@ -219,7 +223,7 @@ jobs:
           name: Coverage report
           path: app/build/reports/jacoco/jacocoTestReport
 
-      # Step 18: Run SonarCloud analysis
+      # Step 20: Run SonarCloud analysis
       # Analyzes code quality and uploads test coverage to SonarCloud
       - name: SonarCloud analysis
         env:
