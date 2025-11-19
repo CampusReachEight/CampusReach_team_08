@@ -96,6 +96,10 @@ class MapsViewModelTest {
     override suspend fun getMyRequests(): List<Request> {
       return emptyList()
     }
+
+    override suspend fun closeRequest(requestId: String, selectedHelperIds: List<String>): Boolean {
+      return true
+    }
   }
 
   private class FakeProfileRepository : UserProfileRepository {
@@ -119,6 +123,14 @@ class MapsViewModelTest {
 
     override suspend fun searchUserProfiles(query: String, limit: Int): List<UserProfile> {
       return listOf()
+    }
+
+    override suspend fun awardKudos(userId: String, amount: Int) {
+      return
+    }
+
+    override suspend fun awardKudosBatch(awards: Map<String, Int>) {
+      return
     }
   }
 

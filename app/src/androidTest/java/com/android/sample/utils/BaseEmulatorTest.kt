@@ -3,6 +3,7 @@ package com.android.sample.utils
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
@@ -60,5 +61,21 @@ abstract class BaseEmulatorTest {
     FirebaseEmulator.clearFirestoreEmulator()
     FirebaseEmulator.clearAuthEmulator()
     FirebaseEmulator.signOut()
+  }
+
+  // Add this to your BaseEmulatorTest class
+
+  /** Creates a new user with the given email and password, then signs them in. */
+  protected suspend fun createAndSignInUser(email: String, password: String) {
+    try {
+      auth.createUserWithEmailAndPassword(email, password).await()
+
+      auth.signInWithEmailAndPassword(email, password).await()
+
+      kotlinx.coroutines.delay(100)
+    } catch (e: Exception) {
+      auth.signInWithEmailAndPassword(email, password).await()
+      kotlinx.coroutines.delay(100)
+    }
   }
 }
