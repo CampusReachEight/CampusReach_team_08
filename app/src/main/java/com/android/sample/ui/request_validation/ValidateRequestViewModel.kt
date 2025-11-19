@@ -17,17 +17,17 @@ import kotlinx.coroutines.launch
 
 /** Represents the different states of the validation process. */
 sealed class ValidationState {
-  /** Initial state - loading request and user data. */
+  /** Initial state loading request and user data. */
   object Loading : ValidationState()
 
-  /** Ready state - user can select helpers. */
+  /** Ready state user can select helpers. */
   data class Ready(
       val request: Request,
       val helpers: List<UserProfile>,
       val selectedHelperIds: Set<String> = emptySet()
   ) : ValidationState()
 
-  /** Confirming state - showing confirmation dialog. */
+  /** Confirming state showing confirmation dialog. */
   data class Confirming(
       val request: Request,
       val selectedHelpers: List<UserProfile>,
@@ -35,7 +35,7 @@ sealed class ValidationState {
       val creatorBonus: Int
   ) : ValidationState()
 
-  /** Processing state - closing request and awarding kudos. */
+  /** Processing state closing request and awarding kudos. */
   object Processing : ValidationState()
 
   /** Success state - operation completed. */
@@ -44,6 +44,23 @@ sealed class ValidationState {
   /** Error state with message. */
   data class Error(val message: String, val canRetry: Boolean = true) : ValidationState()
 }
+
+private const val NOT_OWNER = "You are not the owner of this request."
+
+private const val CANNOT_BE_CLOSED = "This request cannot be closed. Status:"
+
+private const val NOT_LOAD_PROFILES_ERROR = "Could not load helper profiles. Please try again."
+
+private const val FAILED_TO_LOAD_REQUESTS = "Failed to load request:"
+
+private const val WAIT_TIME_100_MS = 100L
+private const val VALIDATE_REQUEST = "ValidateRequestVM"
+
+private const val UNEXPECTED_ERROR = "An unexpected error occurred:"
+
+private const val FAILED_TO_AWARD_KUDOS_ERROR = "Failed to award kudos after closing request"
+
+private const val FAILED_TO_CLOSE_REQUEST_ERROR = "Failed to close request:"
 
 /**
  * ViewModel for the request validation screen.
@@ -80,18 +97,14 @@ class ValidateRequestViewModel(
         val request = requestRepository.getRequest(requestId)
 
         if (!requestRepository.isOwnerOfRequest(request)) {
-          state =
-              ValidationState.Error(
-                  message = "You are not the owner of this request.", canRetry = false)
+          state = ValidationState.Error(message = NOT_OWNER, canRetry = false)
           return@launch
         }
 
         if (request.status != RequestStatus.OPEN && request.status != RequestStatus.IN_PROGRESS) {
           state =
               ValidationState.Error(
-                  message =
-                      "This request cannot be closed. Status: ${request.status.displayString()}",
-                  canRetry = false)
+                  message = "$CANNOT_BE_CLOSED ${request.status.displayString()}", canRetry = false)
           return@launch
         }
 
@@ -109,9 +122,7 @@ class ValidateRequestViewModel(
             }
 
         if (helpers.isEmpty() && request.people.isNotEmpty()) {
-          state =
-              ValidationState.Error(
-                  message = "Could not load helper profiles. Please try again.", canRetry = true)
+          state = ValidationState.Error(message = NOT_LOAD_PROFILES_ERROR, canRetry = true)
           return@launch
         }
 
@@ -120,7 +131,8 @@ class ValidateRequestViewModel(
                 request = request, helpers = helpers, selectedHelperIds = emptySet())
       } catch (e: Exception) {
         state =
-            ValidationState.Error(message = "Failed to load request: ${e.message}", canRetry = true)
+            ValidationState.Error(
+                message = "$FAILED_TO_LOAD_REQUESTS ${e.message}", canRetry = true)
       }
     }
   }
@@ -175,10 +187,8 @@ class ValidateRequestViewModel(
     // Need to reload to get back to Ready state with helpers list
     loadRequestData()
 
-    // After loading, restore the selection
     viewModelScope.launch {
-      // Wait a bit for the state to update
-      kotlinx.coroutines.delay(100)
+      kotlinx.coroutines.delay(WAIT_TIME_100_MS)
       val readyState = state
       if (readyState is ValidationState.Ready) {
         state = readyState.copy(selectedHelperIds = selectedIds)
@@ -216,13 +226,12 @@ class ValidateRequestViewModel(
           kudosAwards[currentState.request.creatorId] = KudosConstants.KUDOS_FOR_CREATOR_RESOLUTION
         }
 
-        // Award kudos (will rollback if any fails, but request is already closed)
+        // Award kudos
         if (kudosAwards.isNotEmpty()) {
           try {
             userProfileRepository.awardKudosBatch(kudosAwards)
           } catch (e: KudosException) {
-            android.util.Log.e(
-                "ValidateRequestVM", "Failed to award kudos after closing request", e)
+            android.util.Log.e(VALIDATE_REQUEST, FAILED_TO_AWARD_KUDOS_ERROR, e)
           }
         }
 
@@ -230,14 +239,13 @@ class ValidateRequestViewModel(
       } catch (e: RequestClosureException) {
         state =
             ValidationState.Error(
-                message = "Failed to close request: ${e.message}", canRetry = true)
+                message = "$FAILED_TO_CLOSE_REQUEST_ERROR ${e.message}", canRetry = true)
       } catch (e: KudosException) {
         state =
-            ValidationState.Error(message = "Failed to award kudos: ${e.message}", canRetry = true)
-      } catch (e: Exception) {
-        state =
             ValidationState.Error(
-                message = "An unexpected error occurred: ${e.message}", canRetry = true)
+                message = "$FAILED_TO_AWARD_KUDOS_ERROR ${e.message}", canRetry = true)
+      } catch (e: Exception) {
+        state = ValidationState.Error(message = "$UNEXPECTED_ERROR ${e.message}", canRetry = true)
       }
     }
   }
@@ -252,6 +260,8 @@ class ValidateRequestViewModel(
     state = ValidationState.Loading
   }
 }
+
+private const val UNKNOWN_VIEW_MODEL_CLASS = "Unknown ViewModel class"
 
 /** Factory for creating ValidateRequestViewModel with dependencies. */
 class ValidateRequestViewModelFactory(
@@ -269,6 +279,6 @@ class ValidateRequestViewModelFactory(
           userProfileRepository = userProfileRepository)
           as T
     }
-    throw IllegalArgumentException("Unknown ViewModel class")
+    throw IllegalArgumentException(UNKNOWN_VIEW_MODEL_CLASS)
   }
 }

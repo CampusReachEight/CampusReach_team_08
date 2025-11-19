@@ -24,6 +24,38 @@ import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 
+private const val HELPER_1 = "helper1"
+
+private const val NAME_HELPER = "Helper"
+
+private const val ID_HELPER2 = "helper2"
+
+private const val HELPER1_EMAIL = "helper1@test.com"
+
+private const val LASTNAME_1 = "One"
+
+private const val LASTNAME_2 = "Two"
+
+private const val HELPER2_EMAIL = "helper2@test.com"
+
+private const val TITLE_TEST_REQUEST = "Test Request"
+
+private const val DESCRIPTION_TEST = "Test Description"
+
+private const val TEST_LOCATION = "Test Location"
+
+private const val NOT_OWNER = "not the owner"
+
+private const val CANNOT_BE_CLOSED = "cannot be closed"
+
+private const val NETWORK_ERROR = "Network error"
+
+private const val COULD_NOT_LOAD_PROFILE = "Could not load helper profiles"
+
+private const val FAILED_TO_LOAD_REQUEST = "Failed to load request"
+
+private const val UNEXPECTED_ERROR_OCCURED = "unexpected error occurred"
+
 @OptIn(ExperimentalCoroutinesApi::class)
 class ValidateRequestViewModelTest {
 
@@ -37,20 +69,20 @@ class ValidateRequestViewModelTest {
   private val testCreatorId = "creator123"
   private val testHelper1 =
       UserProfile(
-          id = "helper1",
-          name = "Helper",
-          lastName = "One",
-          email = "helper1@test.com",
+          id = HELPER_1,
+          name = NAME_HELPER,
+          lastName = LASTNAME_1,
+          email = HELPER1_EMAIL,
           photo = null,
           kudos = 100,
           section = UserSections.COMPUTER_SCIENCE,
           arrivalDate = Date())
   private val testHelper2 =
       UserProfile(
-          id = "helper2",
-          name = "Helper",
-          lastName = "Two",
-          email = "helper2@test.com",
+          id = ID_HELPER2,
+          name = NAME_HELPER,
+          lastName = LASTNAME_2,
+          email = HELPER2_EMAIL,
           photo = null,
           kudos = 50,
           section = UserSections.MATHEMATICS,
@@ -59,15 +91,15 @@ class ValidateRequestViewModelTest {
       Request(
           requestId = testRequestId,
           creatorId = testCreatorId,
-          title = "Test Request",
-          description = "Test Description",
+          title = TITLE_TEST_REQUEST,
+          description = DESCRIPTION_TEST,
           requestType = listOf(RequestType.STUDYING),
-          location = Location(0.0, 0.0, "Test Location"),
-          locationName = "Test Location",
+          location = Location(0.0, 0.0, TEST_LOCATION),
+          locationName = TEST_LOCATION,
           status = RequestStatus.OPEN,
           startTimeStamp = Date(),
           expirationTime = Date(System.currentTimeMillis() + 86400000),
-          people = listOf("helper1", "helper2"),
+          people = listOf(HELPER_1, ID_HELPER2),
           tags = listOf(Tags.URGENT))
 
   @Before
@@ -90,8 +122,8 @@ class ValidateRequestViewModelTest {
     // Given
     coEvery { requestRepository.getRequest(testRequestId) } returns testRequest
     coEvery { requestRepository.isOwnerOfRequest(testRequest) } returns true
-    coEvery { userProfileRepository.getUserProfile("helper1") } returns testHelper1
-    coEvery { userProfileRepository.getUserProfile("helper2") } returns testHelper2
+    coEvery { userProfileRepository.getUserProfile(HELPER_1) } returns testHelper1
+    coEvery { userProfileRepository.getUserProfile(ID_HELPER2) } returns testHelper2
 
     // When
     viewModel = ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
@@ -120,7 +152,7 @@ class ValidateRequestViewModelTest {
     val state = viewModel.state
     assertTrue(state is ValidationState.Error)
     val errorState = state as ValidationState.Error
-    assertTrue(errorState.message.contains("not the owner"))
+    assertTrue(errorState.message.contains(NOT_OWNER))
     assertFalse(errorState.canRetry)
   }
 
@@ -139,7 +171,7 @@ class ValidateRequestViewModelTest {
     val state = viewModel.state
     assertTrue(state is ValidationState.Error)
     val errorState = state as ValidationState.Error
-    assertTrue(errorState.message.contains("cannot be closed"))
+    assertTrue(errorState.message.contains(CANNOT_BE_CLOSED))
     assertFalse(errorState.canRetry)
   }
 
@@ -158,7 +190,7 @@ class ValidateRequestViewModelTest {
     val state = viewModel.state
     assertTrue(state is ValidationState.Error)
     val errorState = state as ValidationState.Error
-    assertTrue(errorState.message.contains("cannot be closed"))
+    assertTrue(errorState.message.contains(CANNOT_BE_CLOSED))
     assertFalse(errorState.canRetry)
   }
 
@@ -177,7 +209,7 @@ class ValidateRequestViewModelTest {
     val state = viewModel.state
     assertTrue(state is ValidationState.Error)
     val errorState = state as ValidationState.Error
-    assertTrue(errorState.message.contains("cannot be closed"))
+    assertTrue(errorState.message.contains(CANNOT_BE_CLOSED))
     assertFalse(errorState.canRetry)
   }
 
@@ -187,8 +219,8 @@ class ValidateRequestViewModelTest {
     val inProgressRequest = testRequest.copy(status = RequestStatus.IN_PROGRESS)
     coEvery { requestRepository.getRequest(testRequestId) } returns inProgressRequest
     coEvery { requestRepository.isOwnerOfRequest(inProgressRequest) } returns true
-    coEvery { userProfileRepository.getUserProfile("helper1") } returns testHelper1
-    coEvery { userProfileRepository.getUserProfile("helper2") } returns testHelper2
+    coEvery { userProfileRepository.getUserProfile(HELPER_1) } returns testHelper1
+    coEvery { userProfileRepository.getUserProfile(ID_HELPER2) } returns testHelper2
 
     // When
     viewModel = ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
@@ -222,8 +254,8 @@ class ValidateRequestViewModelTest {
     // Given
     coEvery { requestRepository.getRequest(testRequestId) } returns testRequest
     coEvery { requestRepository.isOwnerOfRequest(testRequest) } returns true
-    coEvery { userProfileRepository.getUserProfile("helper1") } returns testHelper1
-    coEvery { userProfileRepository.getUserProfile("helper2") } throws Exception("Network error")
+    coEvery { userProfileRepository.getUserProfile(HELPER_1) } returns testHelper1
+    coEvery { userProfileRepository.getUserProfile(ID_HELPER2) } throws Exception(NETWORK_ERROR)
 
     // When
     viewModel = ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
@@ -242,8 +274,8 @@ class ValidateRequestViewModelTest {
     // Given
     coEvery { requestRepository.getRequest(testRequestId) } returns testRequest
     coEvery { requestRepository.isOwnerOfRequest(testRequest) } returns true
-    coEvery { userProfileRepository.getUserProfile("helper1") } throws Exception("Network error")
-    coEvery { userProfileRepository.getUserProfile("helper2") } throws Exception("Network error")
+    coEvery { userProfileRepository.getUserProfile(HELPER_1) } throws Exception(NETWORK_ERROR)
+    coEvery { userProfileRepository.getUserProfile(ID_HELPER2) } throws Exception(NETWORK_ERROR)
 
     // When
     viewModel = ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
@@ -253,14 +285,14 @@ class ValidateRequestViewModelTest {
     val state = viewModel.state
     assertTrue(state is ValidationState.Error)
     val errorState = state as ValidationState.Error
-    assertTrue(errorState.message.contains("Could not load helper profiles"))
+    assertTrue(errorState.message.contains(COULD_NOT_LOAD_PROFILE))
     assertTrue(errorState.canRetry)
   }
 
   @Test
   fun initShowsErrorWhenRequestLoadingFails() = runTest {
     // Given
-    coEvery { requestRepository.getRequest(testRequestId) } throws Exception("Network error")
+    coEvery { requestRepository.getRequest(testRequestId) } throws Exception(NETWORK_ERROR)
 
     // When
     viewModel = ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
@@ -270,7 +302,7 @@ class ValidateRequestViewModelTest {
     val state = viewModel.state
     assertTrue(state is ValidationState.Error)
     val errorState = state as ValidationState.Error
-    assertTrue(errorState.message.contains("Failed to load request"))
+    assertTrue(errorState.message.contains(FAILED_TO_LOAD_REQUEST))
     assertTrue(errorState.canRetry)
   }
 
@@ -282,11 +314,11 @@ class ValidateRequestViewModelTest {
     setupReadyState()
 
     // When
-    viewModel.toggleHelperSelection("helper1")
+    viewModel.toggleHelperSelection(HELPER_1)
 
     // Then
     val state = viewModel.state as ValidationState.Ready
-    assertTrue(state.selectedHelperIds.contains("helper1"))
+    assertTrue(state.selectedHelperIds.contains(HELPER_1))
     assertEquals(1, state.selectedHelperIds.size)
   }
 
@@ -294,14 +326,14 @@ class ValidateRequestViewModelTest {
   fun toggleHelperSelectionRemovesHelperWhenAlreadySelected() = runTest {
     // Given
     setupReadyState()
-    viewModel.toggleHelperSelection("helper1")
+    viewModel.toggleHelperSelection(HELPER_1)
 
     // When
-    viewModel.toggleHelperSelection("helper1")
+    viewModel.toggleHelperSelection(HELPER_1)
 
     // Then
     val state = viewModel.state as ValidationState.Ready
-    assertFalse(state.selectedHelperIds.contains("helper1"))
+    assertFalse(state.selectedHelperIds.contains(HELPER_1))
     assertTrue(state.selectedHelperIds.isEmpty())
   }
 
@@ -311,13 +343,13 @@ class ValidateRequestViewModelTest {
     setupReadyState()
 
     // When
-    viewModel.toggleHelperSelection("helper1")
-    viewModel.toggleHelperSelection("helper2")
+    viewModel.toggleHelperSelection(HELPER_1)
+    viewModel.toggleHelperSelection(ID_HELPER2)
 
     // Then
     val state = viewModel.state as ValidationState.Ready
-    assertTrue(state.selectedHelperIds.contains("helper1"))
-    assertTrue(state.selectedHelperIds.contains("helper2"))
+    assertTrue(state.selectedHelperIds.contains(HELPER_1))
+    assertTrue(state.selectedHelperIds.contains(ID_HELPER2))
     assertEquals(2, state.selectedHelperIds.size)
   }
 
@@ -331,7 +363,7 @@ class ValidateRequestViewModelTest {
     // State is now Error
 
     // When
-    viewModel.toggleHelperSelection("helper1")
+    viewModel.toggleHelperSelection(HELPER_1)
 
     // Then
     assertTrue(viewModel.state is ValidationState.Error)
@@ -343,8 +375,8 @@ class ValidateRequestViewModelTest {
   fun showConfirmationTransitionsToConfirmingStateWithCorrectKudos() = runTest {
     // Given
     setupReadyState()
-    viewModel.toggleHelperSelection("helper1")
-    viewModel.toggleHelperSelection("helper2")
+    viewModel.toggleHelperSelection(HELPER_1)
+    viewModel.toggleHelperSelection(ID_HELPER2)
 
     // When
     viewModel.showConfirmation()
@@ -393,7 +425,7 @@ class ValidateRequestViewModelTest {
   fun cancelConfirmationReturnsToReadyStateWithSelectionsPreserved() = runTest {
     // Given
     setupReadyState()
-    viewModel.toggleHelperSelection("helper1")
+    viewModel.toggleHelperSelection(HELPER_1)
     viewModel.showConfirmation()
 
     // When
@@ -404,7 +436,7 @@ class ValidateRequestViewModelTest {
     val state = viewModel.state
     assertTrue(state is ValidationState.Ready)
     val readyState = state as ValidationState.Ready
-    assertTrue(readyState.selectedHelperIds.contains("helper1"))
+    assertTrue(readyState.selectedHelperIds.contains(HELPER_1))
   }
 
   @Test
@@ -428,10 +460,10 @@ class ValidateRequestViewModelTest {
   fun confirmAndCloseSucceedsWithSelectedHelpersAndAwardsKudos() = runTest {
     // Given
     setupReadyState()
-    viewModel.toggleHelperSelection("helper1")
+    viewModel.toggleHelperSelection(HELPER_1)
     viewModel.showConfirmation()
 
-    coEvery { requestRepository.closeRequest(testRequestId, listOf("helper1")) } returns true
+    coEvery { requestRepository.closeRequest(testRequestId, listOf(HELPER_1)) } returns true
     coEvery { userProfileRepository.awardKudosBatch(any()) } returns Unit
 
     // When
@@ -441,10 +473,10 @@ class ValidateRequestViewModelTest {
     // Then
     assertTrue(viewModel.state is ValidationState.Success)
     coVerify {
-      requestRepository.closeRequest(testRequestId, listOf("helper1"))
+      requestRepository.closeRequest(testRequestId, listOf(HELPER_1))
       userProfileRepository.awardKudosBatch(
           match {
-            it["helper1"] == KudosConstants.KUDOS_PER_HELPER &&
+            it[HELPER_1] == KudosConstants.KUDOS_PER_HELPER &&
                 it[testCreatorId] == KudosConstants.KUDOS_FOR_CREATOR_RESOLUTION &&
                 it.size == 2
           })
@@ -455,11 +487,11 @@ class ValidateRequestViewModelTest {
   fun confirmAndCloseSucceedsWithMultipleHelpers() = runTest {
     // Given
     setupReadyState()
-    viewModel.toggleHelperSelection("helper1")
-    viewModel.toggleHelperSelection("helper2")
+    viewModel.toggleHelperSelection(HELPER_1)
+    viewModel.toggleHelperSelection(ID_HELPER2)
     viewModel.showConfirmation()
 
-    coEvery { requestRepository.closeRequest(testRequestId, listOf("helper1", "helper2")) } returns
+    coEvery { requestRepository.closeRequest(testRequestId, listOf(HELPER_1, ID_HELPER2)) } returns
         true
     coEvery { userProfileRepository.awardKudosBatch(any()) } returns Unit
 
@@ -472,8 +504,8 @@ class ValidateRequestViewModelTest {
     coVerify {
       userProfileRepository.awardKudosBatch(
           match {
-            it["helper1"] == KudosConstants.KUDOS_PER_HELPER &&
-                it["helper2"] == KudosConstants.KUDOS_PER_HELPER &&
+            it[HELPER_1] == KudosConstants.KUDOS_PER_HELPER &&
+                it[ID_HELPER2] == KudosConstants.KUDOS_PER_HELPER &&
                 it[testCreatorId] == KudosConstants.KUDOS_FOR_CREATOR_RESOLUTION &&
                 it.size == 3
           })
@@ -484,10 +516,10 @@ class ValidateRequestViewModelTest {
   fun confirmAndCloseWithoutCreatorBonusWhenCloseRequestReturnsFalse() = runTest {
     // Given
     setupReadyState()
-    viewModel.toggleHelperSelection("helper1")
+    viewModel.toggleHelperSelection(HELPER_1)
     viewModel.showConfirmation()
 
-    coEvery { requestRepository.closeRequest(testRequestId, listOf("helper1")) } returns false
+    coEvery { requestRepository.closeRequest(testRequestId, listOf(HELPER_1)) } returns false
     coEvery { userProfileRepository.awardKudosBatch(any()) } returns Unit
 
     // When
@@ -499,7 +531,7 @@ class ValidateRequestViewModelTest {
     coVerify {
       userProfileRepository.awardKudosBatch(
           match {
-            it["helper1"] == KudosConstants.KUDOS_PER_HELPER &&
+            it[HELPER_1] == KudosConstants.KUDOS_PER_HELPER &&
                 !it.containsKey(testCreatorId) &&
                 it.size == 1
           })
@@ -527,7 +559,7 @@ class ValidateRequestViewModelTest {
   fun confirmAndCloseHandlesRequestClosureException() = runTest {
     // Given
     setupReadyState()
-    viewModel.toggleHelperSelection("helper1")
+    viewModel.toggleHelperSelection(HELPER_1)
     viewModel.showConfirmation()
 
     coEvery { requestRepository.closeRequest(any(), any()) } throws
@@ -549,7 +581,7 @@ class ValidateRequestViewModelTest {
   fun confirmAndCloseHandlesGenericException() = runTest {
     // Given
     setupReadyState()
-    viewModel.toggleHelperSelection("helper1")
+    viewModel.toggleHelperSelection(HELPER_1)
     viewModel.showConfirmation()
 
     coEvery { requestRepository.closeRequest(any(), any()) } throws Exception("Unexpected error")
@@ -562,7 +594,7 @@ class ValidateRequestViewModelTest {
     val state = viewModel.state
     assertTrue(state is ValidationState.Error)
     val errorState = state as ValidationState.Error
-    assertTrue(errorState.message.contains("unexpected error occurred"))
+    assertTrue(errorState.message.contains(UNEXPECTED_ERROR_OCCURED))
     assertTrue(errorState.canRetry)
   }
 
@@ -583,7 +615,7 @@ class ValidateRequestViewModelTest {
   @Test
   fun retryReloadsRequestData() = runTest {
     // Given
-    coEvery { requestRepository.getRequest(testRequestId) } throws Exception("Network error")
+    coEvery { requestRepository.getRequest(testRequestId) } throws Exception(NETWORK_ERROR)
     viewModel = ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
     advanceUntilIdle()
     assertTrue(viewModel.state is ValidationState.Error)
@@ -591,8 +623,8 @@ class ValidateRequestViewModelTest {
     // Now make it succeed
     coEvery { requestRepository.getRequest(testRequestId) } returns testRequest
     coEvery { requestRepository.isOwnerOfRequest(testRequest) } returns true
-    coEvery { userProfileRepository.getUserProfile("helper1") } returns testHelper1
-    coEvery { userProfileRepository.getUserProfile("helper2") } returns testHelper2
+    coEvery { userProfileRepository.getUserProfile(HELPER_1) } returns testHelper1
+    coEvery { userProfileRepository.getUserProfile(ID_HELPER2) } returns testHelper2
 
     // When
     viewModel.retry()
@@ -647,8 +679,8 @@ class ValidateRequestViewModelTest {
   private suspend fun TestScope.setupReadyState() {
     coEvery { requestRepository.getRequest(testRequestId) } returns testRequest
     coEvery { requestRepository.isOwnerOfRequest(testRequest) } returns true
-    coEvery { userProfileRepository.getUserProfile("helper1") } returns testHelper1
-    coEvery { userProfileRepository.getUserProfile("helper2") } returns testHelper2
+    coEvery { userProfileRepository.getUserProfile(HELPER_1) } returns testHelper1
+    coEvery { userProfileRepository.getUserProfile(ID_HELPER2) } returns testHelper2
 
     viewModel = ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
     advanceUntilIdle()
