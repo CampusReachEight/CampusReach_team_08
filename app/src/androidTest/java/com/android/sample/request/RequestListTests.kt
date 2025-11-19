@@ -85,6 +85,10 @@ class RequestListTests : BaseEmulatorTest() {
       return requests.filter { it.creatorId == currentUid }
     }
 
+    override suspend fun closeRequest(requestId: String, selectedHelperIds: List<String>): Boolean {
+      return false
+    }
+
     override suspend fun getAllRequests(): List<Request> = requests
 
     override suspend fun getRequest(requestId: String): Request =
@@ -145,6 +149,14 @@ class RequestListTests : BaseEmulatorTest() {
     override suspend fun deleteUserProfile(userId: String) {}
 
     override suspend fun searchUserProfiles(query: String, limit: Int): List<UserProfile> = listOf()
+
+    override suspend fun awardKudos(userId: String, amount: Int) {
+      return Unit
+    }
+
+    override suspend fun awardKudosBatch(awards: Map<String, Int>) {
+      return Unit
+    }
   }
 
   private fun sampleRequests(creatorIds: List<String>): List<Request> {
@@ -205,6 +217,13 @@ class RequestListTests : BaseEmulatorTest() {
 
                 override suspend fun getMyRequests(): List<Request> {
                   return emptyList()
+                }
+
+                override suspend fun closeRequest(
+                    requestId: String,
+                    selectedHelperIds: List<String>
+                ): Boolean {
+                  return false
                 }
               },
           profileRepository = FakeUserProfileRepository())
@@ -515,7 +534,14 @@ class RequestListTests : BaseEmulatorTest() {
       override suspend fun isOwnerOfRequest(request: Request): Boolean = false
 
       override suspend fun getMyRequests(): List<Request> {
-        TODO("Not yet implemented")
+        return emptyList()
+      }
+
+      override suspend fun closeRequest(
+          requestId: String,
+          selectedHelperIds: List<String>
+      ): Boolean {
+        return false
       }
     }
 

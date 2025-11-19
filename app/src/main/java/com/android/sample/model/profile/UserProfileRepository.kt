@@ -53,4 +53,25 @@ interface UserProfileRepository {
    * @return List of matching user profiles (without loading photos to save bandwidth)
    */
   suspend fun searchUserProfiles(query: String, limit: Int = 20): List<UserProfile>
+
+  /**
+   * Awards kudos to a user by incrementing their kudos count.
+   *
+   * @param userId The unique identifier of the user to award kudos to.
+   * @param amount The amount of kudos to award (must be positive).
+   * @throws IllegalArgumentException if amount is not positive or exceeds safety limits.
+   * @throws NoSuchElementException if the user profile is not found.
+   */
+  suspend fun awardKudos(userId: String, amount: Int)
+
+  /**
+   * Awards kudos to multiple users in a single atomic transaction. If any award fails, all awards
+   * are rolled back.
+   *
+   * @param awards Map of userId to kudos amount.
+   * @throws IllegalArgumentException if any amount is invalid.
+   * @throws NoSuchElementException if any user profile is not found.
+   * @throws Exception if the transaction fails.
+   */
+  suspend fun awardKudosBatch(awards: Map<String, Int>)
 }
