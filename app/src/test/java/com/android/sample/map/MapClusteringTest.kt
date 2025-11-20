@@ -23,6 +23,13 @@ class MapClusteringTest {
   private val name = "test-id"
   private val title = "Test Request"
   private val description = "Test Description"
+  private val distanceDeltaSmall = 0.0001
+  private val distanceDeltaLarge = 0.1f
+  private val tolerance = 0.1
+  private val one = "1"
+  private val two = "2"
+  private val three = "3"
+  private val four = "4"
 
   // ========== Tests for calculateDistance ==========
 
@@ -86,8 +93,8 @@ class MapClusteringTest {
 
     val center = calculateClusterCenter(listOf(request))
 
-    assertEquals(46.5197, center.latitude, 0.0001)
-    assertEquals(6.6323, center.longitude, 0.0001)
+    assertEquals(46.5197, center.latitude, distanceDeltaSmall)
+    assertEquals(6.6323, center.longitude, distanceDeltaSmall)
   }
 
   @Test
@@ -99,8 +106,8 @@ class MapClusteringTest {
 
     val center = calculateClusterCenter(listOf(request1, request2))
 
-    assertEquals(47.0, center.latitude, 0.0001)
-    assertEquals(7.0, center.longitude, 0.0001)
+    assertEquals(47.0, center.latitude, distanceDeltaSmall)
+    assertEquals(7.0, center.longitude, distanceDeltaSmall)
   }
 
   @Test
@@ -115,8 +122,8 @@ class MapClusteringTest {
     val center = calculateClusterCenter(requests)
 
     // Average: (46+47+48)/3 = 47, (6+7+8)/3 = 7
-    assertEquals(47.0, center.latitude, 0.0001)
-    assertEquals(7.0, center.longitude, 0.0001)
+    assertEquals(47.0, center.latitude, distanceDeltaSmall)
+    assertEquals(7.0, center.longitude, distanceDeltaSmall)
   }
 
   @Test
@@ -127,8 +134,8 @@ class MapClusteringTest {
 
     val center = calculateClusterCenter(requests)
 
-    assertEquals(-15.0, center.latitude, 0.0001)
-    assertEquals(-7.5, center.longitude, 0.0001)
+    assertEquals(-15.0, center.latitude, distanceDeltaSmall)
+    assertEquals(-7.5, center.longitude, distanceDeltaSmall)
   }
 
   // ========== Tests for clusterRequestsByDistance ==========
@@ -155,8 +162,8 @@ class MapClusteringTest {
     // Two requests ~50m apart (should cluster with 100m radius)
     val location1 = Location(46.5197, 6.6323, "Point 1")
     val location2 = Location(46.5202, 6.6323, "Point 2") // ~55m north
-    val request1 = createTestRequest(id = "1", location = location1)
-    val request2 = createTestRequest(id = "2", location = location2)
+    val request1 = createTestRequest(id = one, location = location1)
+    val request2 = createTestRequest(id = two, location = location2)
 
     val clusters = clusterRequestsByDistance(listOf(request1, request2), 100.0)
 
@@ -169,8 +176,8 @@ class MapClusteringTest {
     // Two requests ~5km apart (should NOT cluster with 1km radius)
     val location1 = Location(46.5197, 6.6323, "Point 1")
     val location2 = Location(46.5650, 6.6323, "Point 2") // ~5km north
-    val request1 = createTestRequest(id = "1", location = location1)
-    val request2 = createTestRequest(id = "2", location = location2)
+    val request1 = createTestRequest(id = one, location = location1)
+    val request2 = createTestRequest(id = two, location = location2)
 
     val clusters = clusterRequestsByDistance(listOf(request1, request2), 1000.0)
 
@@ -185,9 +192,9 @@ class MapClusteringTest {
     val location1 = Location(46.5197, 6.6323, "Point 1")
     val location2 = Location(46.5202, 6.6323, "Point 2") // Close to location1
     val location3 = Location(46.6000, 6.7000, "Point 3") // Far from others
-    val request1 = createTestRequest(id = "1", location = location1)
-    val request2 = createTestRequest(id = "2", location = location2)
-    val request3 = createTestRequest(id = "3", location = location3)
+    val request1 = createTestRequest(id = one, location = location1)
+    val request2 = createTestRequest(id = two, location = location2)
+    val request3 = createTestRequest(id = three, location = location3)
 
     val clusters = clusterRequestsByDistance(listOf(request1, request2, request3), 1000.0)
 
@@ -203,9 +210,9 @@ class MapClusteringTest {
     val location3 = Location(46.5207, 6.6323, "Point 3")
     val requests =
         listOf(
-            createTestRequest(id = "1", location = location1),
-            createTestRequest(id = "2", location = location2),
-            createTestRequest(id = "3", location = location3))
+            createTestRequest(id = one, location = location1),
+            createTestRequest(id = two, location = location2),
+            createTestRequest(id = three, location = location3))
 
     val clusters = clusterRequestsByDistance(requests, 1000.0)
 
@@ -215,7 +222,7 @@ class MapClusteringTest {
 
     // Verify all request IDs are present
     val allIds = clusters.flatten().map { it.requestId }.toSet()
-    assertEquals(setOf("1", "2", "3"), allIds)
+    assertEquals(setOf(one, two, three), allIds)
   }
 
   @Test
@@ -228,10 +235,10 @@ class MapClusteringTest {
 
     val requests =
         listOf(
-            createTestRequest(id = "1", location = location1),
-            createTestRequest(id = "2", location = location2),
-            createTestRequest(id = "3", location = location3),
-            createTestRequest(id = "4", location = location4))
+            createTestRequest(id = one, location = location1),
+            createTestRequest(id = two, location = location2),
+            createTestRequest(id = three, location = location3),
+            createTestRequest(id = four, location = location4))
 
     val clusters = clusterRequestsByDistance(requests, 200.0)
 
@@ -241,7 +248,7 @@ class MapClusteringTest {
     // After the first request, the rest should be sorted by distance
     // (closest to farthest from the center)
     val clusterIds = clusters[0].map { it.requestId }
-    assertEquals("1", clusterIds[0]) // Center point (highest density)
+    assertEquals(one, clusterIds[0]) // Center point (highest density)
   }
 
   @Test
@@ -249,9 +256,9 @@ class MapClusteringTest {
     val location = Location(46.5197, 6.6323, "Same Location")
     val requests =
         listOf(
-            createTestRequest(id = "1", location = location),
-            createTestRequest(id = "2", location = location),
-            createTestRequest(id = "3", location = location))
+            createTestRequest(id = one, location = location),
+            createTestRequest(id = two, location = location),
+            createTestRequest(id = three, location = location))
 
     val clusters = clusterRequestsByDistance(requests, 100.0)
 
@@ -266,70 +273,70 @@ class MapClusteringTest {
     val radius = getClusterRadiusForZoom(0.5f)
     val expectedBase = ConstantMap.ZOOM_LEVEL_WORLD
     val expected = expectedBase / (0.5f / ConstantMap.ZOOM_DIVIDE)
-    assertEquals(expected, radius, 0.1)
+    assertEquals(expected, radius, tolerance)
   }
 
   @Test
   fun test_getClusterRadiusForZoom_returnsCorrectRadiusForZoomOne() {
-    val zoomLevel = ConstantMap.MAX_ZOOM_ONE - 0.1f
+    val zoomLevel = ConstantMap.MAX_ZOOM_ONE - distanceDeltaLarge
     val radius = getClusterRadiusForZoom(zoomLevel)
     val expectedBase = ConstantMap.ZOOM_LEVEL_WORLD
     val expected = expectedBase / (zoomLevel / ConstantMap.ZOOM_DIVIDE)
-    assertEquals(expected, radius, 0.1)
+    assertEquals(expected, radius, tolerance)
   }
 
   @Test
   fun test_getClusterRadiusForZoom_returnsCorrectRadiusForZoomTwo() {
-    val zoomLevel = ConstantMap.MAX_ZOOM_TWO - 0.1f
+    val zoomLevel = ConstantMap.MAX_ZOOM_TWO - distanceDeltaLarge
     val radius = getClusterRadiusForZoom(zoomLevel)
     val expectedBase = ConstantMap.ZOOM_LEVEL_WL
     val expected = expectedBase / (zoomLevel / ConstantMap.ZOOM_DIVIDE)
-    assertEquals(expected, radius, 0.1)
+    assertEquals(expected, radius, tolerance)
   }
 
   @Test
   fun test_getClusterRadiusForZoom_returnsLandRadiusForLandView() {
-    val zoomLevel = ConstantMap.MAX_ZOOM_THREE - 0.1f
+    val zoomLevel = ConstantMap.MAX_ZOOM_THREE - distanceDeltaLarge
     val radius = getClusterRadiusForZoom(zoomLevel)
     val expectedBase = ConstantMap.ZOOM_LEVEL_LAND
     val expected = expectedBase / (zoomLevel / ConstantMap.ZOOM_DIVIDE)
-    assertEquals(expected, radius, 0.1)
+    assertEquals(expected, radius, tolerance)
   }
 
   @Test
   fun test_getClusterRadiusForZoom_returnsRegionRadiusForRegionView() {
-    val zoomLevel = ConstantMap.MAX_ZOOM_FOUR - 0.1f
+    val zoomLevel = ConstantMap.MAX_ZOOM_FOUR - distanceDeltaLarge
     val radius = getClusterRadiusForZoom(zoomLevel)
     val expectedBase = ConstantMap.ZOOM_LEVEL_REGION
     val expected = expectedBase / (zoomLevel / ConstantMap.ZOOM_DIVIDE)
-    assertEquals(expected, radius, 0.1)
+    assertEquals(expected, radius, tolerance)
   }
 
   @Test
   fun test_getClusterRadiusForZoom_returnsCityRadiusForCityView() {
-    val zoomLevel = ConstantMap.MAX_ZOOM_FIVE - 0.1f
+    val zoomLevel = ConstantMap.MAX_ZOOM_FIVE - distanceDeltaLarge
     val radius = getClusterRadiusForZoom(zoomLevel)
     val expectedBase = ConstantMap.ZOOM_LEVEL_CITY
     val expected = expectedBase / (zoomLevel / ConstantMap.ZOOM_DIVIDE)
-    assertEquals(expected, radius, 0.1)
+    assertEquals(expected, radius, tolerance)
   }
 
   @Test
   fun test_getClusterRadiusForZoom_returnsMidRadiusForMidView() {
-    val zoomLevel = ConstantMap.MAX_ZOOM_SIX - 0.1f
+    val zoomLevel = ConstantMap.MAX_ZOOM_SIX - distanceDeltaLarge
     val radius = getClusterRadiusForZoom(zoomLevel)
     val expectedBase = ConstantMap.ZOOM_LEVEL_MID
     val expected = expectedBase / (zoomLevel / ConstantMap.ZOOM_DIVIDE)
-    assertEquals(expected, radius, 0.1)
+    assertEquals(expected, radius, tolerance)
   }
 
   @Test
   fun test_getClusterRadiusForZoom_returnsStreetBigRadiusForStreetView() {
-    val zoomLevel = ConstantMap.MAX_ZOOM_SEVEN - 0.1f
+    val zoomLevel = ConstantMap.MAX_ZOOM_SEVEN - distanceDeltaLarge
     val radius = getClusterRadiusForZoom(zoomLevel)
     val expectedBase = ConstantMap.ZOOM_LEVEL_STREET_BIG
     val expected = expectedBase / (zoomLevel / ConstantMap.ZOOM_DIVIDE)
-    assertEquals(expected, radius, 0.1)
+    assertEquals(expected, radius, tolerance)
   }
 
   @Test
@@ -338,7 +345,7 @@ class MapClusteringTest {
     val radius = getClusterRadiusForZoom(zoomLevel)
     val expectedBase = ConstantMap.ZOOM_LEVEL_STREET_SMALL
     val expected = expectedBase / (zoomLevel / ConstantMap.ZOOM_DIVIDE)
-    assertEquals(expected, radius, 0.1)
+    assertEquals(expected, radius, tolerance)
   }
 
   @Test

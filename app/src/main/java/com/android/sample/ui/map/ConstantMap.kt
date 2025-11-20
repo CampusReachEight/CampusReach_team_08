@@ -130,6 +130,7 @@ object ConstantMap {
   const val NUMBER_SIZE_ONE = 36f
   const val NUMBER_SIZE_TWO = 32f
   const val NUMBER_SIZE_THREE = 28f
+  const val SIZE_OF_MARKER = 100
 
   // ======================
   // Distance request

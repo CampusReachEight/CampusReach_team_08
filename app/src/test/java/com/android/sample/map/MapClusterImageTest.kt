@@ -15,28 +15,36 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class MapClusterImageTest {
+  private val verySmallSizeText = 5
+  private val smallSizeText = 9
+  private val midSmallSizeText = 10
+  private val midSizeText = 99
+  private val bigSmallSizeText = 100
+  private val bigSizeText = 999
+  private val one = 1
+  private val fifty = 50
 
   @Test
   fun getTextSizeForCount_returns_correct_size_for_single_digit() {
-    assertEquals(ConstantMap.NUMBER_SIZE_ONE, getTextSizeForCount(5))
-    assertEquals(ConstantMap.NUMBER_SIZE_ONE, getTextSizeForCount(9))
+    assertEquals(ConstantMap.NUMBER_SIZE_ONE, getTextSizeForCount(verySmallSizeText))
+    assertEquals(ConstantMap.NUMBER_SIZE_ONE, getTextSizeForCount(smallSizeText))
   }
 
   @Test
   fun getTextSizeForCount_returns_correct_size_for_double_digit() {
-    assertEquals(ConstantMap.NUMBER_SIZE_TWO, getTextSizeForCount(10))
-    assertEquals(ConstantMap.NUMBER_SIZE_TWO, getTextSizeForCount(99))
+    assertEquals(ConstantMap.NUMBER_SIZE_TWO, getTextSizeForCount(midSmallSizeText))
+    assertEquals(ConstantMap.NUMBER_SIZE_TWO, getTextSizeForCount(midSizeText))
   }
 
   @Test
   fun getTextSizeForCount_returns_correct_size_for_triple_digit() {
-    assertEquals(ConstantMap.NUMBER_SIZE_THREE, getTextSizeForCount(100))
-    assertEquals(ConstantMap.NUMBER_SIZE_THREE, getTextSizeForCount(999))
+    assertEquals(ConstantMap.NUMBER_SIZE_THREE, getTextSizeForCount(bigSmallSizeText))
+    assertEquals(ConstantMap.NUMBER_SIZE_THREE, getTextSizeForCount(bigSizeText))
   }
 
   @Test
   fun createTextPaint_returns_paint_with_correct_properties() {
-    val paint = createTextPaint(5)
+    val paint = createTextPaint(verySmallSizeText)
 
     assertEquals(Color.WHITE, paint.color)
     assertEquals(ConstantMap.NUMBER_SIZE_ONE, paint.textSize)
@@ -46,38 +54,38 @@ class MapClusterImageTest {
 
   @Test
   fun createMarkerBitmap_returns_bitmap_with_correct_dimensions() {
-    val bitmap = createMarkerBitmap(5)
+    val bitmap = createMarkerBitmap(verySmallSizeText)
 
-    assertEquals(100, bitmap.width)
-    assertEquals(100, bitmap.height)
+    assertEquals(ConstantMap.SIZE_OF_MARKER, bitmap.width)
+    assertEquals(ConstantMap.SIZE_OF_MARKER, bitmap.height)
     assertEquals(Bitmap.Config.ARGB_8888, bitmap.config)
   }
 
   @Test
   fun createMarkerBitmap_handles_different_count_values() {
-    val bitmap1 = createMarkerBitmap(1)
-    val bitmap2 = createMarkerBitmap(50)
-    val bitmap3 = createMarkerBitmap(999)
+    val bitmap1 = createMarkerBitmap(one)
+    val bitmap2 = createMarkerBitmap(fifty)
+    val bitmap3 = createMarkerBitmap(bigSizeText)
 
     assertNotNull(bitmap1)
     assertNotNull(bitmap2)
     assertNotNull(bitmap3)
 
     // Verify dimensions are correct for all
-    assertEquals(100, bitmap1.width)
-    assertEquals(100, bitmap2.width)
-    assertEquals(100, bitmap3.width)
+    assertEquals(ConstantMap.SIZE_OF_MARKER, bitmap1.width)
+    assertEquals(ConstantMap.SIZE_OF_MARKER, bitmap2.width)
+    assertEquals(ConstantMap.SIZE_OF_MARKER, bitmap3.width)
   }
 
   @Test
   fun createMarkerBitmap_is_properly_configured() {
-    val bitmap = createMarkerBitmap(5)
+    val bitmap = createMarkerBitmap(verySmallSizeText)
 
     // Verify the bitmap exists and has proper configuration
     assertNotNull(bitmap)
     assertEquals(Bitmap.Config.ARGB_8888, bitmap.config)
-    assertEquals(100, bitmap.width)
-    assertEquals(100, bitmap.height)
+    assertEquals(ConstantMap.SIZE_OF_MARKER, bitmap.width)
+    assertEquals(ConstantMap.SIZE_OF_MARKER, bitmap.height)
 
     // Verify the bitmap is mutable (can be drawn on)
     assertEquals(true, bitmap.isMutable)
