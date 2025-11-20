@@ -312,7 +312,9 @@ fun AcceptRequestScreen(
                           Spacer(
                               modifier =
                                   Modifier.height(AcceptRequestScreenConstants.SECTION_SPACING))
-                          if (request.people.isEmpty()) {
+                          // Safeguard: exclude creatorId from volunteers list if present
+                          val volunteers = request.people.filterNot { it == request.creatorId }
+                          if (volunteers.isEmpty()) {
                             Text(
                                 text = AcceptRequestScreenLabels.NO_VOLUNTEERS_YET,
                                 style = MaterialTheme.typography.bodyMedium,
@@ -322,7 +324,7 @@ fun AcceptRequestScreen(
                                 verticalArrangement =
                                     Arrangement.spacedBy(
                                         AcceptRequestScreenConstants.SECTION_SPACING)) {
-                                  request.people.forEach { userId ->
+                                  volunteers.forEach { userId ->
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                       ProfilePicture(profileId = userId, withName = true)
                                     }

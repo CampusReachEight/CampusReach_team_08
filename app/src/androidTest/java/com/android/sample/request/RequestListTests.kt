@@ -1045,4 +1045,92 @@ class RequestListTests : BaseEmulatorTest() {
       }
     }
   }
+
+  @Test
+  fun filtering_excludes_nonOpenAndInProgressStatuses() {
+    val now = Date()
+    val hour = ONE_HOUR_MS
+    val requests =
+        listOf(
+            Request(
+                requestId = "r_open",
+                title = "Open Req",
+                description = "desc",
+                requestType = listOf(RequestType.OTHER),
+                location = Location(0.0, 0.0, "Loc"),
+                locationName = "LocName",
+                status = RequestStatus.OPEN,
+                startTimeStamp = now,
+                expirationTime = Date(now.time + hour),
+                people = emptyList(),
+                tags = listOf(Tags.INDOOR),
+                creatorId = "c1"),
+            Request(
+                requestId = "r_inprog",
+                title = "In Progress Req",
+                description = "desc",
+                requestType = listOf(RequestType.OTHER),
+                location = Location(0.0, 0.0, "Loc"),
+                locationName = "LocName",
+                status = RequestStatus.IN_PROGRESS,
+                startTimeStamp = now,
+                expirationTime = Date(now.time + hour),
+                people = emptyList(),
+                tags = listOf(Tags.INDOOR),
+                creatorId = "c2"),
+            Request(
+                requestId = "r_completed",
+                title = "Completed Req",
+                description = "desc",
+                requestType = listOf(RequestType.OTHER),
+                location = Location(0.0, 0.0, "Loc"),
+                locationName = "LocName",
+                status = RequestStatus.COMPLETED,
+                startTimeStamp = now,
+                expirationTime = Date(now.time + hour),
+                people = emptyList(),
+                tags = listOf(Tags.INDOOR),
+                creatorId = "c3"),
+            Request(
+                requestId = "r_cancelled",
+                title = "Cancelled Req",
+                description = "desc",
+                requestType = listOf(RequestType.OTHER),
+                location = Location(0.0, 0.0, "Loc"),
+                locationName = "LocName",
+                status = RequestStatus.CANCELLED,
+                startTimeStamp = now,
+                expirationTime = Date(now.time + hour),
+                people = emptyList(),
+                tags = listOf(Tags.INDOOR),
+                creatorId = "c4"),
+            Request(
+                requestId = "r_archived",
+                title = "Archived Req",
+                description = "desc",
+                requestType = listOf(RequestType.OTHER),
+                location = Location(0.0, 0.0, "Loc"),
+                locationName = "LocName",
+                status = RequestStatus.ARCHIVED,
+                startTimeStamp = now,
+                expirationTime = Date(now.time + hour),
+                people = emptyList(),
+                tags = listOf(Tags.INDOOR),
+                creatorId = "c5"))
+    val vm = RequestListViewModel(FakeRequestRepository(requests), FakeUserProfileRepository())
+
+    composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
+
+    composeTestRule.waitUntil(WAIT_TIMEOUT_MS) { vm.state.value.requests.size == requests.size }
+
+    // Only 2 requests should be displayed (OPEN + IN_PROGRESS)
+    composeTestRule
+        .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM_TITLE, useUnmergedTree = true)
+        .assertCountEquals(2)
+    composeTestRule.onNodeWithText("Open Req").assertExists()
+    composeTestRule.onNodeWithText("In Progress Req").assertExists()
+    composeTestRule.onNodeWithText("Completed Req").assertDoesNotExist()
+    composeTestRule.onNodeWithText("Cancelled Req").assertDoesNotExist()
+    composeTestRule.onNodeWithText("Archived Req").assertDoesNotExist()
+  }
 }
