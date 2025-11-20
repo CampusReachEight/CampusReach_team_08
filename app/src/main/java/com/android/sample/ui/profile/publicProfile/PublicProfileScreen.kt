@@ -4,9 +4,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -15,6 +17,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.android.sample.model.profile.UserProfile
 import com.android.sample.ui.profile.ProfilePicture
@@ -32,8 +35,10 @@ import java.util.Locale
 @Composable
 fun PublicProfileScreen(
     profileId: String,
+    modifier: Modifier = Modifier,
     profileLoader: suspend (String) -> PublicProfile? = { id ->
-        // Simple default fake data to avoid unresolved references and allow previews.
+        // Simple default fake data to avoid unresolved references and allow previews
+        // Disclaimer: this is not representative of real data!
         PublicProfile(
             userId = id,
             name = "Jane Doe",
@@ -46,11 +51,11 @@ fun PublicProfileScreen(
             following = 10
         )
     },
-    onBack: () -> Unit = {},
-    modifier: Modifier = Modifier
+    onBack: () -> Unit = {}
 ) {
     val loadingState = remember { mutableStateOf(true) }
     val profileState = remember { mutableStateOf<PublicProfile?>(null) }
+    val isFollowing = remember { mutableStateOf(false) }
 
     LaunchedEffect(profileId) {
         loadingState.value = true
@@ -68,7 +73,19 @@ fun PublicProfileScreen(
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Button(onClick = onBack) { Text("Back") }
+        // Top row: Back + placeholder Follow button (replaces edit button behavior)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Start,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Button(onClick = onBack) { Text("Back") }
+            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.weight(1f))
+            Button(onClick = { isFollowing.value = !isFollowing.value }) {
+                Text(if (isFollowing.value) "Following" else "Follow")
+            }
+        }
 
         Spacer(modifier = Modifier.height(12.dp))
 
@@ -83,7 +100,6 @@ fun PublicProfileScreen(
             return@Column
         }
 
-        // Use existing ProfilePicture composable; show picture only (no name below)
         ProfilePicture(
             profileId = profile.userId,
             onClick = {},
@@ -101,17 +117,7 @@ fun PublicProfileScreen(
             Text(text = "Joined: $date")
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
-
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("Kudos: ${profile.kudosReceived}")
-            Text("Help: ${profile.helpReceived}")
-            Text("Followers: ${profile.followers}")
-            Text("Following: ${profile.following}")
-        }
+        // Profile actions/stats removed for public view
     }
 }
 
@@ -137,4 +143,10 @@ fun userProfileToPublic(up: UserProfile): PublicProfile {
         followers = 0,
         following = 0
     )
+}
+
+@Preview(showBackground = true)
+@Composable
+fun PublicProfileScreenPreview() {
+    PublicProfileScreen(profileId = "user123")
 }
