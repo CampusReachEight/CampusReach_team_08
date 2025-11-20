@@ -3,6 +3,8 @@ package com.android.sample.ui.profile.publicProfile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.sample.model.profile.UserProfileRepository
+import com.android.sample.model.profile.UserProfileRepositoryFirestore
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,7 +19,8 @@ data class PublicProfileUiState(
 )
 
 class PublicProfileViewModel (
-    private val repository: UserProfileRepository,
+    private val repository: UserProfileRepository =
+        UserProfileRepositoryFirestore(FirebaseFirestore.getInstance())
     ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PublicProfileUiState())
