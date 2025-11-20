@@ -94,16 +94,23 @@ class ValidateRequestViewModel(
       state = ValidationState.Loading
 
       try {
+        android.util.Log.d(VALIDATE_REQUEST, "Loading request with ID: $requestId")
         val request = requestRepository.getRequest(requestId)
+        android.util.Log.d(
+            VALIDATE_REQUEST,
+            "Request loaded successfully: ${request.requestId}, owner: ${request.creatorId}")
 
         // Extract validation to separate method
         validateRequestForClosure(request)?.let { errorState ->
+          android.util.Log.e(VALIDATE_REQUEST, "Validation failed: ${errorState.message}")
+
           state = errorState
           return@launch
         }
 
         // Extract helper loading to separate method
         val helpers = loadHelperProfiles(request.people)
+        android.util.Log.d(VALIDATE_REQUEST, "Loaded ${helpers.size} helpers")
 
         // Validate helpers loaded successfully
         if (helpers.isEmpty() && request.people.isNotEmpty()) {
@@ -115,6 +122,8 @@ class ValidateRequestViewModel(
             ValidationState.Ready(
                 request = request, helpers = helpers, selectedHelperIds = emptySet())
       } catch (e: Exception) {
+        android.util.Log.e(VALIDATE_REQUEST, "Exception loading request", e)
+
         state =
             ValidationState.Error(
                 message = "$FAILED_TO_LOAD_REQUESTS ${e.message}", canRetry = true)

@@ -59,6 +59,7 @@ import java.util.Locale
 object AcceptRequestScreenTestTags {
   const val REQUEST_BUTTON = "requestButton"
   const val REQUEST_TITLE = "requestTitle"
+  const val VALIDATE_REQUEST_BUTTON = "validateRequestButton"
   const val REQUEST_DESCRIPTION = "requestDescription"
   const val REQUEST_TAG = "requestTag"
   const val REQUEST_TYPE = "requestType"
@@ -80,6 +81,7 @@ object AcceptRequestScreenTestTags {
 // Centralized user-visible strings for AcceptRequest screen
 object AcceptRequestScreenLabels {
   const val BACK = "Back"
+  const val VALIDATE_REQUEST = "Validate Request"
 
   const val DESCRIPTION = "Description"
   const val TAGS = "Tags"
@@ -111,6 +113,7 @@ object AcceptRequestScreenLabels {
 fun AcceptRequestScreen(
     requestId: String,
     acceptRequestViewModel: AcceptRequestViewModel = viewModel(),
+    onValidateClick: (String) -> Unit = {},
     onGoBack: () -> Unit = {},
     onEditClick: (String) -> Unit = {}
 ) {
@@ -264,6 +267,21 @@ fun AcceptRequestScreen(
                             style = MaterialTheme.typography.labelLarge)
                       }
                     }
+
+                if (isOwner) {
+                  Spacer(modifier = Modifier.height(AcceptRequestScreenConstants.SECTION_SPACING))
+
+                  FilledTonalButton(
+                      onClick = { onValidateClick(requestId) },
+                      modifier =
+                          Modifier.fillMaxWidth()
+                              .height(AcceptRequestScreenConstants.BUTTON_HEIGHT)
+                              .testTag(AcceptRequestScreenTestTags.VALIDATE_REQUEST_BUTTON)) {
+                        Text(
+                            text = AcceptRequestScreenLabels.VALIDATE_REQUEST,
+                            style = MaterialTheme.typography.labelLarge)
+                      }
+                }
 
                 // Volunteers expandable section (owners only)
                 if (isOwner) {

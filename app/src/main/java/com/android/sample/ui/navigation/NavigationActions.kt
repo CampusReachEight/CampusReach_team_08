@@ -54,7 +54,7 @@ sealed class Screen(
     }
   }
 
-  data class ValidateRequest(val requestId: String) : Screen("validateRequest/{requestId}") {
+  data class ValidateRequest(val requestId: String) : Screen(route = "validateRequest/$requestId") {
     companion object {
       const val ARG_REQUEST_ID = "requestId"
       const val route = "validateRequest/{$ARG_REQUEST_ID}"

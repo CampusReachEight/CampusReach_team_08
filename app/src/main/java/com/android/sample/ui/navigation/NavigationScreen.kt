@@ -24,6 +24,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navigation
 import com.android.sample.model.map.FusedLocationProvider
 import com.android.sample.model.map.NominatimLocationRepository
+import com.android.sample.model.profile.UserProfileRepositoryFirestore
 import com.android.sample.model.request.RequestRepositoryFirestore
 import com.android.sample.ui.authentication.SignInScreen
 import com.android.sample.ui.authentication.SignInViewModel
@@ -38,6 +39,8 @@ import com.android.sample.ui.request.RequestListViewModel
 import com.android.sample.ui.request.edit.EditRequestScreen
 import com.android.sample.ui.request.edit.EditRequestViewModel
 import com.android.sample.ui.request.edit.EditRequestViewModelFactory
+import com.android.sample.ui.request_validation.ValidateRequestScreen
+import com.android.sample.ui.request_validation.ValidateRequestViewModelFactory
 import com.android.sample.ui.theme.TopNavigationBar
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
@@ -60,6 +63,7 @@ fun NavigationScreen(
   val requestRepository = RequestRepositoryFirestore(Firebase.firestore)
   val locationRepository = NominatimLocationRepository(client = OkHttpClient())
   val fusedLocationProvider = FusedLocationProvider(LocalContext.current)
+  val userProfileRepository = UserProfileRepositoryFirestore(Firebase.firestore)
 
   // ViewModels
   val signInViewModel: SignInViewModel = viewModel()
@@ -106,10 +110,33 @@ fun NavigationScreen(
           AcceptRequestScreen(
               requestId = id,
               onGoBack = { navigationActions.goBack() },
+              onValidateClick = { requestIdToValidate ->
+                navigationActions.navigateTo(Screen.ValidateRequest(requestIdToValidate))
+              },
               onEditClick = { requestIdForEdit ->
                 navigationActions.navigateTo(Screen.EditRequest(requestIdForEdit))
               },
               acceptRequestViewModel = acceptRequestViewModel)
+        }
+      }
+      composable(Screen.ValidateRequest.route) { navBackStackEntry ->
+        val requestId = navBackStackEntry.arguments?.getString(Screen.RequestAccept.ARG_REQUEST_ID)
+        requestId?.let { id ->
+          ValidateRequestScreen(
+              requestId = id,
+              viewModel =
+                  viewModel(
+                      factory =
+                          ValidateRequestViewModelFactory(
+                              requestId = id,
+                              requestRepository = requestRepository,
+                              userProfileRepository = userProfileRepository)),
+              userProfileRepository = userProfileRepository,
+              onRequestClosed = {
+                requestListViewModel.refreshRequests()
+                navigationActions.goBack()
+              },
+              onNavigateBack = { navigationActions.goBack() })
         }
       }
       composable(Screen.EditRequest.route) { navBackStackEntry ->
