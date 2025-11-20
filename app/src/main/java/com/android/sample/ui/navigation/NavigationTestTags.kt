@@ -22,6 +22,7 @@ object NavigationTestTags {
   const val EVENT_TAB = "EventTab"
   const val MAP_TAB = "MapTab"
   const val PROFILE_BUTTON = "ProfileButton"
+  const val PUBLIC_PROFILE_SCREEN = "PublicProfileScreen"
 
   fun getTabTestTag(navigationTab: NavigationTab): String =
       when (navigationTab) {

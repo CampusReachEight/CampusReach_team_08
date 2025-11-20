@@ -1,31 +1,35 @@
 package com.android.sample.ui.profile.publicProfile
 
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.model.profile.UserProfile
-import com.android.sample.ui.profile.ProfilePicture
+import com.android.sample.ui.navigation.NavigationTestTags
+import com.android.sample.ui.profile.ProfileDimens
+import com.android.sample.ui.profile.ProfileState
+import com.android.sample.ui.profile.composables.ErrorBanner
+import com.android.sample.ui.profile.composables.ProfileInformation
+import com.android.sample.ui.profile.composables.ProfileLoadingBuffer
+import com.android.sample.ui.profile.composables.ProfileStats
+import com.android.sample.ui.profile.composables.ProfileTopBar
+import com.android.sample.ui.theme.appPalette
 import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.Locale
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 /**
  * One-off public profile screen: accepts a suspend loader that returns a `PublicProfile?`. Default
@@ -34,88 +38,45 @@ import kotlinx.coroutines.withContext
  */
 @Composable
 fun PublicProfileScreen(
-    profileId: String,
-    modifier: Modifier = Modifier,
-    profileLoader: suspend (String) -> PublicProfile? = { id ->
-      // Simple default fake data to avoid unresolved references and allow previews
-      // Disclaimer: this is not representative of real data!
-      PublicProfile(
-          userId = id,
-          name = "Jane Doe",
-          section = "Engineering",
-          arrivalDate = "01/01/2020",
-          pictureUriString = null,
-          kudosReceived = 42,
-          helpReceived = 5,
-          followers = 128,
-          following = 10)
-    },
-    onBack: () -> Unit = {}
+    viewModel: PublicProfileViewModel = viewModel(),
+    onBackClick: () -> Unit = {}
 ) {
-  val loadingState = remember { mutableStateOf(true) }
-  val profileState = remember { mutableStateOf<PublicProfile?>(null) }
-  val isFollowing = remember { mutableStateOf(false) }
+    val state by viewModel.uiState.collectAsState()
+    val isFollowing = remember { mutableStateOf(false) }
+    val shownState = mapPublicToProfileState(
+        publicProfile = state.profile,
+        error = state.errorMessage,
+        isLoading = state.isLoading
+    )
 
-  LaunchedEffect(profileId) {
-    loadingState.value = true
-    val p =
-        try {
-          withContext(Dispatchers.IO) { profileLoader(profileId) }
-        } catch (_: Exception) {
-          null
-        }
-    profileState.value = p
-    loadingState.value = false
-  }
+    Scaffold(
+        modifier = Modifier.testTag(NavigationTestTags.PUBLIC_PROFILE_SCREEN),
+        containerColor = appPalette().primary,
+        topBar = { ProfileTopBar(onBackClick) }) { padding ->
+        Box(modifier = Modifier
+            .fillMaxSize()
+            .padding(padding)) {
+            when {
+                state.isLoading -> ProfileLoadingBuffer(Modifier.fillMaxSize())
+                else ->
+                    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                        state.errorMessage?.let {
+                            ErrorBanner(it)
+                            Spacer(modifier = Modifier.height(ProfileDimens.Vertical))
+                        }
 
-  Column(
-      modifier = modifier.padding(16.dp),
-      verticalArrangement = Arrangement.Top,
-      horizontalAlignment = Alignment.CenterHorizontally) {
-        // Top row: Back + placeholder Follow button (replaces edit button behavior)
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Start,
-            verticalAlignment = Alignment.CenterVertically) {
-              Button(onClick = onBack) { Text("Back") }
-              Spacer(modifier = Modifier.width(8.dp))
-              Spacer(modifier = Modifier.weight(1f))
-              Button(onClick = { isFollowing.value = !isFollowing.value }) {
-                Text(if (isFollowing.value) "Following" else "Follow")
-              }
+                        // ProfileHeader(state = state, onEditRequested = onEditRequested) TODO: create new public profile header
+                        Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
+                        ProfileStats(state = shownState)
+                        Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
+                        ProfileInformation(state = shownState)
+                        Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
+                    }
             }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        if (loadingState.value) {
-          Text("Loading...")
-          return@Column
+            // Follow / Unfollow button at the bottom
+            // TODO : add follow unfollow button
         }
-
-        val profile = profileState.value
-        if (profile == null) {
-          Text("Profile not found")
-          return@Column
-        }
-
-        ProfilePicture(
-            profileId = profile.userId,
-            onClick = {},
-            withName = false,
-            modifier = Modifier.size(128.dp))
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        Text(text = profile.name)
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(text = profile.section)
-        profile.arrivalDate?.let { date ->
-          Spacer(modifier = Modifier.height(4.dp))
-          Text(text = "Joined: $date")
-        }
-
-        // Profile actions/stats removed for public view
-      }
+    }
 }
 
 /**
@@ -126,7 +87,7 @@ fun userProfileToPublic(up: UserProfile): PublicProfile {
   val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
   val arrival =
       try {
-        dateFormat.format(up.arrivalDate ?: Date())
+        dateFormat.format(up.arrivalDate)
       } catch (_: Exception) {
         null
       }
@@ -142,8 +103,56 @@ fun userProfileToPublic(up: UserProfile): PublicProfile {
       following = 0)
 }
 
+private fun mapPublicToProfileState(
+    publicProfile: PublicProfile?,
+    error: String?,
+    isLoading: Boolean
+): ProfileState {
+    // Use ProfileState.default() when available to avoid missing fields; otherwise construct explicitly.
+    return if (isLoading) {
+        ProfileState.default()
+    } else {
+        if (publicProfile == null) {
+            // minimal empty state with error shown
+            ProfileState(
+                userName = "Unknown",
+                userEmail = "",
+                profileId = "",
+                kudosReceived = 0,
+                helpReceived = 0,
+                followers = 0,
+                following = 0,
+                arrivalDate = "",
+                userSection = "",
+                isLoading = false,
+                errorMessage = error,
+                isEditMode = false,
+                profilePictureUrl = null,
+                isLoggingOut = false
+            )
+        } else {
+            ProfileState(
+                userName = publicProfile.name,
+                userEmail = "",
+                profileId = publicProfile.userId,
+                kudosReceived = publicProfile.kudosReceived,
+                helpReceived = publicProfile.helpReceived,
+                followers = publicProfile.followers,
+                following = publicProfile.following,
+                arrivalDate = publicProfile.arrivalDate ?: "",
+                userSection = publicProfile.section,
+                isLoading = false,
+                errorMessage = error,
+                isEditMode = false,
+                profilePictureUrl = publicProfile.pictureUriString,
+                isLoggingOut = false
+            )
+        }
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
 fun PublicProfileScreenPreview() {
-  PublicProfileScreen(profileId = "user123")
+  PublicProfileScreen()
 }

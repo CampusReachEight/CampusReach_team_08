@@ -11,9 +11,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 data class PublicProfileUiState(
-    val loading: Boolean = false,
+    val isLoading: Boolean = false,
     val profile: PublicProfile? = null,
-    val error: String? = null
+    val errorMessage: String? = null
 )
 
 class PublicProfileViewModel (
@@ -27,17 +27,19 @@ class PublicProfileViewModel (
         // Implementation to load public profile from repository
         // and update _uiState accordingly
         viewModelScope.launch {
-            _uiState.value = PublicProfileUiState(loading = true, error = null)
+            _uiState.value = PublicProfileUiState(isLoading = true, errorMessage = null)
             try {
                 val up = withContext(Dispatchers.IO) { repository
                     .getUserProfile(profileId) }
                 val public = userProfileToPublic(up)
-                _uiState.value = _uiState.value.copy(loading = false, profile = public, error = null)
+                _uiState.value = _uiState.value.copy(isLoading = false,
+                    profile = public,
+                    errorMessage = null)
             } catch (e: Exception) {
                 _uiState.value =
-                    _uiState.value.copy(loading = false,
+                    _uiState.value.copy(isLoading = false,
                         profile = null,
-                        error = e.message ?: "Failed to load profile")
+                        errorMessage = e.message ?: "Failed to load profile")
             }
         }
     }
