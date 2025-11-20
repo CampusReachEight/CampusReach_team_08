@@ -14,7 +14,7 @@ object ProfileDimens {
   val StatCardHeight = UiDimens.StatCardHeight
   val StatCardVerticalPadding = UiDimens.SpacingLg
   val StatCardHorizontalPadding = UiDimens.SpacingMd
-  val StatCardSpacer = UiDimens.SpacingXs
+  val StatCardSpacer = UiDimens.SpacingXxs
 
   val InfoCornerRadius = UiDimens.CornerRadiusSm
   val InfoSpacer = UiDimens.SpacingSm
