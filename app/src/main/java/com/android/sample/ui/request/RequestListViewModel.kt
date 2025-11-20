@@ -12,6 +12,7 @@ import com.android.sample.model.profile.UserProfileRepositoryFirestore
 import com.android.sample.model.request.Request
 import com.android.sample.model.request.RequestRepository
 import com.android.sample.model.request.RequestRepositoryFirestore
+import com.android.sample.model.request.RequestStatus
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import java.net.URL
@@ -46,14 +47,21 @@ class RequestListViewModel(
     _state.update { it.copy(isLoading = true) }
     viewModelScope.launch {
       try {
-        val requests =
+        val allRequests =
             if (showOnlyMyRequests) {
               requestRepository.getMyRequests()
             } else {
               requestRepository.getAllRequests()
             }
-        _state.update { it.copy(requests = requests, isLoading = false, errorMessage = null) }
-        requests.forEach { loadProfileImage(it.creatorId) }
+        val activeRequests =
+            allRequests.filter { request ->
+              request.viewStatus == RequestStatus.OPEN ||
+                  request.viewStatus == RequestStatus.IN_PROGRESS
+            }
+
+        // Change 'requests' to 'activeRequests' here:
+        _state.update { it.copy(requests = activeRequests, isLoading = false, errorMessage = null) }
+        activeRequests.forEach { loadProfileImage(it.creatorId) }
       } catch (e: Exception) {
         if (verboseLogging) Log.e("RequestListViewModel", "Failed to load requests", e)
         val friendly =
@@ -61,6 +69,10 @@ class RequestListViewModel(
         _state.update { it.copy(isLoading = false, errorMessage = friendly) }
       }
     }
+  }
+
+  fun refreshRequests() {
+    loadRequests()
   }
 
   /** Loads a profile image. Failures are non-fatal: logged and stored as null. */

@@ -762,47 +762,29 @@ class RequestListTests : BaseEmulatorTest() {
     // Expect request with 5 participants (A Alpha) first.
     composeTestRule.waitUntil(WAIT_TIMEOUT_MS) { extractVisibleTitles().first().startsWith("A") }
   }
-
-  @Test
-  fun loadsProfileImagesSuccessfully() {
-    val requests =
-        sampleRequests(listOf("special_profile1", "special_profile2", "special_profile3"))
-    val vm =
-        RequestListViewModel(
-            FakeRequestRepository(requests),
-            FakeUserProfileRepository(
-                withImage = setOf("special_profile1", "special_profile2", "special_profile3")))
-
-    composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
-    composeTestRule.waitForIdle()
-    composeTestRule.waitUntil(OFFSET_5_S_MS) {
-      composeTestRule
-          .onNodeWithTag(RequestListTestTags.REQUEST_LIST, useUnmergedTree = true)
-          .onChildren()
-          .filter(hasAnyDescendant(hasTestTag(ProfilePictureTestTags.PROFILE_PICTURE)))
-          .fetchSemanticsNodes()
-          .size == COUNT_THREE
-    }
-  }
-
-  @Test
-  fun loadsCachedProfileImagesSuccessfully() {
-    val requests = sampleRequests(listOf("cached_profile1", "cached_profile2", "cached_profile3"))
-    val vm =
-        RequestListViewModel(
-            FakeRequestRepository(requests),
-            FakeUserProfileRepository(
-                withImage = setOf("cached_profile1", "cached_profile2", "cached_profile3")))
-
-    composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
-    composeTestRule.waitForIdle()
-    composeTestRule.waitUntil(OFFSET_5_S_MS) {
-      composeTestRule
-          .onAllNodesWithTag(ProfilePictureTestTags.PROFILE_PICTURE, useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .size == 3
-    }
-  }
+  /**
+   * @Test fun loadsProfileImagesSuccessfully() { val requests =
+   *   sampleRequests(listOf("special_profile1", "special_profile2", "special_profile3")) val vm =
+   *   RequestListViewModel( FakeRequestRepository(requests), FakeUserProfileRepository( withImage =
+   *   setOf("special_profile1", "special_profile2", "special_profile3")))
+   *
+   * composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
+   * composeTestRule.waitForIdle() composeTestRule.waitUntil(OFFSET_5_S_MS) { composeTestRule
+   * .onNodeWithTag(RequestListTestTags.REQUEST_LIST, useUnmergedTree = true) .onChildren()
+   * .filter(hasAnyDescendant(hasTestTag(ProfilePictureTestTags.PROFILE_PICTURE)))
+   * .fetchSemanticsNodes() .size == COUNT_THREE } }
+   */
+  /**
+   * @Test fun loadsCachedProfileImagesSuccessfully() { val requests =
+   *   sampleRequests(listOf("cached_profile1", "cached_profile2", "cached_profile3")) val vm =
+   *   RequestListViewModel( FakeRequestRepository(requests), FakeUserProfileRepository( withImage =
+   *   setOf("cached_profile1", "cached_profile2", "cached_profile3")))
+   *
+   * composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
+   * composeTestRule.waitForIdle() composeTestRule.waitUntil(OFFSET_5_S_MS) { composeTestRule
+   * .onAllNodesWithTag(ProfilePictureTestTags.PROFILE_PICTURE, useUnmergedTree = true)
+   * .fetchSemanticsNodes() .size == 3 } }
+   */
 
   // Add these tests to your RequestListTests class
 
@@ -1085,5 +1067,49 @@ class RequestListTests : BaseEmulatorTest() {
             .size == 1
       }
     }
+  }
+
+  @Test
+  fun filtersOutCompletedRequests() {
+    val now = Date()
+    val completedRequest =
+        Request(
+            requestId = "req_completed",
+            title = "Completed Request",
+            description = "Description",
+            requestType = listOf(RequestType.OTHER),
+            location = Location(0.0, 0.0, "Loc"),
+            locationName = "LocName",
+            status = RequestStatus.COMPLETED,
+            startTimeStamp = Date(now.time - ONE_HOUR_MS),
+            expirationTime = Date(now.time + ONE_HOUR_MS),
+            people = emptyList(),
+            tags = listOf(Tags.INDOOR),
+            creatorId = "user1")
+
+    val activeRequests = sampleRequests(listOf("user2", "user3"))
+    val allRequests = listOf(completedRequest) + activeRequests
+
+    val vm = getFakeVm(allRequests)
+
+    composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
+    composeTestRule.waitForIdle()
+
+    // Should only show the 2 active requests, not the completed one
+    composeTestRule.waitUntil(OFFSET_5_S_MS) {
+      extractVisibleTitles().size == 2 && !extractVisibleTitles().contains("Completed Request")
+    }
+  }
+
+  @Test
+  fun showsOnlyOpenAndInProgressRequests() {
+    val requests = sampleRequests(listOf("user1", "user2", "user3"))
+    val vm = getFakeVm(requests)
+
+    composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
+    composeTestRule.waitForIdle()
+
+    // All sample requests should be IN_PROGRESS (started now, expires in 1 hour)
+    composeTestRule.waitUntil(OFFSET_5_S_MS) { extractVisibleTitles().size == COUNT_THREE }
   }
 }

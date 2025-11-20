@@ -27,8 +27,9 @@ data class Request(
       val now = Date()
 
       return when {
-        status == RequestStatus.CANCELLED || status == RequestStatus.ARCHIVED -> status
-
+        status == RequestStatus.COMPLETED ||
+            status == RequestStatus.CANCELLED ||
+            status == RequestStatus.ARCHIVED -> status
         // COMPLETED when expirationTime <= now
         !expirationTime.after(now) -> RequestStatus.COMPLETED
 
