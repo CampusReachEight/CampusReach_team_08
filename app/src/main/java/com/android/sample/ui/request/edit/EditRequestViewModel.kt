@@ -293,7 +293,7 @@ class EditRequestViewModel(
                 status = _currentRequest.value?.status ?: RequestStatus.IN_PROGRESS,
                 startTimeStamp = state.startTimeStamp,
                 expirationTime = state.expirationTime,
-                people = _people.value.ifEmpty { listOf(creatorId) },
+                people = _people.value.ifEmpty { listOf() }, // Removed creator from volunteers
                 tags = state.tags,
                 creatorId = _currentRequest.value?.creatorId ?: creatorId)
 
