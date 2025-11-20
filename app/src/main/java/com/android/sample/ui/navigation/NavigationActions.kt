@@ -53,6 +53,13 @@ sealed class Screen(
       const val route = "profile/main/{$ARG_USER_ID}"
     }
   }
+
+  data class PublicProfile(val userId: String) : Screen(route = "profile/public/${userId}") {
+    companion object {
+      const val ARG_USER_ID = "userId"
+      const val route = "profile/public/{$ARG_USER_ID}"
+    }
+  }
 }
 
 /**

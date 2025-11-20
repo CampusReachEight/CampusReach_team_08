@@ -1,0 +1,46 @@
+package com.android.sample.ui.profile.publicProfile
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.android.sample.model.profile.UserProfileRepository
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
+data class PublicProfileUiState(
+    val loading: Boolean = false,
+    val profile: PublicProfile? = null,
+    val error: String? = null
+)
+
+class PublicProfileViewModel (
+    private val repository: UserProfileRepository,
+    ) : ViewModel() {
+
+    private val _uiState = MutableStateFlow(PublicProfileUiState())
+    val uiState: StateFlow<PublicProfileUiState> = _uiState.asStateFlow()
+
+    fun loadPublicProfile(profileId: String) {
+        // Implementation to load public profile from repository
+        // and update _uiState accordingly
+        viewModelScope.launch {
+            _uiState.value = PublicProfileUiState(loading = true, error = null)
+            try {
+                val up = withContext(Dispatchers.IO) { repository
+                    .getUserProfile(profileId) }
+                val public = userProfileToPublic(up)
+                _uiState.value = _uiState.value.copy(loading = false, profile = public, error = null)
+            } catch (e: Exception) {
+                _uiState.value =
+                    _uiState.value.copy(loading = false,
+                        profile = null,
+                        error = e.message ?: "Failed to load profile")
+            }
+        }
+    }
+
+    fun refresh(profileId: String) = loadPublicProfile(profileId)
+}
