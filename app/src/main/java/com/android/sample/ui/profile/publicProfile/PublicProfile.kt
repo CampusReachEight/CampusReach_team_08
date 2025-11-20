@@ -1,6 +1,6 @@
 package com.android.sample.ui.profile.publicProfile
 
-data class PublicProfile (
+data class PublicProfile(
     val userId: String,
     val name: String,
     val section: String,
@@ -10,5 +10,4 @@ data class PublicProfile (
     val helpReceived: Int,
     val followers: Int,
     val following: Int
-
 )

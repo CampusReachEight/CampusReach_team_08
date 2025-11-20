@@ -21,91 +21,88 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.android.sample.model.profile.UserProfile
 import com.android.sample.ui.profile.ProfilePicture
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
- * One-off public profile screen: accepts a suspend loader that returns a `PublicProfile?`.
- * Default loader returns a deterministic fake for previews / quick wiring so callers don't need
- * to provide a repository when just rendering the UI.
+ * One-off public profile screen: accepts a suspend loader that returns a `PublicProfile?`. Default
+ * loader returns a deterministic fake for previews / quick wiring so callers don't need to provide
+ * a repository when just rendering the UI.
  */
 @Composable
 fun PublicProfileScreen(
     profileId: String,
     modifier: Modifier = Modifier,
     profileLoader: suspend (String) -> PublicProfile? = { id ->
-        // Simple default fake data to avoid unresolved references and allow previews
-        // Disclaimer: this is not representative of real data!
-        PublicProfile(
-            userId = id,
-            name = "Jane Doe",
-            section = "Engineering",
-            arrivalDate = "01/01/2020",
-            pictureUriString = null,
-            kudosReceived = 42,
-            helpReceived = 5,
-            followers = 128,
-            following = 10
-        )
+      // Simple default fake data to avoid unresolved references and allow previews
+      // Disclaimer: this is not representative of real data!
+      PublicProfile(
+          userId = id,
+          name = "Jane Doe",
+          section = "Engineering",
+          arrivalDate = "01/01/2020",
+          pictureUriString = null,
+          kudosReceived = 42,
+          helpReceived = 5,
+          followers = 128,
+          following = 10)
     },
     onBack: () -> Unit = {}
 ) {
-    val loadingState = remember { mutableStateOf(true) }
-    val profileState = remember { mutableStateOf<PublicProfile?>(null) }
-    val isFollowing = remember { mutableStateOf(false) }
+  val loadingState = remember { mutableStateOf(true) }
+  val profileState = remember { mutableStateOf<PublicProfile?>(null) }
+  val isFollowing = remember { mutableStateOf(false) }
 
-    LaunchedEffect(profileId) {
-        loadingState.value = true
-        val p = try {
-            withContext(Dispatchers.IO) { profileLoader(profileId) }
+  LaunchedEffect(profileId) {
+    loadingState.value = true
+    val p =
+        try {
+          withContext(Dispatchers.IO) { profileLoader(profileId) }
         } catch (_: Exception) {
-            null
+          null
         }
-        profileState.value = p
-        loadingState.value = false
-    }
+    profileState.value = p
+    loadingState.value = false
+  }
 
-    Column(
-        modifier = modifier.padding(16.dp),
-        verticalArrangement = Arrangement.Top,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
+  Column(
+      modifier = modifier.padding(16.dp),
+      verticalArrangement = Arrangement.Top,
+      horizontalAlignment = Alignment.CenterHorizontally) {
         // Top row: Back + placeholder Follow button (replaces edit button behavior)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Start,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Button(onClick = onBack) { Text("Back") }
-            Spacer(modifier = Modifier.width(8.dp))
-            Spacer(modifier = Modifier.weight(1f))
-            Button(onClick = { isFollowing.value = !isFollowing.value }) {
+            verticalAlignment = Alignment.CenterVertically) {
+              Button(onClick = onBack) { Text("Back") }
+              Spacer(modifier = Modifier.width(8.dp))
+              Spacer(modifier = Modifier.weight(1f))
+              Button(onClick = { isFollowing.value = !isFollowing.value }) {
                 Text(if (isFollowing.value) "Following" else "Follow")
+              }
             }
-        }
 
         Spacer(modifier = Modifier.height(12.dp))
 
         if (loadingState.value) {
-            Text("Loading...")
-            return@Column
+          Text("Loading...")
+          return@Column
         }
 
         val profile = profileState.value
         if (profile == null) {
-            Text("Profile not found")
-            return@Column
+          Text("Profile not found")
+          return@Column
         }
 
         ProfilePicture(
             profileId = profile.userId,
             onClick = {},
             withName = false,
-            modifier = Modifier.size(128.dp)
-        )
+            modifier = Modifier.size(128.dp))
 
         Spacer(modifier = Modifier.height(12.dp))
 
@@ -113,12 +110,12 @@ fun PublicProfileScreen(
         Spacer(modifier = Modifier.height(4.dp))
         Text(text = profile.section)
         profile.arrivalDate?.let { date ->
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(text = "Joined: $date")
+          Spacer(modifier = Modifier.height(4.dp))
+          Text(text = "Joined: $date")
         }
 
         // Profile actions/stats removed for public view
-    }
+      }
 }
 
 /**
@@ -126,27 +123,27 @@ fun PublicProfileScreen(
  * that reads from `UserProfileRepository`.
  */
 fun userProfileToPublic(up: UserProfile): PublicProfile {
-    val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-    val arrival = try {
+  val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+  val arrival =
+      try {
         dateFormat.format(up.arrivalDate ?: Date())
-    } catch (_: Exception) {
+      } catch (_: Exception) {
         null
-    }
-    return PublicProfile(
-        userId = up.id,
-        name = listOf(up.name, up.lastName).joinToString(" ").trim().ifEmpty { "Unknown" },
-        section = up.section.name,
-        arrivalDate = arrival,
-        pictureUriString = up.photo?.toString(),
-        kudosReceived = up.kudos,
-        helpReceived = 0,
-        followers = 0,
-        following = 0
-    )
+      }
+  return PublicProfile(
+      userId = up.id,
+      name = listOf(up.name, up.lastName).joinToString(" ").trim().ifEmpty { "Unknown" },
+      section = up.section.name,
+      arrivalDate = arrival,
+      pictureUriString = up.photo?.toString(),
+      kudosReceived = up.kudos,
+      helpReceived = 0,
+      followers = 0,
+      following = 0)
 }
 
 @Preview(showBackground = true)
 @Composable
 fun PublicProfileScreenPreview() {
-    PublicProfileScreen(profileId = "user123")
+  PublicProfileScreen(profileId = "user123")
 }
