@@ -24,6 +24,11 @@ object ConstantMap {
   // ======================
   // General / reusable
   // ======================
+  const val ZERO = 0
+  const val ONE = 1
+  const val TWO_FLOAT = 2f
+  const val THREE_FLOAT = 3f
+  const val FIVE = 5
   val PADDING_STANDARD = 12.dp
   val PADDING_HORIZONTAL_STANDARD = 16.dp
   val SPACER_HEIGHT_SMALL = 4.dp
@@ -57,6 +62,7 @@ object ConstantMap {
 
   val MIN_HEIGHT = 120.dp
   const val DURATION_ANIMATION = 100
+  const val PROPORTION_FOR_INITIALIZE_SHEET = 0.67f
 
   // ======================
   // Button X
@@ -90,4 +96,46 @@ object ConstantMap {
   val FONT_SIZE_BIG = 18.sp
   val FONT_SIZE_MID = 15.sp
   const val ALPHA_KUDOS_DIVIDER = 0.17f
+
+  // ======================
+  // Camera
+  // ======================
+  const val ZOOM_AFTER_CHOSEN = 17f
+  const val LONG_DURATION_ANIMATION = 500
+  const val MAX_ZOOM_ONE = 5
+  const val MAX_ZOOM_TWO = 7
+  const val MAX_ZOOM_THREE = 9
+  const val MAX_ZOOM_FOUR = 11
+  const val MAX_ZOOM_FIVE = 14
+  const val MAX_ZOOM_SIX = 17
+  const val MAX_ZOOM_SEVEN = 20
+
+  const val ZOOM_LEVEL_WORLD = 300000.0
+  const val ZOOM_LEVEL_WL = 70000.0
+  const val ZOOM_LEVEL_LAND = 40000.0
+  const val ZOOM_LEVEL_REGION = 10000.0
+  const val ZOOM_LEVEL_CITY = 3000.0
+  const val ZOOM_LEVEL_MID = 400.0
+  const val ZOOM_LEVEL_STREET_BIG = 50.0
+  const val ZOOM_LEVEL_STREET_SMALL = 20.0
+  const val ZOOM_DIVIDE = 5.0
+  const val ZOOM_LEVEL_TWO = 2
+
+  // ======================
+  // Cluster image
+  // ======================
+
+  const val NUMBER_LENGTH_ONE = 10
+  const val NUMBER_LENGTH_TWO = 100
+  const val NUMBER_SIZE_ONE = 36f
+  const val NUMBER_SIZE_TWO = 32f
+  const val NUMBER_SIZE_THREE = 28f
+  const val SIZE_OF_MARKER = 100
+
+  // ======================
+  // Distance request
+  // ======================
+
+  const val EARTH_RADIUS = 6371000.0
+  const val TWO = 2
 }
