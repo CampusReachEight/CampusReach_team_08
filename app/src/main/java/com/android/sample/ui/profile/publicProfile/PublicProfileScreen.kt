@@ -75,7 +75,16 @@ fun PublicProfileScreen(
                     }
             }
             // Follow / Unfollow button at the bottom
-            // TODO : add follow unfollow button
+            FollowButton(
+                isFollowing = isFollowing.value,
+                onToggle = { isFollowing.value = !isFollowing.value },
+                modifier = Modifier
+                    .padding(
+                        start = ProfileDimens.Horizontal,
+                        end = ProfileDimens.Horizontal,
+                        bottom = ProfileDimens.Vertical
+                    )
+            )
         }
     }
 }
