@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -147,6 +148,26 @@ private fun mapPublicToProfileState(
                 profilePictureUrl = publicProfile.pictureUriString,
                 isLoggingOut = false
             )
+        }
+    }
+}
+
+
+//Placeholder FollowButton composable
+@Composable
+fun FollowButton(
+    isFollowing: Boolean,
+    onToggle:() -> Unit,
+    modifier: Modifier = Modifier
+) {
+    ElevatedButton(
+        onClick = onToggle,
+        modifier = modifier
+    ) {
+        if (isFollowing) {
+            androidx.compose.material3.Text(text = "Unfollow")
+        } else {
+            androidx.compose.material3.Text(text = "Follow")
         }
     }
 }
