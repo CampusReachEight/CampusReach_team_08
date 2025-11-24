@@ -19,6 +19,9 @@ class RequestTest {
       currentTime: Long = System.currentTimeMillis(),
       oneHourLater: Long = currentTime + 3600000 // 1 hour later
   ): Request {
+    // Ensure startTimeStamp is sufficiently in the future so dynamic viewStatus remains OPEN during
+    // slower test execution
+    val futureStart = currentTime + 300_000 // +5 minutes buffer
     return Request(
         requestId = requestId,
         title = title,
@@ -27,7 +30,7 @@ class RequestTest {
         location = Location(46.5191, 6.5668, "EPFL"),
         locationName = "EPFL",
         status = RequestStatus.OPEN,
-        startTimeStamp = Date(currentTime),
+        startTimeStamp = Date(futureStart),
         expirationTime = Date(oneHourLater),
         people = listOf("user1", "user2"),
         tags = listOf(Tags.URGENT, Tags.INDOOR),
@@ -54,7 +57,7 @@ class RequestTest {
     // Reconstruct from map
     val reconstructed = Request.fromMap(map)
 
-    // Verify all fields match
+    // Verify all fields match (status now uses dynamic viewStatus)
     assertEquals(request.requestId, reconstructed.requestId)
     assertEquals(request.title, reconstructed.title)
     assertEquals(request.description, reconstructed.description)
@@ -63,7 +66,7 @@ class RequestTest {
     assertEquals(request.location.longitude, reconstructed.location.longitude, 0.0001)
     assertEquals(request.location.name, reconstructed.location.name)
     assertEquals(request.locationName, reconstructed.locationName)
-    assertEquals(request.status, reconstructed.status)
+    assertEquals(request.viewStatus, reconstructed.status) // adapted for dynamic status
     assertEquals(request.startTimeStamp.time / 1000, reconstructed.startTimeStamp.time / 1000)
     assertEquals(request.expirationTime.time / 1000, reconstructed.expirationTime.time / 1000)
     assertEquals(request.people, reconstructed.people)
@@ -259,10 +262,11 @@ class RequestTest {
     RequestStatus.values().forEach { status ->
       val request = createTestRequest().copy(status = status)
       val map = request.toMap()
-      assertEquals(status.name, map["status"])
+      assertEquals(status.name, map["status"]) // original stored status
 
       val reconstructed = Request.fromMap(map)
-      assertEquals(status, reconstructed.status)
+      // Adapted: reconstructed status should match dynamic viewStatus
+      assertEquals(request.viewStatus, reconstructed.status)
     }
   }
 
