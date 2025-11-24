@@ -28,6 +28,7 @@ import com.android.sample.ui.map.MapViewModel
 import com.android.sample.ui.map.toDisplayStringWithoutHours
 import com.android.sample.ui.overview.toDisplayString
 import com.android.sample.ui.profile.UserSections
+import com.android.sample.ui.request.RequestListTestTags
 import com.android.sample.utils.BaseEmulatorTest
 import com.android.sample.utils.UI_WAIT_TIMEOUT
 import java.util.Calendar
@@ -48,6 +49,7 @@ class MapsTest : BaseEmulatorTest() {
   private lateinit var mapsUtil: MapsUtil
   private lateinit var request1: Request
   private lateinit var request2: Request
+  private lateinit var request3: Request
   private lateinit var profile1: UserProfile
   private lateinit var profile2: UserProfile
   private lateinit var date: Date
@@ -57,8 +59,10 @@ class MapsTest : BaseEmulatorTest() {
 
   private val requestId1 = "request1"
   private val requestId2 = "request2"
+  private val requestId3 = "request3"
   private val title1 = "Here is a good title"
   private val title2 = "Another one"
+  private val title3 = "A big title"
   private val description2 = "Very good description"
   private val description1 = "In here we will do a lot of things, like being good persons"
   private val name1 = "Random"
@@ -108,8 +112,10 @@ class MapsTest : BaseEmulatorTest() {
               emptyList(),
               creatorIdForRequest2 // <-- USE FIXED ID
               )
+      request3 = request2.copy(requestId = requestId3, title = title3)
 
       repository.addRequest(request2)
+      repository.addRequest(request3)
 
       profile2 =
           UserProfile(
@@ -395,6 +401,37 @@ class MapsTest : BaseEmulatorTest() {
     composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
       composeTestRule.onAllNodesWithTag(MapTestTags.REQUEST_TITLE).fetchSemanticsNodes().isEmpty()
     }
+  }
+
+  @Test
+  fun clickOnAClusterThenOpenFirstRequest() {
+    viewModel.updateCurrentListRequest(listOf(request2))
+    composeTestRule.waitForIdle()
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule
+          .onAllNodesWithTag(MapTestTags.MAP_LIST_REQUEST)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    composeTestRule
+        .onNodeWithTag(RequestListTestTags.REQUEST_ITEM)
+        .assertIsDisplayed()
+        .performClick()
+
+    composeTestRule.waitForIdle()
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule
+          .onAllNodesWithTag(MapTestTags.REQUEST_TITLE)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    composeTestRule
+        .onNodeWithTag(MapTestTags.REQUEST_TITLE)
+        .assertIsDisplayed()
+        .performClick()
+        .assertTextContains(title2)
   }
 }
 

@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -270,16 +271,16 @@ fun AcceptRequestScreen(
                   Column(
                       modifier =
                           Modifier.fillMaxWidth()
-                              .testTag(AcceptRequestScreenTestTags.VOLUNTEERS_SECTION_CONTAINER)) {
+                              .testTag(AcceptRequestScreenTestTags.VOLUNTEERS_SECTION_CONTAINER)
+                              .clip(
+                                  RoundedCornerShape(
+                                      AcceptRequestScreenConstants.CARD_CORNER_RADIUS))
+                              .background(MaterialTheme.colorScheme.surfaceVariant)
+                              .padding(AcceptRequestScreenConstants.CREATOR_SECTION_PADDING)) {
                         Row(
                             modifier =
                                 Modifier.fillMaxWidth()
-                                    .clip(
-                                        RoundedCornerShape(
-                                            AcceptRequestScreenConstants.CARD_CORNER_RADIUS))
                                     .clickable { volunteersExpanded = !volunteersExpanded }
-                                    .background(MaterialTheme.colorScheme.surfaceVariant)
-                                    .padding(AcceptRequestScreenConstants.CREATOR_SECTION_PADDING)
                                     .semantics(mergeDescendants = true) {}
                                     .testTag(AcceptRequestScreenTestTags.VOLUNTEERS_SECTION_HEADER),
                             verticalAlignment = Alignment.CenterVertically) {
@@ -309,28 +310,36 @@ fun AcceptRequestScreen(
                             }
 
                         if (volunteersExpanded) {
-                          Spacer(
-                              modifier =
-                                  Modifier.height(AcceptRequestScreenConstants.SECTION_SPACING))
-                          // Safeguard: exclude creatorId from volunteers list if present
-                          val volunteers = request.people.filterNot { it == request.creatorId }
-                          if (volunteers.isEmpty()) {
-                            Text(
-                                text = AcceptRequestScreenLabels.NO_VOLUNTEERS_YET,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant)
-                          } else {
-                            Column(
-                                verticalArrangement =
-                                    Arrangement.spacedBy(
-                                        AcceptRequestScreenConstants.SECTION_SPACING)) {
-                                  volunteers.forEach { userId ->
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                      ProfilePicture(profileId = userId, withName = true)
+                            Spacer(
+                                modifier = Modifier.height(AcceptRequestScreenConstants.SECTION_SPACING)
+                            )
+
+// Safeguard: exclude creatorId from volunteers list if present
+                            val volunteers = request.people.filterNot { it == request.creatorId }
+                            if (volunteers.isEmpty()) {
+                                Text(
+                                    text = AcceptRequestScreenLabels.NO_VOLUNTEERS_YET,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            } else {
+                                LazyRow(
+                                    horizontalArrangement =
+                                        Arrangement.spacedBy(AcceptRequestScreenConstants.VOLUNTEER_ROW_SPACING),
+                                    modifier =
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .height(AcceptRequestScreenConstants.VOLUNTEER_ROW_HEIGHT)
+                                ) {
+                                    items(volunteers.size) { index ->
+                                        val userId = volunteers[index]
+                                        ProfilePicture(
+                                            profileId = userId,
+                                            withName = true
+                                        )
                                     }
-                                  }
                                 }
-                          }
+                            }
                         }
                       }
                 }

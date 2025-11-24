@@ -65,10 +65,3 @@ fun ProfileScreen(
         }
       }
 }
-
-// Simple preview for quick visual checks during development (not covered)
-// @Preview(showBackground = true)
-// @Composable
-// fun ProfilePreview() {
-//  ProfileScreen()
-// }
