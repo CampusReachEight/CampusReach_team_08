@@ -37,8 +37,9 @@ class RequestRepositoryFirestore(
         .documents
         .mapNotNull { doc -> doc.data?.let { Request.fromMap(it) } }
         .filter { request ->
-          request.viewStatus != RequestStatus.COMPLETED &&
-              request.viewStatus != RequestStatus.CANCELLED
+          // Exclude requests that are completed (either by status or by expiration) or cancelled
+          val vs = request.viewStatus
+          vs != RequestStatus.COMPLETED && vs != RequestStatus.CANCELLED
         }
   }
 
