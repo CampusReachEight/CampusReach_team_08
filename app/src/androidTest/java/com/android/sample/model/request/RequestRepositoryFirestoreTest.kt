@@ -670,6 +670,7 @@ class RequestRepositoryFirestoreTest : BaseEmulatorTest() {
     val updatedRequest = repository.getRequest(requestWithHelpers.requestId)
     assertEquals(RequestStatus.COMPLETED, updatedRequest.status)
   }
+
   @Test
   fun getAllCurrentRequests_excludesCompletedRequests() = runTest {
     val completed = request1.copy(status = RequestStatus.COMPLETED)
@@ -677,9 +678,9 @@ class RequestRepositoryFirestoreTest : BaseEmulatorTest() {
 
     val all = repository.getAllCurrentRequests()
     assertFalse(
-      "Completed requests must be filtered out",
-      all.any { it.requestId == completed.requestId })
+        "Completed requests must be filtered out", all.any { it.requestId == completed.requestId })
   }
+
   @Test
   fun getAllCurrentRequests_excludesCancelledRequests() = runTest {
     val cancelled = request1.copy(status = RequestStatus.CANCELLED)
@@ -687,28 +688,29 @@ class RequestRepositoryFirestoreTest : BaseEmulatorTest() {
 
     val all = repository.getAllCurrentRequests()
     assertFalse(
-      "Cancelled requests must be filtered out",
-      all.any { it.requestId == cancelled.requestId })
+        "Cancelled requests must be filtered out", all.any { it.requestId == cancelled.requestId })
   }
+
   @Test
   fun getAllCurrentRequests_excludesAutomaticallyCompletedRequests() = runTest {
     val now = Date()
     val expiredRequest =
-      generateRequest(
-        "expired-request",
-        "Expired",
-        "Already expired",
-        currentUserId,
-        start = Date(now.time - 10_000),
-        expires = Date(now.time - 1) // EXPIRED
-      )
+        generateRequest(
+            "expired-request",
+            "Expired",
+            "Already expired",
+            currentUserId,
+            start = Date(now.time - 10_000),
+            expires = Date(now.time - 1) // EXPIRED
+            )
     addRequestTracking(expiredRequest)
 
     val all = repository.getAllCurrentRequests()
     assertFalse(
-      "Expired requests (viewStatus=COMPLETED) must be filtered out",
-      all.any { it.requestId == expiredRequest.requestId })
+        "Expired requests (viewStatus=COMPLETED) must be filtered out",
+        all.any { it.requestId == expiredRequest.requestId })
   }
+
   @Test
   fun getAllCurrentRequests_keepsNonCompletedRequests() = runTest {
     val open = request1.copy(status = RequestStatus.OPEN)
@@ -725,6 +727,7 @@ class RequestRepositoryFirestoreTest : BaseEmulatorTest() {
     assertTrue(all.contains(inProgress.requestId))
     assertTrue(all.contains(archived.requestId))
   }
+
   @Test
   fun getRequest_stillReturnsCompletedOrCancelledRequests() = runTest {
     val completed = request1.copy(status = RequestStatus.COMPLETED)
@@ -733,5 +736,4 @@ class RequestRepositoryFirestoreTest : BaseEmulatorTest() {
     val stored = repository.getRequest(completed.requestId)
     assertEquals(completed.requestId, stored.requestId)
   }
-
 }

@@ -94,10 +94,11 @@ class RequestListTests : BaseEmulatorTest() {
 
     override suspend fun getAllRequests(): List<Request> = requests
 
-      override suspend fun getAllCurrentRequests(): List<Request> = requests.filter { request ->
+    override suspend fun getAllCurrentRequests(): List<Request> =
+        requests.filter { request ->
           request.viewStatus != RequestStatus.COMPLETED &&
-                  request.viewStatus != RequestStatus.CANCELLED
-      }
+              request.viewStatus != RequestStatus.CANCELLED
+        }
 
     override suspend fun getRequest(requestId: String): Request =
         requests.first { it.requestId == requestId }
@@ -215,10 +216,11 @@ class RequestListTests : BaseEmulatorTest() {
 
                 override suspend fun getAllRequests(): List<Request> = requests
 
-                  override suspend fun getAllCurrentRequests(): List<Request> = requests.filter { request ->
+                override suspend fun getAllCurrentRequests(): List<Request> =
+                    requests.filter { request ->
                       request.viewStatus != RequestStatus.COMPLETED &&
-                              request.viewStatus != RequestStatus.CANCELLED
-                  }
+                          request.viewStatus != RequestStatus.CANCELLED
+                    }
 
                 override suspend fun getRequest(requestId: String): Request =
                     requests.first { it.requestId == requestId }
@@ -566,9 +568,10 @@ class RequestListTests : BaseEmulatorTest() {
       override suspend fun getAllRequests(): List<Request> {
         throw RuntimeException("Simulated load failure")
       }
-        override suspend fun getAllCurrentRequests(): List<Request> {
-            throw RuntimeException("Simulated load failure")
-        }
+
+      override suspend fun getAllCurrentRequests(): List<Request> {
+        throw RuntimeException("Simulated load failure")
+      }
 
       override suspend fun getRequest(requestId: String): Request = throw NotImplementedError()
 
