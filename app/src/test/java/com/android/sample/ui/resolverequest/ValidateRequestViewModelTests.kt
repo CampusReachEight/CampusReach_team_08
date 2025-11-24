@@ -58,7 +58,7 @@ private const val UNEXPECTED_ERROR_OCCURED = "unexpected error occurred"
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ValidateRequestViewModelTest {
-  private val testDispatcher = StandardTestDispatcher()
+  private val testDispatcher = UnconfinedTestDispatcher()
   private lateinit var requestRepository: RequestRepository
   private lateinit var userProfileRepository: UserProfileRepository
   private lateinit var viewModel: ValidateRequestViewModel
@@ -124,7 +124,6 @@ class ValidateRequestViewModelTest {
     coEvery { userProfileRepository.getUserProfile(ID_HELPER2) } returns testHelper2
     // When
     viewModel = ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
-    advanceUntilIdle()
 
     // Then
     val state = viewModel.state
