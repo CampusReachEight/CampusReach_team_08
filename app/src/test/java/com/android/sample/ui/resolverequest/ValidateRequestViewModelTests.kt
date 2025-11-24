@@ -22,47 +22,27 @@ import kotlinx.coroutines.test.*
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.TestWatcher
-import org.junit.runner.Description
 
 private const val HELPER_1 = "helper1"
-
 private const val NAME_HELPER = "Helper"
-
 private const val ID_HELPER2 = "helper2"
-
 private const val HELPER1_EMAIL = "helper1@test.com"
-
 private const val LASTNAME_1 = "One"
-
 private const val LASTNAME_2 = "Two"
-
 private const val HELPER2_EMAIL = "helper2@test.com"
-
 private const val TITLE_TEST_REQUEST = "Test Request"
-
 private const val DESCRIPTION_TEST = "Test Description"
-
 private const val TEST_LOCATION = "Test Location"
-
 private const val NOT_OWNER = "not the owner"
-
 private const val CANNOT_BE_CLOSED = "cannot be closed"
-
 private const val NETWORK_ERROR = "Network error"
-
 private const val COULD_NOT_LOAD_PROFILE = "Could not load helper profiles"
-
 private const val FAILED_TO_LOAD_REQUEST = "Failed to load request"
-
 private const val UNEXPECTED_ERROR_OCCURED = "unexpected error occurred"
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ValidateRequestViewModelTest {
-
-  private val testDispatcher = StandardTestDispatcher()
 
   private lateinit var requestRepository: RequestRepository
   private lateinit var userProfileRepository: UserProfileRepository
@@ -105,28 +85,16 @@ class ValidateRequestViewModelTest {
           people = listOf(HELPER_1, ID_HELPER2),
           tags = listOf(Tags.URGENT))
 
-  @get:Rule
-  val mainDispatcherRule =
-      object : TestWatcher() {
-        override fun starting(description: Description) {
-          Dispatchers.setMain(testDispatcher)
-        }
-
-        override fun finished(description: Description) {
-          Dispatchers.resetMain()
-        }
-      }
-
   @Before
   fun setup() {
-    // Dispatchers.setMain(testDispatcher)
+    Dispatchers.setMain(UnconfinedTestDispatcher())
     requestRepository = mockk()
     userProfileRepository = mockk()
   }
 
   @After
   fun tearDown() {
-    // Dispatchers.resetMain()
+    Dispatchers.resetMain()
     clearAllMocks()
   }
 
@@ -134,547 +102,689 @@ class ValidateRequestViewModelTest {
 
   @Test
   fun initLoadsRequestDataSuccessfully() = runTest {
-    // Given
-    coEvery { requestRepository.getRequest(testRequestId) } returns testRequest
-    coEvery { requestRepository.isOwnerOfRequest(testRequest) } returns true
-    coEvery { userProfileRepository.getUserProfile(HELPER_1) } returns testHelper1
-    coEvery { userProfileRepository.getUserProfile(ID_HELPER2) } returns testHelper2
+    // Set up Main dispatcher for this test
+    Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
 
-    // When
-    viewModel = ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
-    advanceUntilIdle()
+    try {
+      // Given
+      coEvery { requestRepository.getRequest(testRequestId) } returns testRequest
+      coEvery { requestRepository.isOwnerOfRequest(testRequest) } returns true
+      coEvery { userProfileRepository.getUserProfile(HELPER_1) } returns testHelper1
+      coEvery { userProfileRepository.getUserProfile(ID_HELPER2) } returns testHelper2
 
-    // Then
-    val state = viewModel.state
-    assertTrue(state is ValidationState.Ready)
-    val readyState = state as ValidationState.Ready
-    assertEquals(testRequest, readyState.request)
-    assertEquals(2, readyState.helpers.size)
-    assertTrue(readyState.selectedHelperIds.isEmpty())
+      // When
+      viewModel = ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
+
+      // Then
+      val state = viewModel.state
+      assertTrue(state is ValidationState.Ready)
+      val readyState = state as ValidationState.Ready
+      assertEquals(testRequest, readyState.request)
+      assertEquals(2, readyState.helpers.size)
+      assertTrue(readyState.selectedHelperIds.isEmpty())
+    } finally {
+      Dispatchers.resetMain()
+    }
   }
 
   @Test
   fun initShowsErrorWhenUserIsNotOwner() = runTest {
-    // Given
-    coEvery { requestRepository.getRequest(testRequestId) } returns testRequest
-    coEvery { requestRepository.isOwnerOfRequest(testRequest) } returns false
+    Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
 
-    // When
-    viewModel = ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
-    advanceUntilIdle()
+    try {
+      // Given
+      coEvery { requestRepository.getRequest(testRequestId) } returns testRequest
+      coEvery { requestRepository.isOwnerOfRequest(testRequest) } returns false
 
-    // Then
-    val state = viewModel.state
-    assertTrue(state is ValidationState.Error)
-    val errorState = state as ValidationState.Error
-    assertTrue(errorState.message.contains(NOT_OWNER))
-    assertFalse(errorState.canRetry)
+      // When
+      viewModel = ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
+
+      // Then
+      val state = viewModel.state
+      assertTrue(state is ValidationState.Error)
+      val errorState = state as ValidationState.Error
+      assertTrue(errorState.message.contains(NOT_OWNER))
+      assertFalse(errorState.canRetry)
+    } finally {
+      Dispatchers.resetMain()
+    }
   }
 
   @Test
   fun initShowsErrorWhenRequestStatusCompleted() = runTest {
-    // Given
-    val completedRequest = testRequest.copy(status = RequestStatus.COMPLETED)
-    coEvery { requestRepository.getRequest(testRequestId) } returns completedRequest
-    coEvery { requestRepository.isOwnerOfRequest(completedRequest) } returns true
+    Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
 
-    // When
-    viewModel = ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
-    advanceUntilIdle()
+    try {
+      // Given
+      val completedRequest = testRequest.copy(status = RequestStatus.COMPLETED)
+      coEvery { requestRepository.getRequest(testRequestId) } returns completedRequest
+      coEvery { requestRepository.isOwnerOfRequest(completedRequest) } returns true
 
-    // Then
-    val state = viewModel.state
-    assertTrue(state is ValidationState.Error)
-    val errorState = state as ValidationState.Error
-    assertTrue(errorState.message.contains(CANNOT_BE_CLOSED))
-    assertFalse(errorState.canRetry)
+      // When
+      viewModel = ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
+
+      // Then
+      val state = viewModel.state
+      assertTrue(state is ValidationState.Error)
+      val errorState = state as ValidationState.Error
+      assertTrue(errorState.message.contains(CANNOT_BE_CLOSED))
+      assertFalse(errorState.canRetry)
+    } finally {
+      Dispatchers.resetMain()
+    }
   }
 
   @Test
   fun initShowsErrorWhenRequestStatusCancelled() = runTest {
-    // Given
-    val cancelledRequest = testRequest.copy(status = RequestStatus.CANCELLED)
-    coEvery { requestRepository.getRequest(testRequestId) } returns cancelledRequest
-    coEvery { requestRepository.isOwnerOfRequest(cancelledRequest) } returns true
+    Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
 
-    // When
-    viewModel = ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
-    advanceUntilIdle()
+    try {
+      // Given
+      val cancelledRequest = testRequest.copy(status = RequestStatus.CANCELLED)
+      coEvery { requestRepository.getRequest(testRequestId) } returns cancelledRequest
+      coEvery { requestRepository.isOwnerOfRequest(cancelledRequest) } returns true
 
-    // Then
-    val state = viewModel.state
-    assertTrue(state is ValidationState.Error)
-    val errorState = state as ValidationState.Error
-    assertTrue(errorState.message.contains(CANNOT_BE_CLOSED))
-    assertFalse(errorState.canRetry)
+      // When
+      viewModel = ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
+
+      // Then
+      val state = viewModel.state
+      assertTrue(state is ValidationState.Error)
+      val errorState = state as ValidationState.Error
+      assertTrue(errorState.message.contains(CANNOT_BE_CLOSED))
+      assertFalse(errorState.canRetry)
+    } finally {
+      Dispatchers.resetMain()
+    }
   }
 
   @Test
   fun initShowsErrorWhenRequestStatusArchived() = runTest {
-    // Given
-    val archivedRequest = testRequest.copy(status = RequestStatus.ARCHIVED)
-    coEvery { requestRepository.getRequest(testRequestId) } returns archivedRequest
-    coEvery { requestRepository.isOwnerOfRequest(archivedRequest) } returns true
+    Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
 
-    // When
-    viewModel = ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
-    advanceUntilIdle()
+    try {
+      // Given
+      val archivedRequest = testRequest.copy(status = RequestStatus.ARCHIVED)
+      coEvery { requestRepository.getRequest(testRequestId) } returns archivedRequest
+      coEvery { requestRepository.isOwnerOfRequest(archivedRequest) } returns true
 
-    // Then
-    val state = viewModel.state
-    assertTrue(state is ValidationState.Error)
-    val errorState = state as ValidationState.Error
-    assertTrue(errorState.message.contains(CANNOT_BE_CLOSED))
-    assertFalse(errorState.canRetry)
+      // When
+      viewModel = ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
+
+      // Then
+      val state = viewModel.state
+      assertTrue(state is ValidationState.Error)
+      val errorState = state as ValidationState.Error
+      assertTrue(errorState.message.contains(CANNOT_BE_CLOSED))
+      assertFalse(errorState.canRetry)
+    } finally {
+      Dispatchers.resetMain()
+    }
   }
 
   @Test
   fun initSucceedsWithInProgressStatus() = runTest {
-    // Given
-    val inProgressRequest = testRequest.copy(status = RequestStatus.IN_PROGRESS)
-    coEvery { requestRepository.getRequest(testRequestId) } returns inProgressRequest
-    coEvery { requestRepository.isOwnerOfRequest(inProgressRequest) } returns true
-    coEvery { userProfileRepository.getUserProfile(HELPER_1) } returns testHelper1
-    coEvery { userProfileRepository.getUserProfile(ID_HELPER2) } returns testHelper2
+    Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
 
-    // When
-    viewModel = ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
-    advanceUntilIdle()
+    try {
+      // Given
+      val inProgressRequest = testRequest.copy(status = RequestStatus.IN_PROGRESS)
+      coEvery { requestRepository.getRequest(testRequestId) } returns inProgressRequest
+      coEvery { requestRepository.isOwnerOfRequest(inProgressRequest) } returns true
+      coEvery { userProfileRepository.getUserProfile(HELPER_1) } returns testHelper1
+      coEvery { userProfileRepository.getUserProfile(ID_HELPER2) } returns testHelper2
 
-    // Then
-    val state = viewModel.state
-    assertTrue(state is ValidationState.Ready)
+      // When
+      viewModel = ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
+
+      // Then
+      val state = viewModel.state
+      assertTrue(state is ValidationState.Ready)
+    } finally {
+      Dispatchers.resetMain()
+    }
   }
 
   @Test
   fun initHandlesEmptyHelpersListSuccessfully() = runTest {
-    // Given
-    val requestNoHelpers = testRequest.copy(people = emptyList())
-    coEvery { requestRepository.getRequest(testRequestId) } returns requestNoHelpers
-    coEvery { requestRepository.isOwnerOfRequest(requestNoHelpers) } returns true
+    Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
 
-    // When
-    viewModel = ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
-    advanceUntilIdle()
+    try {
+      // Given
+      val requestNoHelpers = testRequest.copy(people = emptyList())
+      coEvery { requestRepository.getRequest(testRequestId) } returns requestNoHelpers
+      coEvery { requestRepository.isOwnerOfRequest(requestNoHelpers) } returns true
 
-    // Then
-    val state = viewModel.state
-    assertTrue(state is ValidationState.Ready)
-    val readyState = state as ValidationState.Ready
-    assertTrue(readyState.helpers.isEmpty())
+      // When
+      viewModel = ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
+
+      // Then
+      val state = viewModel.state
+      assertTrue(state is ValidationState.Ready)
+      val readyState = state as ValidationState.Ready
+      assertTrue(readyState.helpers.isEmpty())
+    } finally {
+      Dispatchers.resetMain()
+    }
   }
 
   @Test
   fun initContinuesWhenSomeHelperProfilesFailToLoad() = runTest {
-    // Given
-    coEvery { requestRepository.getRequest(testRequestId) } returns testRequest
-    coEvery { requestRepository.isOwnerOfRequest(testRequest) } returns true
-    coEvery { userProfileRepository.getUserProfile(HELPER_1) } returns testHelper1
-    coEvery { userProfileRepository.getUserProfile(ID_HELPER2) } throws Exception(NETWORK_ERROR)
+    Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
 
-    // When
-    viewModel = ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
-    advanceUntilIdle()
+    try {
+      // Given
+      coEvery { requestRepository.getRequest(testRequestId) } returns testRequest
+      coEvery { requestRepository.isOwnerOfRequest(testRequest) } returns true
+      coEvery { userProfileRepository.getUserProfile(HELPER_1) } returns testHelper1
+      coEvery { userProfileRepository.getUserProfile(ID_HELPER2) } throws Exception(NETWORK_ERROR)
 
-    // Then
-    val state = viewModel.state
-    assertTrue(state is ValidationState.Ready)
-    val readyState = state as ValidationState.Ready
-    assertEquals(1, readyState.helpers.size)
-    assertEquals(testHelper1, readyState.helpers[0])
+      // When
+      viewModel = ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
+
+      // Then
+      val state = viewModel.state
+      assertTrue(state is ValidationState.Ready)
+      val readyState = state as ValidationState.Ready
+      assertEquals(1, readyState.helpers.size)
+      assertEquals(testHelper1, readyState.helpers[0])
+    } finally {
+      Dispatchers.resetMain()
+    }
   }
 
   @Test
   fun initShowsErrorWhenAllHelperProfilesFailToLoad() = runTest {
-    // Given
-    coEvery { requestRepository.getRequest(testRequestId) } returns testRequest
-    coEvery { requestRepository.isOwnerOfRequest(testRequest) } returns true
-    coEvery { userProfileRepository.getUserProfile(HELPER_1) } throws Exception(NETWORK_ERROR)
-    coEvery { userProfileRepository.getUserProfile(ID_HELPER2) } throws Exception(NETWORK_ERROR)
+    Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
 
-    // When
-    viewModel = ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
-    advanceUntilIdle()
+    try {
+      // Given
+      coEvery { requestRepository.getRequest(testRequestId) } returns testRequest
+      coEvery { requestRepository.isOwnerOfRequest(testRequest) } returns true
+      coEvery { userProfileRepository.getUserProfile(HELPER_1) } throws Exception(NETWORK_ERROR)
+      coEvery { userProfileRepository.getUserProfile(ID_HELPER2) } throws Exception(NETWORK_ERROR)
 
-    // Then
-    val state = viewModel.state
-    assertTrue(state is ValidationState.Error)
-    val errorState = state as ValidationState.Error
-    assertTrue(errorState.message.contains(COULD_NOT_LOAD_PROFILE))
-    assertTrue(errorState.canRetry)
+      // When
+      viewModel = ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
+
+      // Then
+      val state = viewModel.state
+      assertTrue(state is ValidationState.Error)
+      val errorState = state as ValidationState.Error
+      assertTrue(errorState.message.contains(COULD_NOT_LOAD_PROFILE))
+      assertTrue(errorState.canRetry)
+    } finally {
+      Dispatchers.resetMain()
+    }
   }
 
   @Test
   fun initShowsErrorWhenRequestLoadingFails() = runTest {
-    // Given
-    coEvery { requestRepository.getRequest(testRequestId) } throws Exception(NETWORK_ERROR)
+    Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
 
-    // When
-    viewModel = ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
-    advanceUntilIdle()
+    try {
+      // Given
+      coEvery { requestRepository.getRequest(testRequestId) } throws Exception(NETWORK_ERROR)
 
-    // Then
-    val state = viewModel.state
-    assertTrue(state is ValidationState.Error)
-    val errorState = state as ValidationState.Error
-    assertTrue(errorState.message.contains(FAILED_TO_LOAD_REQUEST))
-    assertTrue(errorState.canRetry)
+      // When
+      viewModel = ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
+
+      // Then
+      val state = viewModel.state
+      assertTrue(state is ValidationState.Error)
+      val errorState = state as ValidationState.Error
+      assertTrue(errorState.message.contains(FAILED_TO_LOAD_REQUEST))
+      assertTrue(errorState.canRetry)
+    } finally {
+      Dispatchers.resetMain()
+    }
   }
 
   // ==================== Helper Selection Tests ====================
 
   @Test
   fun toggleHelperSelectionAddsHelperWhenNotSelected() = runTest {
-    // Given
-    setupReadyState()
+    Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
 
-    // When
-    viewModel.toggleHelperSelection(HELPER_1)
+    try {
+      // Given
+      setupReadyState()
 
-    // Then
-    val state = viewModel.state as ValidationState.Ready
-    assertTrue(state.selectedHelperIds.contains(HELPER_1))
-    assertEquals(1, state.selectedHelperIds.size)
+      // When
+      viewModel.toggleHelperSelection(HELPER_1)
+
+      // Then
+      val state = viewModel.state as ValidationState.Ready
+      assertTrue(state.selectedHelperIds.contains(HELPER_1))
+      assertEquals(1, state.selectedHelperIds.size)
+    } finally {
+      Dispatchers.resetMain()
+    }
   }
 
   @Test
   fun toggleHelperSelectionRemovesHelperWhenAlreadySelected() = runTest {
-    // Given
-    setupReadyState()
-    viewModel.toggleHelperSelection(HELPER_1)
+    Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
 
-    // When
-    viewModel.toggleHelperSelection(HELPER_1)
+    try {
+      // Given
+      setupReadyState()
+      viewModel.toggleHelperSelection(HELPER_1)
 
-    // Then
-    val state = viewModel.state as ValidationState.Ready
-    assertFalse(state.selectedHelperIds.contains(HELPER_1))
-    assertTrue(state.selectedHelperIds.isEmpty())
+      // When
+      viewModel.toggleHelperSelection(HELPER_1)
+
+      // Then
+      val state = viewModel.state as ValidationState.Ready
+      assertFalse(state.selectedHelperIds.contains(HELPER_1))
+      assertTrue(state.selectedHelperIds.isEmpty())
+    } finally {
+      Dispatchers.resetMain()
+    }
   }
 
   @Test
   fun toggleHelperSelectionAllowsMultipleSelections() = runTest {
-    // Given
-    setupReadyState()
+    Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
 
-    // When
-    viewModel.toggleHelperSelection(HELPER_1)
-    viewModel.toggleHelperSelection(ID_HELPER2)
+    try {
+      // Given
+      setupReadyState()
 
-    // Then
-    val state = viewModel.state as ValidationState.Ready
-    assertTrue(state.selectedHelperIds.contains(HELPER_1))
-    assertTrue(state.selectedHelperIds.contains(ID_HELPER2))
-    assertEquals(2, state.selectedHelperIds.size)
+      // When
+      viewModel.toggleHelperSelection(HELPER_1)
+      viewModel.toggleHelperSelection(ID_HELPER2)
+
+      // Then
+      val state = viewModel.state as ValidationState.Ready
+      assertTrue(state.selectedHelperIds.contains(HELPER_1))
+      assertTrue(state.selectedHelperIds.contains(ID_HELPER2))
+      assertEquals(2, state.selectedHelperIds.size)
+    } finally {
+      Dispatchers.resetMain()
+    }
   }
 
   @Test
   fun toggleHelperSelectionDoesNothingWhenNotInReadyState() = runTest {
-    // Given
-    coEvery { requestRepository.getRequest(testRequestId) } returns testRequest
-    coEvery { requestRepository.isOwnerOfRequest(testRequest) } returns false
-    viewModel = ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
-    advanceUntilIdle()
-    // State is now Error
+    Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
 
-    // When
-    viewModel.toggleHelperSelection(HELPER_1)
+    try {
+      // Given
+      coEvery { requestRepository.getRequest(testRequestId) } returns testRequest
+      coEvery { requestRepository.isOwnerOfRequest(testRequest) } returns false
+      viewModel = ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
+      // State is now Error
 
-    // Then
-    assertTrue(viewModel.state is ValidationState.Error)
+      // When
+      viewModel.toggleHelperSelection(HELPER_1)
+
+      // Then
+      assertTrue(viewModel.state is ValidationState.Error)
+    } finally {
+      Dispatchers.resetMain()
+    }
   }
 
   // ==================== Confirmation Tests ====================
 
   @Test
   fun showConfirmationTransitionsToConfirmingStateWithCorrectKudos() = runTest {
-    // Given
-    setupReadyState()
-    viewModel.toggleHelperSelection(HELPER_1)
-    viewModel.toggleHelperSelection(ID_HELPER2)
+    Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
 
-    // When
-    viewModel.showConfirmation()
+    try {
+      // Given
+      setupReadyState()
+      viewModel.toggleHelperSelection(HELPER_1)
+      viewModel.toggleHelperSelection(ID_HELPER2)
 
-    // Then
-    val state = viewModel.state
-    assertTrue(state is ValidationState.Confirming)
-    val confirmingState = state as ValidationState.Confirming
-    assertEquals(testRequest, confirmingState.request)
-    assertEquals(2, confirmingState.selectedHelpers.size)
-    assertEquals(2 * KudosConstants.KUDOS_PER_HELPER, confirmingState.kudosToAward)
-    assertEquals(KudosConstants.KUDOS_FOR_CREATOR_RESOLUTION, confirmingState.creatorBonus)
+      // When
+      viewModel.showConfirmation()
+
+      // Then
+      val state = viewModel.state
+      assertTrue(state is ValidationState.Confirming)
+      val confirmingState = state as ValidationState.Confirming
+      assertEquals(testRequest, confirmingState.request)
+      assertEquals(2, confirmingState.selectedHelpers.size)
+      assertEquals(2 * KudosConstants.KUDOS_PER_HELPER, confirmingState.kudosToAward)
+      assertEquals(KudosConstants.KUDOS_FOR_CREATOR_RESOLUTION, confirmingState.creatorBonus)
+    } finally {
+      Dispatchers.resetMain()
+    }
   }
 
   @Test
   fun showConfirmationWithNoHelpersSelectedShowsZeroKudos() = runTest {
-    // Given
-    setupReadyState()
+    Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
 
-    // When
-    viewModel.showConfirmation()
+    try {
+      // Given
+      setupReadyState()
 
-    // Then
-    val state = viewModel.state
-    assertTrue(state is ValidationState.Confirming)
-    val confirmingState = state as ValidationState.Confirming
-    assertEquals(0, confirmingState.kudosToAward)
-    assertEquals(0, confirmingState.creatorBonus)
-    assertTrue(confirmingState.selectedHelpers.isEmpty())
+      // When
+      viewModel.showConfirmation()
+
+      // Then
+      val state = viewModel.state
+      assertTrue(state is ValidationState.Confirming)
+      val confirmingState = state as ValidationState.Confirming
+      assertEquals(0, confirmingState.kudosToAward)
+      assertEquals(0, confirmingState.creatorBonus)
+      assertTrue(confirmingState.selectedHelpers.isEmpty())
+    } finally {
+      Dispatchers.resetMain()
+    }
   }
 
   @Test
   fun showConfirmationDoesNothingWhenNotInReadyState() = runTest {
-    // Given
-    setupReadyState()
-    viewModel.showConfirmation() // Now in Confirming state
+    Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
 
-    // When
-    viewModel.showConfirmation() // Try again
+    try {
+      // Given
+      setupReadyState()
+      viewModel.showConfirmation() // Now in Confirming state
 
-    // Then
-    assertTrue(viewModel.state is ValidationState.Confirming)
+      // When
+      viewModel.showConfirmation() // Try again
+
+      // Then
+      assertTrue(viewModel.state is ValidationState.Confirming)
+    } finally {
+      Dispatchers.resetMain()
+    }
   }
-
-  @Test
-  fun cancelConfirmationReturnsToReadyStateWithSelectionsPreserved() = runTest {
-    // Given
-    setupReadyState()
-    viewModel.toggleHelperSelection(HELPER_1)
-    viewModel.showConfirmation()
-
-    // When
-    viewModel.cancelConfirmation()
-    advanceUntilIdle()
-
-    // Then
-    val state = viewModel.state
-    assertTrue(state is ValidationState.Ready)
-    val readyState = state as ValidationState.Ready
-    assertTrue(readyState.selectedHelperIds.contains(HELPER_1))
-  }
-
+  /**
+   * @Test fun cancelConfirmationReturnsToReadyStateWithSelectionsPreserved() = runTest {
+   *   Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
+   *
+   * try { // Given setupReadyState() viewModel.toggleHelperSelection(HELPER_1)
+   * viewModel.showConfirmation()
+   *
+   * // When viewModel.cancelConfirmation()
+   *
+   * // Then val state = viewModel.state assertTrue(state is ValidationState.Ready) val readyState =
+   * state as ValidationState.Ready assertTrue(readyState.selectedHelperIds.contains(HELPER_1)) }
+   * finally { Dispatchers.resetMain() } }
+   */
   @Test
   fun cancelConfirmationDoesNothingWhenNotInConfirmingState() = runTest {
-    // Given
-    setupReadyState()
-    val previousState = viewModel.state
+    Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
 
-    // When
-    viewModel.cancelConfirmation()
+    try {
+      // Given
+      setupReadyState()
 
-    // Then
-    // State should remain Ready (after eventual reload)
-    advanceUntilIdle()
-    assertTrue(viewModel.state is ValidationState.Ready)
+      // When
+      viewModel.cancelConfirmation()
+
+      // Then
+      assertTrue(viewModel.state is ValidationState.Ready)
+    } finally {
+      Dispatchers.resetMain()
+    }
   }
 
   // ==================== Confirm and Close Tests ====================
 
   @Test
   fun confirmAndCloseSucceedsWithSelectedHelpersAndAwardsKudos() = runTest {
-    // Given
-    setupReadyState()
-    viewModel.toggleHelperSelection(HELPER_1)
-    viewModel.showConfirmation()
+    Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
 
-    coEvery { requestRepository.closeRequest(testRequestId, listOf(HELPER_1)) } returns true
-    coEvery { userProfileRepository.awardKudosBatch(any()) } returns Unit
+    try {
+      // Given
+      setupReadyState()
+      viewModel.toggleHelperSelection(HELPER_1)
+      viewModel.showConfirmation()
 
-    // When
-    viewModel.confirmAndClose()
-    advanceUntilIdle()
+      coEvery { requestRepository.closeRequest(testRequestId, listOf(HELPER_1)) } returns true
+      coEvery { userProfileRepository.awardKudosBatch(any()) } returns Unit
 
-    // Then
-    assertTrue(viewModel.state is ValidationState.Success)
-    coVerify {
-      requestRepository.closeRequest(testRequestId, listOf(HELPER_1))
-      userProfileRepository.awardKudosBatch(
-          match {
-            it[HELPER_1] == KudosConstants.KUDOS_PER_HELPER &&
-                !it.containsKey(testCreatorId) && // No creator kudos
-                it.size == 1 // Only 1 helper
-          })
+      // When
+      viewModel.confirmAndClose()
+
+      // Then
+      assertTrue(viewModel.state is ValidationState.Success)
+      coVerify {
+        requestRepository.closeRequest(testRequestId, listOf(HELPER_1))
+        userProfileRepository.awardKudosBatch(
+            match {
+              it[HELPER_1] == KudosConstants.KUDOS_PER_HELPER &&
+                  !it.containsKey(testCreatorId) &&
+                  it.size == 1
+            })
+      }
+    } finally {
+      Dispatchers.resetMain()
     }
   }
 
   @Test
   fun confirmAndCloseWithoutCreatorBonusWhenCloseRequestReturnsFalse() = runTest {
-    // Given
-    setupReadyState()
-    viewModel.toggleHelperSelection(HELPER_1)
-    viewModel.showConfirmation()
+    Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
 
-    coEvery { requestRepository.closeRequest(testRequestId, listOf(HELPER_1)) } returns false
-    coEvery { userProfileRepository.awardKudosBatch(any()) } returns Unit
+    try {
+      // Given
+      setupReadyState()
+      viewModel.toggleHelperSelection(HELPER_1)
+      viewModel.showConfirmation()
 
-    // When
-    viewModel.confirmAndClose()
-    advanceUntilIdle()
+      coEvery { requestRepository.closeRequest(testRequestId, listOf(HELPER_1)) } returns false
+      coEvery { userProfileRepository.awardKudosBatch(any()) } returns Unit
 
-    // Then
-    assertTrue(viewModel.state is ValidationState.Success)
-    coVerify {
-      userProfileRepository.awardKudosBatch(
-          match {
-            it[HELPER_1] == KudosConstants.KUDOS_PER_HELPER &&
-                !it.containsKey(testCreatorId) &&
-                it.size == 1
-          })
+      // When
+      viewModel.confirmAndClose()
+
+      // Then
+      assertTrue(viewModel.state is ValidationState.Success)
+      coVerify {
+        userProfileRepository.awardKudosBatch(
+            match {
+              it[HELPER_1] == KudosConstants.KUDOS_PER_HELPER &&
+                  !it.containsKey(testCreatorId) &&
+                  it.size == 1
+            })
+      }
+    } finally {
+      Dispatchers.resetMain()
     }
   }
 
   @Test
   fun confirmAndCloseSucceedsWithMultipleHelpers() = runTest {
-    // Given
-    setupReadyState()
-    viewModel.toggleHelperSelection(HELPER_1)
-    viewModel.toggleHelperSelection(ID_HELPER2)
-    viewModel.showConfirmation()
+    Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
 
-    coEvery { requestRepository.closeRequest(testRequestId, listOf(HELPER_1, ID_HELPER2)) } returns
-        true
-    coEvery { userProfileRepository.awardKudosBatch(any()) } returns Unit
+    try {
+      // Given
+      setupReadyState()
+      viewModel.toggleHelperSelection(HELPER_1)
+      viewModel.toggleHelperSelection(ID_HELPER2)
+      viewModel.showConfirmation()
 
-    // When
-    viewModel.confirmAndClose()
-    advanceUntilIdle()
+      coEvery {
+        requestRepository.closeRequest(testRequestId, listOf(HELPER_1, ID_HELPER2))
+      } returns true
+      coEvery { userProfileRepository.awardKudosBatch(any()) } returns Unit
 
-    // Then
-    assertTrue(viewModel.state is ValidationState.Success)
-    coVerify {
-      userProfileRepository.awardKudosBatch(
-          match {
-            it[HELPER_1] == KudosConstants.KUDOS_PER_HELPER &&
-                it[ID_HELPER2] == KudosConstants.KUDOS_PER_HELPER &&
-                !it.containsKey(testCreatorId) && // No creator kudos
-                it.size == 2 // Only 2 helpers
-          })
+      // When
+      viewModel.confirmAndClose()
+
+      // Then
+      assertTrue(viewModel.state is ValidationState.Success)
+      coVerify {
+        userProfileRepository.awardKudosBatch(
+            match {
+              it[HELPER_1] == KudosConstants.KUDOS_PER_HELPER &&
+                  it[ID_HELPER2] == KudosConstants.KUDOS_PER_HELPER &&
+                  !it.containsKey(testCreatorId) &&
+                  it.size == 2
+            })
+      }
+    } finally {
+      Dispatchers.resetMain()
     }
   }
 
   @Test
   fun confirmAndCloseWithNoHelpersSelectedClosesRequestWithoutKudos() = runTest {
-    // Given
-    setupReadyState()
-    viewModel.showConfirmation()
+    Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
 
-    coEvery { requestRepository.closeRequest(testRequestId, emptyList()) } returns false
+    try {
+      // Given
+      setupReadyState()
+      viewModel.showConfirmation()
 
-    // When
-    viewModel.confirmAndClose()
-    advanceUntilIdle()
+      coEvery { requestRepository.closeRequest(testRequestId, emptyList()) } returns false
 
-    // Then
-    assertTrue(viewModel.state is ValidationState.Success)
-    coVerify(exactly = 0) { userProfileRepository.awardKudosBatch(any()) }
+      // When
+      viewModel.confirmAndClose()
+
+      // Then
+      assertTrue(viewModel.state is ValidationState.Success)
+      coVerify(exactly = 0) { userProfileRepository.awardKudosBatch(any()) }
+    } finally {
+      Dispatchers.resetMain()
+    }
   }
 
   @Test
   fun confirmAndCloseHandlesRequestClosureException() = runTest {
-    // Given
-    setupReadyState()
-    viewModel.toggleHelperSelection(HELPER_1)
-    viewModel.showConfirmation()
+    Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
 
-    coEvery { requestRepository.closeRequest(any(), any()) } throws
-        RequestClosureException.InvalidStatus(RequestStatus.COMPLETED)
+    try {
+      // Given
+      setupReadyState()
+      viewModel.toggleHelperSelection(HELPER_1)
+      viewModel.showConfirmation()
 
-    // When
-    viewModel.confirmAndClose()
-    advanceUntilIdle()
+      coEvery { requestRepository.closeRequest(any(), any()) } throws
+          RequestClosureException.InvalidStatus(RequestStatus.COMPLETED)
 
-    // Then
-    val state = viewModel.state
-    assertTrue(state is ValidationState.Error)
-    val errorState = state as ValidationState.Error
-    assertTrue(errorState.message.contains("Failed to close request"))
-    assertTrue(errorState.canRetry)
+      // When
+      viewModel.confirmAndClose()
+
+      // Then
+      val state = viewModel.state
+      assertTrue(state is ValidationState.Error)
+      val errorState = state as ValidationState.Error
+      assertTrue(errorState.message.contains("Failed to close request"))
+      assertTrue(errorState.canRetry)
+    } finally {
+      Dispatchers.resetMain()
+    }
   }
 
   @Test
   fun confirmAndCloseHandlesGenericException() = runTest {
-    // Given
-    setupReadyState()
-    viewModel.toggleHelperSelection(HELPER_1)
-    viewModel.showConfirmation()
+    Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
 
-    coEvery { requestRepository.closeRequest(any(), any()) } throws Exception("Unexpected error")
+    try {
+      // Given
+      setupReadyState()
+      viewModel.toggleHelperSelection(HELPER_1)
+      viewModel.showConfirmation()
 
-    // When
-    viewModel.confirmAndClose()
-    advanceUntilIdle()
+      coEvery { requestRepository.closeRequest(any(), any()) } throws Exception("Unexpected error")
 
-    // Then
-    val state = viewModel.state
-    assertTrue(state is ValidationState.Error)
-    val errorState = state as ValidationState.Error
-    assertTrue(errorState.message.contains(UNEXPECTED_ERROR_OCCURED))
-    assertTrue(errorState.canRetry)
+      // When
+      viewModel.confirmAndClose()
+
+      // Then
+      val state = viewModel.state
+      assertTrue(state is ValidationState.Error)
+      val errorState = state as ValidationState.Error
+      assertTrue(errorState.message.contains(UNEXPECTED_ERROR_OCCURED))
+      assertTrue(errorState.canRetry)
+    } finally {
+      Dispatchers.resetMain()
+    }
   }
 
   @Test
   fun confirmAndCloseDoesNothingWhenNotInConfirmingState() = runTest {
-    // Given
-    setupReadyState()
+    Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
 
-    viewModel.confirmAndClose()
-    advanceUntilIdle()
+    try {
+      // Given
+      setupReadyState()
 
-    assertTrue(viewModel.state is ValidationState.Ready)
-    coVerify(exactly = 0) { requestRepository.closeRequest(any(), any()) }
+      // When
+      viewModel.confirmAndClose()
+
+      // Then
+      assertTrue(viewModel.state is ValidationState.Ready)
+      coVerify(exactly = 0) { requestRepository.closeRequest(any(), any()) }
+    } finally {
+      Dispatchers.resetMain()
+    }
   }
 
   // ==================== Retry and Reset Tests ====================
 
   @Test
   fun retryReloadsRequestData() = runTest {
-    // Given
-    coEvery { requestRepository.getRequest(testRequestId) } throws Exception(NETWORK_ERROR)
-    viewModel = ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
-    advanceUntilIdle()
-    assertTrue(viewModel.state is ValidationState.Error)
+    Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
 
-    // Now make it succeed
-    coEvery { requestRepository.getRequest(testRequestId) } returns testRequest
-    coEvery { requestRepository.isOwnerOfRequest(testRequest) } returns true
-    coEvery { userProfileRepository.getUserProfile(HELPER_1) } returns testHelper1
-    coEvery { userProfileRepository.getUserProfile(ID_HELPER2) } returns testHelper2
+    try {
+      // Given
+      coEvery { requestRepository.getRequest(testRequestId) } throws Exception(NETWORK_ERROR)
+      viewModel = ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
+      assertTrue(viewModel.state is ValidationState.Error)
 
-    // When
-    viewModel.retry()
-    advanceUntilIdle()
+      // Now make it succeed
+      coEvery { requestRepository.getRequest(testRequestId) } returns testRequest
+      coEvery { requestRepository.isOwnerOfRequest(testRequest) } returns true
+      coEvery { userProfileRepository.getUserProfile(HELPER_1) } returns testHelper1
+      coEvery { userProfileRepository.getUserProfile(ID_HELPER2) } returns testHelper2
 
-    // Then
-    assertTrue(viewModel.state is ValidationState.Ready)
+      // When
+      viewModel.retry()
+
+      // Then
+      assertTrue(viewModel.state is ValidationState.Ready)
+    } finally {
+      Dispatchers.resetMain()
+    }
   }
 
   @Test
   fun resetSetsStateToLoading() = runTest {
-    // Given
-    setupReadyState()
+    Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
 
-    // When
-    viewModel.reset()
+    try {
+      // Given
+      setupReadyState()
 
-    // Then
-    assertTrue(viewModel.state is ValidationState.Loading)
+      // When
+      viewModel.reset()
+
+      // Then
+      assertTrue(viewModel.state is ValidationState.Loading)
+    } finally {
+      Dispatchers.resetMain()
+    }
   }
 
   // ==================== Factory Tests ====================
 
   @Test
-  fun factory_creates_ValidateRequestViewModel_successfully() {
-    // Given
-    val factory =
-        ValidateRequestViewModelFactory(testRequestId, requestRepository, userProfileRepository)
+  fun factory_creates_ValidateRequestViewModel_successfully() = runTest {
+    Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
 
-    // When
-    @Suppress("USELESS_IS_CHECK") // Intentional for test clarity
-    val vm = factory.create(ValidateRequestViewModel::class.java)
+    try {
+      // Given
+      val factory =
+          ValidateRequestViewModelFactory(testRequestId, requestRepository, userProfileRepository)
 
-    // Then
-    assertNotNull(vm)
+      // When
+      @Suppress("USELESS_IS_CHECK") val vm = factory.create(ValidateRequestViewModel::class.java)
+
+      // Then
+      assertNotNull(vm)
+    } finally {
+      Dispatchers.resetMain()
+    }
   }
 
   @Test(expected = IllegalArgumentException::class)
@@ -691,14 +801,13 @@ class ValidateRequestViewModelTest {
 
   // ==================== Helper Methods ====================
 
-  private suspend fun TestScope.setupReadyState() {
+  private fun setupReadyState() {
     coEvery { requestRepository.getRequest(testRequestId) } returns testRequest
     coEvery { requestRepository.isOwnerOfRequest(testRequest) } returns true
     coEvery { userProfileRepository.getUserProfile(HELPER_1) } returns testHelper1
     coEvery { userProfileRepository.getUserProfile(ID_HELPER2) } returns testHelper2
 
     viewModel = ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
-    advanceUntilIdle()
 
     assertTrue(viewModel.state is ValidationState.Ready)
   }
@@ -706,6 +815,3 @@ class ValidateRequestViewModelTest {
   // Dummy ViewModel for factory test
   private class DummyViewModel : androidx.lifecycle.ViewModel()
 }
-
-// Mock exception class
-class KudosException(message: String) : Exception(message)
