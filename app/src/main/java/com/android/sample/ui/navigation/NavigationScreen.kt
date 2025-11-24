@@ -133,7 +133,7 @@ fun NavigationScreen(
                               userProfileRepository = userProfileRepository)),
               userProfileRepository = userProfileRepository,
               onRequestClosed = {
-                requestListViewModel.refreshRequests()
+                // requestListViewModel.refreshRequests()
                 navigationActions.goBack()
               },
               onNavigateBack = { navigationActions.goBack() })

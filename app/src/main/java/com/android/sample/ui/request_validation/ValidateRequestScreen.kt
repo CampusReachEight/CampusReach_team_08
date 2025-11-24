@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import com.android.sample.model.profile.UserProfile
 import com.android.sample.model.profile.UserProfileRepository
 import com.android.sample.ui.profile.ProfilePicture
+import com.android.sample.ui.request_validation.ValidateRequestConstants.SCREEN_TITLE
 
 /**
  * Main screen for validating and closing a request. Allows the request creator to select helpers
@@ -115,7 +116,7 @@ private fun ValidateRequestTopBar(
   TopAppBar(
       title = {
         Text(
-            text = ValidateRequestConstants.SCREEN_TITLE,
+            text = SCREEN_TITLE,
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold)
       },
@@ -420,10 +421,13 @@ private fun HelperCard(
 @Composable
 private fun KudosSummary(selectedCount: Int, modifier: Modifier = Modifier) {
   val totalKudos = selectedCount * KudosConstants.KUDOS_PER_HELPER
-  val creatorBonus = if (selectedCount > 0) KudosConstants.KUDOS_FOR_CREATOR_RESOLUTION else 0
+  val creatorBonus =
+      if (selectedCount > ValidateRequestConstants.VALUE_ZERO)
+          KudosConstants.KUDOS_FOR_CREATOR_RESOLUTION
+      else ValidateRequestConstants.VALUE_ZERO
 
   AnimatedVisibility(
-      visible = selectedCount > 0,
+      visible = selectedCount > ValidateRequestConstants.VALUE_ZERO,
       enter = fadeIn() + expandVertically(),
       exit = fadeOut() + shrinkVertically(),
       modifier = modifier) {
@@ -548,7 +552,7 @@ private fun ConfirmationDialog(
 
                 if (creatorBonus > 0) {
                   Text(
-                      text = ValidateRequestConstants.getConfirmCreatorBonus(creatorBonus),
+                      text = ValidateRequestConstants.getConfirmHelperBonus(creatorBonus),
                       style = MaterialTheme.typography.bodySmall,
                       color = MaterialTheme.colorScheme.tertiary,
                       fontWeight = FontWeight.Medium)

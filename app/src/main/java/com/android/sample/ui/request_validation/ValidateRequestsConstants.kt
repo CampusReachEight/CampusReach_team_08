@@ -62,8 +62,8 @@ object ValidateRequestConstants {
   const val SYMBOL_MULTIPLY = " × "
   const val SYMBOL_PLUS = "+"
 
-  fun getConfirmCreatorBonus(kudos: Int) =
-      "You will receive ${SYMBOL_PLUS}$kudos kudos for resolving this request!"
+  fun getConfirmHelperBonus(kudos: Int) =
+      "The people you selected will receive ${SYMBOL_PLUS}$kudos kudos for resolving this request!"
 
   // Kudos summary
   const val SUMMARY_TOTAL_LABEL = "Total kudos to award"
@@ -106,6 +106,7 @@ object ValidateRequestConstants {
 
   // Icon sizes
   const val PROFILE_PICTURE_SIZE_DP = 56
+  const val VALUE_ZERO = 0
   const val SELECTION_INDICATOR_SIZE_DP = 20
   const val SELECTION_INDICATOR_ICON_SIZE_DP = 12
   const val KUDOS_ICON_SIZE_DP = 16
