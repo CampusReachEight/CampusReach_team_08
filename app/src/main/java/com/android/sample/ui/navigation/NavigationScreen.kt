@@ -124,6 +124,7 @@ fun NavigationScreen(
         requestId?.let { id ->
           ValidateRequestScreen(
               requestId = id,
+              modifier = Modifier.testTag(NavigationTestTags.VALIDATE_REQUEST_SCREEN),
               viewModel =
                   viewModel(
                       factory =
