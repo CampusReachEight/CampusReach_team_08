@@ -163,7 +163,8 @@ class RequestListTests : BaseEmulatorTest() {
   }
 
   private fun sampleRequests(creatorIds: List<String>): List<Request> {
-    val now = Date()
+    val now = System.currentTimeMillis()
+    // Use future start time so viewStatus computes OPEN (startTimeStamp > now)
     return creatorIds.mapIndexed { idx, creator ->
       Request(
           requestId = "req_${idx + COUNT_ONE}",
@@ -182,8 +183,8 @@ class RequestListTests : BaseEmulatorTest() {
           location = Location(0.0, 0.0, "Loc"),
           locationName = "LocName",
           status = RequestStatus.OPEN,
-          startTimeStamp = now,
-          expirationTime = Date(now.time + ONE_HOUR_MS),
+          startTimeStamp = Date(now + ONE_HOUR_MS), // 1 hour from now
+          expirationTime = Date(now + 2 * ONE_HOUR_MS), // 2 hours from now
           people = emptyList(),
           tags = listOf(Tags.INDOOR),
           creatorId = creator)
@@ -453,6 +454,7 @@ class RequestListTests : BaseEmulatorTest() {
 
   @Test
   fun selectingType_updatesSelectedCount_inHeader() {
+    val now = System.currentTimeMillis()
     val request =
         Request(
             requestId = "req_1",
@@ -462,8 +464,8 @@ class RequestListTests : BaseEmulatorTest() {
             location = Location(0.0, 0.0, "Loc"),
             locationName = "LocName",
             status = RequestStatus.OPEN,
-            startTimeStamp = Date(),
-            expirationTime = Date(System.currentTimeMillis() + ONE_HOUR_MS),
+            startTimeStamp = Date(now + ONE_HOUR_MS), // Future start for OPEN viewStatus
+            expirationTime = Date(now + 2 * ONE_HOUR_MS),
             people = emptyList(),
             tags = listOf(Tags.INDOOR),
             creatorId = currentUserId)
@@ -808,6 +810,7 @@ class RequestListTests : BaseEmulatorTest() {
 
   @Test
   fun showOnlyMyRequests_displaysOnlyCurrentUserRequests() {
+    val now = System.currentTimeMillis()
     // Create requests with different creators
     val myRequest =
         Request(
@@ -818,8 +821,8 @@ class RequestListTests : BaseEmulatorTest() {
             location = Location(0.0, 0.0, "Loc"),
             locationName = "LocName",
             status = RequestStatus.OPEN,
-            startTimeStamp = Date(),
-            expirationTime = Date(System.currentTimeMillis() + 3_600_000),
+            startTimeStamp = Date(now + ONE_HOUR_MS), // Future start for OPEN viewStatus
+            expirationTime = Date(now + 2 * ONE_HOUR_MS),
             people = emptyList(),
             tags = listOf(Tags.INDOOR),
             creatorId = currentUserId // Current user's request
@@ -834,8 +837,8 @@ class RequestListTests : BaseEmulatorTest() {
             location = Location(0.0, 0.0, "Loc"),
             locationName = "LocName",
             status = RequestStatus.OPEN,
-            startTimeStamp = Date(),
-            expirationTime = Date(System.currentTimeMillis() + 3_600_000),
+            startTimeStamp = Date(now + ONE_HOUR_MS), // Future start for OPEN viewStatus
+            expirationTime = Date(now + 2 * ONE_HOUR_MS),
             people = emptyList(),
             tags = listOf(Tags.INDOOR),
             creatorId = "other_user" // Different user
@@ -911,6 +914,7 @@ class RequestListTests : BaseEmulatorTest() {
 
   @Test
   fun showOnlyMyRequests_false_displaysAllRequests() {
+    val now = System.currentTimeMillis()
     val myRequest =
         Request(
             requestId = "my_req_1",
@@ -920,8 +924,8 @@ class RequestListTests : BaseEmulatorTest() {
             location = Location(0.0, 0.0, "Loc"),
             locationName = "LocName",
             status = RequestStatus.OPEN,
-            startTimeStamp = Date(),
-            expirationTime = Date(System.currentTimeMillis() + 3_600_000),
+            startTimeStamp = Date(now + ONE_HOUR_MS), // Future start for OPEN viewStatus
+            expirationTime = Date(now + 2 * ONE_HOUR_MS),
             people = emptyList(),
             tags = listOf(Tags.INDOOR),
             creatorId = currentUserId)
@@ -935,8 +939,8 @@ class RequestListTests : BaseEmulatorTest() {
             location = Location(0.0, 0.0, "Loc"),
             locationName = "LocName",
             status = RequestStatus.OPEN,
-            startTimeStamp = Date(),
-            expirationTime = Date(System.currentTimeMillis() + 3_600_000),
+            startTimeStamp = Date(now + ONE_HOUR_MS), // Future start for OPEN viewStatus
+            expirationTime = Date(now + 2 * ONE_HOUR_MS),
             people = emptyList(),
             tags = listOf(Tags.INDOOR),
             creatorId = "other_user")
@@ -1007,6 +1011,7 @@ class RequestListTests : BaseEmulatorTest() {
 
   @Test
   fun showOnlyMyRequests_multipleUserRequests_displaysAll() {
+    val now = System.currentTimeMillis()
     // Create multiple requests from the current user
     val requests =
         listOf(
@@ -1018,8 +1023,8 @@ class RequestListTests : BaseEmulatorTest() {
                 location = Location(0.0, 0.0, "Loc"),
                 locationName = "LocName",
                 status = RequestStatus.OPEN,
-                startTimeStamp = Date(),
-                expirationTime = Date(System.currentTimeMillis() + 3_600_000),
+                startTimeStamp = Date(now + ONE_HOUR_MS), // Future start for OPEN viewStatus
+                expirationTime = Date(now + 2 * ONE_HOUR_MS),
                 people = emptyList(),
                 tags = listOf(Tags.INDOOR),
                 creatorId = currentUserId),
@@ -1031,8 +1036,8 @@ class RequestListTests : BaseEmulatorTest() {
                 location = Location(0.0, 0.0, "Loc"),
                 locationName = "LocName",
                 status = RequestStatus.OPEN,
-                startTimeStamp = Date(),
-                expirationTime = Date(System.currentTimeMillis() + 3_600_000),
+                startTimeStamp = Date(now + ONE_HOUR_MS), // Future start for OPEN viewStatus
+                expirationTime = Date(now + 2 * ONE_HOUR_MS),
                 people = emptyList(),
                 tags = listOf(Tags.OUTDOOR),
                 creatorId = currentUserId),
@@ -1044,8 +1049,8 @@ class RequestListTests : BaseEmulatorTest() {
                 location = Location(0.0, 0.0, "Loc"),
                 locationName = "LocName",
                 status = RequestStatus.OPEN,
-                startTimeStamp = Date(),
-                expirationTime = Date(System.currentTimeMillis() + 3_600_000),
+                startTimeStamp = Date(now + ONE_HOUR_MS), // Future start for OPEN viewStatus
+                expirationTime = Date(now + 2 * ONE_HOUR_MS),
                 people = emptyList(),
                 tags = listOf(Tags.INDOOR),
                 creatorId = "other_user"))
@@ -1089,10 +1094,11 @@ class RequestListTests : BaseEmulatorTest() {
 
   @Test
   fun filtering_excludes_nonOpenAndInProgressStatuses() {
-    val now = Date()
+    val now = System.currentTimeMillis()
     val hour = ONE_HOUR_MS
     val requests =
         listOf(
+            // OPEN: startTimeStamp > now (future start)
             Request(
                 requestId = "r_open",
                 title = "Open Req",
@@ -1101,11 +1107,12 @@ class RequestListTests : BaseEmulatorTest() {
                 location = Location(0.0, 0.0, "Loc"),
                 locationName = "LocName",
                 status = RequestStatus.OPEN,
-                startTimeStamp = now,
-                expirationTime = Date(now.time + hour),
+                startTimeStamp = Date(now + hour), // Future start for OPEN viewStatus
+                expirationTime = Date(now + 2 * hour),
                 people = emptyList(),
                 tags = listOf(Tags.INDOOR),
                 creatorId = "c1"),
+            // IN_PROGRESS: startTimeStamp <= now, expirationTime > now
             Request(
                 requestId = "r_inprog",
                 title = "In Progress Req",
@@ -1114,11 +1121,12 @@ class RequestListTests : BaseEmulatorTest() {
                 location = Location(0.0, 0.0, "Loc"),
                 locationName = "LocName",
                 status = RequestStatus.IN_PROGRESS,
-                startTimeStamp = now,
-                expirationTime = Date(now.time + hour),
+                startTimeStamp = Date(now - 1000), // Past start for IN_PROGRESS viewStatus
+                expirationTime = Date(now + hour),
                 people = emptyList(),
                 tags = listOf(Tags.INDOOR),
                 creatorId = "c2"),
+            // COMPLETED: expirationTime <= now
             Request(
                 requestId = "r_completed",
                 title = "Completed Req",
@@ -1127,11 +1135,12 @@ class RequestListTests : BaseEmulatorTest() {
                 location = Location(0.0, 0.0, "Loc"),
                 locationName = "LocName",
                 status = RequestStatus.COMPLETED,
-                startTimeStamp = now,
-                expirationTime = Date(now.time + hour),
+                startTimeStamp = Date(now - 2 * hour), // Past dates for COMPLETED viewStatus
+                expirationTime = Date(now - hour), // Expired
                 people = emptyList(),
                 tags = listOf(Tags.INDOOR),
                 creatorId = "c3"),
+            // CANCELLED: preserved regardless of dates
             Request(
                 requestId = "r_cancelled",
                 title = "Cancelled Req",
@@ -1140,11 +1149,12 @@ class RequestListTests : BaseEmulatorTest() {
                 location = Location(0.0, 0.0, "Loc"),
                 locationName = "LocName",
                 status = RequestStatus.CANCELLED,
-                startTimeStamp = now,
-                expirationTime = Date(now.time + hour),
+                startTimeStamp = Date(now + hour),
+                expirationTime = Date(now + 2 * hour),
                 people = emptyList(),
                 tags = listOf(Tags.INDOOR),
                 creatorId = "c4"),
+            // ARCHIVED: preserved regardless of dates
             Request(
                 requestId = "r_archived",
                 title = "Archived Req",
@@ -1153,8 +1163,8 @@ class RequestListTests : BaseEmulatorTest() {
                 location = Location(0.0, 0.0, "Loc"),
                 locationName = "LocName",
                 status = RequestStatus.ARCHIVED,
-                startTimeStamp = now,
-                expirationTime = Date(now.time + hour),
+                startTimeStamp = Date(now + hour),
+                expirationTime = Date(now + 2 * hour),
                 people = emptyList(),
                 tags = listOf(Tags.INDOOR),
                 creatorId = "c5"))
