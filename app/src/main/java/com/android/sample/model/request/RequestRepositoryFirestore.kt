@@ -30,6 +30,18 @@ class RequestRepositoryFirestore(
     }
   }
 
+  override suspend fun getAllCurrentRequests(): List<Request> {
+    return collectionRef
+        .get()
+        .await()
+        .documents
+        .mapNotNull { doc -> doc.data?.let { Request.fromMap(it) } }
+        .filter { request ->
+          request.viewStatus != RequestStatus.COMPLETED &&
+              request.viewStatus != RequestStatus.CANCELLED
+        }
+  }
+
   override suspend fun getRequest(requestId: String): Request {
     return collectionRef
         .whereEqualTo("requestId", requestId)

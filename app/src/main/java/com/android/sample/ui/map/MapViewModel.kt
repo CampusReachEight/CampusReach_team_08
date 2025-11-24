@@ -149,7 +149,7 @@ class MapViewModel(
   private fun fetchAcceptedRequest() {
     viewModelScope.launch {
       try {
-        val requests = requestRepository.getAllRequests()
+        val requests = requestRepository.getAllCurrentRequests()
 
         val current = _uiState.value.currentRequest
         val updatedCurrent = current?.let { requests.find { it.requestId == current.requestId } }
