@@ -310,36 +310,32 @@ fun AcceptRequestScreen(
                             }
 
                         if (volunteersExpanded) {
-                            Spacer(
-                                modifier = Modifier.height(AcceptRequestScreenConstants.SECTION_SPACING)
-                            )
+                          Spacer(
+                              modifier =
+                                  Modifier.height(AcceptRequestScreenConstants.SECTION_SPACING))
 
-// Safeguard: exclude creatorId from volunteers list if present
-                            val volunteers = request.people.filterNot { it == request.creatorId }
-                            if (volunteers.isEmpty()) {
-                                Text(
-                                    text = AcceptRequestScreenLabels.NO_VOLUNTEERS_YET,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            } else {
-                                LazyRow(
-                                    horizontalArrangement =
-                                        Arrangement.spacedBy(AcceptRequestScreenConstants.VOLUNTEER_ROW_SPACING),
-                                    modifier =
-                                        Modifier
-                                            .fillMaxWidth()
-                                            .height(AcceptRequestScreenConstants.VOLUNTEER_ROW_HEIGHT)
-                                ) {
-                                    items(volunteers.size) { index ->
-                                        val userId = volunteers[index]
-                                        ProfilePicture(
-                                            profileId = userId,
-                                            withName = true
-                                        )
-                                    }
+                          // Safeguard: exclude creatorId from volunteers list if present
+                          val volunteers = request.people.filterNot { it == request.creatorId }
+                          if (volunteers.isEmpty()) {
+                            Text(
+                                text = AcceptRequestScreenLabels.NO_VOLUNTEERS_YET,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                          } else {
+                            LazyRow(
+                                horizontalArrangement =
+                                    Arrangement.spacedBy(
+                                        AcceptRequestScreenConstants.VOLUNTEER_ROW_SPACING),
+                                modifier =
+                                    Modifier.fillMaxWidth()
+                                        .height(
+                                            AcceptRequestScreenConstants.VOLUNTEER_ROW_HEIGHT)) {
+                                  items(volunteers.size) { index ->
+                                    val userId = volunteers[index]
+                                    ProfilePicture(profileId = userId, withName = true)
+                                  }
                                 }
-                            }
+                          }
                         }
                       }
                 }
