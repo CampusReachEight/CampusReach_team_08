@@ -22,10 +22,7 @@ import kotlinx.coroutines.test.*
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.TestWatcher
-import org.junit.runner.Description
 
 private const val HELPER_1 = "helper1"
 
@@ -105,18 +102,6 @@ class ValidateRequestViewModelTest {
           people = listOf(HELPER_1, ID_HELPER2),
           tags = listOf(Tags.URGENT))
 
-  @get:Rule
-  val mainDispatcherRule =
-      object : TestWatcher() {
-        override fun starting(description: Description) {
-          Dispatchers.setMain(testDispatcher)
-        }
-
-        override fun finished(description: Description) {
-          Dispatchers.resetMain()
-        }
-      }
-
   @Before
   fun setup() {
     // Dispatchers.setMain(testDispatcher)
@@ -133,25 +118,26 @@ class ValidateRequestViewModelTest {
   // ==================== Initialization Tests ====================
 
   @Test
-  fun initLoadsRequestDataSuccessfully() = runTest {
-    // Given
-    coEvery { requestRepository.getRequest(testRequestId) } returns testRequest
-    coEvery { requestRepository.isOwnerOfRequest(testRequest) } returns true
-    coEvery { userProfileRepository.getUserProfile(HELPER_1) } returns testHelper1
-    coEvery { userProfileRepository.getUserProfile(ID_HELPER2) } returns testHelper2
+  fun initLoadsRequestDataSuccessfully() =
+      runTest(testDispatcher) {
+        // Given
+        coEvery { requestRepository.getRequest(testRequestId) } returns testRequest
+        coEvery { requestRepository.isOwnerOfRequest(testRequest) } returns true
+        coEvery { userProfileRepository.getUserProfile(HELPER_1) } returns testHelper1
+        coEvery { userProfileRepository.getUserProfile(ID_HELPER2) } returns testHelper2
 
-    viewModel = ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
+        // When
+        viewModel =
+            ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
 
-    // No need for advanceUntilIdle() with UnconfinedTestDispatcher
-
-    // Then
-    val state = viewModel.state
-    assertTrue(state is ValidationState.Ready)
-    val readyState = state as ValidationState.Ready
-    assertEquals(testRequest, readyState.request)
-    assertEquals(2, readyState.helpers.size)
-    assertTrue(readyState.selectedHelperIds.isEmpty())
-  }
+        // Then
+        val state = viewModel.state
+        assertTrue(state is ValidationState.Ready)
+        val readyState = state as ValidationState.Ready
+        assertEquals(testRequest, readyState.request)
+        assertEquals(2, readyState.helpers.size)
+        assertTrue(readyState.selectedHelperIds.isEmpty())
+      }
 
   @Test
   fun initShowsErrorWhenUserIsNotOwner() = runTest {
