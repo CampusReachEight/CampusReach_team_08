@@ -117,27 +117,25 @@ class ValidateRequestViewModelTest {
   // ==================== Initialization Tests ====================
 
   @Test
-  fun initLoadsRequestDataSuccessfully() =
-      runTest(testDispatcher) {
-        // Given
-        coEvery { requestRepository.getRequest(testRequestId) } returns testRequest
-        coEvery { requestRepository.isOwnerOfRequest(testRequest) } returns true
-        coEvery { userProfileRepository.getUserProfile(HELPER_1) } returns testHelper1
-        coEvery { userProfileRepository.getUserProfile(ID_HELPER2) } returns testHelper2
+  fun initLoadsRequestDataSuccessfully() = runTest {
+    // Given
+    coEvery { requestRepository.getRequest(testRequestId) } returns testRequest
+    coEvery { requestRepository.isOwnerOfRequest(testRequest) } returns true
+    coEvery { userProfileRepository.getUserProfile(HELPER_1) } returns testHelper1
+    coEvery { userProfileRepository.getUserProfile(ID_HELPER2) } returns testHelper2
 
-        // When
-        viewModel =
-            ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
-        advanceUntilIdle() // Add this back with StandardTestDispatcher
+    // When
+    viewModel = ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
+    advanceUntilIdle() // Add this back with StandardTestDispatcher
 
-        // Then
-        val state = viewModel.state
-        assertTrue(state is ValidationState.Ready)
-        val readyState = state as ValidationState.Ready
-        assertEquals(testRequest, readyState.request)
-        assertEquals(2, readyState.helpers.size)
-        assertTrue(readyState.selectedHelperIds.isEmpty())
-      }
+    // Then
+    val state = viewModel.state
+    assertTrue(state is ValidationState.Ready)
+    val readyState = state as ValidationState.Ready
+    assertEquals(testRequest, readyState.request)
+    assertEquals(2, readyState.helpers.size)
+    assertTrue(readyState.selectedHelperIds.isEmpty())
+  }
 
   @Test
   fun initShowsErrorWhenUserIsNotOwner() = runTest {
