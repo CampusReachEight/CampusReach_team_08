@@ -21,7 +21,6 @@ class RequestTest {
   ): Request {
     // Ensure startTimeStamp is sufficiently in the future so dynamic viewStatus remains OPEN during
     // slower test execution
-    val futureStart = currentTime + 300_000 // +5 minutes buffer
     return Request(
         requestId = requestId,
         title = title,
@@ -30,7 +29,7 @@ class RequestTest {
         location = Location(46.5191, 6.5668, "EPFL"),
         locationName = "EPFL",
         status = RequestStatus.OPEN,
-        startTimeStamp = Date(futureStart),
+        startTimeStamp = Date(currentTime),
         expirationTime = Date(oneHourLater),
         people = listOf("user1", "user2"),
         tags = listOf(Tags.URGENT, Tags.INDOOR),
