@@ -58,9 +58,7 @@ private const val UNEXPECTED_ERROR_OCCURED = "unexpected error occurred"
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ValidateRequestViewModelTest {
-
   private val testDispatcher = StandardTestDispatcher()
-
   private lateinit var requestRepository: RequestRepository
   private lateinit var userProfileRepository: UserProfileRepository
   private lateinit var viewModel: ValidateRequestViewModel
@@ -112,6 +110,7 @@ class ValidateRequestViewModelTest {
   @After
   fun tearDown() {
     Dispatchers.resetMain()
+    clearAllMocks()
   }
 
   // ==================== Initialization Tests ====================
@@ -123,10 +122,9 @@ class ValidateRequestViewModelTest {
     coEvery { requestRepository.isOwnerOfRequest(testRequest) } returns true
     coEvery { userProfileRepository.getUserProfile(HELPER_1) } returns testHelper1
     coEvery { userProfileRepository.getUserProfile(ID_HELPER2) } returns testHelper2
-
     // When
     viewModel = ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
-    advanceUntilIdle() // Add this back with StandardTestDispatcher
+    advanceUntilIdle()
 
     // Then
     val state = viewModel.state
