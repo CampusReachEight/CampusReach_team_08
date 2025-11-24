@@ -670,4 +670,70 @@ class RequestRepositoryFirestoreTest : BaseEmulatorTest() {
     val updatedRequest = repository.getRequest(requestWithHelpers.requestId)
     assertEquals(RequestStatus.COMPLETED, updatedRequest.status)
   }
+
+  @Test
+  fun getAllRequests_excludesCompletedRequests() = runTest {
+    val completed = request1.copy(status = RequestStatus.COMPLETED)
+    addRequestTracking(completed)
+
+    val all = repository.getAllRequests()
+    assertFalse(
+        "Completed requests must be filtered out", all.any { it.requestId == completed.requestId })
+  }
+
+  @Test
+  fun getAllRequests_excludesCancelledRequests() = runTest {
+    val cancelled = request1.copy(status = RequestStatus.CANCELLED)
+    addRequestTracking(cancelled)
+
+    val all = repository.getAllRequests()
+    assertFalse(
+        "Cancelled requests must be filtered out", all.any { it.requestId == cancelled.requestId })
+  }
+
+  @Test
+  fun getAllRequests_excludesAutomaticallyCompletedRequests() = runTest {
+    val now = Date()
+    val expiredRequest =
+        generateRequest(
+            "expired-request",
+            "Expired",
+            "Already expired",
+            currentUserId,
+            start = Date(now.time - 10_000),
+            expires = Date(now.time - 1) // EXPIRED
+            )
+    addRequestTracking(expiredRequest)
+
+    val all = repository.getAllRequests()
+    assertFalse(
+        "Expired requests (viewStatus=COMPLETED) must be filtered out",
+        all.any { it.requestId == expiredRequest.requestId })
+  }
+
+  @Test
+  fun getAllRequests_keepsNonCompletedRequests() = runTest {
+    val open = request1.copy(status = RequestStatus.OPEN)
+    val inProgress = request2.copy(status = RequestStatus.IN_PROGRESS)
+    val archived = request3.copy(status = RequestStatus.ARCHIVED)
+
+    addRequestTracking(open)
+    addRequestTracking(inProgress)
+    addRequestTracking(archived)
+
+    val all = repository.getAllRequests().map { it.requestId }.toSet()
+
+    assertTrue(all.contains(open.requestId))
+    assertTrue(all.contains(inProgress.requestId))
+    assertTrue(all.contains(archived.requestId))
+  }
+
+  @Test
+  fun getRequest_stillReturnsCompletedOrCancelledRequests() = runTest {
+    val completed = request1.copy(status = RequestStatus.COMPLETED)
+    addRequestTracking(completed)
+
+    val stored = repository.getRequest(completed.requestId)
+    assertEquals(completed.requestId, stored.requestId)
+  }
 }
