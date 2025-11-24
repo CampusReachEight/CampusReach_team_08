@@ -39,7 +39,10 @@ class RequestRepositoryFirestore(
         .filter { request ->
           // Exclude requests that are completed (either by status or by expiration) or cancelled
           val vs = request.viewStatus
-          vs != RequestStatus.COMPLETED && vs != RequestStatus.CANCELLED
+          val s = request.status
+          vs != RequestStatus.COMPLETED &&
+              vs != RequestStatus.CANCELLED &&
+              s != RequestStatus.COMPLETED
         }
   }
 
