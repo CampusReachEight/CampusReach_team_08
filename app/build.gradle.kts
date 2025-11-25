@@ -9,7 +9,7 @@ plugins {
     alias(libs.plugins.ktfmt)
     alias(libs.plugins.sonar)
     alias(libs.plugins.gms)
-    id("org.jetbrains.kotlin.plugin.serialization") version "2.2.21"
+    id("org.jetbrains.kotlin.plugin.serialization") version "1.9.0"
 }
 android {
     namespace = "com.android.sample"

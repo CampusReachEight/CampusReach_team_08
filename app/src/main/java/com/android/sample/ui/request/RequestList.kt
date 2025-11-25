@@ -12,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -20,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.model.request.Request
+import com.android.sample.model.request.RequestCache
 import com.android.sample.model.request.RequestType
 import com.android.sample.model.request.displayString
 import com.android.sample.ui.navigation.BottomNavigationMenu
@@ -101,7 +103,10 @@ fun RequestListScreen(
     modifier: Modifier = Modifier,
     showOnlyMyRequests: Boolean = false,
     requestListViewModel: RequestListViewModel =
-        viewModel(factory = RequestListViewModelFactory(showOnlyMyRequests = showOnlyMyRequests)),
+        viewModel(factory = RequestListViewModelFactory(
+            showOnlyMyRequests = showOnlyMyRequests,
+            requestCache = RequestCache(LocalContext.current)
+        )),
     navigationActions: NavigationActions? = null,
 ) {
   val searchFilterViewModel: RequestSearchFilterViewModel = viewModel()
@@ -198,16 +203,31 @@ fun RequestList(
     onRequestClick: (Request) -> Unit,
     modifier: Modifier = Modifier
 ) {
-  LazyColumn(
-      modifier =
-          modifier
-              .padding(ConstantRequestList.ListPadding)
-              .testTag(RequestListTestTags.REQUEST_LIST)) {
-        items(state.requests.size) { index ->
-          val request = state.requests[index]
-          RequestListItem(viewModel = viewModel, request = request, onClick = onRequestClick)
+    Column {
+        if (state.offlineMode) {
+            Text(
+                text = "You are in offline mode. Displaying cached requests.",
+                color = appPalette().error,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                textAlign = TextAlign.Center
+            )
         }
-      }
+        LazyColumn(
+            modifier =
+                modifier
+                    .padding(ConstantRequestList.ListPadding)
+                    .testTag(RequestListTestTags.REQUEST_LIST)
+        ) {
+            items(state.requests.size) { index ->
+                val request = state.requests[index]
+                RequestListItem(viewModel = viewModel, request = request, onClick = onRequestClick)
+            }
+        }
+    }
 }
 
 private const val WEIGHT = 1f
