@@ -138,4 +138,33 @@ object ConstantMap {
 
   const val EARTH_RADIUS = 6371000.0
   const val TWO = 2
+
+  // ======================
+  // Map filter
+  // ======================
+
+  // Card elevation
+  val CARD_DEFAULT_ELEVATION = 4.dp
+
+  // Padding values
+  val CARD_HORIZONTAL_PADDING = 16.dp
+  val CARD_VERTICAL_PADDING = 8.dp
+  val PANEL_HORIZONTAL_PADDING = 16.dp
+  val PANEL_INTERNAL_PADDING = 16.dp
+  val ROW_VERTICAL_PADDING = 8.dp
+
+  // Spacing
+  val BUTTON_SPACING = 8.dp
+  val SPACER_HEIGHT = 8.dp
+  val RADIO_BUTTON_SPACING = 8.dp
+
+  // Component heights
+  val FILTER_BUTTON_HEIGHT = 40.dp
+
+  // Surface elevation
+  val SURFACE_TONAL_ELEVATION = 2.dp
+  val SURFACE_SHADOW_ELEVATION = 2.dp
+
+  // Keys
+  const val OWNERSHIP_KEY = "ownership"
 }

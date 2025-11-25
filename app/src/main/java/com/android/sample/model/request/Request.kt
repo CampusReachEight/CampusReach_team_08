@@ -218,6 +218,25 @@ enum class Tags {
   }
 }
 
+enum class RequestOwnership {
+  ALL,
+  OWN,
+  OTHER,
+  ACCEPTED,
+  NOT_ACCEPTED,
+  NOT_ACCEPTED_BY_ME;
+
+  fun displayString(): String =
+      when (this) {
+        ALL -> "All Requests"
+        OWN -> "My Requests"
+        OTHER -> "Other Requests"
+        ACCEPTED -> "Accepted by Me"
+        NOT_ACCEPTED -> "Nobody Accepted"
+        NOT_ACCEPTED_BY_ME -> "Not Accepted by Me"
+      }
+}
+
 fun RequestStatus.displayString(): String =
     name.replace("_", " ").lowercase(Locale.ROOT).replaceFirstChar {
       if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString()
