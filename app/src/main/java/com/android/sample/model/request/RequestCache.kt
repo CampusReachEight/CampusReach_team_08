@@ -57,6 +57,28 @@ class RequestCache(private val context: Context) {
         } ?: emptyList()
   }
 
+  /**
+   * Retrieves a specific request from the cache by its ID.
+   *
+   * @param requestId The ID of the request to retrieve.
+   * @return The cached Request object.
+   * @throws IllegalArgumentException if no request with the given ID exists in the cache.
+   */
+  fun getRequestById(requestId: String): Request {
+    val file = File(cacheDir, "$requestId.json")
+
+    if (!file.exists()) {
+      throw IllegalArgumentException("Request with ID $requestId not found in cache")
+    }
+
+    return try {
+      val requestJson = file.readText()
+      json.decodeFromString(Request.serializer(), requestJson)
+    } catch (e: Exception) {
+      throw IllegalArgumentException("Failed to load request with ID $requestId from cache", e)
+    }
+  }
+
   fun clearAll() {
     if (cacheDir.exists()) {
       cacheDir.listFiles()?.forEach { it.delete() }
