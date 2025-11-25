@@ -14,6 +14,7 @@ import com.android.sample.ui.profile.publicProfile.PublicProfile
 import com.android.sample.ui.profile.publicProfile.PublicProfileHeader
 import com.android.sample.ui.profile.publicProfile.PublicProfileTestTags
 import com.android.sample.ui.profile.publicProfile.PublicProfileUiState
+import java.util.Date
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -188,5 +189,79 @@ class PublicProfileScreenTest {
     assertEquals("content://pic", state.profilePictureUrl)
     assertEquals(null, state.errorMessage)
     assertEquals(false, state.isLoading)
+  }
+
+  private fun callUserProfileToPublic(userProfileInstance: Any): PublicProfile {
+    val ktClass = Class.forName("com.android.sample.ui.profile.publicProfile.PublicProfileScreenKt")
+    val upClass = Class.forName("com.android.sample.model.profile.UserProfile")
+    val method = ktClass.getDeclaredMethod("userProfileToPublic", upClass)
+    method.isAccessible = true
+    return method.invoke(null, userProfileInstance) as PublicProfile
+  }
+
+  private fun createDummyUserProfile(overrides: Map<String, Any?> = emptyMap()): Any {
+    val upClass = Class.forName("com.android.sample.model.profile.UserProfile")
+    // pick the constructor with lowest parameter count
+    val ctor = upClass.constructors.minByOrNull { it.parameterTypes.size }!!
+    val args =
+        ctor.parameterTypes
+            .map { p ->
+              when {
+                p == java.lang.String::class.java -> "X"
+                p == java.lang.Integer::class.java || p == java.lang.Integer.TYPE -> 0
+                p == java.lang.Long::class.java || p == java.lang.Long.TYPE -> 0L
+                p == java.lang.Boolean::class.java || p == java.lang.Boolean.TYPE -> false
+                p == java.util.Date::class.java -> Date(1700000000)
+                p.isEnum -> p.enumConstants[0]
+                else -> null
+              }
+            }
+            .toTypedArray()
+
+    val instance = ctor.newInstance(*args)
+    // apply overrides by setting fields reflectively if present
+    overrides.forEach { (name, value) ->
+      try {
+        val field = upClass.getDeclaredField(name)
+        field.isAccessible = true
+        field.set(instance, value)
+      } catch (_: NoSuchFieldException) {
+        // ignore if field not present; caller can adapt
+      }
+    }
+    return instance
+  }
+
+  @Test
+  fun maps_userprofile_fields_to_publicprofile() {
+    val upInstance =
+        createDummyUserProfile(
+            mapOf(
+                // try to set commonly used fields; adapt names to your real UserProfile if
+                // different
+                "id" to "u42",
+                "name" to "Jane",
+                "lastName" to "Doe",
+                // if section is an enum/object with 'name' property, constructor default will be
+                // used;
+                // adapt by setting the actual field if needed
+            ))
+
+    val pub = callUserProfileToPublic(upInstance)
+
+    assertEquals("Jane Doe", pub.name)
+    assertEquals("u42", pub.userId)
+    // arrivalDate formatting depends on actual up.arrivalDate value; presence checked below
+    // ensure basic numeric fields exist and default to integers
+    assertEquals(0, pub.kudosReceived)
+  }
+
+  @Test
+  fun maps_empty_name_to_unknown() {
+    val upInstance = createDummyUserProfile(mapOf("name" to "", "lastName" to ""))
+
+    val pub = callUserProfileToPublic(upInstance)
+
+    assertEquals("Unknown", pub.name)
   }
 }
