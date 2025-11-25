@@ -5,6 +5,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -40,6 +41,12 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
   private lateinit var request2: Request
   private lateinit var request3: Request
 
+  companion object {
+    const val request1_id = "request1"
+    const val request2_id = "request2"
+    const val request3_id = "request3"
+  }
+
   private fun signIn(email: String = DEFAULT_USER_EMAIL, password: String = DEFAULT_USER_PASSWORD) {
     previousUserId = currentUserId
 
@@ -66,7 +73,7 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
 
       request1 =
           Request(
-              "request1",
+              request1_id,
               "Here is a good title",
               "In here we will do a lot of things, like beeing good persons",
               listOf(RequestType.STUDYING, RequestType.STUDY_GROUP, RequestType.SPORT),
@@ -140,7 +147,7 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
 
   @Test
   fun screenComponentsAreDisplayed() {
-    composeTestRule.setContent { AcceptRequestScreen("request1") }
+    composeTestRule.setContent { AcceptRequestScreen(request1_id) }
 
     composeTestRule.waitUntil(uiWaitTimeout) {
       composeTestRule
@@ -163,13 +170,18 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
         .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_DETAILS_CARD)
         .assertIsDisplayed()
 
-    // Accept button
+    // Action button visible
     composeTestRule.onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON).assertIsDisplayed()
+
+    // As non-owner, Volunteers section header should not exist
+    composeTestRule
+        .onAllNodesWithTag(AcceptRequestScreenTestTags.VOLUNTEERS_SECTION_HEADER)
+        .assertCountEquals(0)
   }
 
   @Test
   fun detailsCardDisplaysAllInformation() {
-    composeTestRule.setContent { AcceptRequestScreen("request1") }
+    composeTestRule.setContent { AcceptRequestScreen(request1_id) }
 
     composeTestRule.waitUntil(uiWaitTimeout) {
       composeTestRule
@@ -208,7 +220,7 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_STATUS)
         .assertIsDisplayed()
-        .assertTextContains("Open", substring = true, ignoreCase = true)
+        .assertTextContains("Completed", substring = true, ignoreCase = true)
 
     // Location
     composeTestRule
@@ -231,7 +243,7 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
 
   @Test
   fun topBarDisplaysCorrectTitle() {
-    composeTestRule.setContent { AcceptRequestScreen("request1") }
+    composeTestRule.setContent { AcceptRequestScreen(request1_id) }
 
     composeTestRule.waitUntil(uiWaitTimeout) {
       composeTestRule
@@ -248,7 +260,7 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
 
   @Test
   fun acceptButtonDisplaysCorrectText() {
-    composeTestRule.setContent { AcceptRequestScreen("request1") }
+    composeTestRule.setContent { AcceptRequestScreen(request1_id) }
 
     composeTestRule.waitUntil(uiWaitTimeout) {
       composeTestRule
@@ -265,7 +277,7 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
 
   @Test
   fun acceptAndCancelRequestFlow() {
-    composeTestRule.setContent { AcceptRequestScreen("request1") }
+    composeTestRule.setContent { AcceptRequestScreen(request1_id) }
 
     composeTestRule.waitUntil(uiWaitTimeout) {
       composeTestRule
@@ -363,32 +375,27 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
   }
 
   @Test
-  fun cantAcceptOwnRequest() {
+  fun cantAcceptOwnRequest_showsEditButton() {
+    // request2 is owned by the currently signed-in user (SECOND_USER_EMAIL)
     composeTestRule.setContent { AcceptRequestScreen("request2") }
 
     composeTestRule.waitUntil(uiWaitTimeout) {
       composeTestRule
           .onAllNodesWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)
           .fetchSemanticsNodes()
-          .any { node ->
-            val text =
-                node.config.getOrNull(SemanticsProperties.Text)?.joinToString("") { it.text } ?: ""
-            text.contains("Accept Request", ignoreCase = true)
-          }
+          .isNotEmpty()
     }
 
+    // Owner sees "Edit Request" instead of Accept
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)
-        .assertTextContains("Accept Request", substring = true, ignoreCase = true)
+        .assertTextContains("Edit Request", substring = true, ignoreCase = true)
         .performClick()
 
-    composeTestRule.mainClock.advanceTimeBy(1000)
-    composeTestRule.waitForIdle()
-
-    // Button should still say "Accept Request" because the action failed
+    // onEditClick is a no-op in this test; label remains "Edit Request"
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)
-        .assertTextContains("Accept Request", substring = true, ignoreCase = true)
+        .assertTextContains("Edit Request", substring = true, ignoreCase = true)
   }
 
   @Test
@@ -426,7 +433,7 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
   fun backButtonNavigatesBack() {
     var backButtonClicked = false
     composeTestRule.setContent {
-      AcceptRequestScreen("request1", onGoBack = { backButtonClicked = true })
+      AcceptRequestScreen(request1_id, onGoBack = { backButtonClicked = true })
     }
 
     composeTestRule.waitUntil(uiWaitTimeout) {
@@ -443,7 +450,7 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
 
   @Test
   fun buttonShowsLoadingState() {
-    composeTestRule.setContent { AcceptRequestScreen("request1") }
+    composeTestRule.setContent { AcceptRequestScreen(request1_id) }
 
     composeTestRule.waitUntil(uiWaitTimeout) {
       composeTestRule
@@ -493,7 +500,7 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
 
   @Test
   fun multipleRequestTypesDisplayCorrectly() {
-    composeTestRule.setContent { AcceptRequestScreen("request1") }
+    composeTestRule.setContent { AcceptRequestScreen(request1_id) }
 
     composeTestRule.waitUntil(uiWaitTimeout) {
       composeTestRule
@@ -524,6 +531,33 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
         .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_STATUS)
         .assertIsDisplayed()
         .assertTextContains("Archived", substring = true, ignoreCase = true)
+  }
+
+  // New integration test: Volunteers visible and expandable only for owner
+  @Test
+  fun volunteersSection_visibleForOwner_and_expands() {
+    // Sign in as the owner of request1
+    runTest { signInUser(DEFAULT_USER_EMAIL, DEFAULT_USER_PASSWORD) }
+
+    composeTestRule.setContent { AcceptRequestScreen(request1_id) }
+
+    composeTestRule.waitUntil(uiWaitTimeout) {
+      composeTestRule
+          .onAllNodesWithTag(AcceptRequestScreenTestTags.VOLUNTEERS_SECTION_HEADER)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Header visible for owner
+    composeTestRule
+        .onNodeWithTag(AcceptRequestScreenTestTags.VOLUNTEERS_SECTION_HEADER)
+        .assertIsDisplayed()
+        .performClick()
+
+    // request1 has empty people list -> should show "No volunteers yet"
+    composeTestRule
+        .onNodeWithTag(AcceptRequestScreenTestTags.VOLUNTEERS_SECTION_CONTAINER)
+        .assertIsDisplayed()
   }
 
   // Tests for getInitials function (via CreatorSection composable)

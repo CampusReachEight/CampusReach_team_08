@@ -54,6 +54,9 @@ object AcceptRequestScreenConstants {
 
   // Weights
   const val TEXT_COLUMN_WEIGHT = 1f
+
+  val VOLUNTEER_ROW_HEIGHT = 65.dp
+  val VOLUNTEER_ROW_SPACING = 15.dp
 }
 
 // Avatar text
