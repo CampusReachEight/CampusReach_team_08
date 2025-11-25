@@ -9,6 +9,7 @@ plugins {
     alias(libs.plugins.ktfmt)
     alias(libs.plugins.sonar)
     alias(libs.plugins.gms)
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.2.21"
 }
 android {
     namespace = "com.android.sample"
@@ -222,6 +223,9 @@ dependencies {
     androidTestImplementation(libs.mockito.kotlin)
     androidTestImplementation(libs.mockito.android)
     testImplementation(kotlin("test"))
+
+    // Serialization
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
 }
 tasks.withType<Test> {
     configure<JacocoTaskExtension> {
