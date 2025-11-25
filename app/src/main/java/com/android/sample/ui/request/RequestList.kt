@@ -32,8 +32,8 @@ import com.android.sample.ui.request.ConstantRequestList.TypeChipBorderWidth
 import com.android.sample.ui.request.ConstantRequestList.TypeChipColumnSpacing
 import com.android.sample.ui.request.ConstantRequestList.TypeChipTextPadding
 import com.android.sample.ui.theme.TopNavigationBar
-import com.google.firebase.auth.FirebaseAuth
 import com.android.sample.ui.theme.appPalette
+import com.google.firebase.auth.FirebaseAuth
 
 // removed local magic number vals; use ConstantRequestList instead
 
