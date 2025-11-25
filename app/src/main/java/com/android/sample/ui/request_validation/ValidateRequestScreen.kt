@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -42,20 +43,14 @@ import com.android.sample.ui.request_validation.ValidateRequestConstants.SCREEN_
 fun ValidateRequestScreen(
     state: ValidationState,
     userProfileRepository: UserProfileRepository,
-    onToggleHelper: (String) -> Unit,
-    onShowConfirmation: () -> Unit,
-    onCancelConfirmation: () -> Unit,
-    onConfirmAndClose: () -> Unit,
-    onRetry: () -> Unit,
-    onRequestClosed: () -> Unit,
-    onNavigateBack: () -> Unit,
+    callbacks: ValidateRequestCallbacks,
     modifier: Modifier = Modifier
 ) {
 
   // Handle success navigation
   LaunchedEffect(state) {
     if (state is ValidationState.Success) {
-      onRequestClosed()
+      callbacks.onRequestClosed()
     }
   }
 
@@ -63,7 +58,8 @@ fun ValidateRequestScreen(
       modifier = modifier.fillMaxSize(),
       topBar = {
         ValidateRequestTopBar(
-            onNavigateBack = onNavigateBack, canNavigateBack = state !is ValidationState.Processing)
+            onNavigateBack = callbacks.onNavigateBack,
+            canNavigateBack = state !is ValidationState.Processing)
       }) { paddingValues ->
         Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
           when (state) {
@@ -76,8 +72,8 @@ fun ValidateRequestScreen(
                   helpers = state.helpers,
                   selectedHelperIds = state.selectedHelperIds,
                   userProfileRepository = userProfileRepository,
-                  onToggleHelper = onToggleHelper,
-                  onValidate = onShowConfirmation)
+                  onToggleHelper = callbacks.onToggleHelper,
+                  onValidate = callbacks.onShowConfirmation)
             }
             is ValidationState.Confirming -> {
               // Keep ready content visible in background (for context)
@@ -86,9 +82,8 @@ fun ValidateRequestScreen(
               ConfirmationDialog(
                   selectedHelpers = state.selectedHelpers,
                   kudosToAward = state.kudosToAward,
-                  creatorBonus = state.creatorBonus,
-                  onConfirm = onConfirmAndClose,
-                  onDismiss = onCancelConfirmation)
+                  onConfirm = callbacks.onConfirmAndClose,
+                  onDismiss = callbacks.onCancelConfirmation)
             }
             is ValidationState.Processing -> {
               ProcessingContent()
@@ -97,8 +92,8 @@ fun ValidateRequestScreen(
               ErrorContent(
                   message = state.message,
                   canRetry = state.canRetry,
-                  onRetry = onRetry,
-                  onBack = onNavigateBack)
+                  onRetry = callbacks.onRetry,
+                  onBack = callbacks.onNavigateBack)
             }
             is ValidationState.Success -> {
               // This should trigger navigation via LaunchedEffect
@@ -129,7 +124,7 @@ private fun ValidateRequestTopBar(
               onClick = onNavigateBack,
               modifier = Modifier.testTag(ValidateRequestConstants.TAG_BACK_BUTTON)) {
                 Icon(
-                    imageVector = Icons.Default.ArrowBack,
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = ValidateRequestConstants.CD_GO_BACK)
               }
         }
@@ -198,7 +193,7 @@ private fun ReadyContent(
                   isSelected = helper.id in selectedHelperIds,
                   userProfileRepository = userProfileRepository,
                   onClick = { onToggleHelper(helper.id) },
-                  modifier = Modifier.animateItemPlacement())
+                  modifier = Modifier.animateItem())
             }
           }
 
@@ -424,10 +419,6 @@ private fun HelperCard(
 @Composable
 private fun KudosSummary(selectedCount: Int, modifier: Modifier = Modifier) {
   val totalKudos = selectedCount * KudosConstants.KUDOS_PER_HELPER
-  val creatorBonus =
-      if (selectedCount > ValidateRequestConstants.VALUE_ZERO)
-          KudosConstants.KUDOS_FOR_CREATOR_RESOLUTION
-      else ValidateRequestConstants.VALUE_ZERO
 
   AnimatedVisibility(
       visible = selectedCount > ValidateRequestConstants.VALUE_ZERO,
@@ -455,13 +446,6 @@ private fun KudosSummary(selectedCount: Int, modifier: Modifier = Modifier) {
                           color =
                               MaterialTheme.colorScheme.onSecondaryContainer.copy(
                                   alpha = ValidateRequestConstants.ALPHA_SECONDARY_TEXT))
-                      if (creatorBonus > 0) {
-                        Text(
-                            text = ValidateRequestConstants.getSummaryCreatorBonus(creatorBonus),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Medium)
-                      }
                     }
 
                     Row(
@@ -490,7 +474,6 @@ private fun KudosSummary(selectedCount: Int, modifier: Modifier = Modifier) {
 private fun ConfirmationDialog(
     selectedHelpers: List<UserProfile>,
     kudosToAward: Int,
-    creatorBonus: Int,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
@@ -552,14 +535,6 @@ private fun ConfirmationDialog(
                           fontWeight = FontWeight.Bold,
                           color = MaterialTheme.colorScheme.primary)
                     }
-
-                if (creatorBonus > 0) {
-                  Text(
-                      text = ValidateRequestConstants.getConfirmHelperBonus(creatorBonus),
-                      style = MaterialTheme.typography.bodySmall,
-                      color = MaterialTheme.colorScheme.tertiary,
-                      fontWeight = FontWeight.Medium)
-                }
               }
 
               Text(

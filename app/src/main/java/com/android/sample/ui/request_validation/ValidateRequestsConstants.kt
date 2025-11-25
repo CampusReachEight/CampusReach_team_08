@@ -71,7 +71,7 @@ object ValidateRequestConstants {
   fun getSummaryHelperCount(count: Int) =
       "$count helper${if (count != 1) "s" else ""}$SYMBOL_MULTIPLY${KudosConstants.KUDOS_PER_HELPER} kudos"
 
-  fun getSummaryCreatorBonus(kudos: Int) = "You will receive ${SYMBOL_PLUS}$kudos kudos"
+  // fun getSummaryCreatorBonus(kudos: Int) = "You will receive ${SYMBOL_PLUS}$kudos kudos"
 
   // Profile display
   const val KUDOS_SUFFIX = " kudos"

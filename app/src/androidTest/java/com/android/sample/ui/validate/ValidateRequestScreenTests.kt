@@ -511,13 +511,15 @@ class ValidateRequestScreenTest {
       ValidateRequestScreen(
           state = state,
           userProfileRepository = fakeUserProfileRepository,
-          onToggleHelper = { callbackTracker.onToggleHelper(it) },
-          onShowConfirmation = { callbackTracker.onShowConfirmation() },
-          onCancelConfirmation = { callbackTracker.onCancelConfirmation() },
-          onConfirmAndClose = { callbackTracker.onConfirmAndClose() },
-          onRetry = { callbackTracker.onRetry() },
-          onRequestClosed = { callbackTracker.onRequestClosed() },
-          onNavigateBack = { callbackTracker.onNavigateBack() })
+          callbacks =
+              ValidateRequestCallbacks(
+                  onToggleHelper = { callbackTracker.onToggleHelper(it) },
+                  onShowConfirmation = { callbackTracker.onShowConfirmation() },
+                  onCancelConfirmation = { callbackTracker.onCancelConfirmation() },
+                  onConfirmAndClose = { callbackTracker.onConfirmAndClose() },
+                  onRetry = { callbackTracker.onRetry() },
+                  onRequestClosed = { callbackTracker.onRequestClosed() },
+                  onNavigateBack = { callbackTracker.onNavigateBack() }))
     }
   }
 }
@@ -785,19 +787,10 @@ private object TestDataFactory {
       request: Request = createTestRequest(),
       selectedHelpers: List<UserProfile> =
           createTestHelpers().take(TestSizes.SELECTED_HELPERS_COUNT),
-      kudosToAward: Int = selectedHelpers.size * KudosConstants.KUDOS_PER_HELPER,
-      creatorBonus: Int =
-          if (selectedHelpers.isNotEmpty()) {
-            KudosConstants.KUDOS_FOR_CREATOR_RESOLUTION
-          } else {
-            0
-          }
+      kudosToAward: Int = selectedHelpers.size * KudosConstants.KUDOS_PER_HELPER
   ): ValidationState.Confirming {
     return ValidationState.Confirming(
-        request = request,
-        selectedHelpers = selectedHelpers,
-        kudosToAward = kudosToAward,
-        creatorBonus = creatorBonus)
+        request = request, selectedHelpers = selectedHelpers, kudosToAward = kudosToAward)
   }
 
   fun createErrorState(
