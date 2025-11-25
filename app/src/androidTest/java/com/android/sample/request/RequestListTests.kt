@@ -61,6 +61,9 @@ class RequestListTests : BaseEmulatorTest() {
     const val LONG_SLEEP_MS = 10_000L
     const val COUNT_ZERO = 0
     const val COUNT_ONE = 1
+
+    // This is the kicker aka the magic sauce
+    const val COUNT_TWO = 2
     const val COUNT_THREE = 3
     const val DEFAULT_USER_ID = "test_current_user_id"
 
@@ -184,7 +187,8 @@ class RequestListTests : BaseEmulatorTest() {
           locationName = "LocName",
           status = RequestStatus.OPEN,
           startTimeStamp = Date(now + ONE_HOUR_MS), // 1 hour from now
-          expirationTime = Date(now + 2 * ONE_HOUR_MS), // 2 hours from now
+          // 2 hours from now BUT with a constants made from TWO constants ;)
+          expirationTime = Date(now + COUNT_TWO * ONE_HOUR_MS),
           people = emptyList(),
           tags = listOf(Tags.INDOOR),
           creatorId = creator)

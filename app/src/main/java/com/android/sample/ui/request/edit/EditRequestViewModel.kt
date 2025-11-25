@@ -145,10 +145,10 @@ class EditRequestViewModel(
   }
 
   /** Initialize for create mode */
-  fun initializeForCreate(creatorId: String) {
+  fun initializeForCreate() {
     _uiState.value = EditRequestUiState(isEditMode = false)
     _currentRequest.value = null
-    _people.value = listOf(creatorId)
+    _people.value = listOf()
   }
 
   /**
@@ -293,7 +293,7 @@ class EditRequestViewModel(
                 status = _currentRequest.value?.status ?: RequestStatus.IN_PROGRESS,
                 startTimeStamp = state.startTimeStamp,
                 expirationTime = state.expirationTime,
-                people = _people.value.ifEmpty { listOf() }, // Removed creator from volunteers
+                people = _people.value,
                 tags = state.tags,
                 creatorId = _currentRequest.value?.creatorId ?: creatorId)
 
