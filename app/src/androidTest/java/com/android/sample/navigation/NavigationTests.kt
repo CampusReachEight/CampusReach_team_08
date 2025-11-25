@@ -391,4 +391,17 @@ class NavigationTests : BaseEmulatorTest() {
     composeTestRule.waitForIdle()
     composeTestRule.onNodeWithTag(NavigationTestTags.REQUESTS_SCREEN).assertIsDisplayed()
   }
+
+  @Test
+  fun navigateToPublicProfileScreenFromRequestsTab() {
+    // Start at Requests screen
+    composeTestRule.onNodeWithTag(NavigationTestTags.REQUESTS_SCREEN).assertIsDisplayed()
+
+    // Navigate programmatically to the public profile screen
+    composeTestRule.runOnIdle { navigationActions.navigateTo(Screen.PublicProfile("user123")) }
+    composeTestRule.waitForIdle()
+
+    // Verify Public Profile screen is displayed
+    composeTestRule.onNodeWithTag(NavigationTestTags.PUBLIC_PROFILE_SCREEN).assertIsDisplayed()
+  }
 }

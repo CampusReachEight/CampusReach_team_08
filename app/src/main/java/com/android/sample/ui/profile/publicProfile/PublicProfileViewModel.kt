@@ -18,34 +18,33 @@ data class PublicProfileUiState(
     val errorMessage: String? = null
 )
 
-class PublicProfileViewModel (
+class PublicProfileViewModel(
     private val repository: UserProfileRepository =
         UserProfileRepositoryFirestore(FirebaseFirestore.getInstance())
-    ) : ViewModel() {
+) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(PublicProfileUiState())
-    val uiState: StateFlow<PublicProfileUiState> = _uiState.asStateFlow()
+  private val _uiState = MutableStateFlow(PublicProfileUiState())
+  val uiState: StateFlow<PublicProfileUiState> = _uiState.asStateFlow()
 
-    fun loadPublicProfile(profileId: String) {
-        // Implementation to load public profile from repository
-        // and update _uiState accordingly
-        viewModelScope.launch {
-            _uiState.value = PublicProfileUiState(isLoading = true, errorMessage = null)
-            try {
-                val up = withContext(Dispatchers.IO) { repository
-                    .getUserProfile(profileId) }
-                val public = userProfileToPublic(up)
-                _uiState.value = _uiState.value.copy(isLoading = false,
-                    profile = public,
-                    errorMessage = null)
-            } catch (e: Exception) {
-                _uiState.value =
-                    _uiState.value.copy(isLoading = false,
-                        profile = null,
-                        errorMessage = e.message ?: "Failed to load profile")
-            }
-        }
+  fun loadPublicProfile(profileId: String) {
+    // Implementation to load public profile from repository
+    // and update _uiState accordingly
+    viewModelScope.launch {
+      _uiState.value = PublicProfileUiState(isLoading = true, errorMessage = null)
+      try {
+        val up = withContext(Dispatchers.IO) { repository.getUserProfile(profileId) }
+        val public = userProfileToPublic(up)
+        _uiState.value =
+            _uiState.value.copy(isLoading = false, profile = public, errorMessage = null)
+      } catch (e: Exception) {
+        _uiState.value =
+            _uiState.value.copy(
+                isLoading = false,
+                profile = null,
+                errorMessage = e.message ?: "Failed to load profile")
+      }
     }
+  }
 
-    fun refresh(profileId: String) = loadPublicProfile(profileId)
+  fun refresh(profileId: String) = loadPublicProfile(profileId)
 }

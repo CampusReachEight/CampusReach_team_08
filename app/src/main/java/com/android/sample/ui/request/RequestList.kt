@@ -183,14 +183,13 @@ fun RequestListScreen(
                 },
                 modifier = Modifier.fillMaxSize(),
                 viewModel = requestListViewModel,
-                onProfileClick = {id ->
+                onProfileClick = { id ->
                   if (id != currentUserId) {
                     navigationActions?.navigateTo(Screen.PublicProfile(id))
                   } else {
                     navigationActions?.navigateTo(Screen.Profile(id))
                   }
-                }
-                )
+                })
           }
         }
       }
@@ -216,8 +215,7 @@ fun RequestList(
               viewModel = viewModel,
               request = request,
               onClick = onRequestClick,
-              onProfileClick = onProfileClick
-          )
+              onProfileClick = onProfileClick)
         }
       }
 }
@@ -247,7 +245,7 @@ fun RequestListItem(
       ProfilePicture(
           profileRepository = viewModel.profileRepository,
           profileId = request.creatorId,
-          onClick = {onProfileClick(request.creatorId)},
+          onClick = { onProfileClick(request.creatorId) },
           modifier =
               Modifier.size(ConstantRequestList.RequestItemCreatorSectionSize)
                   .align(Alignment.CenterVertically),

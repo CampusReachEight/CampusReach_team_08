@@ -55,44 +55,39 @@ fun PublicProfileScreen(
     viewModel: PublicProfileViewModel = viewModel(),
     onBackClick: () -> Unit = {}
 ) {
-    val state by viewModel.uiState.collectAsState()
-    val isFollowing = remember { mutableStateOf(false) }
-    val shownState = mapPublicToProfileState(
-        publicProfile = state.profile,
-        error = state.errorMessage,
-        isLoading = state.isLoading
-    )
+  val state by viewModel.uiState.collectAsState()
+  val isFollowing = remember { mutableStateOf(false) }
+  val shownState =
+      mapPublicToProfileState(
+          publicProfile = state.profile, error = state.errorMessage, isLoading = state.isLoading)
 
-    Scaffold(
-        modifier = Modifier.testTag(NavigationTestTags.PUBLIC_PROFILE_SCREEN),
-        containerColor = appPalette().primary,
-        topBar = { ProfileTopBar(onBackClick) }) { padding ->
-        Box(modifier = Modifier
-            .fillMaxSize()
-            .padding(padding)) {
-            when {
-                state.isLoading -> ProfileLoadingBuffer(Modifier.fillMaxSize())
-                else ->
-                    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                        state.errorMessage?.let {
-                            ErrorBanner(it)
-                            Spacer(modifier = Modifier.height(ProfileDimens.Vertical))
-                        }
+  Scaffold(
+      modifier = Modifier.testTag(NavigationTestTags.PUBLIC_PROFILE_SCREEN),
+      containerColor = appPalette().primary,
+      topBar = { ProfileTopBar(onBackClick) }) { padding ->
+        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+          when {
+            state.isLoading -> ProfileLoadingBuffer(Modifier.fillMaxSize())
+            else ->
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                  state.errorMessage?.let {
+                    ErrorBanner(it)
+                    Spacer(modifier = Modifier.height(ProfileDimens.Vertical))
+                  }
 
-                        PublicProfileHeader(
-                            state = state,
-                            isFollowing = isFollowing.value,
-                            onFollowToggle = { isFollowing.value = !isFollowing.value }
-                        )
-                        Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
-                        ProfileStats(state = shownState)
-                        Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
-                        ProfileInformation(state = shownState)
-                        Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
-                    }
-            }
+                  PublicProfileHeader(
+                      state = state,
+                      isFollowing = isFollowing.value,
+                      onFollowToggle = { isFollowing.value = !isFollowing.value })
+                  Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
+                  ProfileStats(state = shownState)
+                  Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
+                  ProfileInformation(state = shownState)
+                  Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
+                }
+          }
         }
-    }
+      }
 }
 
 /**
@@ -124,129 +119,115 @@ private fun mapPublicToProfileState(
     error: String?,
     isLoading: Boolean
 ): ProfileState {
-    // Use ProfileState.default() when available to avoid missing fields; otherwise construct explicitly.
-    return if (isLoading) {
-        ProfileState.default()
+  // Use ProfileState.default() when available to avoid missing fields; otherwise construct
+  // explicitly.
+  return if (isLoading) {
+    ProfileState.default()
+  } else {
+    if (publicProfile == null) {
+      // minimal empty state with error shown
+      ProfileState(
+          userName = "Unknown",
+          userEmail = "",
+          profileId = "",
+          kudosReceived = 0,
+          helpReceived = 0,
+          followers = 0,
+          following = 0,
+          arrivalDate = "",
+          userSection = "",
+          isLoading = false,
+          errorMessage = error,
+          isEditMode = false,
+          profilePictureUrl = null,
+          isLoggingOut = false)
     } else {
-        if (publicProfile == null) {
-            // minimal empty state with error shown
-            ProfileState(
-                userName = "Unknown",
-                userEmail = "",
-                profileId = "",
-                kudosReceived = 0,
-                helpReceived = 0,
-                followers = 0,
-                following = 0,
-                arrivalDate = "",
-                userSection = "",
-                isLoading = false,
-                errorMessage = error,
-                isEditMode = false,
-                profilePictureUrl = null,
-                isLoggingOut = false
-            )
-        } else {
-            ProfileState(
-                userName = publicProfile.name,
-                userEmail = "",
-                profileId = publicProfile.userId,
-                kudosReceived = publicProfile.kudosReceived,
-                helpReceived = publicProfile.helpReceived,
-                followers = publicProfile.followers,
-                following = publicProfile.following,
-                arrivalDate = publicProfile.arrivalDate ?: "",
-                userSection = publicProfile.section,
-                isLoading = false,
-                errorMessage = error,
-                isEditMode = false,
-                profilePictureUrl = publicProfile.pictureUriString,
-                isLoggingOut = false
-            )
-        }
+      ProfileState(
+          userName = publicProfile.name,
+          userEmail = "",
+          profileId = publicProfile.userId,
+          kudosReceived = publicProfile.kudosReceived,
+          helpReceived = publicProfile.helpReceived,
+          followers = publicProfile.followers,
+          following = publicProfile.following,
+          arrivalDate = publicProfile.arrivalDate ?: "",
+          userSection = publicProfile.section,
+          isLoading = false,
+          errorMessage = error,
+          isEditMode = false,
+          profilePictureUrl = publicProfile.pictureUriString,
+          isLoggingOut = false)
     }
+  }
 }
 
-
-//Placeholder FollowButton composable
+// Placeholder FollowButton composable
 @Composable
-fun FollowButton(
-    isFollowing: Boolean,
-    onToggle:() -> Unit,
-    modifier: Modifier = Modifier
-) {
-    ElevatedButton(
-        onClick = onToggle,
-        modifier = modifier
-            .size(width = UiDimens.IconMedium * 3, height = UiDimens.IconMedium)
-    ) {
+fun FollowButton(isFollowing: Boolean, onToggle: () -> Unit, modifier: Modifier = Modifier) {
+  ElevatedButton(
+      onClick = onToggle,
+      modifier = modifier.size(width = UiDimens.IconMedium * 3, height = UiDimens.IconMedium)) {
         if (isFollowing) {
-            Text(text = "Unfollow")
+          Text(text = "Unfollow")
         } else {
-            Text(text = "Follow")
+          Text(text = "Follow")
         }
-    }
+      }
 }
 
 @Composable
-fun PublicProfileHeader (
+fun PublicProfileHeader(
     state: PublicProfileUiState,
     modifier: Modifier = Modifier,
     isFollowing: Boolean = false,
-    onFollowToggle: () -> Unit = { },
+    onFollowToggle: () -> Unit = {},
     palette: AppPalette = appPalette()
 ) {
-    val accent = palette.accent
-    val textColor = AppColors.WhiteColor
+  val accent = palette.accent
+  val textColor = AppColors.WhiteColor
 
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(ProfileDimens.HeaderPadding)
-            .testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER),
-        colors = CardDefaults.cardColors(containerColor = accent),
-        elevation = CardDefaults.cardElevation(defaultElevation = ProfileDimens.CardElevation)
-    ) {
+  Card(
+      modifier =
+          modifier
+              .fillMaxWidth()
+              .padding(ProfileDimens.HeaderPadding)
+              .testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER),
+      colors = CardDefaults.cardColors(containerColor = accent),
+      elevation = CardDefaults.cardElevation(defaultElevation = ProfileDimens.CardElevation)) {
         Box(modifier = Modifier.padding(ProfileDimens.HeaderPadding)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                ProfilePicture(
-                    profileId = state.profile?.userId ?: "",
-                    modifier =
+          Row(verticalAlignment = Alignment.CenterVertically) {
+            ProfilePicture(
+                profileId = state.profile?.userId ?: "",
+                modifier =
                     Modifier.size(ProfileDimens.ProfilePicture)
-                        .testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_PROFILE_PICTURE)
-                )
+                        .testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_PROFILE_PICTURE))
 
-                Spacer(modifier = Modifier.width(ProfileDimens.HeaderSpacer))
+            Spacer(modifier = Modifier.width(ProfileDimens.HeaderSpacer))
 
-                Column {
-                    Text (
-                        text = state.profile?.name ?: "Unknown",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = textColor,
-                        modifier = Modifier
-                            .testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_NAME)
-                    )
-                    Text (
-                        text = state.profile?.section ?: "None",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = textColor,
-                        modifier = Modifier
-                            .testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_EMAIL)
-                    )
-                }
-                Spacer(modifier = Modifier.weight(1f))
-
-                FollowButton(
-                    isFollowing = isFollowing,
-                    onToggle = onFollowToggle,
-                    modifier = Modifier.testTag(
-                        if (isFollowing) PublicProfileTestTags.UNFOLLOW_BUTTON
-                        else PublicProfileTestTags.FOLLOW_BUTTON
-                    )
-                )
+            Column {
+              Text(
+                  text = state.profile?.name ?: "Unknown",
+                  style = MaterialTheme.typography.titleMedium,
+                  color = textColor,
+                  modifier = Modifier.testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_NAME))
+              Text(
+                  text = state.profile?.section ?: "None",
+                  style = MaterialTheme.typography.bodyMedium,
+                  color = textColor,
+                  modifier = Modifier.testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_EMAIL))
             }
+            Spacer(modifier = Modifier.weight(1f))
+
+            FollowButton(
+                isFollowing = isFollowing,
+                onToggle = onFollowToggle,
+                modifier =
+                    Modifier.testTag(
+                        if (isFollowing) PublicProfileTestTags.UNFOLLOW_BUTTON
+                        else PublicProfileTestTags.FOLLOW_BUTTON))
+          }
         }
-    }
+      }
 }
 
 @Preview(showBackground = true)

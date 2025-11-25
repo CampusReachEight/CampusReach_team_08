@@ -119,25 +119,26 @@ fun NavigationScreen(
             onNavigateBack = { navigationActions.goBack() },
             viewModel = editRequestViewModel)
       }
-        composable(
-            Screen.PublicProfile.route,
-            arguments = listOf(navArgument(Screen.PublicProfile.ARG_USER_ID) { type = NavType.StringType })
-        ) { navBackStackEntry ->
+      composable(
+          Screen.PublicProfile.route,
+          arguments =
+              listOf(
+                  navArgument(Screen.PublicProfile.ARG_USER_ID) { type = NavType.StringType })) {
+              navBackStackEntry ->
             val userId = navBackStackEntry.arguments?.getString(Screen.PublicProfile.ARG_USER_ID)
             userId?.let { id ->
-                // scoped key so different user ids get separate VMs
-                val publicProfileViewModel: com.android.sample.ui.profile.publicProfile.PublicProfileViewModel =
-                    viewModel(key = "PublicProfile_$id")
-                androidx.compose.runtime.LaunchedEffect(id) {
-                    publicProfileViewModel.loadPublicProfile(id)
-                }
+              // scoped key so different user ids get separate VMs
+              val publicProfileViewModel:
+                  com.android.sample.ui.profile.publicProfile.PublicProfileViewModel =
+                  viewModel(key = "PublicProfile_$id")
+              androidx.compose.runtime.LaunchedEffect(id) {
+                publicProfileViewModel.loadPublicProfile(id)
+              }
 
-                PublicProfileScreen(
-                    viewModel = publicProfileViewModel,
-                    onBackClick = { navigationActions.goBack() }
-                )
+              PublicProfileScreen(
+                  viewModel = publicProfileViewModel, onBackClick = { navigationActions.goBack() })
             }
-        }
+          }
     }
 
     navigation(startDestination = Screen.Events.route, route = "events") {

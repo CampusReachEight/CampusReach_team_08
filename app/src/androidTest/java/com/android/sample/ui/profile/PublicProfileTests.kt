@@ -19,66 +19,64 @@ import org.junit.Test
 
 class PublicProfileScreenTest {
 
-    @get:Rule
-    val composeRule = createComposeRule()
+  @get:Rule val composeRule = createComposeRule()
 
-    private val samplePublic = PublicProfile(
-        userId = "u1",
-        name = "Test User",
-        section = "Computer Science",
-        arrivalDate = "01/01/2024",
-        pictureUriString = null,
-        kudosReceived = 0,
-        helpReceived = 0,
-        followers = 0,
-        following = 0
-    )
+  private val samplePublic =
+      PublicProfile(
+          userId = "u1",
+          name = "Test User",
+          section = "Computer Science",
+          arrivalDate = "01/01/2024",
+          pictureUriString = null,
+          kudosReceived = 0,
+          helpReceived = 0,
+          followers = 0,
+          following = 0)
 
-    @Test
-    fun followButton_showsFollow_and_togglesToUnfollow() {
-        val isFollowing = mutableStateOf(false)
+  @Test
+  fun followButton_showsFollow_and_togglesToUnfollow() {
+    val isFollowing = mutableStateOf(false)
 
-        composeRule.setContent {
-            FollowButton(
-                isFollowing = isFollowing.value,
-                onToggle = { isFollowing.value = !isFollowing.value },
-                modifier = Modifier.testTag(PublicProfileTestTags.FOLLOW_BUTTON)
-            )
-        }
-
-        // initially "Follow"
-        composeRule.onNodeWithTag(PublicProfileTestTags.FOLLOW_BUTTON).assertIsDisplayed()
-        composeRule.onNodeWithTag(PublicProfileTestTags.FOLLOW_BUTTON).assertTextEquals("Follow")
-
-        // click toggles state -> "Unfollow"
-        composeRule.onNodeWithTag(PublicProfileTestTags.FOLLOW_BUTTON).performClick()
-        composeRule.onNodeWithTag(PublicProfileTestTags.FOLLOW_BUTTON).assertTextEquals("Unfollow")
+    composeRule.setContent {
+      FollowButton(
+          isFollowing = isFollowing.value,
+          onToggle = { isFollowing.value = !isFollowing.value },
+          modifier = Modifier.testTag(PublicProfileTestTags.FOLLOW_BUTTON))
     }
 
-    @Test
-    fun followButton_emits_onToggle_callback() {
-        var toggled = false
-        val isFollowing = mutableStateOf(false)
+    // initially "Follow"
+    composeRule.onNodeWithTag(PublicProfileTestTags.FOLLOW_BUTTON).assertIsDisplayed()
+    composeRule.onNodeWithTag(PublicProfileTestTags.FOLLOW_BUTTON).assertTextEquals("Follow")
 
-        composeRule.setContent {
-            FollowButton(
-                isFollowing = isFollowing.value,
-                onToggle = {
-                    toggled = true
-                    isFollowing.value = !isFollowing.value
-                },
-                modifier = Modifier.testTag(PublicProfileTestTags.FOLLOW_BUTTON)
-            )
-        }
+    // click toggles state -> "Unfollow"
+    composeRule.onNodeWithTag(PublicProfileTestTags.FOLLOW_BUTTON).performClick()
+    composeRule.onNodeWithTag(PublicProfileTestTags.FOLLOW_BUTTON).assertTextEquals("Unfollow")
+  }
 
-        composeRule.onNodeWithTag(PublicProfileTestTags.FOLLOW_BUTTON).performClick()
-        composeRule.runOnIdle { assert(toggled) }
+  @Test
+  fun followButton_emits_onToggle_callback() {
+    var toggled = false
+    val isFollowing = mutableStateOf(false)
+
+    composeRule.setContent {
+      FollowButton(
+          isFollowing = isFollowing.value,
+          onToggle = {
+            toggled = true
+            isFollowing.value = !isFollowing.value
+          },
+          modifier = Modifier.testTag(PublicProfileTestTags.FOLLOW_BUTTON))
     }
 
-    @Test
-    fun publicProfileHeader_displays_name_section_picture_and_followButton() {
-        // Construct a minimal PublicProfile used by header
-        val samplePublic = PublicProfile(
+    composeRule.onNodeWithTag(PublicProfileTestTags.FOLLOW_BUTTON).performClick()
+    composeRule.runOnIdle { assert(toggled) }
+  }
+
+  @Test
+  fun publicProfileHeader_displays_name_section_picture_and_followButton() {
+    // Construct a minimal PublicProfile used by header
+    val samplePublic =
+        PublicProfile(
             userId = "u1",
             name = "Test User",
             section = "Computer Science",
@@ -87,52 +85,49 @@ class PublicProfileScreenTest {
             kudosReceived = 0,
             helpReceived = 0,
             followers = 0,
-            following = 0
-        )
+            following = 0)
 
-        // minimal UI state matching what PublicProfileHeader expects
-        val uiState =
-            PublicProfileUiState(profile = samplePublic, isLoading = false, errorMessage = null)
+    // minimal UI state matching what PublicProfileHeader expects
+    val uiState =
+        PublicProfileUiState(profile = samplePublic, isLoading = false, errorMessage = null)
 
-        composeRule.setContent {
-            PublicProfileHeader(
-                state = uiState,
-                isFollowing = false,
-                onFollowToggle = {},
-                modifier = Modifier
-            )
-        }
-
-        composeRule.onNodeWithTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER).assertIsDisplayed()
-        composeRule.onNodeWithTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_NAME).assertIsDisplayed()
-        composeRule.onNodeWithTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_NAME).assertTextEquals("Test User")
-        composeRule.onNodeWithTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_EMAIL).assertIsDisplayed()
-        composeRule.onNodeWithTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_PROFILE_PICTURE).assertIsDisplayed()
-        composeRule.onNodeWithTag(PublicProfileTestTags.FOLLOW_BUTTON).assertIsDisplayed()
+    composeRule.setContent {
+      PublicProfileHeader(
+          state = uiState, isFollowing = false, onFollowToggle = {}, modifier = Modifier)
     }
 
-    @Test
-    fun followButton_showsFollow_and_togglesToUnfollow_withTagSwap() {
-        val state = PublicProfileUiState(profile = samplePublic, isLoading = false, errorMessage = null)
-        val isFollowing = mutableStateOf(false)
+    composeRule.onNodeWithTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER).assertIsDisplayed()
+    composeRule.onNodeWithTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_NAME).assertIsDisplayed()
+    composeRule
+        .onNodeWithTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_NAME)
+        .assertTextEquals("Test User")
+    composeRule.onNodeWithTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_EMAIL).assertIsDisplayed()
+    composeRule
+        .onNodeWithTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_PROFILE_PICTURE)
+        .assertIsDisplayed()
+    composeRule.onNodeWithTag(PublicProfileTestTags.FOLLOW_BUTTON).assertIsDisplayed()
+  }
 
-        composeRule.setContent {
-            PublicProfileHeader(
-                state = state,
-                isFollowing = isFollowing.value,
-                onFollowToggle = { isFollowing.value = !isFollowing.value }
-            )
-        }
+  @Test
+  fun followButton_showsFollow_and_togglesToUnfollow_withTagSwap() {
+    val state = PublicProfileUiState(profile = samplePublic, isLoading = false, errorMessage = null)
+    val isFollowing = mutableStateOf(false)
 
-        // initial: Follow button tag present and label shown
-        composeRule.onNodeWithTag(PublicProfileTestTags.FOLLOW_BUTTON).assertIsDisplayed()
-        composeRule.onNodeWithText("Follow").assertIsDisplayed()
-
-        // click to toggle
-        composeRule.onNodeWithTag(PublicProfileTestTags.FOLLOW_BUTTON).performClick()
-        // after toggle the UNFOLLOW tag and text should be visible
-        composeRule.onNodeWithTag(PublicProfileTestTags.UNFOLLOW_BUTTON).assertIsDisplayed()
-        composeRule.onNodeWithText("Unfollow").assertIsDisplayed()
-
+    composeRule.setContent {
+      PublicProfileHeader(
+          state = state,
+          isFollowing = isFollowing.value,
+          onFollowToggle = { isFollowing.value = !isFollowing.value })
     }
+
+    // initial: Follow button tag present and label shown
+    composeRule.onNodeWithTag(PublicProfileTestTags.FOLLOW_BUTTON).assertIsDisplayed()
+    composeRule.onNodeWithText("Follow").assertIsDisplayed()
+
+    // click to toggle
+    composeRule.onNodeWithTag(PublicProfileTestTags.FOLLOW_BUTTON).performClick()
+    // after toggle the UNFOLLOW tag and text should be visible
+    composeRule.onNodeWithTag(PublicProfileTestTags.UNFOLLOW_BUTTON).assertIsDisplayed()
+    composeRule.onNodeWithText("Unfollow").assertIsDisplayed()
+  }
 }
