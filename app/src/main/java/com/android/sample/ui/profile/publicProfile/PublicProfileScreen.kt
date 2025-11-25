@@ -15,7 +15,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedButton
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -41,6 +40,7 @@ import com.android.sample.ui.profile.composables.ProfileStats
 import com.android.sample.ui.profile.composables.ProfileTopBar
 import com.android.sample.ui.theme.AppColors
 import com.android.sample.ui.theme.AppPalette
+import com.android.sample.ui.theme.UiDimens
 import com.android.sample.ui.theme.appPalette
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -178,11 +178,12 @@ fun FollowButton(
     ElevatedButton(
         onClick = onToggle,
         modifier = modifier
+            .size(width = UiDimens.IconMedium * 3, height = UiDimens.IconMedium)
     ) {
         if (isFollowing) {
-            androidx.compose.material3.Text(text = "Unfollow")
+            Text(text = "Unfollow")
         } else {
-            androidx.compose.material3.Text(text = "Follow")
+            Text(text = "Follow")
         }
     }
 }
@@ -196,7 +197,6 @@ fun PublicProfileHeader (
     palette: AppPalette = appPalette()
 ) {
     val accent = palette.accent
-    val surface = palette.surface
     val textColor = AppColors.WhiteColor
 
     Card(
