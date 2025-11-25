@@ -54,7 +54,7 @@ class RequestListViewModel(
             } else {
               requestRepository.getAllRequests()
             }
-        _state.update { it.copy(requests = requests, isLoading = false, errorMessage = null) }
+        _state.update { it.copy(requests = requests, offlineMode = false, isLoading = false, errorMessage = null) }
 
         // Save requests to cache if available
         requestCache?.saveRequests(requests)
@@ -65,12 +65,18 @@ class RequestListViewModel(
 
         // Try to load from cache if there's an error (e.g., no internet)
         val cachedRequests = requestCache?.loadRequests() ?: emptyList()
-
         if (cachedRequests.isNotEmpty()) {
           // Successfully loaded from cache
-          _state.update { it.copy(requests = cachedRequests, offlineMode = true, isLoading = false, errorMessage = null) }
+          _state.update {
+            it.copy(
+                requests = cachedRequests,
+                offlineMode = true,
+                isLoading = false,
+                errorMessage = null)
+          }
           cachedRequests.forEach { loadProfileImage(it.creatorId) }
-          if (verboseLogging) Log.i("RequestListViewModel", "Loaded ${cachedRequests.size} requests from cache")
+          if (verboseLogging)
+              Log.i("RequestListViewModel", "Loaded ${cachedRequests.size} requests from cache")
         } else {
           // No cached data available
           val friendly =
@@ -125,9 +131,8 @@ class RequestListViewModelFactory(
     if (modelClass.isAssignableFrom(RequestListViewModel::class.java)) {
       @Suppress("UNCHECKED_CAST")
       return RequestListViewModel(
-          showOnlyMyRequests = showOnlyMyRequests,
-          requestCache = requestCache
-      ) as T
+          showOnlyMyRequests = showOnlyMyRequests, requestCache = requestCache)
+          as T
     }
     throw IllegalArgumentException("Unknown ViewModel class")
   }
@@ -137,5 +142,5 @@ data class RequestListState(
     val requests: List<Request> = emptyList(),
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
-    val offlineMode : Boolean = false
+    val offlineMode: Boolean = false
 )
