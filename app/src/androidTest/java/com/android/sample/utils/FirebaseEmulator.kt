@@ -92,8 +92,10 @@ object FirebaseEmulator {
       creatorId: String = auth.currentUser?.uid ?: "test-creator",
       status: RequestStatus = RequestStatus.IN_PROGRESS,
       title: String = "Test Request",
-      description: String = "Test Description"
+      description: String = "Test Description",
+      verbose: Boolean = false
   ) {
+    val current_time = System.currentTimeMillis()
     val request =
         hashMapOf(
             "requestId" to requestId,
@@ -105,13 +107,14 @@ object FirebaseEmulator {
             "people" to emptyList<String>(),
             "tags" to emptyList<String>(),
             "locationName" to "Test Location",
-            "startTimeStamp" to System.currentTimeMillis(),
-            "expirationTime" to System.currentTimeMillis() + 86400000 // +1 day
+            "startTimeStamp" to current_time,
+            "expirationTime" to current_time + 86400000 // +1 day
             )
 
     firestore.collection("requests").document(requestId).set(request).await()
-
-    Log.d("FirebaseEmulator", "Added test request: $requestId")
+    if (verbose) {
+      Log.d("FirebaseEmulator", "Added test request: $requestId")
+    }
   }
 
   fun signOut() = auth.signOut()

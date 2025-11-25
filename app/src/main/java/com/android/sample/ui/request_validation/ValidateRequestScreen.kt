@@ -54,6 +54,7 @@ fun ValidateRequestScreen(
     }
   }
 
+  // Main scaffold
   Scaffold(
       modifier = modifier.fillMaxSize(),
       topBar = {
@@ -61,11 +62,13 @@ fun ValidateRequestScreen(
             onNavigateBack = callbacks.onNavigateBack,
             canNavigateBack = state !is ValidationState.Processing)
       }) { paddingValues ->
+        // Screen content based on state
         Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
           when (state) {
             is ValidationState.Loading -> {
               LoadingContent()
             }
+            // Ready state with helpers list
             is ValidationState.Ready -> {
               ReadyContent(
                   request = state.request,
@@ -104,6 +107,13 @@ fun ValidateRequestScreen(
       }
 }
 
+/**
+ * Top app bar for the Validate Request screen.
+ *
+ * @param onNavigateBack Callback to navigate back
+ * @param canNavigateBack Whether navigation back is allowed
+ * @param modifier Modifier for styling
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ValidateRequestTopBar(
@@ -136,6 +146,11 @@ private fun ValidateRequestTopBar(
       modifier = modifier)
 }
 
+/**
+ * Loading content shown while request and helpers are being loaded.
+ *
+ * @param modifier Modifier for styling
+ */
 @Composable
 private fun LoadingContent(modifier: Modifier = Modifier) {
   Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -152,6 +167,17 @@ private fun LoadingContent(modifier: Modifier = Modifier) {
   }
 }
 
+/**
+ * Content shown in the Ready state, displaying the list of helpers and validate button.
+ *
+ * @param request The request being validated
+ * @param helpers List of potential helpers
+ * @param selectedHelperIds Set of selected helper IDs
+ * @param userProfileRepository Repository for loading user profiles
+ * @param onToggleHelper Callback when a helper is toggled
+ * @param onValidate Callback when validate button is clicked
+ * @param modifier Modifier for styling
+ */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ReadyContent(
@@ -184,7 +210,10 @@ private fun ReadyContent(
     } else {
       // Helpers list
       LazyColumn(
-          modifier = Modifier.weight(1f).testTag(ValidateRequestConstants.TAG_HELPERS_LIST),
+          modifier =
+              Modifier.weight(ValidateRequestConstants.LAZY_COLUMN_WEIGHT)
+                  .testTag(ValidateRequestConstants.TAG_HELPERS_LIST),
+          // Spacing between items
           verticalArrangement =
               Arrangement.spacedBy(ValidateRequestConstants.SPACING_LARGE_DP.dp)) {
             items(items = helpers, key = { it.id }) { helper ->
@@ -212,9 +241,11 @@ private fun ReadyContent(
               Modifier.fillMaxWidth()
                   .height(ValidateRequestConstants.BUTTON_HEIGHT_DP.dp)
                   .testTag(ValidateRequestConstants.TAG_VALIDATE_BUTTON),
+          // Styling
           shape = RoundedCornerShape(ValidateRequestConstants.CORNER_RADIUS_MEDIUM_DP.dp),
           colors =
               ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)) {
+            // Button content
             Icon(
                 imageVector = Icons.Default.CheckCircle,
                 contentDescription = null,
@@ -229,9 +260,16 @@ private fun ReadyContent(
   }
 }
 
+/**
+ * Content shown when there are no helpers available.
+ *
+ * @param onValidate Callback when validate button is clicked
+ * @param modifier Modifier for styling
+ */
 @Composable
 private fun EmptyHelpersContent(onValidate: () -> Unit, modifier: Modifier = Modifier) {
   Column(
+      // Center content
       modifier = modifier,
       horizontalAlignment = Alignment.CenterHorizontally,
       verticalArrangement = Arrangement.Center) {
@@ -259,7 +297,7 @@ private fun EmptyHelpersContent(onValidate: () -> Unit, modifier: Modifier = Mod
             modifier =
                 Modifier.padding(
                     horizontal = ValidateRequestConstants.PADDING_HORIZONTAL_LARGE_DP.dp))
-
+        //
         Spacer(modifier = Modifier.height(ValidateRequestConstants.SPACING_XXXLARGE_DP.dp))
 
         Button(
@@ -276,6 +314,15 @@ private fun EmptyHelpersContent(onValidate: () -> Unit, modifier: Modifier = Mod
       }
 }
 
+/**
+ * Card representing a helper user profile.
+ *
+ * @param helper The user profile of the helper
+ * @param isSelected Whether the helper is selected
+ * @param userProfileRepository Repository for loading user profiles
+ * @param onClick Callback when the card is clicked
+ * @param modifier Modifier for styling
+ */
 @Composable
 private fun HelperCard(
     helper: UserProfile,
@@ -294,24 +341,30 @@ private fun HelperCard(
               },
           animationSpec = tween(ValidateRequestConstants.COLOR_ANIMATION_DURATION_MS),
           label = "borderColor")
+
+  // Background color animation
   val backgroundColor by
       animateColorAsState(
+          // Target background color based on selection
           targetValue =
+              // Selected state uses primaryContainer with alpha, unselected uses surface
               if (isSelected) {
                 MaterialTheme.colorScheme.primaryContainer.copy(
                     alpha = ValidateRequestConstants.ALPHA_SELECTED_BACKGROUND)
+                // Unselected state
               } else {
                 MaterialTheme.colorScheme.surface
               },
           animationSpec = tween(ValidateRequestConstants.COLOR_ANIMATION_DURATION_MS),
           label = "backgroundColor")
-
+  // Card container
   Card(
       modifier =
           modifier.fillMaxWidth().testTag(ValidateRequestConstants.getHelperCardTag(helper.id)),
       shape = RoundedCornerShape(ValidateRequestConstants.CORNER_RADIUS_LARGE_DP.dp),
       colors = CardDefaults.cardColors(containerColor = backgroundColor),
       border =
+          // Border changes based on selection
           BorderStroke(
               width =
                   if (isSelected) {
@@ -320,6 +373,7 @@ private fun HelperCard(
                     ValidateRequestConstants.CARD_BORDER_WIDTH_UNSELECTED_DP.dp
                   },
               color = borderColor)) {
+        // Card content
         Row(
             modifier =
                 Modifier.clickable(onClick = onClick)
@@ -378,10 +432,12 @@ private fun HelperCard(
               // Kudos badge section - using Crossfade
               Crossfade(targetState = isSelected) { selected ->
                 if (selected) {
+                  // Show badge when selected
                   Surface(
                       shape =
                           RoundedCornerShape(ValidateRequestConstants.CORNER_RADIUS_SMALL_DP.dp),
                       color = MaterialTheme.colorScheme.primary,
+                      // Padding for badge
                       modifier =
                           Modifier.padding(
                               start = ValidateRequestConstants.PADDING_BADGE_START_DP.dp)) {
@@ -393,8 +449,10 @@ private fun HelperCard(
                                     vertical =
                                         ValidateRequestConstants.PADDING_BADGE_VERTICAL_DP.dp),
                             horizontalArrangement =
+                                // Spacing between text and icon
                                 Arrangement.spacedBy(ValidateRequestConstants.SPACING_SMALL_DP.dp),
                             verticalAlignment = Alignment.CenterVertically) {
+                              // Kudos text and icon
                               Text(
                                   text =
                                       ValidateRequestConstants.getKudosBadge(
@@ -402,6 +460,7 @@ private fun HelperCard(
                                   style = MaterialTheme.typography.labelLarge,
                                   fontWeight = FontWeight.Bold,
                                   color = MaterialTheme.colorScheme.onPrimary)
+                              // Kudos star icon
                               Icon(
                                   imageVector = Icons.Default.Star,
                                   contentDescription = ValidateRequestConstants.CD_KUDOS,
@@ -416,6 +475,12 @@ private fun HelperCard(
       }
 }
 
+/**
+ * Summary card showing total kudos to be awarded based on selected helpers.
+ *
+ * @param selectedCount Number of selected helpers
+ * @param modifier Modifier for styling
+ */
 @Composable
 private fun KudosSummary(selectedCount: Int, modifier: Modifier = Modifier) {
   val totalKudos = selectedCount * KudosConstants.KUDOS_PER_HELPER
@@ -425,21 +490,25 @@ private fun KudosSummary(selectedCount: Int, modifier: Modifier = Modifier) {
       enter = fadeIn() + expandVertically(),
       exit = fadeOut() + shrinkVertically(),
       modifier = modifier) {
+        // Summary card
         Card(
             shape = RoundedCornerShape(ValidateRequestConstants.CORNER_RADIUS_MEDIUM_DP.dp),
             colors =
                 CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
               Row(
+                  // Summary content
                   modifier =
                       Modifier.fillMaxWidth().padding(ValidateRequestConstants.PADDING_CARD_DP.dp),
                   horizontalArrangement = Arrangement.SpaceBetween,
                   verticalAlignment = Alignment.CenterVertically) {
+                    // Left side: Total label and helper count
                     Column {
                       Text(
                           text = ValidateRequestConstants.SUMMARY_TOTAL_LABEL,
                           style = MaterialTheme.typography.labelMedium,
                           color = MaterialTheme.colorScheme.onSecondaryContainer)
+                      // Helper count
                       Text(
                           text = ValidateRequestConstants.getSummaryHelperCount(selectedCount),
                           style = MaterialTheme.typography.bodySmall,
@@ -447,7 +516,7 @@ private fun KudosSummary(selectedCount: Int, modifier: Modifier = Modifier) {
                               MaterialTheme.colorScheme.onSecondaryContainer.copy(
                                   alpha = ValidateRequestConstants.ALPHA_SECONDARY_TEXT))
                     }
-
+                    // Right side: Total kudos
                     Row(
                         horizontalArrangement =
                             Arrangement.spacedBy(ValidateRequestConstants.SPACING_SMALL_DP.dp),
@@ -470,6 +539,15 @@ private fun KudosSummary(selectedCount: Int, modifier: Modifier = Modifier) {
       }
 }
 
+/**
+ * Confirmation dialog shown before finalizing the request closure.
+ *
+ * @param selectedHelpers List of selected helper profiles
+ * @param kudosToAward Total kudos to be awarded
+ * @param onConfirm Callback when confirm button is clicked
+ * @param onDismiss Callback when dismiss button is clicked
+ * @param modifier Modifier for styling
+ */
 @Composable
 private fun ConfirmationDialog(
     selectedHelpers: List<UserProfile>,
@@ -478,6 +556,7 @@ private fun ConfirmationDialog(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+  // Alert dialog container
   AlertDialog(
       onDismissRequest = onDismiss,
       title = { Text(text = ValidateRequestConstants.CONFIRM_TITLE, fontWeight = FontWeight.Bold) },
@@ -491,9 +570,9 @@ private fun ConfirmationDialog(
                     text = ValidateRequestConstants.CONFIRM_NO_KUDOS,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.error)
-              } else {
+              } else { // Helpers selected case
                 Text(ValidateRequestConstants.CONFIRM_AWARD_TO)
-
+                // List of selected helpers
                 selectedHelpers.forEach { helper ->
                   Row(
                       horizontalArrangement =
@@ -516,12 +595,12 @@ private fun ConfirmationDialog(
                             fontWeight = FontWeight.Bold)
                       }
                 }
-
+                // Total kudos section
                 HorizontalDivider(
                     modifier =
                         Modifier.padding(
                             vertical = ValidateRequestConstants.PADDING_VERTICAL_DIALOG_DP.dp))
-
+                // Total kudos row
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween) {
@@ -561,6 +640,11 @@ private fun ConfirmationDialog(
       modifier = modifier.testTag(ValidateRequestConstants.TAG_CONFIRMATION_DIALOG))
 }
 
+/**
+ * Content shown while the request is being processed.
+ *
+ * @param modifier Modifier for styling
+ */
 @Composable
 private fun ProcessingContent(modifier: Modifier = Modifier) {
   Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -583,7 +667,11 @@ private fun ProcessingContent(modifier: Modifier = Modifier) {
         }
   }
 }
-
+/**
+ * Content shown when the request has been successfully closed.
+ *
+ * @param modifier Modifier for styling
+ */
 @Composable
 private fun SuccessContent(modifier: Modifier = Modifier) {
   Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -609,6 +697,15 @@ private fun SuccessContent(modifier: Modifier = Modifier) {
   }
 }
 
+/**
+ * Content shown when an error occurs during validation.
+ *
+ * @param message The error message to display
+ * @param canRetry Whether retrying is allowed
+ * @param onRetry Callback when retry button is clicked
+ * @param onBack Callback when back button is clicked
+ * @param modifier Modifier for styling
+ */
 @Composable
 private fun ErrorContent(
     message: String,
@@ -617,6 +714,7 @@ private fun ErrorContent(
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+  // Error content container
   Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -639,7 +737,7 @@ private fun ErrorContent(
               style = MaterialTheme.typography.bodyLarge,
               textAlign = TextAlign.Center,
               color = MaterialTheme.colorScheme.onSurfaceVariant)
-
+          // Action buttons row
           Row(
               horizontalArrangement =
                   Arrangement.spacedBy(ValidateRequestConstants.SPACING_LARGE_DP.dp),

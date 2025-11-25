@@ -152,6 +152,7 @@ object ValidateRequestConstants {
   // ==================== FRACTIONS & RATIOS ====================
 
   const val ALPHA_SELECTED_BACKGROUND = 0.3f
+  const val LAZY_COLUMN_WEIGHT = 1f
   const val ALPHA_SECONDARY_TEXT = 0.7f
   const val WIDTH_FRACTION_EMPTY_BUTTON = 0.7f
 
