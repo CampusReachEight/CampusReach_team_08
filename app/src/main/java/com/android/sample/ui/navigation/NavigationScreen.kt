@@ -24,6 +24,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navigation
 import com.android.sample.model.map.FusedLocationProvider
 import com.android.sample.model.map.NominatimLocationRepository
+import com.android.sample.model.request.RequestCache
 import com.android.sample.model.request.RequestRepositoryFirestore
 import com.android.sample.ui.authentication.SignInScreen
 import com.android.sample.ui.authentication.SignInViewModel
