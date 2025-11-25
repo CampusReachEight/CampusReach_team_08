@@ -4,36 +4,37 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.sample.model.map.Location
+import java.util.Date
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.util.Date
 
 @RunWith(AndroidJUnit4::class)
 class RequestCacheTest {
 
-    private lateinit var requestCache: RequestCache
-    private lateinit var context: Context
+  private lateinit var requestCache: RequestCache
+  private lateinit var context: Context
 
-    @Before
-    fun setup() {
-        context = ApplicationProvider.getApplicationContext()
-        requestCache = RequestCache(context)
-        // Clean up before each test to ensure isolation
-        requestCache.clearAll()
-    }
+  @Before
+  fun setup() {
+    context = ApplicationProvider.getApplicationContext()
+    requestCache = RequestCache(context)
+    // Clean up before each test to ensure isolation
+    requestCache.clearAll()
+  }
 
-    @After
-    fun teardown() {
-        // Clean up after each test
-        requestCache.clearAll()
-    }
+  @After
+  fun teardown() {
+    // Clean up after each test
+    requestCache.clearAll()
+  }
 
-    @Test
-    fun `saveRequests and loadRequests should correctly persist and retrieve requests`() {
-        val requests = listOf(
+  @Test
+  fun `saveRequests and loadRequests should correctly persist and retrieve requests`() {
+    val requests =
+        listOf(
             Request(
                 requestId = "1",
                 title = "Study Session",
@@ -46,8 +47,7 @@ class RequestCacheTest {
                 expirationTime = Date(1672617600000L),
                 people = listOf("user1"),
                 tags = listOf(Tags.SOLO_WORK),
-                creatorId = "user2"
-            ),
+                creatorId = "user2"),
             Request(
                 requestId = "2",
                 title = "Soccer Game",
@@ -60,26 +60,25 @@ class RequestCacheTest {
                 expirationTime = Date(1672790400000L),
                 people = listOf("user3", "user4"),
                 tags = listOf(Tags.OUTDOOR, Tags.GROUP_WORK),
-                creatorId = "user5"
-            )
-        )
+                creatorId = "user5"))
 
-        requestCache.saveRequests(requests)
-        val loadedRequests = requestCache.loadRequests()
+    requestCache.saveRequests(requests)
+    val loadedRequests = requestCache.loadRequests()
 
-        // Use toSet() to compare contents regardless of order
-        assertEquals(requests.toSet(), loadedRequests.toSet())
-    }
+    // Use toSet() to compare contents regardless of order
+    assertEquals(requests.toSet(), loadedRequests.toSet())
+  }
 
-    @Test
-    fun `loadRequests should return an empty list when cache is empty`() {
-        val loadedRequests = requestCache.loadRequests()
-        assertTrue(loadedRequests.isEmpty())
-    }
+  @Test
+  fun `loadRequests should return an empty list when cache is empty`() {
+    val loadedRequests = requestCache.loadRequests()
+    assertTrue(loadedRequests.isEmpty())
+  }
 
-    @Test
-    fun `clearAll should delete all cached files`() {
-        val request = Request(
+  @Test
+  fun `clearAll should delete all cached files`() {
+    val request =
+        Request(
             requestId = "temp_req",
             title = "To be deleted",
             description = "This request will be deleted.",
@@ -91,22 +90,22 @@ class RequestCacheTest {
             expirationTime = Date(),
             people = emptyList(),
             tags = emptyList(),
-            creatorId = "temp_user"
-        )
-        requestCache.saveRequests(listOf(request))
+            creatorId = "temp_user")
+    requestCache.saveRequests(listOf(request))
 
-        // Verify something was saved
-        assertTrue(requestCache.loadRequests().isNotEmpty())
+    // Verify something was saved
+    assertTrue(requestCache.loadRequests().isNotEmpty())
 
-        requestCache.clearAll()
+    requestCache.clearAll()
 
-        // Verify it's now empty
-        assertTrue(requestCache.loadRequests().isEmpty())
-    }
+    // Verify it's now empty
+    assertTrue(requestCache.loadRequests().isEmpty())
+  }
 
-    @Test
-    fun `saveRequests with an empty list should clear the cache`() {
-        val initialRequest = listOf(
+  @Test
+  fun `saveRequests with an empty list should clear the cache`() {
+    val initialRequest =
+        listOf(
             Request(
                 requestId = "initial_req",
                 title = "Initial Request",
@@ -119,28 +118,29 @@ class RequestCacheTest {
                 expirationTime = Date(),
                 people = emptyList(),
                 tags = emptyList(),
-                creatorId = "initial_user"
-            )
-        )
-        requestCache.saveRequests(initialRequest)
-        assertTrue(requestCache.loadRequests().isNotEmpty())
+                creatorId = "initial_user"))
+    requestCache.saveRequests(initialRequest)
+    assertTrue(requestCache.loadRequests().isNotEmpty())
 
-        // Now save an empty list
-        requestCache.saveRequests(emptyList())
+    // Now save an empty list
+    requestCache.saveRequests(emptyList())
 
-        assertTrue(requestCache.loadRequests().isEmpty())
-    }
+    assertTrue(requestCache.loadRequests().isEmpty())
+  }
 
-    @Test
-    fun `serialization and deserialization handles all data types correctly`() {
-        // Create a request with all possible enum values and complex strings
-        val complexRequest = Request(
+  @Test
+  fun `serialization and deserialization handles all data types correctly`() {
+    // Create a request with all possible enum values and complex strings
+    val complexRequest =
+        Request(
             requestId = "complex-id-456",
             title = "Test: All The Things",
-            description = """
+            description =
+                """
                 This is a multi-line description.
                 It includes special characters like `~!@#$%^&*()_+-={}[]|\:";',./<>?
-            """.trimIndent(),
+            """
+                    .trimIndent(),
             requestType = RequestType.values().toList(),
             location = Location(latitude = 40.7128, longitude = -74.0060, name = "New York City"),
             locationName = "NYC",
@@ -149,15 +149,14 @@ class RequestCacheTest {
             expirationTime = Date(1704067200000L), // Fixed date
             people = listOf("user_a", "user_b"),
             tags = Tags.values().toList(),
-            creatorId = "test_creator"
-        )
+            creatorId = "test_creator")
 
-        requestCache.saveRequests(listOf(complexRequest))
-        val loadedRequests = requestCache.loadRequests()
+    requestCache.saveRequests(listOf(complexRequest))
+    val loadedRequests = requestCache.loadRequests()
 
-        assertEquals(1, loadedRequests.size)
-        val loadedRequest = loadedRequests.first()
+    assertEquals(1, loadedRequests.size)
+    val loadedRequest = loadedRequests.first()
 
-        assertEquals(complexRequest, loadedRequest)
-    }
+    assertEquals(complexRequest, loadedRequest)
+  }
 }

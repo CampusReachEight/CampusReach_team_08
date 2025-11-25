@@ -1,11 +1,11 @@
 package com.android.sample.model.request
 
+import com.android.sample.model.date.DateSerializer
 import com.android.sample.model.map.Location
 import com.google.firebase.Timestamp
-import kotlinx.serialization.Serializable
 import java.util.Date
 import java.util.Locale
-import com.android.sample.model.date.DateSerializer
+import kotlinx.serialization.Serializable
 
 @Serializable
 data class Request(
@@ -18,10 +18,8 @@ data class Request(
     val location: Location,
     val locationName: String,
     val status: RequestStatus,
-    @Serializable(with = DateSerializer::class)
-    val startTimeStamp: Date,
-    @Serializable(with = DateSerializer::class)
-    val expirationTime: Date,
+    @Serializable(with = DateSerializer::class) val startTimeStamp: Date,
+    @Serializable(with = DateSerializer::class) val expirationTime: Date,
     val people: List<String>,
     val tags: List<Tags>,
     val creatorId: String

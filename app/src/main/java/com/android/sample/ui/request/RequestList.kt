@@ -103,10 +103,11 @@ fun RequestListScreen(
     modifier: Modifier = Modifier,
     showOnlyMyRequests: Boolean = false,
     requestListViewModel: RequestListViewModel =
-        viewModel(factory = RequestListViewModelFactory(
-            showOnlyMyRequests = showOnlyMyRequests,
-            requestCache = RequestCache(LocalContext.current)
-        )),
+        viewModel(
+            factory =
+                RequestListViewModelFactory(
+                    showOnlyMyRequests = showOnlyMyRequests,
+                    requestCache = RequestCache(LocalContext.current))),
     navigationActions: NavigationActions? = null,
 ) {
   val searchFilterViewModel: RequestSearchFilterViewModel = viewModel()
@@ -203,31 +204,27 @@ fun RequestList(
     onRequestClick: (Request) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column {
-        if (state.offlineMode) {
-            Text(
-                text = "You are in offline mode. Displaying cached requests.",
-                color = appPalette().error,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp),
-                textAlign = TextAlign.Center
-            )
-        }
-        LazyColumn(
-            modifier =
-                modifier
-                    .padding(ConstantRequestList.ListPadding)
-                    .testTag(RequestListTestTags.REQUEST_LIST)
-        ) {
-            items(state.requests.size) { index ->
-                val request = state.requests[index]
-                RequestListItem(viewModel = viewModel, request = request, onClick = onRequestClick)
-            }
-        }
+  Column {
+    if (state.offlineMode) {
+      Text(
+          text = "You are in offline mode. Displaying cached requests.",
+          color = appPalette().error,
+          fontSize = 14.sp,
+          fontWeight = FontWeight.Medium,
+          modifier = Modifier.fillMaxWidth().padding(8.dp),
+          textAlign = TextAlign.Center)
     }
+    LazyColumn(
+        modifier =
+            modifier
+                .padding(ConstantRequestList.ListPadding)
+                .testTag(RequestListTestTags.REQUEST_LIST)) {
+          items(state.requests.size) { index ->
+            val request = state.requests[index]
+            RequestListItem(viewModel = viewModel, request = request, onClick = onRequestClick)
+          }
+        }
+  }
 }
 
 private const val WEIGHT = 1f
