@@ -262,7 +262,7 @@ class EditRequestViewModelTest {
 
   @Test
   fun initializeForCreate_setsDefaultState() {
-    viewModel.initializeForCreate("user1")
+    viewModel.initializeForCreate()
 
     val uiState = viewModel.uiState.value
     assertEquals("", uiState.title)
