@@ -31,6 +31,14 @@ android {
             useSupportLibrary = true
         }
         manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
+
+        // Test sharding configuration for parallel CI execution
+        val numShards = project.findProperty("numShards")?.toString()
+        val shardIndex = project.findProperty("shardIndex")?.toString()
+        if (numShards != null && shardIndex != null) {
+            testInstrumentationRunnerArguments["numShards"] = numShards
+            testInstrumentationRunnerArguments["shardIndex"] = shardIndex
+        }
     }
 
     signingConfigs {
