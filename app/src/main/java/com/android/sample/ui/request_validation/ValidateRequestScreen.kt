@@ -40,14 +40,17 @@ import com.android.sample.ui.request_validation.ValidateRequestConstants.SCREEN_
  */
 @Composable
 fun ValidateRequestScreen(
-    requestId: String,
-    viewModel: ValidateRequestViewModel,
+    state: ValidationState,
     userProfileRepository: UserProfileRepository,
+    onToggleHelper: (String) -> Unit,
+    onShowConfirmation: () -> Unit,
+    onCancelConfirmation: () -> Unit,
+    onConfirmAndClose: () -> Unit,
+    onRetry: () -> Unit,
     onRequestClosed: () -> Unit,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-  val state = viewModel.state
 
   // Handle success navigation
   LaunchedEffect(state) {
@@ -73,8 +76,8 @@ fun ValidateRequestScreen(
                   helpers = state.helpers,
                   selectedHelperIds = state.selectedHelperIds,
                   userProfileRepository = userProfileRepository,
-                  onToggleHelper = { viewModel.toggleHelperSelection(it) },
-                  onValidate = { viewModel.showConfirmation() })
+                  onToggleHelper = onToggleHelper,
+                  onValidate = onShowConfirmation)
             }
             is ValidationState.Confirming -> {
               // Keep ready content visible in background (for context)
@@ -84,8 +87,8 @@ fun ValidateRequestScreen(
                   selectedHelpers = state.selectedHelpers,
                   kudosToAward = state.kudosToAward,
                   creatorBonus = state.creatorBonus,
-                  onConfirm = { viewModel.confirmAndClose() },
-                  onDismiss = { viewModel.cancelConfirmation() })
+                  onConfirm = onConfirmAndClose,
+                  onDismiss = onCancelConfirmation)
             }
             is ValidationState.Processing -> {
               ProcessingContent()
@@ -94,7 +97,7 @@ fun ValidateRequestScreen(
               ErrorContent(
                   message = state.message,
                   canRetry = state.canRetry,
-                  onRetry = { viewModel.retry() },
+                  onRetry = onRetry,
                   onBack = onNavigateBack)
             }
             is ValidationState.Success -> {
