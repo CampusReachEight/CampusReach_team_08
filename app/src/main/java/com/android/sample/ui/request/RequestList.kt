@@ -23,6 +23,7 @@ import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.navigation.Screen
 import com.android.sample.ui.profile.ProfilePicture
 import com.android.sample.ui.theme.TopNavigationBar
+import com.google.firebase.auth.FirebaseAuth
 
 // removed local magic number vals; use ConstantRequestList instead
 
@@ -110,6 +111,7 @@ fun RequestListScreen(
   val displayed by searchFilterViewModel.displayedRequests.collectAsState()
   val searchQuery by searchFilterViewModel.searchQuery.collectAsState()
   val isSearching by searchFilterViewModel.isSearching.collectAsState()
+  val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
 
   Scaffold(
       modifier = modifier.fillMaxSize().testTag(NavigationTestTags.REQUESTS_SCREEN),
@@ -180,7 +182,15 @@ fun RequestListScreen(
                       })
                 },
                 modifier = Modifier.fillMaxSize(),
-                viewModel = requestListViewModel)
+                viewModel = requestListViewModel,
+                onProfileClick = {id ->
+                  if (id != currentUserId) {
+                    navigationActions?.navigateTo(Screen.PublicProfile(id))
+                  } else {
+                    navigationActions?.navigateTo(Screen.Profile(id))
+                  }
+                }
+                )
           }
         }
       }
@@ -192,7 +202,8 @@ fun RequestList(
     viewModel: RequestListViewModel,
     state: RequestListState,
     onRequestClick: (Request) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onProfileClick: (String) -> Unit = {}
 ) {
   LazyColumn(
       modifier =
@@ -201,7 +212,12 @@ fun RequestList(
               .testTag(RequestListTestTags.REQUEST_LIST)) {
         items(state.requests.size) { index ->
           val request = state.requests[index]
-          RequestListItem(viewModel = viewModel, request = request, onClick = onRequestClick)
+          RequestListItem(
+              viewModel = viewModel,
+              request = request,
+              onClick = onRequestClick,
+              onProfileClick = onProfileClick
+          )
         }
       }
 }
@@ -216,7 +232,8 @@ fun RequestListItem(
     viewModel: RequestListViewModel,
     request: Request,
     onClick: (Request) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onProfileClick: (String) -> Unit = {}
 ) {
   Card(
       modifier =
@@ -230,7 +247,7 @@ fun RequestListItem(
       ProfilePicture(
           profileRepository = viewModel.profileRepository,
           profileId = request.creatorId,
-          onClick = {},
+          onClick = {onProfileClick(request.creatorId)},
           modifier =
               Modifier.size(ConstantRequestList.RequestItemCreatorSectionSize)
                   .align(Alignment.CenterVertically),
