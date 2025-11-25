@@ -187,7 +187,6 @@ fun RequestListScreen(
                   navigationActions?.navigateTo(Screen.RequestAccept(it.requestId))
                 },
                 modifier = Modifier.fillMaxSize(),
-                viewModel = requestListViewModel,
                 onProfileClick = { id ->
                   if (id != currentUserId) {
                     navigationActions?.navigateTo(Screen.PublicProfile(id))

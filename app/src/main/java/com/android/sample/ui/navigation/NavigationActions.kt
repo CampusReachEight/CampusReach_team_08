@@ -55,12 +55,12 @@ sealed class Screen(
   }
 
   data class PublicProfile(val userId: String) : Screen(route = "profile/public/${userId}") {
-      companion object {
-          const val ARG_USER_ID = "userId"
-          const val route = "profile/public/{$ARG_USER_ID}"
-      }
+    companion object {
+      const val ARG_USER_ID = "userId"
+      const val route = "profile/public/{$ARG_USER_ID}"
+    }
   }
-      
+
   data class ValidateRequest(val requestId: String) : Screen("validateRequest/{requestId}") {
     companion object {
       const val ARG_REQUEST_ID = "requestId"
