@@ -22,14 +22,14 @@ data class AcceptRequestUIState(
     val errorMsg: String? = null,
     val accepted: Boolean = false,
     val isLoading: Boolean = false,
-    val offlineMode : Boolean = false
+    val offlineMode: Boolean = false
 )
 
 class AcceptRequestViewModel(
     private val requestRepository: RequestRepository =
         RequestRepositoryFirestore(Firebase.firestore),
     private val userProfileRepository: UserProfileRepository? = null,
-    private val requestCache : RequestCache
+    private val requestCache: RequestCache
 ) : ViewModel() {
 
   private val _uiState = MutableStateFlow(AcceptRequestUIState())
@@ -88,7 +88,11 @@ class AcceptRequestViewModel(
         Log.d("AcceptRequest", "=== DEBUG END ===")
 
         _uiState.value =
-            AcceptRequestUIState(request = request, accepted = accept, creatorName = creatorName, offlineMode = false)
+            AcceptRequestUIState(
+                request = request,
+                accepted = accept,
+                creatorName = creatorName,
+                offlineMode = false)
       } catch (e: Exception) {
         try {
           val cachedRequest = requestCache.getRequestById(requestID)
@@ -96,11 +100,9 @@ class AcceptRequestViewModel(
             it.copy(
                 request = cachedRequest,
                 accepted = requestRepository.hasUserAcceptedRequest(cachedRequest),
-                offlineMode = true
-            )
+                offlineMode = true)
           }
-
-        } catch (e : Exception) {
+        } catch (e: Exception) {
           Log.e("AcceptRequestViewModel", "Failed to load request: ${e.message}", e)
           setErrorMsg("Failed to load request: ${e.message}")
         }
@@ -154,7 +156,7 @@ class AcceptRequestViewModel(
 class AcceptRequestViewModelFactory(
     private val requestRepository: RequestRepository,
     private val userProfileRepository: UserProfileRepository?,
-    private val requestCache : RequestCache
+    private val requestCache: RequestCache
 ) : androidx.lifecycle.ViewModelProvider.Factory {
   override fun <T : ViewModel> create(modelClass: Class<T>): T {
     if (modelClass.isAssignableFrom(AcceptRequestViewModel::class.java)) {
@@ -162,8 +164,8 @@ class AcceptRequestViewModelFactory(
       return AcceptRequestViewModel(
           requestRepository = requestRepository,
           userProfileRepository = userProfileRepository,
-          requestCache = requestCache
-      ) as T
+          requestCache = requestCache)
+          as T
     }
     throw IllegalArgumentException("Unknown ViewModel class")
   }

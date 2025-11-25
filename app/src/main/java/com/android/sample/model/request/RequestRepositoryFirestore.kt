@@ -31,12 +31,11 @@ class RequestRepositoryFirestore(
       val snapshot = collectionRef.get(Source.SERVER).await()
 
       if (snapshot.metadata.isFromCache) {
-        throw IllegalStateException("Cannot retrieve requests: data from cache (network unavailable)")
+        throw IllegalStateException(
+            "Cannot retrieve requests: data from cache (network unavailable)")
       }
 
-      snapshot.documents.mapNotNull { doc ->
-        doc.data?.let { Request.fromMap(it) }
-      }
+      snapshot.documents.mapNotNull { doc -> doc.data?.let { Request.fromMap(it) } }
     } catch (e: FirebaseFirestoreException) {
       if (e.code == FirebaseFirestoreException.Code.UNAVAILABLE) {
         throw IllegalStateException("Network unavailable: cannot retrieve requests from server", e)
@@ -51,17 +50,14 @@ class RequestRepositoryFirestore(
 
   override suspend fun getRequest(requestId: String): Request {
     return try {
-      val snapshot = collectionRef
-          .whereEqualTo("requestId", requestId)
-          .get(Source.SERVER)
-          .await()
+      val snapshot = collectionRef.whereEqualTo("requestId", requestId).get(Source.SERVER).await()
 
       if (snapshot.metadata.isFromCache) {
-        throw IllegalStateException("Cannot retrieve request: data from cache (network unavailable)")
+        throw IllegalStateException(
+            "Cannot retrieve request: data from cache (network unavailable)")
       }
 
-      snapshot.documents
-          .firstNotNullOfOrNull { doc -> doc.data?.let { Request.fromMap(it) } }
+      snapshot.documents.firstNotNullOfOrNull { doc -> doc.data?.let { Request.fromMap(it) } }
           ?: throw Exception("Request with ID $requestId not found")
     } catch (e: FirebaseFirestoreException) {
       if (e.code == FirebaseFirestoreException.Code.UNAVAILABLE) {
@@ -94,7 +90,8 @@ class RequestRepositoryFirestore(
         throw Exception("Failed to verify request creation for ID ${request.requestId}")
       }
       if (addedRequest.metadata.isFromCache) {
-        throw IllegalStateException("Cannot verify request creation: data from cache (network unavailable)")
+        throw IllegalStateException(
+            "Cannot verify request creation: data from cache (network unavailable)")
       }
     } catch (e: FirebaseFirestoreException) {
       if (e.code == FirebaseFirestoreException.Code.UNAVAILABLE) {
@@ -131,7 +128,8 @@ class RequestRepositoryFirestore(
         throw Exception("Request disappeared during update for ID $requestId")
       }
       if (verifyRequest.metadata.isFromCache) {
-        throw IllegalStateException("Cannot verify request update: data from cache (network unavailable)")
+        throw IllegalStateException(
+            "Cannot verify request update: data from cache (network unavailable)")
       }
     } catch (e: FirebaseFirestoreException) {
       if (e.code == FirebaseFirestoreException.Code.UNAVAILABLE) {
@@ -166,7 +164,8 @@ class RequestRepositoryFirestore(
         throw Exception("Failed to verify request deletion for ID $requestId")
       }
       if (deletedRequest.metadata.isFromCache) {
-        throw IllegalStateException("Cannot verify request deletion: data from cache (network unavailable)")
+        throw IllegalStateException(
+            "Cannot verify request deletion: data from cache (network unavailable)")
       }
     } catch (e: FirebaseFirestoreException) {
       if (e.code == FirebaseFirestoreException.Code.UNAVAILABLE) {
@@ -256,19 +255,19 @@ class RequestRepositoryFirestore(
     val currentUserId = Firebase.auth.currentUser?.uid ?: notAuthenticated()
 
     return try {
-      val snapshot = collectionRef
-          .whereEqualTo("creatorId", currentUserId)
-          .get(Source.SERVER)
-          .await()
+      val snapshot =
+          collectionRef.whereEqualTo("creatorId", currentUserId).get(Source.SERVER).await()
 
       if (snapshot.metadata.isFromCache) {
-        throw IllegalStateException("Cannot retrieve user requests: data from cache (network unavailable)")
+        throw IllegalStateException(
+            "Cannot retrieve user requests: data from cache (network unavailable)")
       }
 
       snapshot.documents.mapNotNull { doc -> doc.data?.let { Request.fromMap(it) } }
     } catch (e: FirebaseFirestoreException) {
       if (e.code == FirebaseFirestoreException.Code.UNAVAILABLE) {
-        throw IllegalStateException("Network unavailable: cannot retrieve user requests from server", e)
+        throw IllegalStateException(
+            "Network unavailable: cannot retrieve user requests from server", e)
       }
       throw Exception("Failed to retrieve requests for user $currentUserId: ${e.message}", e)
     } catch (e: IllegalStateException) {

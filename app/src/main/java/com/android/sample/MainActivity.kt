@@ -29,9 +29,7 @@ class MainActivity : ComponentActivity() {
     super.onCreate(savedInstanceState)
     enableEdgeToEdge()
 
-    val settings = FirebaseFirestoreSettings.Builder()
-        .setPersistenceEnabled(false)
-        .build()
+    val settings = FirebaseFirestoreSettings.Builder().setPersistenceEnabled(false).build()
     Firebase.firestore.firestoreSettings = settings
 
     setContent {

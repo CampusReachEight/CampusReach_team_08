@@ -54,7 +54,9 @@ class RequestListViewModel(
             } else {
               requestRepository.getAllRequests()
             }
-        _state.update { it.copy(requests = requests, offlineMode = false, isLoading = false, errorMessage = null) }
+        _state.update {
+          it.copy(requests = requests, offlineMode = false, isLoading = false, errorMessage = null)
+        }
 
         // Save requests to cache if available
         requestCache?.saveRequests(requests)
