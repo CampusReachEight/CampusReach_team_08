@@ -14,6 +14,7 @@ import com.android.sample.ui.profile.publicProfile.PublicProfile
 import com.android.sample.ui.profile.publicProfile.PublicProfileHeader
 import com.android.sample.ui.profile.publicProfile.PublicProfileTestTags
 import com.android.sample.ui.profile.publicProfile.PublicProfileUiState
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 
@@ -129,5 +130,63 @@ class PublicProfileScreenTest {
     // after toggle the UNFOLLOW tag and text should be visible
     composeRule.onNodeWithTag(PublicProfileTestTags.UNFOLLOW_BUTTON).assertIsDisplayed()
     composeRule.onNodeWithText("Unfollow").assertIsDisplayed()
+  }
+
+  private fun mapPublicToProfileStateViaReflection(
+      publicProfile: PublicProfile?,
+      error: String?,
+      isLoading: Boolean
+  ): ProfileState {
+    val cls = Class.forName("com.android.sample.ui.profile.publicProfile.PublicProfileScreenKt")
+    val method =
+        cls.getDeclaredMethod(
+            "mapPublicToProfileState",
+            PublicProfile::class.java,
+            String::class.java,
+            java.lang.Boolean.TYPE)
+    method.isAccessible = true
+    return method.invoke(null, publicProfile, error, java.lang.Boolean.valueOf(isLoading))
+        as ProfileState
+  }
+
+  @Test
+  fun maps_null_public_profile_to_minimal_state_with_error() {
+    val state = mapPublicToProfileStateViaReflection(null, "load failed", false)
+
+    assertEquals("Unknown", state.userName)
+    assertEquals("", state.userEmail)
+    assertEquals("", state.profileId)
+    assertEquals(0, state.kudosReceived)
+    assertEquals(0, state.followers)
+    assertEquals(0, state.following)
+    assertEquals("load failed", state.errorMessage)
+    assertEquals(false, state.isLoading)
+  }
+
+  @Test
+  fun maps_non_null_public_profile_to_profilestate_fields() {
+    val pub =
+        PublicProfile(
+            userId = "u42",
+            name = "Jane Doe",
+            section = "Engineering",
+            arrivalDate = "01/02/2024",
+            pictureUriString = "content://pic",
+            kudosReceived = 7,
+            helpReceived = 1,
+            followers = 123,
+            following = 10)
+
+    val state = mapPublicToProfileStateViaReflection(pub, null, false)
+
+    assertEquals("Jane Doe", state.userName)
+    assertEquals("u42", state.profileId)
+    assertEquals("Engineering", state.userSection)
+    assertEquals("01/02/2024", state.arrivalDate)
+    assertEquals(7, state.kudosReceived)
+    assertEquals(123, state.followers)
+    assertEquals("content://pic", state.profilePictureUrl)
+    assertEquals(null, state.errorMessage)
+    assertEquals(false, state.isLoading)
   }
 }
