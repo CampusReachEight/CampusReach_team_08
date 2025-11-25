@@ -52,6 +52,8 @@ fun NavigationScreen(
     navigationActions: NavigationActions = NavigationActions(navController),
     credentialManager: CredentialManager = CredentialManager.create(LocalContext.current)
 ) {
+    //caches
+    val requestCache = RequestCache(LocalContext.current)
 
   val user = FirebaseAuth.getInstance().currentUser
   var isSignedIn by rememberSaveable { mutableStateOf(user != null) }
