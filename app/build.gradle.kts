@@ -223,9 +223,6 @@ dependencies {
     androidTestImplementation(libs.mockito.kotlin)
     androidTestImplementation(libs.mockito.android)
     testImplementation(kotlin("test"))
-
-    // Serialization
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
 }
 tasks.withType<Test> {
     configure<JacocoTaskExtension> {
