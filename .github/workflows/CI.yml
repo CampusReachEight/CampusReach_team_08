@@ -202,6 +202,16 @@ jobs:
         with:
           node-version: 22
 
+      # Cache Firebase emulator binaries to avoid re-downloading on every run
+      - name: Cache Firebase emulators
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/firebase/emulators
+          key: firebase-emulators-${{ runner.os }}-${{ hashFiles('firebase.json') }}
+          restore-keys: |
+            firebase-emulators-${{ runner.os }}-
+            firebase-emulators-
+
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
 
@@ -225,16 +235,17 @@ jobs:
           sudo udevadm trigger --name-match=kvm
 
       # Run instrumentation tests with sharding
+      # API 29 boots faster and is more stable on GitHub runners than API 36
       - name: Run instrumentation tests (Shard ${{ matrix.shard }}/3)
-        timeout-minutes: 20
+        timeout-minutes: 15
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 36
+          api-level: 29
           target: google_apis
           arch: x86_64
           avd-name: github
           force-avd-creation: true
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -skin 1080x2400
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: ./gradlew connectedCheck --parallel --build-cache -PnumShards=3 -PshardIndex=${{ matrix.shard }}
 
