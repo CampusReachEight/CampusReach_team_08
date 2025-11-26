@@ -726,6 +726,10 @@ private class FakeUserProfileRepository(private var helpers: List<UserProfile>) 
   override suspend fun awardKudosBatch(awards: Map<String, Int>) {
     awards.forEach { (userId, kudos) -> awardKudos(userId, kudos) }
   }
+
+  override fun getCurrentUserId(): String =
+      // return a known test id when available, otherwise a stable default
+      profileCache.keys.firstOrNull() ?: (TestIds.USER_ID_PREFIX + "0")
 }
 
 // ==================== TEST DATA FACTORY ====================
