@@ -12,9 +12,6 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performTouchInput
-import androidx.compose.ui.test.swipeDown
-import androidx.test.espresso.action.ViewActions.swipeUp
 import com.android.sample.model.map.Location
 import com.android.sample.model.request.Request
 import com.android.sample.model.request.RequestRepositoryFirestore
