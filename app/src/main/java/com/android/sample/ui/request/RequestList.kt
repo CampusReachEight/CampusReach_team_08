@@ -28,6 +28,7 @@ import com.android.sample.ui.navigation.NavigationTab
 import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.navigation.Screen
 import com.android.sample.ui.profile.ProfilePicture
+import com.android.sample.ui.profile.publicProfile.PublicProfileDefaults
 import com.android.sample.ui.request.ConstantRequestList.TypeChipBorderWidth
 import com.android.sample.ui.request.ConstantRequestList.TypeChipColumnSpacing
 import com.android.sample.ui.request.ConstantRequestList.TypeChipTextPadding
@@ -95,6 +96,8 @@ private const val TEXT_BACK = "Back"
 
 private const val TEXT_TODO = "TODO"
 
+typealias OnProfileClick = (String) -> Unit
+
 /** Request List screen scaffold: top bar, filters section, list, bottom bar, and error dialog. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -123,6 +126,23 @@ fun RequestListScreen(
   val isSearching by searchFilterViewModel.isSearching.collectAsState()
   val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
 
+  // safeNav: no-op fallback so callers/previews/tests don't need to null-check
+  val safeNav =
+      object {
+        fun navigateTo(screen: Screen) = navigationActions?.navigateTo(screen)
+
+        fun goBack() = navigationActions?.goBack()
+      }
+
+  // Centralized profile click handler: handles null currentUserId and owner vs public routing
+  val onProfileClickHandler: OnProfileClick = { id ->
+    if (id.isNotEmpty() && id == currentUserId) {
+      safeNav.navigateTo(Screen.Profile(id))
+    } else {
+      safeNav.navigateTo(Screen.PublicProfile(id))
+    }
+  }
+
   Scaffold(
       modifier = modifier.fillMaxSize().testTag(NavigationTestTags.REQUESTS_SCREEN),
       topBar = {
@@ -139,7 +159,11 @@ fun RequestListScreen(
           // Full navigation bar for All Requests
           TopNavigationBar(
               selectedTab = NavigationTab.Requests,
-              onProfileClick = { navigationActions?.navigateTo(Screen.Profile(TEXT_TODO)) },
+              onProfileClick = {
+                // call handler with current user id if available, otherwise use default non-null id
+                currentUserId?.let { onProfileClickHandler(it) }
+                    ?: onProfileClickHandler(PublicProfileDefaults.DEFAULT_PROFILE_ID)
+              },
           )
         }
       },
