@@ -31,8 +31,7 @@ sealed class ValidationState {
   data class Confirming(
       val request: Request,
       val selectedHelpers: List<UserProfile>,
-      val kudosToAward: Int,
-      val creatorBonus: Int
+      val kudosToAward: Int
   ) : ValidationState()
 
   /** Processing state closing request and awarding kudos. */
@@ -182,19 +181,12 @@ class ValidateRequestViewModel(
 
     val kudosPerHelper = KudosConstants.KUDOS_PER_HELPER
     val totalKudos = selectedHelpers.size * kudosPerHelper
-    val creatorBonus =
-        if (selectedHelpers.isNotEmpty()) {
-          KudosConstants.KUDOS_FOR_CREATOR_RESOLUTION
-        } else {
-          0
-        }
 
     state =
         ValidationState.Confirming(
             request = currentState.request,
             selectedHelpers = selectedHelpers,
-            kudosToAward = totalKudos,
-            creatorBonus = creatorBonus)
+            kudosToAward = totalKudos)
   }
 
   /** Cancels the confirmation and returns to selection. */
