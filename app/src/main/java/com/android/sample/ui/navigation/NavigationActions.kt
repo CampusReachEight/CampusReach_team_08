@@ -26,38 +26,57 @@ sealed class Screen(
 
   object MyRequest : Screen(route = "profile/myRequest", NavigationType.SUB_SCREEN)
 
+  object NavArgs {
+    const val REQUEST_ID = "requestId"
+    const val EVENT_ID = "eventId"
+    const val USER_ID = "userId"
+  }
+
+  object ProfileRoutes {
+    private const val ARG_USER_ID = NavArgs.USER_ID
+
+    // route patterns used by nav graph (with placeholder)
+    const val PROFILE_ROUTE = "profile/main/{$ARG_USER_ID}"
+    const val PUBLIC_PROFILE_ROUTE = "profile/public/{$ARG_USER_ID}"
+
+    // helpers to build concrete routes
+    fun profileRoute(userId: String) = "profile/main/$userId"
+
+    fun publicProfileRoute(userId: String) = "profile/public/$userId"
+  }
+
   data class RequestAccept(val requestId: String) : Screen(route = "requests/accept/${requestId}") {
     companion object {
-      const val ARG_REQUEST_ID = "requestId"
+      const val ARG_REQUEST_ID = NavArgs.REQUEST_ID
       const val route = "requests/accept/{$ARG_REQUEST_ID}"
     }
   }
 
   data class EditRequest(val requestId: String) : Screen(route = "requests/edit/${requestId}") {
     companion object {
-      const val ARG_REQUEST_ID = "requestId"
+      const val ARG_REQUEST_ID = NavArgs.REQUEST_ID
       const val route = "requests/edit/{$ARG_REQUEST_ID}"
     }
   }
 
   data class EventDetails(val eventId: String) : Screen(route = "events/details/${eventId}") {
     companion object {
-      const val ARG_EVENT_ID = "eventId"
+      const val ARG_EVENT_ID = NavArgs.EVENT_ID
       const val route = "events/details/{$ARG_EVENT_ID}"
     }
   }
 
   data class Profile(val userId: String) : Screen(route = "profile/main/${userId}") {
     companion object {
-      const val ARG_USER_ID = "userId"
-      const val route = "profile/main/{$ARG_USER_ID}"
+      const val ARG_USER_ID = NavArgs.USER_ID
+      const val route = ProfileRoutes.PROFILE_ROUTE
     }
   }
 
   data class PublicProfile(val userId: String) : Screen(route = "profile/public/${userId}") {
     companion object {
-      const val ARG_USER_ID = "userId"
-      const val route = "profile/public/{$ARG_USER_ID}"
+      const val ARG_USER_ID = NavArgs.USER_ID
+      const val route = ProfileRoutes.PUBLIC_PROFILE_ROUTE
     }
   }
 }
