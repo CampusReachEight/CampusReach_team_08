@@ -57,9 +57,10 @@ fun PublicProfileScreen(
   val state by viewModel.uiState.collectAsState()
   // Persist follow state across recompositions/config changes
   val isFollowing = rememberSaveable { mutableStateOf(false) }
+
   val shownState =
       mapPublicToProfileState(
-          publicProfile = state.profile, error = state.errorMessage, isLoading = state.isLoading)
+          publicProfile = state.profile, error = state.error, isLoading = state.isLoading)
 
   Scaffold(
       modifier = Modifier.testTag(NavigationTestTags.PUBLIC_PROFILE_SCREEN),
@@ -70,7 +71,7 @@ fun PublicProfileScreen(
             state.isLoading -> ProfileLoadingBuffer(Modifier.fillMaxSize())
             else ->
                 Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                  state.errorMessage?.let {
+                  state.error?.let {
                     ErrorBanner(it)
                     Spacer(modifier = Modifier.height(ProfileDimens.Vertical))
                   }

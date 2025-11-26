@@ -14,18 +14,10 @@ import kotlinx.coroutines.withTimeoutOrNull
 data class PublicProfileUiState(
     val isLoading: Boolean = false,
     val profile: PublicProfile? = null,
-    val error: PublicProfileError? = null
+    val error: String? = null
 )
 
-sealed class PublicProfileError {
-  object EmptyProfileId : PublicProfileError()
-
-  object ProfileNotFound : PublicProfileError()
-
-  data class Network(val message: String?) : PublicProfileError()
-
-  data class Unexpected(val message: String?) : PublicProfileError()
-}
+private const val TIME_OUT = 15_000L
 
 class PublicProfileViewModel(private val repository: UserProfileRepository) : ViewModel() {
 
@@ -39,7 +31,7 @@ class PublicProfileViewModel(private val repository: UserProfileRepository) : Vi
     if (profileId.isBlank()) {
       _uiState.value =
           _uiState.value.copy(
-              isLoading = false, profile = null, error = PublicProfileError.EmptyProfileId)
+              isLoading = false, profile = null, error = PublicProfileErrors.EMPTY_PROFILE_ID)
       return
     }
 
@@ -49,12 +41,11 @@ class PublicProfileViewModel(private val repository: UserProfileRepository) : Vi
         viewModelScope.launch {
           _uiState.value = _uiState.value.copy(isLoading = true, error = null)
           try {
-            // Bound the call to avoid indefinite hangs; repository should ideally be non-blocking.
-            val up = withTimeoutOrNull(15_000) { repository.getUserProfile(profileId) }
+            // keep the timeout literal per request
+            val up = withTimeoutOrNull(TIME_OUT) { repository.getUserProfile(profileId) }
             if (up == null) {
               _uiState.value =
-                  _uiState.value.copy(
-                      profile = null, error = PublicProfileError.Network("Timeout or not found"))
+                  _uiState.value.copy(profile = null, error = PublicProfileErrors.FAILED_TO_LOAD)
               return@launch
             }
 
@@ -67,18 +58,16 @@ class PublicProfileViewModel(private val repository: UserProfileRepository) : Vi
 
             if (publicProfile == null) {
               _uiState.value =
-                  _uiState.value.copy(
-                      profile = null,
-                      error = PublicProfileError.Unexpected("Malformed profile data"))
+                  _uiState.value.copy(profile = null, error = PublicProfileErrors.FAILED_TO_LOAD)
             } else {
               _uiState.value = _uiState.value.copy(profile = publicProfile, error = null)
             }
           } catch (ce: CancellationException) {
-            // propagate cancellation so callers / coroutine system can handle it
             throw ce
           } catch (e: Exception) {
             _uiState.value =
-                _uiState.value.copy(profile = null, error = PublicProfileError.Network(e.message))
+                _uiState.value.copy(
+                    profile = null, error = e.message ?: PublicProfileErrors.FAILED_TO_LOAD)
           } finally {
             _uiState.value = _uiState.value.copy(isLoading = false)
           }
@@ -88,7 +77,7 @@ class PublicProfileViewModel(private val repository: UserProfileRepository) : Vi
   fun refresh() {
     val id = lastProfileId
     if (id.isNullOrBlank()) {
-      _uiState.value = _uiState.value.copy(error = PublicProfileError.EmptyProfileId)
+      _uiState.value = _uiState.value.copy(error = PublicProfileErrors.EMPTY_PROFILE_ID)
       return
     }
     loadPublicProfile(id)
