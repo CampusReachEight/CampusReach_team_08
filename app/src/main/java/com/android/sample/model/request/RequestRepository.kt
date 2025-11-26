@@ -13,6 +13,13 @@ interface RequestRepository {
   suspend fun getAllRequests(): List<Request>
 
   /**
+   * Retrieves all requests that needs ot appear on the map from the repository.
+   *
+   * @return A list of all requests without status cancelled or completed.
+   */
+  suspend fun getAllCurrentRequests(): List<Request>
+
+  /**
    * Retrieves a specific request by its unique identifier.
    *
    * @param requestId The unique identifier of the request to retrieve.

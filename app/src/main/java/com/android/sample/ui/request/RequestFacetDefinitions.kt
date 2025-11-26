@@ -41,7 +41,7 @@ object RequestFacetDefinitions {
           FacetDefinition(
               id = "status",
               title = RequestStatus.toString(),
-              values = RequestStatus.entries.toList(),
+              values = listOf(RequestStatus.OPEN, RequestStatus.IN_PROGRESS),
               extract = { listOf(it.status) },
               dropdownButtonTag = RequestListTestTags.REQUEST_STATUS_FILTER_DROPDOWN_BUTTON,
               searchBarTag = RequestListTestTags.REQUEST_STATUS_FILTER_SEARCH_BAR,

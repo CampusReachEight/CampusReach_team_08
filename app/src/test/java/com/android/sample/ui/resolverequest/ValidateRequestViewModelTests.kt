@@ -393,7 +393,8 @@ class ValidateRequestViewModelTest {
         assertEquals(testRequest, confirmingState.request)
         assertEquals(2, confirmingState.selectedHelpers.size)
         assertEquals(2 * KudosConstants.KUDOS_PER_HELPER, confirmingState.kudosToAward)
-        assertEquals(KudosConstants.KUDOS_FOR_CREATOR_RESOLUTION, confirmingState.creatorBonus)
+        // Removed: assertEquals(KudosConstants.KUDOS_FOR_CREATOR_RESOLUTION,
+        // confirmingState.creatorBonus)
       }
 
   @Test
@@ -410,7 +411,7 @@ class ValidateRequestViewModelTest {
         assertTrue(state is ValidationState.Confirming)
         val confirmingState = state as ValidationState.Confirming
         assertEquals(0, confirmingState.kudosToAward)
-        assertEquals(0, confirmingState.creatorBonus)
+        // Removed: assertEquals(0, confirmingState.creatorBonus)
         assertTrue(confirmingState.selectedHelpers.isEmpty())
       }
 

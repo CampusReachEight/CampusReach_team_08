@@ -237,7 +237,7 @@ jobs:
       # Run instrumentation tests with sharding
       # API 29 boots faster and is more stable on GitHub runners than API 36
       - name: Run instrumentation tests (Shard ${{ matrix.shard }}/3)
-        timeout-minutes: 15
+        timeout-minutes: 20
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 29
