@@ -1015,9 +1015,8 @@ class RequestRepositoryFirestoreTest : BaseEmulatorTest() {
       // Verify the exception message includes the request ID for debugging
       assertNotNull(e.message)
       assertTrue(
-        "Exception message should contain request ID for debugging",
-        e.message!!.contains(testRequestId) || e.message!!.contains("not found")
-      )
+          "Exception message should contain request ID for debugging",
+          e.message!!.contains(testRequestId) || e.message!!.contains("not found"))
     }
   }
 }
