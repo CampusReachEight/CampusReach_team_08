@@ -16,6 +16,7 @@ import com.android.sample.model.profile.UserProfile
 import com.android.sample.model.profile.UserProfileRepository
 import com.android.sample.model.profile.UserProfileRepositoryFirestore
 import com.android.sample.model.request.Request
+import com.android.sample.model.request.RequestOwnership
 import com.android.sample.model.request.RequestRepository
 import com.android.sample.model.request.RequestRepositoryFirestore
 import com.android.sample.model.request.RequestStatus
@@ -432,6 +433,77 @@ class MapsTest : BaseEmulatorTest() {
         .assertIsDisplayed()
         .performClick()
         .assertTextContains(title2)
+  }
+
+  @Test
+  fun clickOnDifferentFilter() {
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule
+          .onAllNodesWithTag(MapTestTags.MAP_LIST_FILTER)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    clickOnARequestOwnership(RequestOwnership.ALL)
+    clickOnARequestOwnership(RequestOwnership.OWN)
+    clickOnARequestOwnership(RequestOwnership.NOT_ACCEPTED)
+    clickOnARequestOwnership(RequestOwnership.NOT_ACCEPTED_BY_ME)
+    clickOnARequestOwnership(RequestOwnership.ACCEPTED)
+    clickOnARequestOwnership(RequestOwnership.OTHER)
+
+    // open
+    composeTestRule
+        .onNodeWithTag(RequestListTestTags.REQUEST_TYPE_FILTER_DROPDOWN_BUTTON)
+        .performScrollTo()
+        .assertIsDisplayed()
+        .performClick()
+    composeTestRule.mainClock.advanceTimeBy(100)
+
+    // close
+    composeTestRule
+        .onNodeWithTag(RequestListTestTags.REQUEST_TYPE_FILTER_DROPDOWN_BUTTON)
+        .performScrollTo()
+        .assertIsDisplayed()
+        .performClick()
+
+    composeTestRule.mainClock.advanceTimeBy(100)
+    // open
+    composeTestRule
+        .onNodeWithTag(RequestListTestTags.REQUEST_STATUS_FILTER_DROPDOWN_BUTTON)
+        .performScrollTo()
+        .assertIsDisplayed()
+        .performClick()
+    composeTestRule.mainClock.advanceTimeBy(100)
+
+    // close
+    composeTestRule
+        .onNodeWithTag(RequestListTestTags.REQUEST_STATUS_FILTER_DROPDOWN_BUTTON)
+        .performScrollTo()
+        .assertIsDisplayed()
+        .performClick()
+  }
+
+  fun clickOnARequestOwnership(filter: RequestOwnership) {
+    composeTestRule.onNodeWithTag(MapTestTags.MAP_FILTER_OWNER).assertIsDisplayed().performClick()
+
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule
+          .onAllNodesWithTag(MapTestTags.testTagForRequestOwnership(filter))
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    composeTestRule
+        .onNodeWithTag(MapTestTags.testTagForRequestOwnership(filter))
+        .assertIsDisplayed()
+        .performClick()
+
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule
+          .onAllNodesWithTag(MapTestTags.testTagForRequestOwnership(filter))
+          .fetchSemanticsNodes()
+          .isEmpty()
+    }
   }
 }
 

@@ -313,7 +313,10 @@ fun AcceptRequestScreen(
                           Spacer(
                               modifier =
                                   Modifier.height(AcceptRequestScreenConstants.SECTION_SPACING))
-                          if (request.people.isEmpty()) {
+
+                          // Safeguard: exclude creatorId from volunteers list if present
+                          val volunteers = request.people.filterNot { it == request.creatorId }
+                          if (volunteers.isEmpty()) {
                             Text(
                                 text = AcceptRequestScreenLabels.NO_VOLUNTEERS_YET,
                                 style = MaterialTheme.typography.bodyMedium,
@@ -327,12 +330,9 @@ fun AcceptRequestScreen(
                                     Modifier.fillMaxWidth()
                                         .height(
                                             AcceptRequestScreenConstants.VOLUNTEER_ROW_HEIGHT)) {
-                                  items(request.people.size) { index ->
-                                    val userId = request.people[index]
-                                    ProfilePicture(
-                                        profileId = userId,
-                                        withName = true,
-                                    )
+                                  items(volunteers.size) { index ->
+                                    val userId = volunteers[index]
+                                    ProfilePicture(profileId = userId, withName = true)
                                   }
                                 }
                           }

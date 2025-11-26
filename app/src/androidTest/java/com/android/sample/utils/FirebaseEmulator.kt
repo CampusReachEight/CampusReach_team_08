@@ -2,6 +2,7 @@ package com.android.sample.utils
 
 import android.util.Log
 import androidx.test.platform.app.InstrumentationRegistry
+import com.android.sample.model.request.RequestStatus
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.auth
@@ -83,6 +84,37 @@ object FirebaseEmulator {
       auth.createUserWithEmailAndPassword(email, password).await()
     }
     Log.d("FirebaseEmulator", "Signed in as ${auth.currentUser?.uid}")
+  }
+
+  /** Add a test request to Firestore for testing purposes. */
+  suspend fun addTestRequest(
+      requestId: String,
+      creatorId: String = auth.currentUser?.uid ?: "test-creator",
+      status: RequestStatus = RequestStatus.IN_PROGRESS,
+      title: String = "Test Request",
+      description: String = "Test Description",
+      verbose: Boolean = false
+  ) {
+    val current_time = System.currentTimeMillis()
+    val request =
+        hashMapOf(
+            "requestId" to requestId,
+            "title" to title,
+            "description" to description,
+            "status" to status.name,
+            "creatorId" to creatorId,
+            "requestType" to emptyList<String>(),
+            "people" to emptyList<String>(),
+            "tags" to emptyList<String>(),
+            "locationName" to "Test Location",
+            "startTimeStamp" to current_time,
+            "expirationTime" to current_time + 86400000 // +1 day
+            )
+
+    firestore.collection("requests").document(requestId).set(request).await()
+    if (verbose) {
+      Log.d("FirebaseEmulator", "Added test request: $requestId")
+    }
   }
 
   fun signOut() = auth.signOut()

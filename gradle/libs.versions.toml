@@ -67,6 +67,9 @@ kotlinxSerializationJson = "1.6.2"
 androidxCoreKtx = "1.6.1"
 playServicesLocation = "21.3.0"
 material3Version = "1.3.2"
+roomExternalAntlr = "2.8.4"
+runtime = "1.0.0-alpha08"
+junitKtx = "1.3.0"
 
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }

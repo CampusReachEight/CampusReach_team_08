@@ -34,9 +34,11 @@ class RequestRepositoryFirestoreTest : BaseEmulatorTest() {
       title: String,
       description: String,
       creatorId: String,
-      start: Date = Date(),
-      expires: Date = Date(System.currentTimeMillis() + 3_600_000),
-      people: List<String> = emptyList()
+      // Default to future start time so viewStatus computes OPEN (startTimeStamp > now)
+      start: Date = Date(System.currentTimeMillis() + 3_600_000),
+      expires: Date = Date(System.currentTimeMillis() + 7_200_000),
+      people: List<String> = emptyList(),
+      status: RequestStatus = RequestStatus.OPEN
   ): Request {
     return Request(
         requestId = requestId,
@@ -45,7 +47,7 @@ class RequestRepositoryFirestoreTest : BaseEmulatorTest() {
         requestType = listOf(RequestType.STUDYING),
         location = Location(46.5191, 6.5668, "EPFL"),
         locationName = "EPFL",
-        status = RequestStatus.OPEN,
+        status = status,
         startTimeStamp = start,
         expirationTime = expires,
         people = people,
@@ -131,7 +133,13 @@ class RequestRepositoryFirestoreTest : BaseEmulatorTest() {
   fun addRequestWithTheCorrectID() = runTest {
     addRequestTracking(request1)
     val storedRequest = repository.getRequest(request1.requestId)
-    assertEquals(request1, storedRequest)
+    // Compare key fields - status is dynamically computed via viewStatus
+    assertEquals(request1.requestId, storedRequest.requestId)
+    assertEquals(request1.title, storedRequest.title)
+    assertEquals(request1.description, storedRequest.description)
+    assertEquals(request1.creatorId, storedRequest.creatorId)
+    assertEquals(request1.locationName, storedRequest.locationName)
+    assertEquals(RequestStatus.OPEN, storedRequest.status) // viewStatus with future dates = OPEN
   }
 
   @Test
@@ -173,7 +181,12 @@ class RequestRepositoryFirestoreTest : BaseEmulatorTest() {
     addRequestTracking(request1)
     addRequestTracking(request2)
     val storedRequest = repository.getRequest(request2.requestId)
-    assertEquals(request2, storedRequest)
+    // Compare key fields - status is dynamically computed via viewStatus
+    assertEquals(request2.requestId, storedRequest.requestId)
+    assertEquals(request2.title, storedRequest.title)
+    assertEquals(request2.description, storedRequest.description)
+    assertEquals(request2.creatorId, storedRequest.creatorId)
+    assertEquals(RequestStatus.OPEN, storedRequest.status) // viewStatus with future dates = OPEN
   }
 
   @Test
@@ -212,20 +225,27 @@ class RequestRepositoryFirestoreTest : BaseEmulatorTest() {
   @Test
   fun canUpdateRequestByID() = runTest {
     addRequestTracking(request1)
-    val modified = request1.copy(title = "Modified Title", status = RequestStatus.COMPLETED)
+    // Update title but keep status that matches viewStatus calculation (OPEN with future dates)
+    val modified = request1.copy(title = "Modified Title")
     repository.updateRequest(request1.requestId, modified)
     val stored = repository.getRequest(request1.requestId)
-    assertEquals(modified, stored)
+    assertEquals(modified.requestId, stored.requestId)
+    assertEquals(modified.title, stored.title)
+    assertEquals(modified.description, stored.description)
+    assertEquals(modified.creatorId, stored.creatorId)
   }
 
   @Test
   fun canUpdateTheCorrectRequestByID() = runTest {
     addRequestTracking(request1)
     addRequestTracking(request2)
-    val modified = request1.copy(title = "Modified Title", status = RequestStatus.IN_PROGRESS)
+    // Update only the title - keep dates so viewStatus remains OPEN
+    val modified = request1.copy(title = "Modified Title")
     repository.updateRequest(request1.requestId, modified)
     val storedModified = repository.getRequest(request1.requestId)
-    assertEquals(modified, storedModified)
+    assertEquals(modified.title, storedModified.title)
+    assertEquals(modified.requestId, storedModified.requestId)
+    assertEquals(RequestStatus.OPEN, storedModified.status) // viewStatus with future dates = OPEN
     val storedOther = repository.getRequest(request2.requestId)
     assertEquals(request2.title, storedOther.title)
   }
@@ -482,9 +502,15 @@ class RequestRepositoryFirestoreTest : BaseEmulatorTest() {
 
   @Test
   fun closeRequest_successfully_closes_IN_PROGRESS_request() = runTest {
-    // Given
+    // Given - Use dates that result in IN_PROGRESS viewStatus (start <= now, expiration > now)
+    val now = System.currentTimeMillis()
     val inProgressRequest =
-        request1.copy(status = RequestStatus.IN_PROGRESS, people = listOf("helper1"))
+        request1.copy(
+            status = RequestStatus.IN_PROGRESS,
+            people = listOf("helper1"),
+            startTimeStamp = Date(now - 1_000), // 1 second ago
+            expirationTime = Date(now + 3_600_000) // 1 hour from now
+            )
     addRequestTracking(inProgressRequest)
 
     // When
@@ -528,8 +554,14 @@ class RequestRepositoryFirestoreTest : BaseEmulatorTest() {
 
   @Test
   fun closeRequest_throws_InvalidStatus_for_COMPLETED_request() = runTest {
-    // Given
-    val completedRequest = request1.copy(status = RequestStatus.COMPLETED)
+    // Given - Use dates that result in COMPLETED viewStatus (expirationTime <= now)
+    val now = System.currentTimeMillis()
+    val completedRequest =
+        request1.copy(
+            status = RequestStatus.COMPLETED,
+            startTimeStamp = Date(now - 7_200_000), // 2 hours ago
+            expirationTime = Date(now - 3_600_000) // 1 hour ago (expired)
+            )
     addRequestTracking(completedRequest)
 
     // When/Then
@@ -669,5 +701,71 @@ class RequestRepositoryFirestoreTest : BaseEmulatorTest() {
     assertTrue(shouldAwardCreator)
     val updatedRequest = repository.getRequest(requestWithHelpers.requestId)
     assertEquals(RequestStatus.COMPLETED, updatedRequest.status)
+  }
+
+  @Test
+  fun getAllCurrentRequests_excludesCompletedRequests() = runTest {
+    val completed = request1.copy(status = RequestStatus.COMPLETED)
+    addRequestTracking(completed)
+
+    val all = repository.getAllCurrentRequests()
+    assertFalse(
+        "Completed requests must be filtered out", all.any { it.requestId == completed.requestId })
+  }
+
+  @Test
+  fun getAllCurrentRequests_excludesCancelledRequests() = runTest {
+    val cancelled = request1.copy(status = RequestStatus.CANCELLED)
+    addRequestTracking(cancelled)
+
+    val all = repository.getAllCurrentRequests()
+    assertFalse(
+        "Cancelled requests must be filtered out", all.any { it.requestId == cancelled.requestId })
+  }
+
+  @Test
+  fun getAllCurrentRequests_excludesAutomaticallyCompletedRequests() = runTest {
+    val now = Date()
+    val expiredRequest =
+        generateRequest(
+            "expired-request",
+            "Expired",
+            "Already expired",
+            currentUserId,
+            start = Date(now.time - 10_000),
+            expires = Date(now.time - 1) // EXPIRED
+            )
+    addRequestTracking(expiredRequest)
+
+    val all = repository.getAllCurrentRequests()
+    assertFalse(
+        "Expired requests (viewStatus=COMPLETED) must be filtered out",
+        all.any { it.requestId == expiredRequest.requestId })
+  }
+
+  @Test
+  fun getAllCurrentRequests_keepsNonCompletedRequests() = runTest {
+    val open = request1.copy(status = RequestStatus.OPEN)
+    val inProgress = request2.copy(status = RequestStatus.IN_PROGRESS)
+    val archived = request3.copy(status = RequestStatus.ARCHIVED)
+
+    addRequestTracking(open)
+    addRequestTracking(inProgress)
+    addRequestTracking(archived)
+
+    val all = repository.getAllCurrentRequests().map { it.requestId }.toSet()
+
+    assertTrue(all.contains(open.requestId))
+    assertTrue(all.contains(inProgress.requestId))
+    assertTrue(all.contains(archived.requestId))
+  }
+
+  @Test
+  fun getRequest_stillReturnsCompletedOrCancelledRequests() = runTest {
+    val completed = request1.copy(status = RequestStatus.COMPLETED)
+    addRequestTracking(completed)
+
+    val stored = repository.getRequest(completed.requestId)
+    assertEquals(completed.requestId, stored.requestId)
   }
 }

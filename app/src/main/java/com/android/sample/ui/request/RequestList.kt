@@ -52,10 +52,7 @@ object RequestListTestTags {
 
   const val REQUEST_SEARCH_BAR = "requestSearchBar"
 
-  /**
-   * Tags for the filter dropdown buttons When clicked, they open the respective filter dropdown
-   * menus
-   */
+  /** Tags for the filter dropdown buttons When clicked, they open the respective filter menus */
   const val REQUEST_TYPE_FILTER_DROPDOWN_BUTTON = "requestTypeFilterDropdown"
 
   const val REQUEST_TAG_FILTER_DROPDOWN_BUTTON = "requestTagFilterDropdown"
@@ -116,7 +113,12 @@ fun RequestListScreen(
   // Keep Lucene index in sync with loaded requests
   LaunchedEffect(state.requests) {
     if (state.requests.isNotEmpty()) {
-      searchFilterViewModel.initializeWithRequests(state.requests)
+      val base =
+          state.requests.filter {
+            it.status == com.android.sample.model.request.RequestStatus.OPEN ||
+                it.status == com.android.sample.model.request.RequestStatus.IN_PROGRESS
+          }
+      searchFilterViewModel.initializeWithRequests(base)
     }
   }
 
@@ -192,7 +194,11 @@ fun RequestListScreen(
           Spacer(modifier = Modifier.height(ConstantRequestList.PaddingLarge))
 
           // Always show the sorted/filtered list from the filter ViewModel
-          val toShow = displayed
+          val toShow =
+              displayed.filter {
+                it.status == com.android.sample.model.request.RequestStatus.OPEN ||
+                    it.status == com.android.sample.model.request.RequestStatus.IN_PROGRESS
+              }
 
           if (!state.isLoading && toShow.isEmpty()) {
             Text(

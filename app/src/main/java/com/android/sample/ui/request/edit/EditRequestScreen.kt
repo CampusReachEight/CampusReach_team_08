@@ -107,7 +107,7 @@ fun EditRequestScreen(
     if (requestId != null) {
       viewModel.loadRequest(requestId)
     } else {
-      viewModel.initializeForCreate(Firebase.auth.currentUser?.uid ?: "")
+      viewModel.initializeForCreate()
     }
   }
   val navigationTag: String =
