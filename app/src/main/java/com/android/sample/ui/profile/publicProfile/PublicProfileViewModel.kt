@@ -83,3 +83,14 @@ class PublicProfileViewModel(private val repository: UserProfileRepository) : Vi
     loadPublicProfile(id)
   }
 }
+
+class PublicProfileViewModelFactory(private val repository: UserProfileRepository) :
+    androidx.lifecycle.ViewModelProvider.Factory {
+  @Suppress("UNCHECKED_CAST")
+  override fun <T : ViewModel> create(modelClass: Class<T>): T {
+    if (modelClass.isAssignableFrom(PublicProfileViewModel::class.java)) {
+      return PublicProfileViewModel(repository) as T
+    }
+    throw IllegalArgumentException("Unknown ViewModel class")
+  }
+}
