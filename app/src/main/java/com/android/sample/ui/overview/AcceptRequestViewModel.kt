@@ -29,7 +29,7 @@ class AcceptRequestViewModel(
     private val requestRepository: RequestRepository =
         RequestRepositoryFirestore(Firebase.firestore),
     private val userProfileRepository: UserProfileRepository? = null,
-    private val requestCache: RequestCache
+    private val requestCache: RequestCache? = null
 ) : ViewModel() {
 
   private val _uiState = MutableStateFlow(AcceptRequestUIState())
@@ -95,11 +95,11 @@ class AcceptRequestViewModel(
                 offlineMode = false)
       } catch (e: Exception) {
         try {
-          val cachedRequest = requestCache.getRequestById(requestID)
+          val cachedRequest = requestCache?.getRequestById(requestID)
           _uiState.update {
             it.copy(
                 request = cachedRequest,
-                accepted = requestRepository.hasUserAcceptedRequest(cachedRequest),
+                accepted = requestRepository.hasUserAcceptedRequest(cachedRequest!!),
                 offlineMode = true)
           }
         } catch (e: Exception) {

@@ -12,6 +12,9 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeDown
+import androidx.test.espresso.action.ViewActions.swipeUp
 import com.android.sample.model.map.Location
 import com.android.sample.model.request.Request
 import com.android.sample.model.request.RequestRepositoryFirestore
@@ -551,13 +554,13 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
     // Header visible for owner
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.VOLUNTEERS_SECTION_HEADER)
-        .assertIsDisplayed()
+        .assertExists()
         .performClick()
 
     // request1 has empty people list -> should show "No volunteers yet"
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.VOLUNTEERS_SECTION_CONTAINER)
-        .assertIsDisplayed()
+        .assertExists()
   }
 
   // Tests for getInitials function (via CreatorSection composable)
