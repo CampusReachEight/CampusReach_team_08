@@ -47,6 +47,9 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.firestore
 import okhttp3.OkHttpClient
 
+private const val PUBLIC_PROFILE_VM_KEY_PREFIX = "PublicProfile_"
+private const val INVALID_USER_ID_MESSAGE = "Invalid user id"
+
 @SuppressLint("ViewModelConstructorInComposable")
 @Composable
 fun NavigationScreen(
@@ -129,18 +132,33 @@ fun NavigationScreen(
                   navArgument(Screen.PublicProfile.ARG_USER_ID) { type = NavType.StringType })) {
               navBackStackEntry ->
             val userId = navBackStackEntry.arguments?.getString(Screen.PublicProfile.ARG_USER_ID)
-            userId?.let { id ->
-              // scoped key so different user ids get separate VMs
-              val publicProfileViewModel:
-                  com.android.sample.ui.profile.publicProfile.PublicProfileViewModel =
-                  viewModel(key = "PublicProfile_$id")
-              androidx.compose.runtime.LaunchedEffect(id) {
-                publicProfileViewModel.loadPublicProfile(id)
-              }
 
-              PublicProfileScreen(
-                  viewModel = publicProfileViewModel, onBackClick = { navigationActions.goBack() })
+            if (userId.isNullOrBlank()) {
+              // missing or empty id: show a minimal inline error UI and navigate back
+              PlaceHolderScreen(
+                  text = INVALID_USER_ID_MESSAGE,
+                  modifier = Modifier.testTag(NavigationTestTags.PUBLIC_PROFILE_SCREEN),
+                  withBottomBar = false)
+              navigationActions.goBack()
+              return@composable
             }
+
+            val id = userId
+            val publicProfileViewModel:
+                com.android.sample.ui.profile.publicProfile.PublicProfileViewModel =
+                viewModel(key = "$PUBLIC_PROFILE_VM_KEY_PREFIX$id")
+
+            androidx.compose.runtime.LaunchedEffect(id) {
+              try {
+                publicProfileViewModel.loadPublicProfile(id)
+              } catch (e: Exception) {
+                // loading failed: navigate back (could be extended to show a Snackbar or retry UI)
+                navigationActions.goBack()
+              }
+            }
+
+            PublicProfileScreen(
+                viewModel = publicProfileViewModel, onBackClick = { navigationActions.goBack() })
           }
     }
 
