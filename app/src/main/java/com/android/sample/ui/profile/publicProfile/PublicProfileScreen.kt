@@ -22,7 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -54,39 +54,40 @@ fun PublicProfileScreen(
     viewModel: PublicProfileViewModel = viewModel(),
     onBackClick: () -> Unit = {}
 ) {
-  val state by viewModel.uiState.collectAsState()
-  val isFollowing = remember { mutableStateOf(false) }
-  val shownState =
-      mapPublicToProfileState(
-          publicProfile = state.profile, error = state.errorMessage, isLoading = state.isLoading)
+    val state by viewModel.uiState.collectAsState()
+    // Persist follow state across recompositions/config changes
+    val isFollowing = rememberSaveable { mutableStateOf(false) }
+    val shownState =
+        mapPublicToProfileState(
+            publicProfile = state.profile, error = state.errorMessage, isLoading = state.isLoading)
 
-  Scaffold(
-      modifier = Modifier.testTag(NavigationTestTags.PUBLIC_PROFILE_SCREEN),
-      containerColor = appPalette().primary,
-      topBar = { ProfileTopBar(onBackClick) }) { padding ->
+    Scaffold(
+        modifier = Modifier.testTag(NavigationTestTags.PUBLIC_PROFILE_SCREEN),
+        containerColor = appPalette().primary,
+        topBar = { ProfileTopBar(onBackClick) }) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
-          when {
-            state.isLoading -> ProfileLoadingBuffer(Modifier.fillMaxSize())
-            else ->
-                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                  state.errorMessage?.let {
-                    ErrorBanner(it)
-                    Spacer(modifier = Modifier.height(ProfileDimens.Vertical))
-                  }
+            when {
+                state.isLoading -> ProfileLoadingBuffer(Modifier.fillMaxSize())
+                else ->
+                    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                        state.errorMessage?.let {
+                            ErrorBanner(it)
+                            Spacer(modifier = Modifier.height(ProfileDimens.Vertical))
+                        }
 
-                  PublicProfileHeader(
-                      state = state,
-                      isFollowing = isFollowing.value,
-                      onFollowToggle = { isFollowing.value = !isFollowing.value })
-                  Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
-                  ProfileStats(state = shownState)
-                  Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
-                  ProfileInformation(state = shownState)
-                  Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
-                }
-          }
+                        PublicProfileHeader(
+                            state = state,
+                            isFollowing = isFollowing.value,
+                            onFollowToggle = { isFollowing.value = !isFollowing.value })
+                        Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
+                        ProfileStats(state = shownState)
+                        Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
+                        ProfileInformation(state = shownState)
+                        Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
+                    }
+            }
         }
-      }
+    }
 }
 
 /**
@@ -94,23 +95,23 @@ fun PublicProfileScreen(
  * that reads from `UserProfileRepository`.
  */
 fun userProfileToPublic(up: UserProfile): PublicProfile {
-  val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-  val arrival =
-      try {
-        dateFormat.format(up.arrivalDate)
-      } catch (_: Exception) {
-        null
-      }
-  return PublicProfile(
-      userId = up.id,
-      name = listOf(up.name, up.lastName).joinToString(" ").trim().ifEmpty { "Unknown" },
-      section = up.section.name,
-      arrivalDate = arrival,
-      pictureUriString = up.photo?.toString(),
-      kudosReceived = up.kudos,
-      helpReceived = 0,
-      followers = 0,
-      following = 0)
+    val dateFormat = SimpleDateFormat(PublicProfileDefaults.DATE_FORMAT_PATTERN, Locale.getDefault())
+    val arrival =
+        try {
+            dateFormat.format(up.arrivalDate)
+        } catch (_: Exception) {
+            null
+        }
+    return PublicProfile(
+        userId = up.id,
+        name = listOf(up.name, up.lastName).joinToString(" ").trim().ifEmpty { PublicProfileDefaults.DEFAULT_NAME },
+        section = up.section.name,
+        arrivalDate = arrival,
+        pictureUriString = up.photo?.toString(),
+        kudosReceived = up.kudos,
+        helpReceived = 0,
+        followers = 0,
+        following = 0)
 }
 
 private fun mapPublicToProfileState(
@@ -118,60 +119,60 @@ private fun mapPublicToProfileState(
     error: String?,
     isLoading: Boolean
 ): ProfileState {
-  // Use ProfileState.default() when available to avoid missing fields; otherwise construct
-  // explicitly.
-  return if (isLoading) {
-    ProfileState.default()
-  } else {
-    if (publicProfile == null) {
-      // minimal empty state with error shown
-      ProfileState(
-          userName = "Unknown",
-          userEmail = "",
-          profileId = "",
-          kudosReceived = 0,
-          helpReceived = 0,
-          followers = 0,
-          following = 0,
-          arrivalDate = "",
-          userSection = "",
-          isLoading = false,
-          errorMessage = error,
-          isEditMode = false,
-          profilePictureUrl = null,
-          isLoggingOut = false)
+    // Use ProfileState.default() when available to avoid missing fields; otherwise construct
+    // explicitly.
+    return if (isLoading) {
+        ProfileState.default()
     } else {
-      ProfileState(
-          userName = publicProfile.name,
-          userEmail = "",
-          profileId = publicProfile.userId,
-          kudosReceived = publicProfile.kudosReceived,
-          helpReceived = publicProfile.helpReceived,
-          followers = publicProfile.followers,
-          following = publicProfile.following,
-          arrivalDate = publicProfile.arrivalDate ?: "",
-          userSection = publicProfile.section,
-          isLoading = false,
-          errorMessage = error,
-          isEditMode = false,
-          profilePictureUrl = publicProfile.pictureUriString,
-          isLoggingOut = false)
+        if (publicProfile == null) {
+            // minimal empty state with error shown
+            ProfileState(
+                userName = PublicProfileDefaults.DEFAULT_NAME,
+                userEmail = PublicProfileDefaults.EMPTY,
+                profileId = PublicProfileDefaults.DEFAULT_PROFILE_ID,
+                kudosReceived = 0,
+                helpReceived = 0,
+                followers = 0,
+                following = 0,
+                arrivalDate = PublicProfileDefaults.EMPTY,
+                userSection = PublicProfileDefaults.EMPTY,
+                isLoading = false,
+                errorMessage = error,
+                isEditMode = false,
+                profilePictureUrl = null,
+                isLoggingOut = false)
+        } else {
+            ProfileState(
+                userName = publicProfile.name,
+                userEmail = PublicProfileDefaults.EMPTY,
+                profileId = publicProfile.userId,
+                kudosReceived = publicProfile.kudosReceived,
+                helpReceived = publicProfile.helpReceived,
+                followers = publicProfile.followers,
+                following = publicProfile.following,
+                arrivalDate = publicProfile.arrivalDate ?: PublicProfileDefaults.EMPTY,
+                userSection = publicProfile.section,
+                isLoading = false,
+                errorMessage = error,
+                isEditMode = false,
+                profilePictureUrl = publicProfile.pictureUriString,
+                isLoggingOut = false)
+        }
     }
-  }
 }
 
 // Placeholder FollowButton composable
 @Composable
 fun FollowButton(isFollowing: Boolean, onToggle: () -> Unit, modifier: Modifier = Modifier) {
-  ElevatedButton(
-      onClick = onToggle,
-      modifier = modifier.size(width = UiDimens.IconMedium * 3, height = UiDimens.IconMedium)) {
+    ElevatedButton(
+        onClick = onToggle,
+        modifier = modifier.size(width = UiDimens.IconMedium * 3, height = UiDimens.IconMedium)) {
         if (isFollowing) {
-          Text(text = "Unfollow")
+            Text(text = "Unfollow")
         } else {
-          Text(text = "Follow")
+            Text(text = "Follow")
         }
-      }
+    }
 }
 
 @Composable
@@ -182,49 +183,49 @@ fun PublicProfileHeader(
     onFollowToggle: () -> Unit = {},
     palette: AppPalette = appPalette()
 ) {
-  val accent = palette.accent
-  val textColor = AppColors.WhiteColor
+    val accent = palette.accent
+    val textColor = AppColors.WhiteColor
 
-  Card(
-      modifier =
-          modifier
-              .fillMaxWidth()
-              .padding(ProfileDimens.HeaderPadding)
-              .testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER),
-      colors = CardDefaults.cardColors(containerColor = accent),
-      elevation = CardDefaults.cardElevation(defaultElevation = ProfileDimens.CardElevation)) {
+    Card(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(ProfileDimens.HeaderPadding)
+                .testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER),
+        colors = CardDefaults.cardColors(containerColor = accent),
+        elevation = CardDefaults.cardElevation(defaultElevation = ProfileDimens.CardElevation)) {
         Box(modifier = Modifier.padding(ProfileDimens.HeaderPadding)) {
-          Row(verticalAlignment = Alignment.CenterVertically) {
-            ProfilePicture(
-                profileId = state.profile?.userId ?: "",
-                modifier =
-                    Modifier.size(ProfileDimens.ProfilePicture)
-                        .testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_PROFILE_PICTURE))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                ProfilePicture(
+                    profileId = state.profile?.userId ?: PublicProfileDefaults.DEFAULT_PROFILE_ID,
+                    modifier =
+                        Modifier.size(ProfileDimens.ProfilePicture)
+                            .testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_PROFILE_PICTURE))
 
-            Spacer(modifier = Modifier.width(ProfileDimens.HeaderSpacer))
+                Spacer(modifier = Modifier.width(ProfileDimens.HeaderSpacer))
 
-            Column {
-              Text(
-                  text = state.profile?.name ?: "Unknown",
-                  style = MaterialTheme.typography.titleMedium,
-                  color = textColor,
-                  modifier = Modifier.testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_NAME))
-              Text(
-                  text = state.profile?.section ?: "None",
-                  style = MaterialTheme.typography.bodyMedium,
-                  color = textColor,
-                  modifier = Modifier.testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_EMAIL))
+                Column {
+                    Text(
+                        text = state.profile?.name ?: PublicProfileDefaults.DEFAULT_NAME,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = textColor,
+                        modifier = Modifier.testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_NAME))
+                    Text(
+                        text = state.profile?.section ?: PublicProfileDefaults.DEFAULT_SECTION,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = textColor,
+                        modifier = Modifier.testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_EMAIL))
+                }
+                Spacer(modifier = Modifier.weight(1f))
+
+                FollowButton(
+                    isFollowing = isFollowing,
+                    onToggle = onFollowToggle,
+                    modifier =
+                        Modifier.testTag(
+                            if (isFollowing) PublicProfileTestTags.UNFOLLOW_BUTTON
+                            else PublicProfileTestTags.FOLLOW_BUTTON))
             }
-            Spacer(modifier = Modifier.weight(1f))
-
-            FollowButton(
-                isFollowing = isFollowing,
-                onToggle = onFollowToggle,
-                modifier =
-                    Modifier.testTag(
-                        if (isFollowing) PublicProfileTestTags.UNFOLLOW_BUTTON
-                        else PublicProfileTestTags.FOLLOW_BUTTON))
-          }
         }
-      }
+    }
 }
