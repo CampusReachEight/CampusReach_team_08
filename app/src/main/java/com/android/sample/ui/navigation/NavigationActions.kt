@@ -79,6 +79,13 @@ sealed class Screen(
       const val route = ProfileRoutes.PUBLIC_PROFILE_ROUTE
     }
   }
+
+  data class ValidateRequest(val requestId: String) : Screen("validateRequest/{requestId}") {
+    companion object {
+      const val ARG_REQUEST_ID = "requestId"
+      const val route = "validateRequest/{$ARG_REQUEST_ID}"
+    }
+  }
 }
 
 /**

@@ -32,7 +32,8 @@ data class MapUIState(
     val errorMsg: String? = null,
     var currentRequest: Request? = null,
     var isOwner: Boolean? = null,
-    val currentProfile: UserProfile? = null
+    val currentProfile: UserProfile? = null,
+    val currentListRequest: List<Request>? = null
 )
 
 /**
@@ -81,9 +82,22 @@ class MapViewModel(
   }
 
   /** Refreshes the UI by updating the current request */
-  fun updateCurrentRequest(request: Request?) {
-    _uiState.value = _uiState.value.copy(currentRequest = request)
+  fun updateCurrentRequest(request: Request) {
+    _uiState.value = _uiState.value.copy(currentRequest = request, currentListRequest = null)
     isHisRequest(request)
+  }
+
+  /** Refreshes the UI by updating the current list of current request */
+  fun updateCurrentListRequest(requestList: List<Request>) {
+    _uiState.value =
+        _uiState.value.copy(
+            currentRequest = null, currentListRequest = requestList, currentProfile = null)
+  }
+
+  /** Set current request, profile and listOfRequest to null */
+  fun updateNoRequests() {
+    _uiState.value =
+        _uiState.value.copy(currentRequest = null, currentListRequest = null, currentProfile = null)
   }
 
   /**

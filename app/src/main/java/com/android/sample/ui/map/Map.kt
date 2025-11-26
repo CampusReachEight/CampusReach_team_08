@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -28,7 +29,6 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -44,6 +44,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -72,11 +73,14 @@ import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.navigation.Screen
 import com.android.sample.ui.overview.toDisplayString
 import com.android.sample.ui.profile.ProfilePicture
+import com.android.sample.ui.request.ConstantRequestList
+import com.android.sample.ui.request.RequestListItem
 import com.android.sample.ui.theme.AppPalette
 import com.android.sample.ui.theme.TopNavigationBar
 import com.android.sample.ui.theme.UiDimens
 import com.android.sample.ui.theme.appPalette
 import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.CameraPositionState
@@ -84,9 +88,7 @@ import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 object MapTestTags {
@@ -111,25 +113,13 @@ object MapTestTags {
   const val PROFILE_SECTION_TEXT = "profileSectionText"
   const val PROFILE_CREATION_DATE = "profileCreationDate"
   const val PROFILE_EDIT_BUTTON = "profileEditButton"
+  const val MAP_LIST_REQUEST = "map_list_request"
 
   fun testTagForTab(tab: String): String {
     return "tag${tab}"
   }
 }
 
-private const val ZOOM_FEW = 15f
-private const val ZOOM_SEVERAL = 13f
-private const val ZOOM_MANY = 10f
-
-fun calculateZoomLevel(markerCount: Int): Float {
-  return when {
-    markerCount < 2 -> ZOOM_FEW
-    markerCount < 5 -> ZOOM_SEVERAL
-    else -> ZOOM_MANY
-  }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MapScreen(viewModel: MapViewModel = viewModel(), navigationActions: NavigationActions? = null) {
   val uiState by viewModel.uiState.collectAsState()
@@ -170,6 +160,15 @@ fun MapScreen(viewModel: MapViewModel = viewModel(), navigationActions: Navigati
                         uiState.target, calculateZoomLevel(uiState.request.size)))
         val cameraPositionState = remember { initialPosition }
 
+        val zoomLevel by remember { derivedStateOf { cameraPositionState.position.zoom } }
+
+        val clusters =
+            remember(uiState.request, zoomLevel) {
+              clusterRequestsByDistance(
+                  requests = uiState.request,
+                  clusterRadiusMeters = getClusterRadiusForZoom(zoomLevel))
+            }
+
         // Configure UI settings to disable built-in zoom controls
         val uiSettings = remember {
           MapUiSettings(
@@ -178,20 +177,53 @@ fun MapScreen(viewModel: MapViewModel = viewModel(), navigationActions: Navigati
         }
 
         Box(modifier = Modifier.fillMaxSize().padding(pd)) {
+
           // Carte
           GoogleMap(
               modifier = Modifier.fillMaxSize().testTag(MapTestTags.GOOGLE_MAP_SCREEN),
               cameraPositionState = cameraPositionState,
               uiSettings = uiSettings) {
-                uiState.request.forEach { request ->
-                  val markerState =
-                      MarkerState(
-                          position = LatLng(request.location.latitude, request.location.longitude))
+                clusters.forEach { cluster ->
+                  val isACluster = cluster.size == ConstantMap.ONE
+                  val position =
+                      if (isACluster) {
+                        LatLng(
+                            cluster.first().location.latitude, cluster.first().location.longitude)
+                      } else {
+                        calculateClusterCenter(cluster)
+                      }
                   Marker(
-                      state = markerState,
+                      state = MarkerState(position = position),
+                      icon =
+                          if (isACluster) {
+                            BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)
+                          } else {
+                            createMarkerWithNumber(cluster.size)
+                          },
                       onClick = {
-                        viewModel.updateCurrentRequest(request)
-                        viewModel.updateCurrentProfile(request.creatorId)
+                        coroutineScope.launch {
+                          if (isACluster) {
+                            // Zoom on one individual marker
+                            cameraPositionState.animate(
+                                update =
+                                    CameraUpdateFactory.newLatLngZoom(
+                                        position, ConstantMap.ZOOM_AFTER_CHOSEN),
+                                durationMs = ConstantMap.LONG_DURATION_ANIMATION)
+                            viewModel.updateCurrentRequest(cluster.first())
+                            viewModel.updateCurrentProfile(cluster.first().creatorId)
+                          } else {
+                            // Zoom on cluster
+                            cameraPositionState.animate(
+                                update =
+                                    CameraUpdateFactory.newLatLngZoom(
+                                        position,
+                                        zoomLevel + ConstantMap.ZOOM_LEVEL_TWO // Zoom 2 level
+                                        ),
+                                durationMs = ConstantMap.LONG_DURATION_ANIMATION)
+                            viewModel.updateCurrentListRequest(cluster)
+                          }
+                        }
+
                         true
                       })
                 }
@@ -200,342 +232,235 @@ fun MapScreen(viewModel: MapViewModel = viewModel(), navigationActions: Navigati
           // Bottom Sheet Draggable
           uiState.currentRequest?.let { req ->
             var selectedTab by remember { mutableIntStateOf(0) }
-            val minHeight = ConstantMap.MIN_HEIGHT
-
-            val density = LocalDensity.current
-            val screenHeight = with(density) { LocalConfiguration.current.screenHeightDp.dp.toPx() }
-            val minHeightPx = with(density) { minHeight.toPx() }
-            val midScreen = screenHeight / 2
-            var offsetY by remember { mutableFloatStateOf(midScreen) }
-
-            val currentHeight by
-                animateDpAsState(
-                    targetValue =
-                        with(density) {
-                          (screenHeight -
-                                  offsetY.coerceIn(
-                                      ConstantMap.MIN_OFFSET_Y, screenHeight - minHeightPx))
-                              .toDp()
-                        },
-                    animationSpec = tween(durationMillis = ConstantMap.DURATION_ANIMATION))
-
-            // list of all tabs
             val tabs = listOf(ConstantMap.DETAILS, ConstantMap.PROFILE)
 
-            Box(
-                modifier =
-                    Modifier.align(Alignment.BottomCenter)
-                        .fillMaxWidth()
-                        .testTag(MapTestTags.DRAG_DOWN_MENU)) {
-                  Surface(
-                      modifier = Modifier.fillMaxWidth().height(currentHeight),
-                      shape =
-                          RoundedCornerShape(
-                              topStart = ConstantMap.BOTTOM_SHEET_SHAPE,
-                              topEnd = ConstantMap.BOTTOM_SHEET_SHAPE),
-                      color = appPalette.primary,
-                      shadowElevation = ConstantMap.BOTTOM_SHEET_ELEVATION) {
-                        Column(modifier = Modifier.fillMaxSize()) {
-                          // Drag Handle + Button
-                          Box(modifier = Modifier.fillMaxWidth()) {
-                            // Drag Handle
-                            Box(
-                                modifier =
-                                    Modifier.width(ConstantMap.DRAG_HANDLE_WIDTH)
-                                        .height(ConstantMap.DRAG_HANDLE_HEIGHT)
-                                        .background(
-                                            color =
-                                                MaterialTheme.colorScheme.onSurface.copy(
-                                                    alpha = ConstantMap.DRAG_HANDLE_ALPHA),
-                                            shape =
-                                                RoundedCornerShape(
-                                                    ConstantMap.DRAG_HANDLE_CORNER_RADIUS))
-                                        .align(Alignment.Center)
-                                        .pointerInput(Unit) {
-                                          detectVerticalDragGestures(
-                                              onVerticalDrag = { _, dragAmount ->
-                                                offsetY =
-                                                    (offsetY + dragAmount).coerceIn(
-                                                        ConstantMap.MIN_OFFSET_Y,
-                                                        screenHeight - minHeightPx)
-                                              })
-                                        }
-                                        .testTag(MapTestTags.DRAG))
+            AnimatedBottomSheet(
+                viewModel = viewModel,
+                appPalette = appPalette,
+                modifier = Modifier.align(Alignment.BottomCenter)) {
 
-                            // Button X
-                            IconButton(
-                                onClick = {
-                                  viewModel.updateCurrentRequest(null)
-                                  viewModel.updateCurrentProfile(null)
-                                },
-                                modifier =
-                                    Modifier.align(Alignment.CenterEnd)
-                                        .testTag(MapTestTags.BUTTON_X)) {
-                                  Icon(
-                                      imageVector = Icons.Default.Close,
-                                      contentDescription = ConstantMap.CLOSE_BUTTON_DESCRIPTION,
-                                      tint =
-                                          MaterialTheme.colorScheme.onSurface.copy(
-                                              alpha = ConstantMap.CLOSE_BUTTON_ALPHA))
-                                }
-                          }
-
-                          // Tabs
-                          ScrollableTabRow(
-                              selectedTabIndex = selectedTab,
-                              modifier = Modifier.fillMaxWidth(),
-                              edgePadding = ConstantMap.TAB_ROW_EDGE_PADDING,
-                              indicator = { tabPositions ->
-                                TabRowDefaults.SecondaryIndicator(
-                                    Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
-                                    color = appPalette.accent)
+                  // Tabs
+                  ScrollableTabRow(
+                      selectedTabIndex = selectedTab,
+                      modifier = Modifier.fillMaxWidth(),
+                      edgePadding = ConstantMap.TAB_ROW_EDGE_PADDING,
+                      indicator = { tabPositions ->
+                        TabRowDefaults.SecondaryIndicator(
+                            Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
+                            color = appPalette.accent)
+                      },
+                      divider = {}) {
+                        tabs.forEachIndexed { index, title ->
+                          Tab(
+                              selected = selectedTab == index,
+                              onClick = { selectedTab = index },
+                              text = {
+                                Text(
+                                    text = title,
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color =
+                                        if (selectedTab == index) appPalette.accent
+                                        else
+                                            MaterialTheme.colorScheme.onSurface.copy(
+                                                alpha = ConstantMap.ALPHA_TEXT_UNSELECTED))
                               },
-                              divider = {}) {
-                                tabs.forEachIndexed { index, title ->
-                                  Tab(
-                                      selected = selectedTab == index,
-                                      onClick = { selectedTab = index },
-                                      text = {
+                              modifier = Modifier.testTag(MapTestTags.testTagForTab(title)))
+                        }
+                      }
+
+                  HorizontalDivider(
+                      thickness = ConstantMap.DIVIDER_THICKNESS,
+                      color =
+                          MaterialTheme.colorScheme.onSurface.copy(
+                              alpha = ConstantMap.ALPHA_DIVIDER))
+
+                  // show text in function of tab selected
+                  Column(
+                      modifier =
+                          Modifier.fillMaxWidth()
+                              .weight(ConstantMap.WEIGHT_FILL)
+                              .verticalScroll(rememberScrollState())
+                              .padding(
+                                  horizontal = ConstantMap.PADDING_HORIZONTAL_STANDARD,
+                                  vertical = ConstantMap.PADDING_STANDARD)) {
+                        when (selectedTab) {
+                          0 -> { // Information
+                            Surface(
+                                color =
+                                    appPalette.accent.copy(
+                                        alpha = ConstantMap.ALPHA_PRIMARY_SURFACE),
+                                shape = RoundedCornerShape(ConstantMap.CORNER_RADIUS_SMALL),
+                                modifier =
+                                    Modifier.padding(bottom = ConstantMap.SPACER_HEIGHT_LARGE)) {
+                                  Text(
+                                      text = req.title,
+                                      style = MaterialTheme.typography.titleMedium,
+                                      color = appPalette.accent,
+                                      modifier =
+                                          Modifier.padding(
+                                                  horizontal = ConstantMap.PADDING_STANDARD,
+                                                  vertical = ConstantMap.SPACER_HEIGHT_SMALL)
+                                              .testTag(MapTestTags.REQUEST_TITLE))
+                                }
+
+                            Text(
+                                text = req.description,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier =
+                                    Modifier.padding(bottom = ConstantMap.SPACER_HEIGHT_LARGE)
+                                        .testTag(MapTestTags.REQUEST_DESCRIPTION))
+
+                            // Dates
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement =
+                                    Arrangement.spacedBy(ConstantMap.SPACER_HEIGHT_MEDIUM)) {
+                                  // Start Date
+                                  Surface(
+                                      modifier = Modifier.weight(ConstantMap.WEIGHT_FILL),
+                                      shape = RoundedCornerShape(ConstantMap.CORNER_RADIUS_MEDIUM),
+                                      color = MaterialTheme.colorScheme.secondaryContainer) {
+                                        Column(
+                                            modifier =
+                                                Modifier.padding(ConstantMap.PADDING_STANDARD)) {
+                                              Text(
+                                                  text = ConstantMap.START_DATE,
+                                                  style = MaterialTheme.typography.labelSmall,
+                                                  color =
+                                                      MaterialTheme.colorScheme.onPrimaryContainer
+                                                          .copy(
+                                                              alpha =
+                                                                  ConstantMap
+                                                                      .ALPHA_ON_CONTAINER_MEDIUM))
+                                              Spacer(
+                                                  modifier =
+                                                      Modifier.height(
+                                                          ConstantMap.SPACER_HEIGHT_SMALL))
+                                              Text(
+                                                  text = req.startTimeStamp.toDisplayString(),
+                                                  style = MaterialTheme.typography.bodyMedium,
+                                                  fontWeight = FontWeight.SemiBold,
+                                                  color =
+                                                      MaterialTheme.colorScheme.onPrimaryContainer,
+                                                  modifier =
+                                                      Modifier.testTag(MapTestTags.START_DATE))
+                                            }
+                                      }
+
+                                  // End Date
+                                  Surface(
+                                      modifier = Modifier.weight(ConstantMap.WEIGHT_FILL),
+                                      shape = RoundedCornerShape(ConstantMap.CORNER_RADIUS_MEDIUM),
+                                      color = MaterialTheme.colorScheme.secondaryContainer) {
+                                        Column(
+                                            modifier =
+                                                Modifier.padding(ConstantMap.PADDING_STANDARD)) {
+                                              Text(
+                                                  text = ConstantMap.END_DATE,
+                                                  style = MaterialTheme.typography.labelSmall,
+                                                  color =
+                                                      MaterialTheme.colorScheme.onSecondaryContainer
+                                                          .copy(
+                                                              alpha =
+                                                                  ConstantMap
+                                                                      .ALPHA_ON_CONTAINER_MEDIUM))
+                                              Spacer(
+                                                  modifier =
+                                                      Modifier.height(
+                                                          ConstantMap.SPACER_HEIGHT_SMALL))
+                                              Text(
+                                                  text = req.expirationTime.toDisplayString(),
+                                                  style = MaterialTheme.typography.bodyMedium,
+                                                  fontWeight = FontWeight.SemiBold,
+                                                  color =
+                                                      MaterialTheme.colorScheme
+                                                          .onSecondaryContainer,
+                                                  modifier = Modifier.testTag(MapTestTags.END_DATE))
+                                            }
+                                      }
+                                }
+                            Spacer(modifier = Modifier.height(ConstantMap.SPACER_HEIGHT_LARGE))
+
+                            // Status
+                            Surface(
+                                shape = RoundedCornerShape(ConstantMap.CORNER_RADIUS_LARGE),
+                                color = MaterialTheme.colorScheme.tertiaryContainer,
+                                modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                                  Text(
+                                      text = req.status.name,
+                                      style = MaterialTheme.typography.labelMedium,
+                                      fontWeight = FontWeight.Medium,
+                                      color = MaterialTheme.colorScheme.onTertiaryContainer,
+                                      modifier =
+                                          Modifier.padding(
+                                                  horizontal = ConstantMap.SPACER_HEIGHT_LARGE,
+                                                  vertical = ConstantMap.SPACER_HEIGHT_MID)
+                                              .testTag(MapTestTags.REQUEST_STATUS))
+                                }
+
+                            Spacer(modifier = Modifier.height(ConstantMap.SPACER_HEIGHT_MEDIUM))
+
+                            // Location name
+                            Surface(
+                                shape = RoundedCornerShape(ConstantMap.CORNER_RADIUS_MEDIUM),
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                                  Row(
+                                      verticalAlignment = Alignment.CenterVertically,
+                                      modifier =
+                                          Modifier.padding(
+                                              horizontal = ConstantMap.PADDING_HORIZONTAL_STANDARD,
+                                              vertical = ConstantMap.PADDING_STANDARD)) {
+                                        Icon(
+                                            imageVector = Icons.Default.LocationOn,
+                                            contentDescription = ConstantMap.LOCATION,
+                                            tint = appPalette.primary,
+                                            modifier =
+                                                Modifier.size(ConstantMap.ICON_SIZE_LOCATION))
+                                        Spacer(
+                                            modifier =
+                                                Modifier.width(ConstantMap.SPACER_WIDTH_SMALL))
                                         Text(
-                                            text = title,
-                                            style = MaterialTheme.typography.titleSmall,
-                                            color =
-                                                if (selectedTab == index) appPalette.accent
-                                                else
-                                                    MaterialTheme.colorScheme.onSurface.copy(
-                                                        alpha = ConstantMap.ALPHA_TEXT_UNSELECTED))
-                                      },
-                                      modifier = Modifier.testTag(MapTestTags.testTagForTab(title)))
+                                            text = req.locationName,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.Medium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier =
+                                                Modifier.testTag(MapTestTags.REQUEST_LOCATION_NAME))
+                                      }
                                 }
-                              }
+                            Spacer(modifier = Modifier.height(ConstantMap.SPACER_HEIGHT_MEDIUM))
 
-                          HorizontalDivider(
-                              thickness = ConstantMap.DIVIDER_THICKNESS,
-                              color =
-                                  MaterialTheme.colorScheme.onSurface.copy(
-                                      alpha = ConstantMap.ALPHA_DIVIDER))
-
-                          // show text in function of tab selected
-                          Column(
-                              modifier =
-                                  Modifier.fillMaxWidth()
-                                      .weight(ConstantMap.WEIGHT_FILL)
-                                      .verticalScroll(rememberScrollState())
-                                      .padding(
-                                          horizontal = ConstantMap.PADDING_HORIZONTAL_STANDARD,
-                                          vertical = ConstantMap.PADDING_STANDARD)) {
-                                when (selectedTab) {
-                                  0 -> { // Information
-                                    Surface(
-                                        color =
-                                            appPalette.accent.copy(
-                                                alpha = ConstantMap.ALPHA_PRIMARY_SURFACE),
-                                        shape = RoundedCornerShape(ConstantMap.CORNER_RADIUS_SMALL),
-                                        modifier =
-                                            Modifier.padding(
-                                                bottom = ConstantMap.SPACER_HEIGHT_LARGE)) {
-                                          Text(
-                                              text = req.title,
-                                              style = MaterialTheme.typography.titleMedium,
-                                              color = appPalette.accent,
-                                              modifier =
-                                                  Modifier.padding(
-                                                          horizontal = ConstantMap.PADDING_STANDARD,
-                                                          vertical =
-                                                              ConstantMap.SPACER_HEIGHT_SMALL)
-                                                      .testTag(MapTestTags.REQUEST_TITLE))
-                                        }
-
-                                    Text(
-                                        text = req.description,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier =
-                                            Modifier.padding(
-                                                    bottom = ConstantMap.SPACER_HEIGHT_LARGE)
-                                                .testTag(MapTestTags.REQUEST_DESCRIPTION))
-
-                                    // Dates
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement =
-                                            Arrangement.spacedBy(
-                                                ConstantMap.SPACER_HEIGHT_MEDIUM)) {
-                                          // Start Date
-                                          Surface(
-                                              modifier = Modifier.weight(ConstantMap.WEIGHT_FILL),
-                                              shape =
-                                                  RoundedCornerShape(
-                                                      ConstantMap.CORNER_RADIUS_MEDIUM),
-                                              color =
-                                                  MaterialTheme.colorScheme.secondaryContainer) {
-                                                Column(
-                                                    modifier =
-                                                        Modifier.padding(
-                                                            ConstantMap.PADDING_STANDARD)) {
-                                                      Text(
-                                                          text = ConstantMap.START_DATE,
-                                                          style =
-                                                              MaterialTheme.typography.labelSmall,
-                                                          color =
-                                                              MaterialTheme.colorScheme
-                                                                  .onPrimaryContainer
-                                                                  .copy(
-                                                                      alpha =
-                                                                          ConstantMap
-                                                                              .ALPHA_ON_CONTAINER_MEDIUM))
-                                                      Spacer(
-                                                          modifier =
-                                                              Modifier.height(
-                                                                  ConstantMap.SPACER_HEIGHT_SMALL))
-                                                      Text(
-                                                          text =
-                                                              req.startTimeStamp.toDisplayString(),
-                                                          style =
-                                                              MaterialTheme.typography.bodyMedium,
-                                                          fontWeight = FontWeight.SemiBold,
-                                                          color =
-                                                              MaterialTheme.colorScheme
-                                                                  .onPrimaryContainer,
-                                                          modifier =
-                                                              Modifier.testTag(
-                                                                  MapTestTags.START_DATE))
-                                                    }
-                                              }
-
-                                          // End Date
-                                          Surface(
-                                              modifier = Modifier.weight(ConstantMap.WEIGHT_FILL),
-                                              shape =
-                                                  RoundedCornerShape(
-                                                      ConstantMap.CORNER_RADIUS_MEDIUM),
-                                              color =
-                                                  MaterialTheme.colorScheme.secondaryContainer) {
-                                                Column(
-                                                    modifier =
-                                                        Modifier.padding(
-                                                            ConstantMap.PADDING_STANDARD)) {
-                                                      Text(
-                                                          text = ConstantMap.END_DATE,
-                                                          style =
-                                                              MaterialTheme.typography.labelSmall,
-                                                          color =
-                                                              MaterialTheme.colorScheme
-                                                                  .onSecondaryContainer
-                                                                  .copy(
-                                                                      alpha =
-                                                                          ConstantMap
-                                                                              .ALPHA_ON_CONTAINER_MEDIUM))
-                                                      Spacer(
-                                                          modifier =
-                                                              Modifier.height(
-                                                                  ConstantMap.SPACER_HEIGHT_SMALL))
-                                                      Text(
-                                                          text =
-                                                              req.expirationTime.toDisplayString(),
-                                                          style =
-                                                              MaterialTheme.typography.bodyMedium,
-                                                          fontWeight = FontWeight.SemiBold,
-                                                          color =
-                                                              MaterialTheme.colorScheme
-                                                                  .onSecondaryContainer,
-                                                          modifier =
-                                                              Modifier.testTag(
-                                                                  MapTestTags.END_DATE))
-                                                    }
-                                              }
-                                        }
-                                    Spacer(
-                                        modifier = Modifier.height(ConstantMap.SPACER_HEIGHT_LARGE))
-
-                                    // Status
-                                    Surface(
-                                        shape = RoundedCornerShape(ConstantMap.CORNER_RADIUS_LARGE),
-                                        color = MaterialTheme.colorScheme.tertiaryContainer,
-                                        modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                                          Text(
-                                              text = req.status.name,
-                                              style = MaterialTheme.typography.labelMedium,
-                                              fontWeight = FontWeight.Medium,
-                                              color = MaterialTheme.colorScheme.onTertiaryContainer,
-                                              modifier =
-                                                  Modifier.padding(
-                                                          horizontal =
-                                                              ConstantMap.SPACER_HEIGHT_LARGE,
-                                                          vertical = ConstantMap.SPACER_HEIGHT_MID)
-                                                      .testTag(MapTestTags.REQUEST_STATUS))
-                                        }
-
-                                    Spacer(
-                                        modifier =
-                                            Modifier.height(ConstantMap.SPACER_HEIGHT_MEDIUM))
-
-                                    // Location name
-                                    Surface(
-                                        shape =
-                                            RoundedCornerShape(ConstantMap.CORNER_RADIUS_MEDIUM),
-                                        color = MaterialTheme.colorScheme.surfaceVariant,
-                                        modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                                          Row(
-                                              verticalAlignment = Alignment.CenterVertically,
-                                              modifier =
-                                                  Modifier.padding(
-                                                      horizontal =
-                                                          ConstantMap.PADDING_HORIZONTAL_STANDARD,
-                                                      vertical = ConstantMap.PADDING_STANDARD)) {
-                                                Icon(
-                                                    imageVector = Icons.Default.LocationOn,
-                                                    contentDescription = ConstantMap.LOCATION,
-                                                    tint = appPalette.primary,
-                                                    modifier =
-                                                        Modifier.size(
-                                                            ConstantMap.ICON_SIZE_LOCATION))
-                                                Spacer(
-                                                    modifier =
-                                                        Modifier.width(
-                                                            ConstantMap.SPACER_WIDTH_SMALL))
-                                                Text(
-                                                    text = req.locationName,
-                                                    style = MaterialTheme.typography.bodyMedium,
-                                                    fontWeight = FontWeight.Medium,
-                                                    color =
-                                                        MaterialTheme.colorScheme.onSurfaceVariant,
-                                                    modifier =
-                                                        Modifier.testTag(
-                                                            MapTestTags.REQUEST_LOCATION_NAME))
-                                              }
-                                        }
-                                    Spacer(
-                                        modifier =
-                                            Modifier.height(ConstantMap.SPACER_HEIGHT_MEDIUM))
-
-                                    ButtonDetails(
-                                        uiState.isOwner,
-                                        navigationActions,
-                                        req,
-                                        viewModel,
-                                        appPalette)
-                                  }
-                                  1 -> { // Profile
-                                    CurrentProfileUI(
-                                        uiState.isOwner,
-                                        navigationActions,
-                                        uiState.currentProfile,
-                                        viewModel,
-                                        this,
-                                        req,
-                                        appPalette)
-                                  }
-                                // if you want to add more tab, just put last number + 1 ->...
-                                }
-                              }
+                            ButtonDetails(
+                                uiState.isOwner, navigationActions, req, viewModel, appPalette)
+                          }
+                          1 -> { // Profile
+                            CurrentProfileUI(
+                                uiState.isOwner,
+                                navigationActions,
+                                uiState.currentProfile,
+                                viewModel,
+                                this,
+                                req,
+                                appPalette)
+                          }
+                        // if you want to add more tab, just put last number + 1 ->...
                         }
                       }
                 }
           }
 
+          ListOfRequest(
+              uiState,
+              viewModel,
+              appPalette,
+              Modifier.align(Alignment.BottomCenter),
+              coroutineScope,
+              cameraPositionState)
+
           // Zoom controls
-          if (uiState.currentRequest == null) {
+          if (uiState.currentRequest == null && uiState.currentListRequest == null) {
             Column(
                 modifier = Modifier.align(Alignment.BottomEnd).padding(UiDimens.SpacingMd),
                 horizontalAlignment = Alignment.CenterHorizontally) {
@@ -612,16 +537,11 @@ fun ButtonDetails(
 ) {
   Button(
       onClick = {
+        // Always navigate to the view-only details (Accept) page; edit is accessible from there
         when (isOwner) {
-          true -> {
-            navigationActions?.navigateTo(Screen.EditRequest(request.requestId))
-          }
-          false -> {
-            navigationActions?.navigateTo(Screen.RequestAccept(request.requestId))
-          }
-          else -> {
-            mapViewModel.isHisRequest(request)
-          }
+          true,
+          false -> navigationActions?.navigateTo(Screen.RequestAccept(request.requestId))
+          else -> mapViewModel.isHisRequest(request)
         }
       },
       colors =
@@ -633,7 +553,7 @@ fun ButtonDetails(
               .testTag(MapTestTags.BUTTON_DETAILS)) {
         Text(
             when (isOwner) {
-              true -> ConstantMap.TEXT_EDIT
+              true -> ConstantMap.TEXT_SEE_DETAILS
               false -> ConstantMap.TEXT_SEE_DETAILS
               else -> ConstantMap.PROBLEM_OCCUR
             })
@@ -809,9 +729,136 @@ fun ButtonProfileDetails(
       }
 }
 
-fun Date.toDisplayStringWithoutHours(): String {
-  return this.let { timestamp ->
-    SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(timestamp)
+/**
+ * A bottom sheet component with drag-to-resize functionality and smooth animations.
+ *
+ * @param viewModel The MapViewModel to handle state updates
+ * @param appPalette The color palette for theming
+ * @param modifier Optional modifier for customization
+ * @param content The content to display inside the bottom sheet
+ */
+@Composable
+fun AnimatedBottomSheet(
+    viewModel: MapViewModel,
+    appPalette: AppPalette,
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit
+) {
+  val minHeight = ConstantMap.MIN_HEIGHT
+
+  val density = LocalDensity.current
+  val screenHeight = with(density) { LocalConfiguration.current.screenHeightDp.dp.toPx() }
+  val minHeightPx = with(density) { minHeight.toPx() }
+  val thirdOfScreen = screenHeight * ConstantMap.PROPORTION_FOR_INITIALIZE_SHEET
+  var offsetY by remember { mutableFloatStateOf(thirdOfScreen) }
+
+  val currentHeight by
+      animateDpAsState(
+          targetValue =
+              with(density) {
+                (screenHeight -
+                        offsetY.coerceIn(ConstantMap.MIN_OFFSET_Y, screenHeight - minHeightPx))
+                    .toDp()
+              },
+          animationSpec = tween(durationMillis = ConstantMap.DURATION_ANIMATION))
+
+  Box(modifier = modifier.fillMaxWidth().testTag(MapTestTags.DRAG_DOWN_MENU)) {
+    Surface(
+        modifier = Modifier.fillMaxWidth().height(currentHeight),
+        shape =
+            RoundedCornerShape(
+                topStart = ConstantMap.BOTTOM_SHEET_SHAPE, topEnd = ConstantMap.BOTTOM_SHEET_SHAPE),
+        color = appPalette.primary,
+        shadowElevation = ConstantMap.BOTTOM_SHEET_ELEVATION) {
+          Column(modifier = Modifier.fillMaxSize()) {
+            // Drag Handle + Button
+            Box(modifier = Modifier.fillMaxWidth()) {
+              // Drag Handle
+              Box(
+                  modifier =
+                      Modifier.width(ConstantMap.DRAG_HANDLE_WIDTH)
+                          .height(ConstantMap.DRAG_HANDLE_HEIGHT)
+                          .background(
+                              color =
+                                  MaterialTheme.colorScheme.onSurface.copy(
+                                      alpha = ConstantMap.DRAG_HANDLE_ALPHA),
+                              shape = RoundedCornerShape(ConstantMap.DRAG_HANDLE_CORNER_RADIUS))
+                          .align(Alignment.Center)
+                          .pointerInput(Unit) {
+                            detectVerticalDragGestures(
+                                onVerticalDrag = { _, dragAmount ->
+                                  offsetY =
+                                      (offsetY + dragAmount).coerceIn(
+                                          ConstantMap.MIN_OFFSET_Y, screenHeight - minHeightPx)
+                                })
+                          }
+                          .testTag(MapTestTags.DRAG))
+
+              // Button X
+              IconButton(
+                  onClick = { viewModel.updateNoRequests() },
+                  modifier = Modifier.align(Alignment.CenterEnd).testTag(MapTestTags.BUTTON_X)) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = ConstantMap.CLOSE_BUTTON_DESCRIPTION,
+                        tint =
+                            MaterialTheme.colorScheme.onSurface.copy(
+                                alpha = ConstantMap.CLOSE_BUTTON_ALPHA))
+                  }
+            }
+
+            content()
+          }
+        }
+  }
+}
+
+/**
+ * Displays a list of requests in an animated bottom sheet.
+ *
+ * @param uiState The current UI state containing the list of requests
+ * @param viewModel The MapViewModel to handle user interactions
+ * @param appPalette The color palette for theming
+ * @param modifier Optional modifier for customization
+ * @param coroutineScope The coroutine scope for launching async operations
+ * @param cameraPositionState The camera position state for map animations
+ */
+@Composable
+fun ListOfRequest(
+    uiState: MapUIState,
+    viewModel: MapViewModel,
+    appPalette: AppPalette,
+    modifier: Modifier = Modifier,
+    coroutineScope: CoroutineScope,
+    cameraPositionState: CameraPositionState
+) {
+  uiState.currentListRequest?.let { list ->
+    AnimatedBottomSheet(viewModel, appPalette, modifier) {
+      LazyColumn(
+          modifier =
+              modifier
+                  .padding(ConstantRequestList.ListPadding)
+                  .testTag(MapTestTags.MAP_LIST_REQUEST)) {
+            items(list.size) { index ->
+              val request = list[index]
+              RequestListItem(
+                  viewModel = viewModel(),
+                  request = request,
+                  onClick = {
+                    coroutineScope.launch {
+                      cameraPositionState.animate(
+                          update =
+                              CameraUpdateFactory.newLatLngZoom(
+                                  LatLng(request.location.latitude, request.location.longitude),
+                                  ConstantMap.ZOOM_AFTER_CHOSEN),
+                          durationMs = ConstantMap.LONG_DURATION_ANIMATION)
+                    }
+                    viewModel.updateCurrentRequest(request)
+                    viewModel.updateCurrentProfile(request.creatorId)
+                  })
+            }
+          }
+    }
   }
 }
 

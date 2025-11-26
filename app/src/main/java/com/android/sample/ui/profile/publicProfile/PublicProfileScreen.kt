@@ -26,7 +26,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.model.profile.UserProfile
 import com.android.sample.ui.navigation.NavigationTestTags
@@ -228,10 +227,4 @@ fun PublicProfileHeader(
           }
         }
       }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun PublicProfileScreenPreview() {
-  PublicProfileScreen()
 }

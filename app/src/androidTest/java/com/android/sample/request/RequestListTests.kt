@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.Color
 import android.net.Uri
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.assertCountEquals
@@ -39,6 +40,8 @@ import com.android.sample.ui.request.RequestListScreen
 import com.android.sample.ui.request.RequestListTestTags
 import com.android.sample.ui.request.RequestListViewModel
 import com.android.sample.ui.request.RequestSearchFilterTestTags
+import com.android.sample.ui.theme.DarkPalette
+import com.android.sample.ui.theme.LocalAppPalette
 import com.android.sample.utils.BaseEmulatorTest
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
@@ -83,6 +86,10 @@ class RequestListTests : BaseEmulatorTest() {
     override suspend fun getMyRequests(): List<Request> {
       val currentUid = Firebase.auth.currentUser?.uid ?: DEFAULT_USER_ID
       return requests.filter { it.creatorId == currentUid }
+    }
+
+    override suspend fun closeRequest(requestId: String, selectedHelperIds: List<String>): Boolean {
+      return false
     }
 
     override suspend fun getAllRequests(): List<Request> = requests
@@ -145,6 +152,14 @@ class RequestListTests : BaseEmulatorTest() {
     override suspend fun deleteUserProfile(userId: String) {}
 
     override suspend fun searchUserProfiles(query: String, limit: Int): List<UserProfile> = listOf()
+
+    override suspend fun awardKudos(userId: String, amount: Int) {
+      return Unit
+    }
+
+    override suspend fun awardKudosBatch(awards: Map<String, Int>) {
+      return Unit
+    }
   }
 
   private fun sampleRequests(creatorIds: List<String>): List<Request> {
@@ -154,7 +169,16 @@ class RequestListTests : BaseEmulatorTest() {
           requestId = "req_${idx + COUNT_ONE}",
           title = "Title ${idx + COUNT_ONE}",
           description = "Description ${idx + COUNT_ONE}",
-          requestType = listOf(RequestType.OTHER),
+          requestType =
+              listOf(
+                  RequestType.OTHER,
+                  RequestType.STUDYING,
+                  RequestType.EATING,
+                  RequestType.SPORT,
+                  RequestType.HARDWARE,
+                  RequestType.LOST_AND_FOUND,
+                  RequestType.HANGING_OUT,
+                  RequestType.STUDY_GROUP),
           location = Location(0.0, 0.0, "Loc"),
           locationName = "LocName",
           status = RequestStatus.OPEN,
@@ -205,6 +229,13 @@ class RequestListTests : BaseEmulatorTest() {
 
                 override suspend fun getMyRequests(): List<Request> {
                   return emptyList()
+                }
+
+                override suspend fun closeRequest(
+                    requestId: String,
+                    selectedHelperIds: List<String>
+                ): Boolean {
+                  return false
                 }
               },
           profileRepository = FakeUserProfileRepository())
@@ -324,6 +355,35 @@ class RequestListTests : BaseEmulatorTest() {
     val vm = RequestListViewModel(FakeRequestRepository(requests), FakeUserProfileRepository())
 
     composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
+
+    composeTestRule.waitUntil(WAIT_TIMEOUT_MS) { vm.state.value.requests.size == requests.size }
+
+    composeTestRule
+        .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM)
+        .assertCountEquals(COUNT_THREE)
+    composeTestRule
+        .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM_TITLE, useUnmergedTree = true)
+        .assertCountEquals(COUNT_THREE)
+    composeTestRule
+        .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM_DESCRIPTION, useUnmergedTree = true)
+        .assertCountEquals(COUNT_THREE)
+    composeTestRule
+        .onNodeWithTag(RequestListTestTags.REQUEST_LIST, useUnmergedTree = true)
+        .onChildren()
+        .filter(hasAnyDescendant(hasTestTag(ProfilePictureTestTags.PROFILE_PICTURE_DEFAULT)))
+        .assertCountEquals(COUNT_THREE)
+  }
+
+  @Test
+  fun multipleRequestsDisplayAllContentDarkMode() {
+    val requests = sampleRequests(listOf("u1", "u2", "u3"))
+    val vm = RequestListViewModel(FakeRequestRepository(requests), FakeUserProfileRepository())
+
+    composeTestRule.setContent {
+      CompositionLocalProvider(LocalAppPalette provides DarkPalette) {
+        RequestListScreen(requestListViewModel = vm)
+      }
+    }
 
     composeTestRule.waitUntil(WAIT_TIMEOUT_MS) { vm.state.value.requests.size == requests.size }
 
@@ -515,7 +575,14 @@ class RequestListTests : BaseEmulatorTest() {
       override suspend fun isOwnerOfRequest(request: Request): Boolean = false
 
       override suspend fun getMyRequests(): List<Request> {
-        TODO("Not yet implemented")
+        return emptyList()
+      }
+
+      override suspend fun closeRequest(
+          requestId: String,
+          selectedHelperIds: List<String>
+      ): Boolean {
+        return false
       }
     }
 

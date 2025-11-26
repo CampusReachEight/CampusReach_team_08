@@ -1,17 +1,23 @@
 package com.android.sample.ui.request
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.model.request.Request
 import com.android.sample.model.request.RequestType
@@ -22,7 +28,11 @@ import com.android.sample.ui.navigation.NavigationTab
 import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.navigation.Screen
 import com.android.sample.ui.profile.ProfilePicture
+import com.android.sample.ui.request.ConstantRequestList.TypeChipBorderWidth
+import com.android.sample.ui.request.ConstantRequestList.TypeChipColumnSpacing
+import com.android.sample.ui.request.ConstantRequestList.TypeChipTextPadding
 import com.android.sample.ui.theme.TopNavigationBar
+import com.android.sample.ui.theme.appPalette
 import com.google.firebase.auth.FirebaseAuth
 
 // removed local magic number vals; use ConstantRequestList instead
@@ -170,19 +180,13 @@ fun RequestListScreen(
                 textAlign = TextAlign.Center)
           } else {
             RequestList(
+                viewModel = requestListViewModel,
                 state = state.copy(requests = toShow),
                 onRequestClick = {
-                  requestListViewModel.handleRequestClick(
-                      request = it,
-                      onNavigateEdit = { id ->
-                        navigationActions?.navigateTo(Screen.EditRequest(id))
-                      },
-                      onNavigateAccept = { id ->
-                        navigationActions?.navigateTo(Screen.RequestAccept(id))
-                      })
+                  // Always go to view-only accept screen; owner-specific edit is inside details
+                  navigationActions?.navigateTo(Screen.RequestAccept(it.requestId))
                 },
                 modifier = Modifier.fillMaxSize(),
-                viewModel = requestListViewModel,
                 onProfileClick = { id ->
                   if (id != currentUserId) {
                     navigationActions?.navigateTo(Screen.PublicProfile(id))
@@ -223,8 +227,8 @@ fun RequestList(
 private const val WEIGHT = 1f
 
 private const val MAX_PARAM = 2
+private const val ChipsDescriptionRatio = 0.4f
 
-/** One request list item: title, compact type labels, truncated description, and optional icon. */
 @Composable
 fun RequestListItem(
     viewModel: RequestListViewModel,
@@ -233,43 +237,93 @@ fun RequestListItem(
     modifier: Modifier = Modifier,
     onProfileClick: (String) -> Unit = {}
 ) {
+
   Card(
       modifier =
           modifier
               .padding(bottom = ConstantRequestList.ListItemSpacing)
               .fillMaxWidth()
+              .height(ConstantRequestList.RequestItemHeight)
               .clickable(onClick = { onClick(request) })
               .testTag(RequestListTestTags.REQUEST_ITEM),
   ) {
-    Row(modifier = Modifier.fillMaxWidth().padding(ConstantRequestList.RequestItemInnerPadding)) {
+    Row(modifier = Modifier.fillMaxSize().padding(ConstantRequestList.RequestItemInnerPadding)) {
       ProfilePicture(
           profileRepository = viewModel.profileRepository,
           profileId = request.creatorId,
           onClick = { onProfileClick(request.creatorId) },
           modifier =
-              Modifier.size(ConstantRequestList.RequestItemCreatorSectionSize)
-                  .align(Alignment.CenterVertically),
-          withName = true)
+              Modifier.width(ConstantRequestList.RequestItemCreatorSectionSize)
+                  .fillMaxHeight()
+                  .align(Alignment.CenterVertically)
+                  .padding(vertical = ConstantRequestList.RequestItemProfileHeightPadding),
+          withName = true,
+      )
+
       Spacer(Modifier.width(ConstantRequestList.RowSpacing))
-      Column(Modifier.fillMaxWidth()) {
-        Row(Modifier.fillMaxWidth()) {
-          Text(
-              request.title,
-              modifier = Modifier.testTag(RequestListTestTags.REQUEST_ITEM_TITLE).weight(WEIGHT))
-          Text(
-              request.requestType.toCompactLabel(max = MAX_PARAM),
-              textAlign = TextAlign.End,
-              maxLines = 1,
-              overflow = TextOverflow.Clip)
-        }
-        Text(
-            request.description,
-            modifier = Modifier.testTag(RequestListTestTags.REQUEST_ITEM_DESCRIPTION),
-            maxLines = MAX_PARAM,
-            overflow = TextOverflow.Ellipsis)
-      }
+
+      TitleAndDescription(request, modifier = Modifier.weight(1f))
+
+      Spacer(Modifier.width(ConstantRequestList.RowSpacing))
+      LazyColumn(
+          modifier = Modifier.weight(ChipsDescriptionRatio),
+          verticalArrangement = Arrangement.spacedBy(TypeChipColumnSpacing)) {
+            val sortedRequestTypes = request.requestType.sortedBy { it.ordinal }
+            items(sortedRequestTypes.size) { index ->
+              val requestType = sortedRequestTypes[index]
+              TypeChip(
+                  requestType = requestType,
+              )
+            }
+          }
     }
   }
+}
+
+@Composable
+fun TitleAndDescription(request: Request, modifier: Modifier = Modifier) {
+  Column(modifier = modifier) {
+    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
+      Text(
+          request.title,
+          maxLines = 1,
+          overflow = TextOverflow.Ellipsis,
+          fontSize = ConstantRequestList.RequestItemTitleFontSize,
+          fontWeight = FontWeight.SemiBold,
+          modifier = Modifier.testTag(RequestListTestTags.REQUEST_ITEM_TITLE).weight(WEIGHT))
+    }
+    Spacer(modifier = Modifier.height(ConstantRequestList.RequestItemDescriptionSpacing))
+    Text(
+        request.description,
+        color = appPalette().text.copy(alpha = 0.8f),
+        fontSize = ConstantRequestList.RequestItemDescriptionFontSize,
+        modifier = Modifier.fillMaxSize().testTag(RequestListTestTags.REQUEST_ITEM_DESCRIPTION),
+        maxLines = MAX_PARAM,
+        overflow = TextOverflow.Ellipsis)
+  }
+}
+
+@Composable
+fun TypeChip(
+    requestType: RequestType,
+    modifier: Modifier = Modifier,
+) {
+  Surface(
+      color = appPalette().getRequestTypeBackgroundColor(requestType),
+      shape = RoundedCornerShape(16.dp),
+      modifier = modifier.fillMaxWidth(),
+      border = BorderStroke(TypeChipBorderWidth, appPalette().getRequestTypeColor(requestType))) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier.fillMaxHeight().padding(horizontal = TypeChipTextPadding)) {
+              Text(
+                  text = requestType.displayString(),
+                  color = appPalette().getRequestTypeColor(requestType),
+                  fontSize = 12.sp,
+                  fontWeight = FontWeight.Medium,
+                  maxLines = 1)
+            }
+      }
 }
 
 /** Floating add button to navigate to the add-request screen. */
@@ -277,8 +331,12 @@ fun RequestListItem(
 fun AddButton(navigationActions: NavigationActions?) {
   FloatingActionButton(
       onClick = { navigationActions?.navigateTo(Screen.AddRequest) },
+      containerColor = appPalette().accent,
       modifier = Modifier.testTag(RequestListTestTags.REQUEST_ADD_BUTTON)) {
-        Text("+")
+        Icon(
+            imageVector = Icons.Default.Add,
+            contentDescription = "Add Request",
+            tint = appPalette().white)
       }
 }
 
@@ -304,31 +362,26 @@ private fun ErrorDialog(message: String, onDismiss: () -> Unit) {
       })
 }
 
-/** Formats a list of request types into a compact label like `SPORT | EATING | ...`. */
-private fun List<RequestType>.toCompactLabel(max: Int = MAX_PARAM): String {
-  if (isEmpty()) return ""
-  val head = take(max).joinToString(" | ") { it.displayString() }
-  return if (size > max) "$head | ..." else head
-}
-
 // Preview for rendering improvements during development
-// @Preview
-// @Composable
-// fun RequestListItemPreview() {
-//  val sampleRequest =
-//      Request(
-//          requestId = "1",
-//          title = "Sample Request",
-//          description = "This is a sample request description.",
-//          creatorId = "user1",
-//          location = com.android.sample.model.map.Location(0.0, 0.0, "knowhere"),
-//          locationName = "No where",
-//          requestType = RequestType.entries, // 2 values should appear and the rest should be
-// truncated
-//          status = RequestStatus.OPEN,
-//          startTimeStamp = java.util.Date(),
-//          expirationTime = java.util.Date(),
-//          people = listOf(),
-//          tags = listOf())
-//  RequestListItem(request = sampleRequest, icon = null, onClick = {})
-// }
+/*
+@Preview
+@Composable
+fun RequestListItemPreview() {
+  val sampleRequest =
+      Request(
+          requestId = "1",
+          title = "Sample Request",
+          description = "This is a sample request description.",
+          creatorId = "user1",
+          location = com.android.sample.model.map.Location(0.0, 0.0, "nowhere"),
+          locationName = "No where",
+          requestType =
+              RequestType.entries, // 2 values should appear and the rest should be truncated
+          status = RequestStatus.OPEN,
+          startTimeStamp = java.util.Date(),
+          expirationTime = java.util.Date(),
+          people = listOf(),
+          tags = listOf())
+  RequestListItem(request = sampleRequest, onClick = {}, viewModel = RequestListViewModel())
+}
+ */
