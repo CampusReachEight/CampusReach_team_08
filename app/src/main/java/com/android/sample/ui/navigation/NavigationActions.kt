@@ -2,6 +2,8 @@ package com.android.sample.ui.navigation
 
 import androidx.navigation.NavHostController
 
+private const val REQUEST_ID = "requestId"
+
 /**
  * Class defining the different screens in the app
  *
@@ -28,14 +30,14 @@ sealed class Screen(
 
   data class RequestAccept(val requestId: String) : Screen(route = "requests/accept/${requestId}") {
     companion object {
-      const val ARG_REQUEST_ID = "requestId"
+      const val ARG_REQUEST_ID = REQUEST_ID
       const val route = "requests/accept/{$ARG_REQUEST_ID}"
     }
   }
 
   data class EditRequest(val requestId: String) : Screen(route = "requests/edit/${requestId}") {
     companion object {
-      const val ARG_REQUEST_ID = "requestId"
+      const val ARG_REQUEST_ID = REQUEST_ID
       const val route = "requests/edit/{$ARG_REQUEST_ID}"
     }
   }
@@ -54,9 +56,9 @@ sealed class Screen(
     }
   }
 
-  data class ValidateRequest(val requestId: String) : Screen("validateRequest/{requestId}") {
+  data class ValidateRequest(val requestId: String) : Screen(route = "validateRequest/$requestId") {
     companion object {
-      const val ARG_REQUEST_ID = "requestId"
+      const val ARG_REQUEST_ID = REQUEST_ID
       const val route = "validateRequest/{$ARG_REQUEST_ID}"
     }
   }

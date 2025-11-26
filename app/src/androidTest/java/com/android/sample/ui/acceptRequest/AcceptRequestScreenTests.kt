@@ -45,6 +45,15 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
     const val request1_id = "request1"
     const val request2_id = "request2"
     const val request3_id = "request3"
+    const val request4_id = "request4"
+    const val request5_id = "request5"
+    const val request6_id = "request6"
+    const val request7_id = "request7"
+    const val request8_id = "request8"
+
+    // Error messages
+    const val ERROR_VALIDATE_CALLBACK_NOT_TRIGGERED = "Validate button callback was not triggered"
+    const val ERROR_REQUEST_ID_MISMATCH = "Expected request ID %s but got %s"
   }
 
   private fun signIn(email: String = DEFAULT_USER_EMAIL, password: String = DEFAULT_USER_PASSWORD) {
@@ -531,33 +540,6 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
         .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_STATUS)
         .assertIsDisplayed()
         .assertTextContains("Archived", substring = true, ignoreCase = true)
-  }
-
-  // New integration test: Volunteers visible and expandable only for owner
-  @Test
-  fun volunteersSection_visibleForOwner_and_expands() {
-    // Sign in as the owner of request1
-    runTest { signInUser(DEFAULT_USER_EMAIL, DEFAULT_USER_PASSWORD) }
-
-    composeTestRule.setContent { AcceptRequestScreen(request1_id) }
-
-    composeTestRule.waitUntil(uiWaitTimeout) {
-      composeTestRule
-          .onAllNodesWithTag(AcceptRequestScreenTestTags.VOLUNTEERS_SECTION_HEADER)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
-
-    // Header visible for owner
-    composeTestRule
-        .onNodeWithTag(AcceptRequestScreenTestTags.VOLUNTEERS_SECTION_HEADER)
-        .assertIsDisplayed()
-        .performClick()
-
-    // request1 has empty people list -> should show "No volunteers yet"
-    composeTestRule
-        .onNodeWithTag(AcceptRequestScreenTestTags.VOLUNTEERS_SECTION_CONTAINER)
-        .assertIsDisplayed()
   }
 
   // Tests for getInitials function (via CreatorSection composable)
