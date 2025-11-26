@@ -153,64 +153,55 @@ fun AcceptRequestScreen(
             })
       },
       content = { pd ->
-          Column(modifier = Modifier.padding(pd)) {
-              if (requestState.offlineMode) {
-                  Text(
-                      text = "You are currently in offline mode",
-                      modifier = Modifier.fillMaxWidth(),
-                      color = appPalette().error,
-                      textAlign = TextAlign.Center
-                  )
-              }
-              Column(
-                  modifier =
-                      Modifier.fillMaxSize()
-                          .padding(
-                              horizontal = AcceptRequestScreenConstants.SCREEN_HORIZONTAL_PADDING,
-                              vertical = AcceptRequestScreenConstants.SCREEN_VERTICAL_PADDING
-                          )
-                          .verticalScroll(rememberScrollState())
-                          .testTag(AcceptRequestScreenTestTags.REQUEST_COLUMN),
-                  verticalArrangement =
-                      Arrangement.spacedBy(AcceptRequestScreenConstants.SECTION_SPACING)
-              ) {
-                  requestState.request?.let { request ->
-                      val isOwner = FirebaseAuth.getInstance().currentUser?.uid == request.creatorId
-                      // Main Details Card
-                      Card(
-                          modifier =
-                              Modifier.fillMaxWidth()
-                                  .testTag(AcceptRequestScreenTestTags.REQUEST_DETAILS_CARD),
-                          elevation =
-                              CardDefaults.cardElevation(
-                                  defaultElevation = AcceptRequestScreenConstants.CARD_ELEVATION
-                              ),
-                          shape = RoundedCornerShape(AcceptRequestScreenConstants.CARD_CORNER_RADIUS)
-                      ) {
-                          Column(
-                              modifier =
-                                  Modifier.fillMaxWidth()
-                                      .padding(AcceptRequestScreenConstants.CARD_PADDING),
-                              verticalArrangement =
-                                  Arrangement.spacedBy(
-                                      AcceptRequestScreenConstants.SECTION_SPACING
-                                  )
-                          ) {
+        Column(modifier = Modifier.padding(pd)) {
+          if (requestState.offlineMode) {
+            Text(
+                text = "You are currently in offline mode",
+                modifier = Modifier.fillMaxWidth(),
+                color = appPalette().error,
+                textAlign = TextAlign.Center)
+          }
+          Column(
+              modifier =
+                  Modifier.fillMaxSize()
+                      .padding(
+                          horizontal = AcceptRequestScreenConstants.SCREEN_HORIZONTAL_PADDING,
+                          vertical = AcceptRequestScreenConstants.SCREEN_VERTICAL_PADDING)
+                      .verticalScroll(rememberScrollState())
+                      .testTag(AcceptRequestScreenTestTags.REQUEST_COLUMN),
+              verticalArrangement =
+                  Arrangement.spacedBy(AcceptRequestScreenConstants.SECTION_SPACING)) {
+                requestState.request?.let { request ->
+                  val isOwner = FirebaseAuth.getInstance().currentUser?.uid == request.creatorId
+                  // Main Details Card
+                  Card(
+                      modifier =
+                          Modifier.fillMaxWidth()
+                              .testTag(AcceptRequestScreenTestTags.REQUEST_DETAILS_CARD),
+                      elevation =
+                          CardDefaults.cardElevation(
+                              defaultElevation = AcceptRequestScreenConstants.CARD_ELEVATION),
+                      shape = RoundedCornerShape(AcceptRequestScreenConstants.CARD_CORNER_RADIUS)) {
+                        Column(
+                            modifier =
+                                Modifier.fillMaxWidth()
+                                    .padding(AcceptRequestScreenConstants.CARD_PADDING),
+                            verticalArrangement =
+                                Arrangement.spacedBy(
+                                    AcceptRequestScreenConstants.SECTION_SPACING)) {
                               // Description
                               RequestDetailRow(
                                   icon = Icons.Outlined.ChatBubbleOutline,
                                   label = AcceptRequestScreenLabels.DESCRIPTION,
                                   content = request.description,
-                                  testTag = AcceptRequestScreenTestTags.REQUEST_DESCRIPTION
-                              )
+                                  testTag = AcceptRequestScreenTestTags.REQUEST_DESCRIPTION)
 
                               // Tags
                               RequestDetailRow(
                                   icon = Icons.Outlined.LocalOffer,
                                   label = AcceptRequestScreenLabels.TAGS,
                                   content = request.tags.joinToString(", ") { it.displayString() },
-                                  testTag = AcceptRequestScreenTestTags.REQUEST_TAG
-                              )
+                                  testTag = AcceptRequestScreenTestTags.REQUEST_TAG)
 
                               // Request type
                               RequestDetailRow(
@@ -218,189 +209,163 @@ fun AcceptRequestScreen(
                                   label = AcceptRequestScreenLabels.REQUEST_TYPE,
                                   content =
                                       request.requestType.joinToString(", ") { it.displayString() },
-                                  testTag = AcceptRequestScreenTestTags.REQUEST_TYPE
-                              )
+                                  testTag = AcceptRequestScreenTestTags.REQUEST_TYPE)
 
                               // Status
                               RequestDetailRow(
                                   icon = Icons.Outlined.Notifications,
                                   label = "Status",
                                   content = request.viewStatus.displayString(),
-                                  testTag = AcceptRequestScreenTestTags.REQUEST_STATUS
-                              )
+                                  testTag = AcceptRequestScreenTestTags.REQUEST_STATUS)
 
                               // Location
                               RequestDetailRow(
                                   icon = Icons.Outlined.LocationOn,
                                   label = AcceptRequestScreenLabels.LOCATION,
                                   content = request.locationName,
-                                  testTag = AcceptRequestScreenTestTags.REQUEST_LOCATION_NAME
-                              )
+                                  testTag = AcceptRequestScreenTestTags.REQUEST_LOCATION_NAME)
 
                               // Start time
                               RequestDetailRow(
                                   icon = Icons.Outlined.AccessTime,
                                   label = AcceptRequestScreenLabels.START_TIME,
                                   content = request.startTimeStamp.toDisplayString(),
-                                  testTag = AcceptRequestScreenTestTags.REQUEST_START_TIME
-                              )
+                                  testTag = AcceptRequestScreenTestTags.REQUEST_START_TIME)
 
                               // Expiration time
                               RequestDetailRow(
                                   icon = Icons.Outlined.WatchLater,
                                   label = AcceptRequestScreenLabels.EXPIRATION_TIME,
                                   content = request.expirationTime.toDisplayString(),
-                                  testTag = AcceptRequestScreenTestTags.REQUEST_EXPIRATION_TIME
-                              )
-                          }
+                                  testTag = AcceptRequestScreenTestTags.REQUEST_EXPIRATION_TIME)
+                            }
                       }
 
-                      Spacer(
-                          modifier = Modifier.height(AcceptRequestScreenConstants.BUTTON_TOP_SPACING)
-                      )
+                  Spacer(
+                      modifier = Modifier.height(AcceptRequestScreenConstants.BUTTON_TOP_SPACING))
 
-                      if (requestState.offlineMode) {
-                          return@Scaffold
-                      }
-                      // Action Button (Accept/Cancel for non-owners, Edit for owners)
-                      FilledTonalButton(
-                          onClick = {
-                              if (isOwner) {
-                                  onEditClick(requestId)
-                              } else if (requestState.accepted) {
-                                  acceptRequestViewModel.cancelAcceptanceToRequest(requestId)
-                              } else {
-                                  acceptRequestViewModel.acceptRequest(requestId)
-                              }
-                          },
-                          enabled = !requestState.isLoading,
-                          modifier =
-                              Modifier.fillMaxWidth()
-                                  .height(AcceptRequestScreenConstants.BUTTON_HEIGHT)
-                                  .testTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)
-                      ) {
-                          if (requestState.isLoading) {
-                              CircularProgressIndicator(
-                                  modifier =
-                                      Modifier.size(
-                                          AcceptRequestScreenConstants.CIRCULAR_PROGRESS_SIZE
-                                      ),
-                                  color = MaterialTheme.colorScheme.onSecondaryContainer
-                              )
-                          } else {
-                              Text(
-                                  text =
-                                      if (isOwner) AcceptRequestScreenLabels.EDIT_REQUEST
-                                      else if (requestState.accepted)
-                                          AcceptRequestScreenLabels.CANCEL_ACCEPTANCE
-                                      else AcceptRequestScreenLabels.ACCEPT_REQUEST,
-                                  style = MaterialTheme.typography.labelLarge
-                              )
-                          }
+                  if (requestState.offlineMode) {
+                    return@Scaffold
+                  }
+                  // Action Button (Accept/Cancel for non-owners, Edit for owners)
+                  FilledTonalButton(
+                      onClick = {
+                        if (isOwner) {
+                          onEditClick(requestId)
+                        } else if (requestState.accepted) {
+                          acceptRequestViewModel.cancelAcceptanceToRequest(requestId)
+                        } else {
+                          acceptRequestViewModel.acceptRequest(requestId)
+                        }
+                      },
+                      enabled = !requestState.isLoading,
+                      modifier =
+                          Modifier.fillMaxWidth()
+                              .height(AcceptRequestScreenConstants.BUTTON_HEIGHT)
+                              .testTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)) {
+                        if (requestState.isLoading) {
+                          CircularProgressIndicator(
+                              modifier =
+                                  Modifier.size(
+                                      AcceptRequestScreenConstants.CIRCULAR_PROGRESS_SIZE),
+                              color = MaterialTheme.colorScheme.onSecondaryContainer)
+                        } else {
+                          Text(
+                              text =
+                                  if (isOwner) AcceptRequestScreenLabels.EDIT_REQUEST
+                                  else if (requestState.accepted)
+                                      AcceptRequestScreenLabels.CANCEL_ACCEPTANCE
+                                  else AcceptRequestScreenLabels.ACCEPT_REQUEST,
+                              style = MaterialTheme.typography.labelLarge)
+                        }
                       }
 
-                      // Volunteers expandable section (owners only)
-                      if (isOwner) {
-                          Column(
+                  // Volunteers expandable section (owners only)
+                  if (isOwner) {
+                    Column(
+                        modifier =
+                            Modifier.fillMaxWidth()
+                                .testTag(AcceptRequestScreenTestTags.VOLUNTEERS_SECTION_CONTAINER)
+                                .clip(
+                                    RoundedCornerShape(
+                                        AcceptRequestScreenConstants.CARD_CORNER_RADIUS))
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                                .padding(AcceptRequestScreenConstants.CREATOR_SECTION_PADDING)) {
+                          Row(
                               modifier =
                                   Modifier.fillMaxWidth()
-                                      .testTag(AcceptRequestScreenTestTags.VOLUNTEERS_SECTION_CONTAINER)
-                                      .clip(
-                                          RoundedCornerShape(
-                                              AcceptRequestScreenConstants.CARD_CORNER_RADIUS
-                                          )
-                                      )
-                                      .background(MaterialTheme.colorScheme.surfaceVariant)
-                                      .padding(AcceptRequestScreenConstants.CREATOR_SECTION_PADDING)
-                          ) {
-                              Row(
+                                      .clickable { volunteersExpanded = !volunteersExpanded }
+                                      .semantics(mergeDescendants = true) {}
+                                      .testTag(
+                                          AcceptRequestScreenTestTags.VOLUNTEERS_SECTION_HEADER),
+                              verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Group,
+                                    contentDescription = AcceptRequestScreenLabels.VOLUNTEERS,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Spacer(
+                                    modifier =
+                                        Modifier.width(
+                                            AcceptRequestScreenConstants.ICON_TEXT_SPACING))
+                                Text(
+                                    text = AcceptRequestScreenLabels.VOLUNTEERS,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier =
+                                        Modifier.weight(
+                                            AcceptRequestScreenConstants.TEXT_COLUMN_WEIGHT))
+                                Icon(
+                                    imageVector =
+                                        if (volunteersExpanded) Icons.Outlined.KeyboardArrowUp
+                                        else Icons.Outlined.KeyboardArrowDown,
+                                    contentDescription =
+                                        if (volunteersExpanded) AcceptRequestScreenLabels.COLLAPSE
+                                        else AcceptRequestScreenLabels.EXPAND,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                              }
+
+                          if (volunteersExpanded) {
+                            Spacer(
+                                modifier =
+                                    Modifier.height(AcceptRequestScreenConstants.SECTION_SPACING))
+
+                            // Safeguard: exclude creatorId from volunteers list if present
+                            val volunteers = request.people.filterNot { it == request.creatorId }
+                            if (volunteers.isEmpty()) {
+                              Text(
+                                  text = AcceptRequestScreenLabels.NO_VOLUNTEERS_YET,
+                                  style = MaterialTheme.typography.bodyMedium,
+                                  color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            } else {
+                              LazyRow(
+                                  horizontalArrangement =
+                                      Arrangement.spacedBy(
+                                          AcceptRequestScreenConstants.VOLUNTEER_ROW_SPACING),
                                   modifier =
                                       Modifier.fillMaxWidth()
-                                          .clickable { volunteersExpanded = !volunteersExpanded }
-                                          .semantics(mergeDescendants = true) {}
-                                          .testTag(
-                                              AcceptRequestScreenTestTags.VOLUNTEERS_SECTION_HEADER
-                                          ),
-                                  verticalAlignment = Alignment.CenterVertically) {
-                                  Icon(
-                                      imageVector = Icons.Outlined.Group,
-                                      contentDescription = AcceptRequestScreenLabels.VOLUNTEERS,
-                                      tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                  )
-                                  Spacer(
-                                      modifier =
-                                          Modifier.width(
-                                              AcceptRequestScreenConstants.ICON_TEXT_SPACING
-                                          )
-                                  )
-                                  Text(
-                                      text = AcceptRequestScreenLabels.VOLUNTEERS,
-                                      style = MaterialTheme.typography.titleMedium,
-                                      color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                      modifier =
-                                          Modifier.weight(
-                                              AcceptRequestScreenConstants.TEXT_COLUMN_WEIGHT
-                                          )
-                                  )
-                                  Icon(
-                                      imageVector =
-                                          if (volunteersExpanded) Icons.Outlined.KeyboardArrowUp
-                                          else Icons.Outlined.KeyboardArrowDown,
-                                      contentDescription =
-                                          if (volunteersExpanded) AcceptRequestScreenLabels.COLLAPSE
-                                          else AcceptRequestScreenLabels.EXPAND,
-                                      tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                  )
-                              }
-
-                              if (volunteersExpanded) {
-                                  Spacer(
-                                      modifier =
-                                          Modifier.height(AcceptRequestScreenConstants.SECTION_SPACING)
-                                  )
-
-                                  // Safeguard: exclude creatorId from volunteers list if present
-                                  val volunteers =
-                                      request.people.filterNot { it == request.creatorId }
-                                  if (volunteers.isEmpty()) {
-                                      Text(
-                                          text = AcceptRequestScreenLabels.NO_VOLUNTEERS_YET,
-                                          style = MaterialTheme.typography.bodyMedium,
-                                          color = MaterialTheme.colorScheme.onSurfaceVariant
-                                      )
-                                  } else {
-                                      LazyRow(
-                                          horizontalArrangement =
-                                              Arrangement.spacedBy(
-                                                  AcceptRequestScreenConstants.VOLUNTEER_ROW_SPACING
-                                              ),
-                                          modifier =
-                                              Modifier.fillMaxWidth()
-                                                  .height(
-                                                      AcceptRequestScreenConstants.VOLUNTEER_ROW_HEIGHT
-                                                  )
-                                      ) {
-                                          items(volunteers.size) { index ->
-                                              val userId = volunteers[index]
-                                              ProfilePicture(profileId = userId, withName = true)
-                                          }
-                                      }
+                                          .height(
+                                              AcceptRequestScreenConstants.VOLUNTEER_ROW_HEIGHT)) {
+                                    items(volunteers.size) { index ->
+                                      val userId = volunteers[index]
+                                      ProfilePicture(profileId = userId, withName = true)
+                                    }
                                   }
-                              }
+                            }
                           }
-                      }
+                        }
                   }
-                      ?: Text(
-                          text = AcceptRequestScreenLabels.GENERIC_ERROR,
-                          fontSize = AcceptRequestScreenConstants.ERROR_TEXT_FONT_SIZE,
-                          color = MaterialTheme.colorScheme.error,
-                          textAlign = TextAlign.Center,
-                          modifier =
-                              Modifier.fillMaxWidth()
-                                  .padding(AcceptRequestScreenConstants.CARD_PADDING)
-                                  .testTag(AcceptRequestScreenTestTags.NO_REQUEST))
-            }
-            }
+                }
+                    ?: Text(
+                        text = AcceptRequestScreenLabels.GENERIC_ERROR,
+                        fontSize = AcceptRequestScreenConstants.ERROR_TEXT_FONT_SIZE,
+                        color = MaterialTheme.colorScheme.error,
+                        textAlign = TextAlign.Center,
+                        modifier =
+                            Modifier.fillMaxWidth()
+                                .padding(AcceptRequestScreenConstants.CARD_PADDING)
+                                .testTag(AcceptRequestScreenTestTags.NO_REQUEST))
+              }
+        }
       })
 }
 
