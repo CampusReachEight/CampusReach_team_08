@@ -27,7 +27,10 @@ data class Request(
       val now = Date()
 
       return when {
-        status == RequestStatus.CANCELLED || status == RequestStatus.ARCHIVED -> status
+        // Preserve terminal statuses (manual or automatic)
+        status == RequestStatus.CANCELLED ||
+            status == RequestStatus.ARCHIVED ||
+            status == RequestStatus.COMPLETED -> status
 
         // COMPLETED when expirationTime <= now
         !expirationTime.after(now) -> RequestStatus.COMPLETED
@@ -61,19 +64,22 @@ data class Request(
             Location(0.0, 0.0, "")
           }
 
-      return Request(
-          requestId = req("requestId"),
-          title = req("title"),
-          description = req("description"),
-          requestType = (req<List<*>>("requestType")).map { RequestType.valueOf(it as String) },
-          location = location,
-          locationName = req("locationName"),
-          status = RequestStatus.valueOf(req("status")),
-          startTimeStamp = (req<Timestamp>("startTimeStamp")).toDate(),
-          expirationTime = (req<Timestamp>("expirationTime")).toDate(),
-          people = (req<List<*>>("people")).map { it as String },
-          tags = (req<List<*>>("tags")).map { Tags.valueOf(it as String) },
-          creatorId = req("creatorId"))
+      val request =
+          Request(
+              requestId = req("requestId"),
+              title = req("title"),
+              description = req("description"),
+              requestType = (req<List<*>>("requestType")).map { RequestType.valueOf(it as String) },
+              location = location,
+              locationName = req("locationName"),
+              status = RequestStatus.valueOf(req("status")),
+              startTimeStamp = (req<Timestamp>("startTimeStamp")).toDate(),
+              expirationTime = (req<Timestamp>("expirationTime")).toDate(),
+              people = (req<List<*>>("people")).map { it as String },
+              tags = (req<List<*>>("tags")).map { Tags.valueOf(it as String) },
+              creatorId = req("creatorId"))
+
+      return request.copy(status = request.viewStatus) // Fetching from db now returns "True" status
     }
   }
 
