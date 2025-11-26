@@ -35,6 +35,8 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
   private fun notAuthorized(): Unit =
       throw IllegalArgumentException("Can only modify the currently authenticated user's profile")
 
+  override fun getCurrentUserId(): String = Firebase.auth.currentUser?.uid ?: ""
+
   // Fix: Document ID should be the authenticated user's UID
   override fun getNewUid(): String {
     if (Firebase.auth.currentUser == null) {

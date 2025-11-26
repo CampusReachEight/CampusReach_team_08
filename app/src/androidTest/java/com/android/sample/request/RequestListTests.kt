@@ -128,6 +128,10 @@ class RequestListTests : BaseEmulatorTest() {
 
     override fun getNewUid(): String = UUID.randomUUID().toString()
 
+    override fun getCurrentUserId(): String {
+      return ""
+    }
+
     override suspend fun getAllUserProfiles(): List<UserProfile> = emptyList()
 
     override suspend fun getUserProfile(userId: String): UserProfile {

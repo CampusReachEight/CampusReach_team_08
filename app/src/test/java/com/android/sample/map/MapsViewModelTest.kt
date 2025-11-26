@@ -120,6 +120,10 @@ class MapsViewModelTest {
       return ""
     }
 
+    override fun getCurrentUserId(): String {
+      return ""
+    }
+
     override suspend fun getAllUserProfiles(): List<UserProfile> {
       return listOf()
     }

@@ -66,6 +66,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.model.profile.UserProfile
 import com.android.sample.model.request.Request
+import com.android.sample.model.request.RequestOwnership
 import com.android.sample.ui.navigation.BottomNavigationMenu
 import com.android.sample.ui.navigation.NavigationActions
 import com.android.sample.ui.navigation.NavigationTab
@@ -75,6 +76,7 @@ import com.android.sample.ui.overview.toDisplayString
 import com.android.sample.ui.profile.ProfilePicture
 import com.android.sample.ui.request.ConstantRequestList
 import com.android.sample.ui.request.RequestListItem
+import com.android.sample.ui.request.RequestSearchFilterViewModel
 import com.android.sample.ui.theme.AppPalette
 import com.android.sample.ui.theme.TopNavigationBar
 import com.android.sample.ui.theme.UiDimens
@@ -113,17 +115,45 @@ object MapTestTags {
   const val PROFILE_SECTION_TEXT = "profileSectionText"
   const val PROFILE_CREATION_DATE = "profileCreationDate"
   const val PROFILE_EDIT_BUTTON = "profileEditButton"
-  const val MAP_LIST_REQUEST = "map_list_request"
+  const val MAP_LIST_REQUEST = "mapListRequest"
+  const val MAP_FILTER_OWNER = "mapFilterOwner"
+  const val MAP_LIST_FILTER = "mapListFilter"
 
   fun testTagForTab(tab: String): String {
     return "tag${tab}"
   }
+
+  /** give test tag for RequestOwnerShip */
+  fun testTagForRequestOwnership(filter: RequestOwnership): String {
+    return "filter$filter"
+  }
 }
 
 @Composable
-fun MapScreen(viewModel: MapViewModel = viewModel(), navigationActions: NavigationActions? = null) {
+fun MapScreen(
+    viewModel: MapViewModel = viewModel(),
+    navigationActions: NavigationActions? = null,
+    searchFilterViewModel: RequestSearchFilterViewModel = viewModel()
+) {
   val uiState by viewModel.uiState.collectAsState()
   val appPalette = appPalette()
+
+  val currentUserId = viewModel.getCurrentUserID()
+
+  val displayedRequests by searchFilterViewModel.displayedRequests.collectAsState()
+
+  val finalFilteredRequests =
+      remember(displayedRequests, uiState.requestOwnership, currentUserId) {
+        viewModel.filterWithOwnerShip(displayedRequests, currentUserId)
+      }
+
+  LaunchedEffect(uiState.request) { searchFilterViewModel.initializeWithRequests(uiState.request) }
+
+  LaunchedEffect(finalFilteredRequests) {
+    if (finalFilteredRequests.isNotEmpty()) {
+      viewModel.zoomOnRequest(finalFilteredRequests)
+    }
+  }
 
   val errorMsg = uiState.errorMsg
 
@@ -163,9 +193,9 @@ fun MapScreen(viewModel: MapViewModel = viewModel(), navigationActions: Navigati
         val zoomLevel by remember { derivedStateOf { cameraPositionState.position.zoom } }
 
         val clusters =
-            remember(uiState.request, zoomLevel) {
+            remember(finalFilteredRequests, zoomLevel) {
               clusterRequestsByDistance(
-                  requests = uiState.request,
+                  requests = finalFilteredRequests,
                   clusterRadiusMeters = getClusterRadiusForZoom(zoomLevel))
             }
 
@@ -507,13 +537,21 @@ fun MapScreen(viewModel: MapViewModel = viewModel(), navigationActions: Navigati
                   })
 
           // if uiState.target change, do an animation to go to the location the new target
-          LaunchedEffect(uiState.target) {
-            cameraPositionState.animate(
-                update =
-                    CameraUpdateFactory.newLatLngZoom(
-                        uiState.target, calculateZoomLevel(uiState.request.size)),
-                durationMs = 1000)
+          LaunchedEffect(uiState.needToZoom) {
+            if (uiState.needToZoom) {
+              cameraPositionState.animate(
+                  update =
+                      CameraUpdateFactory.newLatLngZoom(
+                          uiState.target, calculateZoomLevel(uiState.request.size)),
+                  durationMs = 1000)
+              viewModel.zoomCompleted()
+            }
           }
+          MapFilter(
+              searchFilterViewModel = searchFilterViewModel,
+              selectedOwnership = uiState.requestOwnership,
+              viewModel = viewModel,
+              modifier = Modifier.align(Alignment.TopCenter))
         }
       })
 }

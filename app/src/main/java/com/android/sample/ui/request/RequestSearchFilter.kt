@@ -82,7 +82,7 @@ internal fun FiltersSection(
 }
 
 @Composable
-private fun FilterMenuButton(
+fun FilterMenuButton(
     title: String,
     selectedCount: Int,
     testTag: String,
@@ -101,7 +101,7 @@ private fun FilterMenuButton(
 }
 
 @Composable
-private fun FilterMenuPanel(
+fun FilterMenuPanel(
     values: List<Enum<*>>,
     selected: Set<Enum<*>>,
     counts: Map<Enum<*>, Int>,
