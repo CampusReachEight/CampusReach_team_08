@@ -171,7 +171,13 @@ class MapViewModel(
     _uiState.value = _uiState.value.copy(requestOwnership = filter)
   }
 
-  /**  */
+  /**
+   * Filter the list of request that is given with the current RequestOwnership
+   *
+   * @param requests list of requests
+   * @param userId the id of the current user
+   * @return the list filtered
+   */
   fun filterWithOwnerShip(requests: List<Request>, userId: String): List<Request> {
     return when (_uiState.value.requestOwnership) {
       RequestOwnership.ALL -> requests
