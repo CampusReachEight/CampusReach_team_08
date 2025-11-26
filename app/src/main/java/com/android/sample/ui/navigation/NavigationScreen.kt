@@ -143,7 +143,7 @@ fun NavigationScreen(
                       onCancelConfirmation = { validateRequestViewModel.cancelConfirmation() },
                       onConfirmAndClose = { validateRequestViewModel.confirmAndClose() },
                       onRetry = { validateRequestViewModel.retry() },
-                      onRequestClosed = { navigationActions.goBack() },
+                      onRequestClosed = { navigationActions.navigateTo(Screen.Requests) },
                       onNavigateBack = { navigationActions.goBack() }),
               modifier = Modifier.testTag(NavigationTestTags.VALIDATE_REQUEST_SCREEN))
         }
