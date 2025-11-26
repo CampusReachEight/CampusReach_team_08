@@ -90,8 +90,7 @@ class PublicProfileScreenTest {
             following = 0)
 
     // minimal UI state matching what PublicProfileHeader expects
-    val uiState =
-        PublicProfileUiState(profile = samplePublic, isLoading = false, errorMessage = null)
+    val uiState = PublicProfileUiState(profile = samplePublic, isLoading = false, error = null)
 
     composeRule.setContent {
       PublicProfileHeader(
@@ -112,7 +111,7 @@ class PublicProfileScreenTest {
 
   @Test
   fun followButton_showsFollow_and_togglesToUnfollow_withTagSwap() {
-    val state = PublicProfileUiState(profile = samplePublic, isLoading = false, errorMessage = null)
+    val state = PublicProfileUiState(profile = samplePublic, isLoading = false, error = null)
     val isFollowing = mutableStateOf(false)
 
     composeRule.setContent {
@@ -237,14 +236,9 @@ class PublicProfileScreenTest {
     val upInstance =
         createDummyUserProfile(
             mapOf(
-                // try to set commonly used fields; adapt names to your real UserProfile if
-                // different
                 "id" to "u42",
                 "name" to "Jane",
                 "lastName" to "Doe",
-                // if section is an enum/object with 'name' property, constructor default will be
-                // used;
-                // adapt by setting the actual field if needed
             ))
 
     val pub = callUserProfileToPublic(upInstance)
