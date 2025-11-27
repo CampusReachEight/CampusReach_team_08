@@ -10,6 +10,7 @@ import androidx.lifecycle.viewModelScope
 import com.android.sample.model.profile.UserProfileRepository
 import com.android.sample.model.profile.UserProfileRepositoryFirestore
 import com.android.sample.model.request.Request
+import com.android.sample.model.request.RequestCache
 import com.android.sample.model.request.RequestRepository
 import com.android.sample.model.request.RequestRepositoryFirestore
 import com.google.firebase.firestore.ktx.firestore
@@ -21,6 +22,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.jetbrains.annotations.VisibleForTesting
 
 /**
  * ViewModel backing the Request List screen.
@@ -32,6 +34,7 @@ class RequestListViewModel(
     val requestRepository: RequestRepository = RequestRepositoryFirestore(Firebase.firestore),
     val profileRepository: UserProfileRepository =
         UserProfileRepositoryFirestore(Firebase.firestore),
+    val requestCache: RequestCache? = null,
     val showOnlyMyRequests: Boolean = false,
     val verboseLogging: Boolean = false
 ) : ViewModel() {
@@ -52,13 +55,37 @@ class RequestListViewModel(
             } else {
               requestRepository.getAllRequests()
             }
-        _state.update { it.copy(requests = requests, isLoading = false, errorMessage = null) }
+        _state.update {
+          it.copy(requests = requests, offlineMode = false, isLoading = false, errorMessage = null)
+        }
+
+        // Save requests to cache if available
+        requestCache?.saveRequests(requests)
+
         requests.forEach { loadProfileImage(it.creatorId) }
       } catch (e: Exception) {
         if (verboseLogging) Log.e("RequestListViewModel", "Failed to load requests", e)
-        val friendly =
-            e.message?.takeIf { it.isNotBlank() } ?: "Failed to load requests. Please try again."
-        _state.update { it.copy(isLoading = false, errorMessage = friendly) }
+
+        // Try to load from cache if there's an error (e.g., no internet)
+        val cachedRequests = requestCache?.loadRequests() ?: emptyList()
+        if (cachedRequests.isNotEmpty()) {
+          // Successfully loaded from cache
+          _state.update {
+            it.copy(
+                requests = cachedRequests,
+                offlineMode = true,
+                isLoading = false,
+                errorMessage = null)
+          }
+          cachedRequests.forEach { loadProfileImage(it.creatorId) }
+          if (verboseLogging)
+              Log.i("RequestListViewModel", "Loaded ${cachedRequests.size} requests from cache")
+        } else {
+          // No cached data available
+          val friendly =
+              e.message?.takeIf { it.isNotBlank() } ?: "Failed to load requests. Please try again."
+          _state.update { it.copy(isLoading = false, errorMessage = friendly) }
+        }
       }
     }
   }
@@ -97,14 +124,23 @@ class RequestListViewModel(
   fun clearError() {
     _state.update { it.copy(errorMessage = null) }
   }
+
+  @VisibleForTesting
+  internal fun setOfflineMode(offline: Boolean) {
+    _state.update { it.copy(offlineMode = offline) }
+  }
 }
 
-class RequestListViewModelFactory(private val showOnlyMyRequests: Boolean = false) :
-    ViewModelProvider.Factory {
+class RequestListViewModelFactory(
+    private val showOnlyMyRequests: Boolean = false,
+    private val requestCache: RequestCache? = null
+) : ViewModelProvider.Factory {
   override fun <T : ViewModel> create(modelClass: Class<T>): T {
     if (modelClass.isAssignableFrom(RequestListViewModel::class.java)) {
       @Suppress("UNCHECKED_CAST")
-      return RequestListViewModel(showOnlyMyRequests = showOnlyMyRequests) as T
+      return RequestListViewModel(
+          showOnlyMyRequests = showOnlyMyRequests, requestCache = requestCache)
+          as T
     }
     throw IllegalArgumentException("Unknown ViewModel class")
   }
@@ -113,5 +149,6 @@ class RequestListViewModelFactory(private val showOnlyMyRequests: Boolean = fals
 data class RequestListState(
     val requests: List<Request> = emptyList(),
     val isLoading: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val offlineMode: Boolean = false
 )

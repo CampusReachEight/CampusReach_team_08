@@ -20,11 +20,17 @@ import com.android.sample.resources.C
 import com.android.sample.ui.navigation.NavigationActions
 import com.android.sample.ui.navigation.NavigationScreen
 import com.android.sample.ui.theme.SampleAppTheme
+import com.google.firebase.firestore.FirebaseFirestoreSettings
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     enableEdgeToEdge()
+
+    val settings = FirebaseFirestoreSettings.Builder().setPersistenceEnabled(false).build()
+    Firebase.firestore.firestoreSettings = settings
 
     setContent {
       SampleAppTheme {
