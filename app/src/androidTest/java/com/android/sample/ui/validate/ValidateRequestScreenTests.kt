@@ -685,6 +685,10 @@ private class FakeUserProfileRepository(private var helpers: List<UserProfile>) 
     return "fake-uid-${uidCounter++}"
   }
 
+  override fun getCurrentUserId(): String {
+    return "fake-current-user"
+  }
+
   override suspend fun getAllUserProfiles(): List<UserProfile> {
     return profileCache.values.toList()
   }

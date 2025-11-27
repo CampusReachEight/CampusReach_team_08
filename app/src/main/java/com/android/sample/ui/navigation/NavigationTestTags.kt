@@ -6,6 +6,7 @@ object NavigationTestTags {
   const val TOP_BAR_TITLE = "TopBarTitle"
 
   const val TOP_NAVIGATION_BAR = "TopNavigationBar"
+  const val VALIDATE_REQUEST_SCREEN = "ValidateRequestScreen"
 
   const val LOGIN_SCREEN = "LoginScreen"
   const val REQUESTS_SCREEN = "RequestScreen"
