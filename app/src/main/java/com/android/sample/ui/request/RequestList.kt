@@ -286,7 +286,8 @@ fun RequestListItem(
               Modifier.width(ConstantRequestList.RequestItemCreatorSectionSize)
                   .fillMaxHeight()
                   .align(Alignment.CenterVertically)
-                  .padding(vertical = ConstantRequestList.RequestItemProfileHeightPadding),
+                  .padding(vertical = ConstantRequestList.RequestItemProfileHeightPadding)
+                  .testTag(NavigationTestTags.PUBLIC_PROFILE_BUTTON),
           withName = true,
       )
 

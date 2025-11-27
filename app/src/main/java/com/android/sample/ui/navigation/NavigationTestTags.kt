@@ -17,12 +17,13 @@ object NavigationTestTags {
   const val EDIT_EVENT_SCREEN = "EditEventScreen"
   const val MAP_SCREEN = "MapScreen"
   const val PROFILE_SCREEN = "ProfileScreen"
+  const val PUBLIC_PROFILE_SCREEN = "PublicProfileScreen"
 
   const val REQUEST_TAB = "RequestTab"
   const val EVENT_TAB = "EventTab"
   const val MAP_TAB = "MapTab"
   const val PROFILE_BUTTON = "ProfileButton"
-  const val PUBLIC_PROFILE_SCREEN = "PublicProfileScreen"
+  const val PUBLIC_PROFILE_BUTTON = "PublicProfileButton"
 
   fun getTabTestTag(navigationTab: NavigationTab): String =
       when (navigationTab) {
