@@ -2,16 +2,27 @@ name: Project CI - Test Runner
 
 on:
   push:
-    branches: [ main, feature/*, bugfix/*, hotfix/* ]
+    branches:
+      - main
+      - feature/*
+      - bugfix/*
+      - hotfix/*
   pull_request:
-    types: [ opened, synchronize, reopened ]
+    types:
+      - opened
+      - synchronize
+      - reopened
 
 jobs:
+  # -----------------------------------------------------------------
   # JOB 1: Build & Setup
-  # Compiles the app once to verify build integrity and prepare artifacts
+  # Compiles the app, checks formatting, and prepares artifacts
+  # -----------------------------------------------------------------
   build-and-prepare:
+    name: Build and Prepare
     runs-on: ubuntu-latest
     env:
+      app_name: ProjectDebug
       base_folder: .
     defaults:
       run:
@@ -23,7 +34,110 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
-      - name: Setup JDK 17
+      - name: Remove current gradle cache
+        run: rm -rf ~/.gradle
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
+      - name: Cache SonarQube packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
+      - name: Retrieve gradle cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+
+      - name: Decode secrets
+        env:
+          GOOGLE_SERVICES: ${{ secrets.GOOGLE_SERVICES }}
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$GOOGLE_SERVICES" ]; then
+            echo "$GOOGLE_SERVICES" | base64 --decode > ./app/google-services.json
+          else
+            echo "::warning::GOOGLE_SERVICES secret is not set. google-services.json will not be created."
+          fi
+          mkdir -p keystore
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 --decode > keystore/ci-debug.keystore
+            echo "✓ Keystore decoded successfully"
+          else
+            echo "::warning::KEYSTORE_BASE64 secret is not set. Keystore will not be created."
+          fi
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
+
+      - name: Setup NodeJS
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Firestore Security Rules tests
+        run: |
+          if [ ! -e "firebase.json" ]; then
+            echo "Warning: 'firebase.json' file is missing. Run 'firebase emulators:init'."
+            exit 0
+          fi
+          jq -e '.emulators' firebase.json >/dev/null || {
+            echo "Error: 'firebase.json' is missing 'emulators'. Run 'firebase emulators:init'."
+            exit 1
+          }
+          for e in auth firestore; do
+            jq -e ".emulators.$e" firebase.json >/dev/null || {
+              echo "Error: 'firebase.json' is missing 'emulators.$e'. Run 'firebase emulators:init'."
+              exit 1
+            }
+          done
+          if [ -e "firebase/firestore/firestore.rules" ]; then
+            jq -e '.firestore.rules' firebase.json >/dev/null || {
+              echo "Error: 'firebase.json' is missing 'firestore.rules'."
+              exit 1
+            }
+            (cd firebase/firestore/test 2>/dev/null && npm install && npm test) || exit $?
+          else
+            echo "Warning: Firestore rules file not found in firebase/firestore. Rules should be added for emulator testing."
+          fi
+
+      - name: KTFmt Check
+        run: ./gradlew ktfmtCheck
+
+      # Build APKs now to populate cache and verify compilation
+      - name: Assemble Debug and AndroidTest
+        run: ./gradlew assembleDebug assembleAndroidTest --build-cache
+
+  # -----------------------------------------------------------------
+  # JOB 2: Unit Tests
+  # Runs standard unit tests (no emulator required)
+  # -----------------------------------------------------------------
+  unit-tests:
+    name: Unit Tests
+    needs: build-and-prepare
+    runs-on: ubuntu-latest
+    env:
+      base_folder: .
+    defaults:
+      run:
+        working-directory: ./${{ env.base_folder }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup JDK
         uses: actions/setup-java@v4
         with:
           distribution: "temurin"
@@ -37,6 +151,61 @@ jobs:
             ~/.gradle/wrapper
           key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
 
+      # Re-apply permission as checkout/cache restore might reset it
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
+
+      # Run ONLY unit tests here (excludes connected tests)
+      - name: Run Unit Tests
+        run: ./gradlew testDebugUnitTest --build-cache
+
+      # Upload unit test coverage for later merging
+      - name: Upload Unit Test Coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-unit
+          path: app/build/jacoco/testDebugUnitTest.exec
+
+      - name: Upload Unit Test Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-unit
+          path: app/build/test-results/testDebugUnitTest
+
+  # -----------------------------------------------------------------
+  # JOB 3: Instrumentation Tests (The Loop)
+  # Uses the Python script to determine which tests to rerun
+  # -----------------------------------------------------------------
+  android-instrumented-tests:
+    name: Instrumentation Tests
+    needs: unit-tests
+    runs-on: ubuntu-latest
+    env:
+      base_folder: .
+    defaults:
+      run:
+        working-directory: ./${{ env.base_folder }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
+      - name: Retrieve gradle cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+
+      # Decode secrets again because this job runs on a fresh VM
       - name: Decode secrets
         env:
           GOOGLE_SERVICES: ${{ secrets.GOOGLE_SERVICES }}
@@ -53,95 +222,6 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
 
-      - name: KTFmt Check
-        run: ./gradlew ktfmtCheck
-
-      # Compile now to ensure code is valid and populate build cache for next jobs
-      - name: Assemble Debug & Test
-        run: ./gradlew assembleDebug assembleAndroidTest --build-cache
-
-  # JOB 2: Unit Tests
-  # Always runs fully. Fast and stable.
-  unit-tests:
-    needs: build-and-prepare
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: .
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup JDK 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: "temurin"
-          java-version: "17"
-
-      - name: Retrieve gradle cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-
-      - name: Run Unit Tests
-        run: ./gradlew testDebugUnitTest --build-cache
-
-      # Upload execution data for merging later
-      - name: Upload Unit Test Coverage
-        uses: actions/upload-artifact@v4
-        with:
-          name: jacoco-unit
-          path: app/build/jacoco/testDebugUnitTest.exec
-
-      - name: Upload Unit Test Results
-        uses: actions/upload-artifact@v4
-        with:
-          name: junit-unit
-          path: app/build/test-results/testDebugUnitTest
-
-  # JOB 3: Integration Tests (The Loop)
-  # Reruns only execute failed tests based on JSON state
-  android-instrumented-tests:
-    needs: unit-tests
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: .
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup JDK 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: "temurin"
-          java-version: "17"
-
-      - name: Retrieve gradle cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-
-      # Re-decode secrets needed for the app to run
-      - name: Decode secrets
-        env:
-          GOOGLE_SERVICES: ${{ secrets.GOOGLE_SERVICES }}
-          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-        run: |
-          if [ -n "$GOOGLE_SERVICES" ]; then
-            echo "$GOOGLE_SERVICES" | base64 --decode > ./app/google-services.json
-          fi
-          mkdir -p keystore
-          if [ -n "$KEYSTORE_BASE64" ]; then
-            echo "$KEYSTORE_BASE64" | base64 --decode > keystore/ci-debug.keystore
-          fi
-
       - name: Setup NodeJS
         uses: actions/setup-node@v4
         with:
@@ -150,21 +230,23 @@ jobs:
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
 
-      - name: Enable KVM
+      - name: Enable KVM group perms
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      # 1. Download previous test state (if exists)
+      # --- Logic for State Management ---
+
+      # 1. Try to download the state file from previous run (if any)
       - name: Download Test State
         uses: actions/download-artifact@v4
         with:
           name: test-state-${{ github.ref_name }}-${{ github.sha }}
           path: .state
-        continue-on-error: true # Allow failing on first run
+        continue-on-error: true
 
-      # 2. Calculate which tests to run
+      # 2. Use python script to decide what runs
       - name: Determine Tests to Run
         id: test_selector
         run: |
@@ -175,7 +257,7 @@ jobs:
           echo "Determined tests: $TESTS"
           echo "TEST_FILTER=$TESTS" >> $GITHUB_ENV
 
-      # 3. Start Emulators & Run Tests (Conditioned)
+      # 3. Run Emulator + Tests (All or Partial)
       - name: Run instrumentation tests
         if: env.TEST_FILTER != 'NONE'
         timeout-minutes: 35
@@ -190,29 +272,30 @@ jobs:
           disable-animations: true
           script: |
             # Start Firebase Emulators
-            if [ -e "firebase.json" ]; then
+            if [ -e "firebase.json" ] && jq -e '.emulators' firebase.json >/dev/null; then
+              echo "Starting Firebase emulators..."
               firebase emulators:start --only auth,firestore --project demo-project &
-              sleep 10
+              sleep 15
             fi
             
-            # Logic: Run ALL or Specific Filters
+            # Execute Tests
             if [ "${{ env.TEST_FILTER }}" == "RUN_ALL" ]; then
               echo "Running ALL tests..."
               ./gradlew connectedCheck --parallel --build-cache
             else
-              echo "Running partial tests: ${{ env.TEST_FILTER }}"
+              echo "Running partial tests..."
               ./gradlew connectedCheck -Pandroid.testInstrumentationRunnerArguments.class=${{ env.TEST_FILTER }} --parallel --build-cache
             fi
 
-      # 4. Update JSON State
+      # 4. Update the JSON state based on results
       - name: Update Test State
-        if: always() # Run even if tests failed to record the failures
+        if: always()
         run: |
           python3 .github/scripts/manage_test_state.py update_state \
             --state-file .state/test-status.json \
             --xml-dir app/build/outputs/androidTest-results/connected
 
-      # 5. Upload Updated State (Overwrite for next rerun)
+      # 5. Upload new state (overwriting old one)
       - name: Upload Test State
         if: always()
         uses: actions/upload-artifact@v4
@@ -221,7 +304,7 @@ jobs:
           path: .state/test-status.json
           overwrite: true
 
-      # 6. Upload Coverage & Results (Unique per run attempt)
+      # 6. Upload specific run results (for coverage merging)
       - name: Upload Run Coverage
         if: always()
         uses: actions/upload-artifact@v4
@@ -236,22 +319,27 @@ jobs:
           name: junit-android-run-${{ github.run_attempt }}
           path: app/build/outputs/androidTest-results/connected
 
+  # -----------------------------------------------------------------
   # JOB 4: Coverage & Sonar
-  # Aggregates results from Unit + All Android Runs
+  # Aggregates everything. Runs even if Integration tests failed.
+  # -----------------------------------------------------------------
   coverage-and-sonar:
+    name: Coverage and Sonar
     needs: [unit-tests, android-instrumented-tests]
-    if: always() # Run even if tests failed
+    if: always()
     runs-on: ubuntu-latest
+    env:
+      base_folder: .
     defaults:
       run:
-        working-directory: .
+        working-directory: ./${{ env.base_folder }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Required for Sonar
+          fetch-depth: 0
 
-      - name: Setup JDK 17
+      - name: Setup JDK
         uses: actions/setup-java@v4
         with:
           distribution: "temurin"
@@ -272,14 +360,17 @@ jobs:
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
 
-      # Download Unit Test Data
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
+
+      # Download Unit coverage
       - name: Download Unit Coverage
         uses: actions/download-artifact@v4
         with:
           name: jacoco-unit
           path: app/build/jacoco/
 
-      # Download ALL Android Runs (Pattern match)
+      # Download ALL Android coverage (run 1, run 2, etc.)
       - name: Download All Android Coverage
         uses: actions/download-artifact@v4
         with:
@@ -287,9 +378,15 @@ jobs:
           merge-multiple: true
           path: app/build/outputs/code_coverage/debugAndroidTest/connected/
 
-      # Generate Report (Gradle will merge found .exec and .ec files)
+      # This task needs to support merging existing exec/ec files
       - name: Generate Merged Coverage Report
         run: ./gradlew jacocoTestReport
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: Coverage report
+          path: app/build/reports/jacoco/jacocoTestReport
 
       - name: SonarCloud analysis
         env:
