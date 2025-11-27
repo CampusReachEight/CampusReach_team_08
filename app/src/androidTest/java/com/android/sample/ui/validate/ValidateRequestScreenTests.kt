@@ -686,7 +686,7 @@ private class FakeUserProfileRepository(private var helpers: List<UserProfile>) 
   }
 
   override fun getCurrentUserId(): String {
-    TODO("Not yet implemented")
+    return "fake-current-user"
   }
 
   override suspend fun getAllUserProfiles(): List<UserProfile> {

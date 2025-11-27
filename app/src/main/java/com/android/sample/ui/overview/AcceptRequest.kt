@@ -61,6 +61,7 @@ import java.util.Locale
 object AcceptRequestScreenTestTags {
   const val REQUEST_BUTTON = "requestButton"
   const val REQUEST_TITLE = "requestTitle"
+  const val VALIDATE_REQUEST_BUTTON = "validateRequestButton"
   const val REQUEST_DESCRIPTION = "requestDescription"
   const val REQUEST_TAG = "requestTag"
   const val REQUEST_TYPE = "requestType"
@@ -82,6 +83,7 @@ object AcceptRequestScreenTestTags {
 // Centralized user-visible strings for AcceptRequest screen
 object AcceptRequestScreenLabels {
   const val BACK = "Back"
+  const val VALIDATE_REQUEST = "Validate Request"
 
   const val DESCRIPTION = "Description"
   const val TAGS = "Tags"
@@ -114,7 +116,8 @@ fun AcceptRequestScreen(
     requestId: String,
     acceptRequestViewModel: AcceptRequestViewModel = viewModel(),
     onGoBack: () -> Unit = {},
-    onEditClick: (String) -> Unit = {}
+    onEditClick: (String) -> Unit = {},
+    onValidateClick: (String) -> Unit = {}
 ) {
   LaunchedEffect(requestId) { acceptRequestViewModel.loadRequest(requestId) }
 
@@ -244,41 +247,55 @@ fun AcceptRequestScreen(
                   Spacer(
                       modifier = Modifier.height(AcceptRequestScreenConstants.BUTTON_TOP_SPACING))
 
-                  if (requestState.offlineMode) {
-                    return@Scaffold
-                  }
-                  // Action Button (Accept/Cancel for non-owners, Edit for owners)
+                    // Action Button (Accept/Cancel for non-owners, Edit for owners)
+                    if (requestState.offlineMode) {
+                        return@Scaffold
+                    }
+                FilledTonalButton(
+                    onClick = {
+                      if (isOwner) {
+                        onEditClick(requestId)
+                      } else if (requestState.accepted) {
+                        acceptRequestViewModel.cancelAcceptanceToRequest(requestId)
+                      } else {
+                        acceptRequestViewModel.acceptRequest(requestId)
+                      }
+                    },
+                    enabled = !requestState.isLoading,
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .height(AcceptRequestScreenConstants.BUTTON_HEIGHT)
+                            .testTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)) {
+                      if (requestState.isLoading) {
+                        CircularProgressIndicator(
+                            modifier =
+                                Modifier.size(AcceptRequestScreenConstants.CIRCULAR_PROGRESS_SIZE),
+                            color = MaterialTheme.colorScheme.onSecondaryContainer)
+                      } else {
+                        Text(
+                            text =
+                                if (isOwner) AcceptRequestScreenLabels.EDIT_REQUEST
+                                else if (requestState.accepted)
+                                    AcceptRequestScreenLabels.CANCEL_ACCEPTANCE
+                                else AcceptRequestScreenLabels.ACCEPT_REQUEST,
+                            style = MaterialTheme.typography.labelLarge)
+                      }
+                    }
+
+                if (isOwner) {
+                  Spacer(modifier = Modifier.height(AcceptRequestScreenConstants.SECTION_SPACING))
+
                   FilledTonalButton(
-                      onClick = {
-                        if (isOwner) {
-                          onEditClick(requestId)
-                        } else if (requestState.accepted) {
-                          acceptRequestViewModel.cancelAcceptanceToRequest(requestId)
-                        } else {
-                          acceptRequestViewModel.acceptRequest(requestId)
-                        }
-                      },
-                      enabled = !requestState.isLoading,
+                      onClick = { onValidateClick(requestId) },
                       modifier =
                           Modifier.fillMaxWidth()
                               .height(AcceptRequestScreenConstants.BUTTON_HEIGHT)
-                              .testTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)) {
-                        if (requestState.isLoading) {
-                          CircularProgressIndicator(
-                              modifier =
-                                  Modifier.size(
-                                      AcceptRequestScreenConstants.CIRCULAR_PROGRESS_SIZE),
-                              color = MaterialTheme.colorScheme.onSecondaryContainer)
-                        } else {
-                          Text(
-                              text =
-                                  if (isOwner) AcceptRequestScreenLabels.EDIT_REQUEST
-                                  else if (requestState.accepted)
-                                      AcceptRequestScreenLabels.CANCEL_ACCEPTANCE
-                                  else AcceptRequestScreenLabels.ACCEPT_REQUEST,
-                              style = MaterialTheme.typography.labelLarge)
-                        }
+                              .testTag(AcceptRequestScreenTestTags.VALIDATE_REQUEST_BUTTON)) {
+                        Text(
+                            text = AcceptRequestScreenLabels.VALIDATE_REQUEST,
+                            style = MaterialTheme.typography.labelLarge)
                       }
+                }
 
                   // Volunteers expandable section (owners only)
                   if (isOwner) {
