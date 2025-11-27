@@ -1,8 +1,19 @@
+# =============================================================================
+# Project CI - Test Runner
+# =============================================================================
+# This workflow runs on GitHub-hosted runners (ubuntu-latest: 2 cores, 7GB RAM)
+#
+# Pipeline Overview:
+#   1. build-and-unit-tests    - Compiles, lints, runs unit tests
+#   2. instrumentation-tests   - Runs Android UI tests (3 parallel shards)
+#   3. coverage-and-analysis   - Generates coverage report + SonarCloud scan
+#
+# Sharding: Tests are split across 3 independent runners for parallel execution.
+# Each shard runs ~1/3 of the instrumented tests on its own emulator instance.
+# =============================================================================
+
 name: Project CI - Test Runner
 
-# Triggers:
-# - Runs on commits pushed to main
-# - Runs when a pull request is opened, synchronized (updated), or reopened
 on:
   push:
     branches:
@@ -16,8 +27,14 @@ on:
       - synchronize
       - reopened
 
+# =============================================================================
+# JOB 1: Build & Unit Tests
+# =============================================================================
+# Validates code quality before expensive instrumentation tests run.
+# Steps: Checkout → Setup Java → Restore caches → Decode secrets →
+#        Firebase rules check → KTFmt check → Unit tests
+# =============================================================================
 jobs:
-  # Job 1: Build, lint, and unit tests
   build-and-unit-tests:
     name: Build & Unit Tests
     runs-on: ubuntu-latest
@@ -31,25 +48,21 @@ jobs:
         working-directory: ./${{ env.base_folder }}
 
     steps:
-      # Step 1: Checkout repository source code
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           submodules: recursive
           fetch-depth: 0
 
-      # Step 2: Clean Gradle cache
-      - name: Remove current gradle cache
+      - name: Clear Gradle cache
         run: rm -rf ~/.gradle
 
-      # Step 3: Setup JDK 17 (Temurin distribution)
-      - name: Setup JDK
+      - name: Setup JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: "temurin"
           java-version: "17"
 
-      # Step 4: Restore Gradle and SonarQube dependency cache
       - name: Cache SonarQube packages
         uses: actions/cache@v4
         with:
@@ -57,7 +70,7 @@ jobs:
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
 
-      - name: Retrieve gradle cache
+      - name: Cache Gradle dependencies
         uses: actions/cache@v4
         with:
           path: |
@@ -65,7 +78,6 @@ jobs:
             ~/.gradle/wrapper
           key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
 
-      # Step 5: Load google-services.json from the secrets
       - name: Decode secrets
         env:
           GOOGLE_SERVICES: ${{ secrets.GOOGLE_SERVICES }}
@@ -74,68 +86,61 @@ jobs:
           if [ -n "$GOOGLE_SERVICES" ]; then
             echo "$GOOGLE_SERVICES" | base64 --decode > ./app/google-services.json
           else
-            echo "::warning::GOOGLE_SERVICES secret is not set. google-services.json will not be created."
+            echo "::warning::GOOGLE_SERVICES secret is not set."
           fi
           mkdir -p keystore
           if [ -n "$KEYSTORE_BASE64" ]; then
             echo "$KEYSTORE_BASE64" | base64 --decode > keystore/ci-debug.keystore
-            echo "✓ Keystore decoded successfully"
           else
-            echo "::warning::KEYSTORE_BASE64 secret is not set. Keystore will not be created."
+            echo "::warning::KEYSTORE_BASE64 secret is not set."
           fi
 
-      # Step 6: Ensure gradlew wrapper is executable
-      - name: Grant execute permission for gradlew
+      - name: Make gradlew executable
         run: chmod +x ./gradlew
 
-      # Step 7: Install NodeJS (version 22)
-      - name: Setup NodeJS
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      # Step 8: Install Firebase CLI globally
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
 
-      # Step 9: Validate Firestore configuration and run Firestore rules tests
-      - name: Firestore Security Rules tests
+      - name: Validate Firestore rules
         run: |
           if [ ! -e "firebase.json" ]; then
-            echo "Warning: 'firebase.json' file is missing. Run 'firebase emulators:init'."
+            echo "Warning: firebase.json missing"
             exit 0
           fi
-          jq -e '.emulators' firebase.json >/dev/null || {
-            echo "Error: 'firebase.json' is missing 'emulators'. Run 'firebase emulators:init'."
-            exit 1
-          }
+          jq -e '.emulators' firebase.json >/dev/null || exit 1
           for e in auth firestore; do
-            jq -e ".emulators.$e" firebase.json >/dev/null || {
-              echo "Error: 'firebase.json' is missing 'emulators.$e'. Run 'firebase emulators:init'."
-              exit 1
-            }
+            jq -e ".emulators.$e" firebase.json >/dev/null || exit 1
           done
           if [ -e "firebase/firestore/firestore.rules" ]; then
-            jq -e '.firestore.rules' firebase.json >/dev/null || {
-              echo "Error: 'firebase.json' is missing 'firestore.rules'."
-              exit 1
-            }
+            jq -e '.firestore.rules' firebase.json >/dev/null || exit 1
             (cd firebase/firestore/test 2>/dev/null && npm install && npm test) || exit $?
-          else
-            echo "Warning: Firestore rules file not found in firebase/firestore. Rules should be added for emulator testing."
           fi
 
-      # Step 10: Run Kotlin formatting check
-      - name: KTFmt Check
+      - name: Check code formatting (KTFmt)
         run: ./gradlew ktfmtCheck
 
-      # Step 11: Run unit tests and verification tasks
-      - name: Run tests
+      - name: Run unit tests
         run: ./gradlew check --parallel --build-cache
 
-  # Job 2: Instrumentation tests with matrix sharding (runs in parallel across 3 runners)
+  # =============================================================================
+  # JOB 2: Instrumentation Tests (Sharded)
+  # =============================================================================
+  # Runs Android instrumented tests on an emulator.
+  # Uses matrix strategy to split tests across 3 parallel runners.
+  #
+  # Emulator Config (optimized for GitHub free runners - 2 cores, 7GB RAM):
+  #   - API 34: Matches local dev environment for consistent behavior
+  #   - swiftshader_indirect: Software rendering (no GPU on free runners)
+  #   - 2GB RAM / 512MB heap: Leaves room for Gradle + Firebase emulators
+  #   - KVM enabled: Hardware virtualization for faster emulation
+  # =============================================================================
   instrumentation-tests:
-    name: Instrumentation Tests (Shard ${{ matrix.shard }})
+    name: Instrumentation Tests (Shard ${{ matrix.shard }}/3)
     runs-on: ubuntu-latest
     needs: build-and-unit-tests
 
@@ -153,22 +158,22 @@ jobs:
         working-directory: ./${{ env.base_folder }}
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           submodules: recursive
           fetch-depth: 0
 
-      - name: Remove current gradle cache
+      - name: Clear Gradle cache
         run: rm -rf ~/.gradle
 
-      - name: Setup JDK
+      - name: Setup JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: "temurin"
           java-version: "17"
 
-      - name: Retrieve gradle cache
+      - name: Cache Gradle dependencies
         uses: actions/cache@v4
         with:
           path: |
@@ -184,72 +189,62 @@ jobs:
           if [ -n "$GOOGLE_SERVICES" ]; then
             echo "$GOOGLE_SERVICES" | base64 --decode > ./app/google-services.json
           else
-            echo "::warning::GOOGLE_SERVICES secret is not set. google-services.json will not be created."
+            echo "::warning::GOOGLE_SERVICES secret is not set."
           fi
           mkdir -p keystore
           if [ -n "$KEYSTORE_BASE64" ]; then
             echo "$KEYSTORE_BASE64" | base64 --decode > keystore/ci-debug.keystore
-            echo "✓ Keystore decoded successfully"
           else
-            echo "::warning::KEYSTORE_BASE64 secret is not set. Keystore will not be created."
+            echo "::warning::KEYSTORE_BASE64 secret is not set."
           fi
 
-      - name: Grant execute permission for gradlew
+      - name: Make gradlew executable
         run: chmod +x ./gradlew
 
-      - name: Setup NodeJS
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      # Cache Firebase emulator binaries to avoid re-downloading on every run
-      - name: Cache Firebase emulators
+      - name: Cache Firebase emulator binaries
         uses: actions/cache@v4
         with:
           path: ~/.cache/firebase/emulators
           key: firebase-emulators-${{ runner.os }}-${{ hashFiles('firebase.json') }}
-          restore-keys: |
-            firebase-emulators-${{ runner.os }}-
-            firebase-emulators-
+          restore-keys: firebase-emulators-${{ runner.os }}-
 
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
 
-      # Start Firebase emulators for instrumentation tests
       - name: Start Firebase emulators
         run: |
           if [ -e "firebase.json" ] && jq -e '.emulators' firebase.json >/dev/null; then
-            echo "Starting Firebase emulators for instrumentation tests..."
             firebase emulators:start --only auth,firestore --project demo-project &
-            sleep 10
-            echo "Firebase emulators started"
-          else
-            echo "Firebase emulators not configured, skipping emulator startup..."
+            sleep 15
           fi
 
-      # Enable KVM for hardware acceleration
-      - name: Enable KVM group perms
+      - name: Enable KVM acceleration
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      # Run instrumentation tests with sharding
-      # API 34 matches local dev environment (Pixel 8 Pro) for consistent test behavior
-      - name: Run instrumentation tests (Shard ${{ matrix.shard }}/3)
-        timeout-minutes: 20
+      - name: Run instrumented tests
+        timeout-minutes: 25
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34
           target: google_apis
           arch: x86_64
-          avd-name: github
+          avd-name: test-avd
           force-avd-creation: true
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          ram-size: 2048M
+          heap-size: 512M
+          disk-size: 6G
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot-load
           disable-animations: true
           script: ./gradlew connectedCheck --parallel --build-cache -PnumShards=3 -PshardIndex=${{ matrix.shard }}
 
-      # Upload test results for this shard
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
@@ -257,7 +252,12 @@ jobs:
           name: test-results-shard-${{ matrix.shard }}
           path: app/build/reports/androidTests/connected/
 
-  # Job 3: Coverage and SonarCloud (runs after all shards complete)
+  # =============================================================================
+  # JOB 3: Coverage & SonarCloud Analysis
+  # =============================================================================
+  # Generates Jacoco coverage report and uploads to SonarCloud.
+  # Runs after unit tests pass (instrumentation test failures don't block this).
+  # =============================================================================
   coverage-and-analysis:
     name: Coverage & SonarCloud
     runs-on: ubuntu-latest
@@ -273,19 +273,19 @@ jobs:
         working-directory: ./${{ env.base_folder }}
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           submodules: recursive
           fetch-depth: 0
 
-      - name: Setup JDK
+      - name: Setup JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: "temurin"
           java-version: "17"
 
-      - name: Retrieve gradle cache
+      - name: Cache Gradle dependencies
         uses: actions/cache@v4
         with:
           path: |
@@ -308,36 +308,31 @@ jobs:
           if [ -n "$GOOGLE_SERVICES" ]; then
             echo "$GOOGLE_SERVICES" | base64 --decode > ./app/google-services.json
           else
-            echo "::warning::GOOGLE_SERVICES secret is not set. google-services.json will not be created."
+            echo "::warning::GOOGLE_SERVICES secret is not set."
           fi
           mkdir -p keystore
           if [ -n "$KEYSTORE_BASE64" ]; then
             echo "$KEYSTORE_BASE64" | base64 --decode > keystore/ci-debug.keystore
-            echo "✓ Keystore decoded successfully"
           else
-            echo "::warning::KEYSTORE_BASE64 secret is not set. Keystore will not be created."
+            echo "::warning::KEYSTORE_BASE64 secret is not set."
           fi
 
-      - name: Grant execute permission for gradlew
+      - name: Make gradlew executable
         run: chmod +x ./gradlew
 
-      # Run unit tests for coverage (needed for Jacoco report)
       - name: Run unit tests for coverage
         run: ./gradlew testDebugUnitTest --parallel --build-cache
 
-      # Generate code coverage report
-      - name: Generate coverage
+      - name: Generate Jacoco coverage report
         run: ./gradlew jacocoTestReport
 
-      # Upload coverage report as an artifact
-      - name: Upload coverage
+      - name: Upload coverage report
         uses: actions/upload-artifact@v4
         with:
-          name: Coverage report
+          name: coverage-report
           path: app/build/reports/jacoco/jacocoTestReport
 
-      # Run SonarCloud analysis
-      - name: SonarCloud analysis
+      - name: Run SonarCloud analysis
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: ./gradlew sonar --info
