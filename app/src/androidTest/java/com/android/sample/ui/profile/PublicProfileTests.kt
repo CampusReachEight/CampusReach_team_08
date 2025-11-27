@@ -17,6 +17,7 @@ import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.profile.publicProfile.FollowButton
 import com.android.sample.ui.profile.publicProfile.PublicProfile
 import com.android.sample.ui.profile.publicProfile.PublicProfileHeader
+import com.android.sample.ui.profile.publicProfile.PublicProfileScreen
 import com.android.sample.ui.profile.publicProfile.PublicProfileTestTags
 import com.android.sample.ui.profile.publicProfile.PublicProfileUiState
 import java.util.Date
@@ -283,5 +284,21 @@ class PublicProfileScreenTest {
     composeRule.onNodeWithTag(ProfileTestTags.PROFILE_TOP_BAR_BACK_BUTTON).performClick()
     composeRule.waitForIdle()
     composeRule.onNodeWithTag(NavigationTestTags.PUBLIC_PROFILE_SCREEN).assertIsNotDisplayed()
+  }
+
+  @Test
+  fun all_components_appear_on_public_profile_screen() {
+    composeRule.setContent { PublicProfileScreen(onBackClick = {}) }
+
+    composeRule.onNodeWithTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER).assertIsDisplayed()
+    composeRule.onNodeWithTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_NAME).assertIsDisplayed()
+    composeRule
+        .onNodeWithTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_NAME)
+        .assertTextEquals("Unknown") // because viewModel has no data
+    composeRule.onNodeWithTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_EMAIL).assertIsDisplayed()
+    composeRule
+        .onNodeWithTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_PROFILE_PICTURE)
+        .assertIsDisplayed()
+    composeRule.onNodeWithTag(PublicProfileTestTags.FOLLOW_BUTTON).assertIsDisplayed()
   }
 }
