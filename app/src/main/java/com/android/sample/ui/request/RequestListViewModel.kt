@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.jetbrains.annotations.VisibleForTesting
 
 /**
  * ViewModel backing the Request List screen.
@@ -122,6 +123,11 @@ class RequestListViewModel(
   /** Clears the current error message, if any. */
   fun clearError() {
     _state.update { it.copy(errorMessage = null) }
+  }
+
+  @VisibleForTesting
+  internal fun setOfflineMode(offline: Boolean) {
+    _state.update { it.copy(offlineMode = offline) }
   }
 }
 
