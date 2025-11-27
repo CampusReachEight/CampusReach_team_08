@@ -235,12 +235,12 @@ jobs:
           sudo udevadm trigger --name-match=kvm
 
       # Run instrumentation tests with sharding
-      # API 29 boots faster and is more stable on GitHub runners than API 36
+      # API 34 matches local dev environment (Pixel 8 Pro) for consistent test behavior
       - name: Run instrumentation tests (Shard ${{ matrix.shard }}/3)
-        timeout-minutes: 15
+        timeout-minutes: 20
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 29
+          api-level: 34
           target: google_apis
           arch: x86_64
           avd-name: github
