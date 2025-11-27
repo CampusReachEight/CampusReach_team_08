@@ -42,7 +42,20 @@ object RequestListTestTags {
   const val REQUEST_TAG_FILTER_DROPDOWN_BUTTON = "requestTagFilterDropdown"
   const val REQUEST_STATUS_FILTER_DROPDOWN_BUTTON = "requestStatusFilterDropdown"
   const val REQUEST_ADD_BUTTON = "requestAddButton"
-  // ... other tags omitted for brevity
+
+  // Search-bar tags required by RequestFacetDefinitions
+  const val REQUEST_TYPE_FILTER_SEARCH_BAR = "requestTypeFilterSearchBar"
+  const val REQUEST_STATUS_FILTER_SEARCH_BAR = "requestStatusFilterSearchBar"
+  const val REQUEST_TAG_FILTER_SEARCH_BAR = "requestTagFilterSearchBar"
+
+  // Helper generators for individual facet rows used by RequestFacetDefinitions
+  fun getRequestTypeFilterTag(type: RequestType): String = "requestTypeFilterRow_${type.name}"
+
+  fun getRequestStatusFilterTag(status: String): String =
+      "requestStatusFilterRow_${status.replace("\\s+".toRegex(), "_")}"
+
+  fun getRequestTagFilterTag(tag: String): String =
+      "requestTagFilterRow_${tag.replace("\\s+".toRegex(), "_")}"
 }
 
 private const val NO_REQUEST_NOW = "No requests at the moment"
