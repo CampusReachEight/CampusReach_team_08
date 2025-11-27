@@ -7,6 +7,7 @@ import com.android.sample.model.profile.UserProfile
 import com.android.sample.model.profile.UserProfileRepository
 import com.android.sample.model.profile.UserProfileRepositoryFirestore
 import com.android.sample.model.request.Request
+import com.android.sample.model.request.RequestOwnership
 import com.android.sample.model.request.RequestRepository
 import com.android.sample.model.request.RequestRepositoryFirestore
 import com.google.android.gms.maps.model.LatLng
@@ -33,7 +34,9 @@ data class MapUIState(
     var currentRequest: Request? = null,
     var isOwner: Boolean? = null,
     val currentProfile: UserProfile? = null,
-    val currentListRequest: List<Request>? = null
+    val currentListRequest: List<Request>? = null,
+    val requestOwnership: RequestOwnership = RequestOwnership.ALL,
+    val needToZoom: Boolean = true
 )
 
 /**
@@ -142,6 +145,50 @@ class MapViewModel(
         }
   }
 
+  /** get current user id */
+  fun getCurrentUserID(): String {
+    return profileRepository.getCurrentUserId()
+  }
+
+  /**
+   * Update target at the first request of this list
+   *
+   * @param requests the lists of request
+   */
+  fun zoomOnRequest(requests: List<Request>) {
+    val loc = requests.firstOrNull()?.location ?: EPFL_LOCATION
+    _uiState.value =
+        _uiState.value.copy(target = LatLng(loc.latitude, loc.longitude), needToZoom = true)
+  }
+
+  /** Set the needToZoom to false */
+  fun zoomCompleted() {
+    _uiState.value = _uiState.value.copy(needToZoom = false)
+  }
+
+  /** Update the filter of the request */
+  fun updateFilterOwnerShip(filter: RequestOwnership) {
+    _uiState.value = _uiState.value.copy(requestOwnership = filter)
+  }
+
+  /**
+   * Filter the list of request that is given with the current RequestOwnership
+   *
+   * @param requests list of requests
+   * @param userId the id of the current user
+   * @return the list filtered
+   */
+  fun filterWithOwnerShip(requests: List<Request>, userId: String): List<Request> {
+    return when (_uiState.value.requestOwnership) {
+      RequestOwnership.ALL -> requests
+      RequestOwnership.OWN -> requests.filter { it.creatorId == userId }
+      RequestOwnership.OTHER -> requests.filter { it.creatorId != userId }
+      RequestOwnership.ACCEPTED -> requests.filter { it.people.contains(userId) }
+      RequestOwnership.NOT_ACCEPTED_BY_ME -> requests.filter { !it.people.contains(userId) }
+      RequestOwnership.NOT_ACCEPTED -> requests.filter { it.people.isEmpty() }
+    }
+  }
+
   /**
    * Fetches all accepted requests and updates the MapUIState. Sets the target location to the first
    * request with a valid location, or to EPFL if no request has a valid address.
@@ -149,7 +196,7 @@ class MapViewModel(
   private fun fetchAcceptedRequest() {
     viewModelScope.launch {
       try {
-        val requests = requestRepository.getAllRequests()
+        val requests = requestRepository.getAllCurrentRequests()
 
         val current = _uiState.value.currentRequest
         val updatedCurrent = current?.let { requests.find { it.requestId == current.requestId } }
@@ -168,7 +215,8 @@ class MapViewModel(
                 ?: requests.firstOrNull()?.location
                 ?: EPFL_LOCATION
         _uiState.value =
-            MapUIState(target = LatLng(loc.latitude, loc.longitude), request = requests)
+            _uiState.value.copy(
+                target = LatLng(loc.latitude, loc.longitude), request = requests, needToZoom = true)
       } catch (e: Exception) {
         setErrorMsg("Failed to load requests: ${e.message}")
       }

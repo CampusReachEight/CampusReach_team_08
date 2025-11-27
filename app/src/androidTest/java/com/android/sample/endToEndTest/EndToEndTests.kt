@@ -37,7 +37,6 @@ import com.android.sample.utils.FakeCredentialManager
 import com.android.sample.utils.FakeJwtGenerator
 import com.android.sample.utils.FirebaseEmulator
 import com.android.sample.utils.UI_WAIT_TIMEOUT
-import java.util.Calendar
 import java.util.Date
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
@@ -137,11 +136,10 @@ class EndToEndTests : BaseEmulatorTest() {
       // actual user
       signInUser()
 
-      val calendar = Calendar.getInstance()
-      calendar.set(2024, Calendar.MARCH, 15, 14, 30, 0)
-      calendar.set(Calendar.MILLISECOND, 0)
-      val date = Date(calendar.timeInMillis)
-      val datePlusOneHour = Date(calendar.timeInMillis + 3_600_000)
+      // Use future dates so viewStatus calculates as OPEN (startTimeStamp > now)
+      val now = System.currentTimeMillis()
+      val oneHourFromNow = Date(now + 3_600_000)
+      val twoHoursFromNow = Date(now + 7_200_000)
 
       request1 =
           Request(
@@ -152,8 +150,8 @@ class EndToEndTests : BaseEmulatorTest() {
               Location(46.5191, 6.5668, "EPFL"),
               "EPFL",
               RequestStatus.OPEN,
-              date,
-              datePlusOneHour,
+              oneHourFromNow,
+              twoHoursFromNow,
               emptyList(),
               listOf(
                   Tags.URGENT,

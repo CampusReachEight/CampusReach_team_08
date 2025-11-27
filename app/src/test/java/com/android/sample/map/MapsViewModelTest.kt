@@ -45,6 +45,19 @@ class MapsViewModelTest {
       if (shouldThrowError) {
         throw RuntimeException("Network error")
       }
+      return requestsToReturn.filter { request ->
+        val vs = request.viewStatus
+        val s = request.status
+        vs != RequestStatus.COMPLETED &&
+            vs != RequestStatus.CANCELLED &&
+            s != RequestStatus.COMPLETED
+      }
+    }
+
+    override suspend fun getAllCurrentRequests(): List<Request> {
+      if (shouldThrowError) {
+        throw RuntimeException("Network error")
+      }
       return requestsToReturn
     }
 
@@ -104,6 +117,10 @@ class MapsViewModelTest {
 
   private class FakeProfileRepository : UserProfileRepository {
     override fun getNewUid(): String {
+      return ""
+    }
+
+    override fun getCurrentUserId(): String {
       return ""
     }
 

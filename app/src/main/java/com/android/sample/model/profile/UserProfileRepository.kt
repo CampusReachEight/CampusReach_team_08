@@ -4,6 +4,9 @@ interface UserProfileRepository {
   /** Generates and returns a new unique identifier for a user profile. */
   fun getNewUid(): String
 
+  /** Gives the current user id. */
+  fun getCurrentUserId(): String
+
   /**
    * Retrieves all user profiles from the repository.
    *
