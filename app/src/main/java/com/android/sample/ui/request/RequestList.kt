@@ -262,159 +262,164 @@ fun RequestList(
             val request = state.requests[index]
             RequestListItem(viewModel = viewModel, request = request, onClick = onRequestClick)
           }
-  LazyColumn(
-      modifier =
-          modifier
-              .padding(ConstantRequestList.ListPadding)
-              .testTag(RequestListTestTags.REQUEST_LIST)) {
-        items(state.requests.size) { index ->
-          val request = state.requests[index]
-          RequestListItem(
-              viewModel = viewModel,
-              request = request,
-              onClick = onRequestClick,
-              onProfileClick = onProfileClick)
+          LazyColumn(
+              modifier =
+                  modifier
+                      .padding(ConstantRequestList.ListPadding)
+                      .testTag(RequestListTestTags.REQUEST_LIST)) {
+                items(state.requests.size) { index ->
+                  val request = state.requests[index]
+                  RequestListItem(
+                      viewModel = viewModel,
+                      request = request,
+                      onClick = onRequestClick,
+                      onProfileClick = onProfileClick)
+                }
+              }
         }
-      }
-}
 
-private const val WEIGHT = 1f
+    private const val WEIGHT = 1f
 
-private const val MAX_PARAM = 2
-private const val ChipsDescriptionRatio = 0.4f
+    private const val MAX_PARAM = 2
+    private const val ChipsDescriptionRatio = 0.4f
 
-@Composable
-fun RequestListItem(
-    viewModel: RequestListViewModel,
-    request: Request,
-    onClick: (Request) -> Unit,
-    modifier: Modifier = Modifier,
-    onProfileClick: (String) -> Unit = {}
-) {
+    @Composable
+    fun RequestListItem(
+        viewModel: RequestListViewModel,
+        request: Request,
+        onClick: (Request) -> Unit,
+        modifier: Modifier = Modifier,
+        onProfileClick: (String) -> Unit = {}
+    ) {
 
-  Card(
-      modifier =
-          modifier
-              .padding(bottom = ConstantRequestList.ListItemSpacing)
-              .fillMaxWidth()
-              .height(ConstantRequestList.RequestItemHeight)
-              .clickable(onClick = { onClick(request) })
-              .testTag(RequestListTestTags.REQUEST_ITEM),
-  ) {
-    Row(modifier = Modifier.fillMaxSize().padding(ConstantRequestList.RequestItemInnerPadding)) {
-      ProfilePicture(
-          profileRepository = viewModel.profileRepository,
-          profileId = request.creatorId,
-          onClick = { onProfileClick(request.creatorId) },
+      Card(
           modifier =
-              Modifier.width(ConstantRequestList.RequestItemCreatorSectionSize)
-                  .fillMaxHeight()
-                  .align(Alignment.CenterVertically)
-                  .padding(vertical = ConstantRequestList.RequestItemProfileHeightPadding)
-                  .testTag(NavigationTestTags.PUBLIC_PROFILE_BUTTON),
-          withName = true,
-      )
-
-      Spacer(Modifier.width(ConstantRequestList.RowSpacing))
-
-      TitleAndDescription(request, modifier = Modifier.weight(1f))
-
-      Spacer(Modifier.width(ConstantRequestList.RowSpacing))
-      LazyColumn(
-          modifier = Modifier.weight(ChipsDescriptionRatio),
-          verticalArrangement = Arrangement.spacedBy(TypeChipColumnSpacing)) {
-            val sortedRequestTypes = request.requestType.sortedBy { it.ordinal }
-            items(sortedRequestTypes.size) { index ->
-              val requestType = sortedRequestTypes[index]
-              TypeChip(
-                  requestType = requestType,
+              modifier
+                  .padding(bottom = ConstantRequestList.ListItemSpacing)
+                  .fillMaxWidth()
+                  .height(ConstantRequestList.RequestItemHeight)
+                  .clickable(onClick = { onClick(request) })
+                  .testTag(RequestListTestTags.REQUEST_ITEM),
+      ) {
+        Row(
+            modifier =
+                Modifier.fillMaxSize().padding(ConstantRequestList.RequestItemInnerPadding)) {
+              ProfilePicture(
+                  profileRepository = viewModel.profileRepository,
+                  profileId = request.creatorId,
+                  onClick = { onProfileClick(request.creatorId) },
+                  modifier =
+                      Modifier.width(ConstantRequestList.RequestItemCreatorSectionSize)
+                          .fillMaxHeight()
+                          .align(Alignment.CenterVertically)
+                          .padding(vertical = ConstantRequestList.RequestItemProfileHeightPadding)
+                          .testTag(NavigationTestTags.PUBLIC_PROFILE_BUTTON),
+                  withName = true,
               )
+
+              Spacer(Modifier.width(ConstantRequestList.RowSpacing))
+
+              TitleAndDescription(request, modifier = Modifier.weight(1f))
+
+              Spacer(Modifier.width(ConstantRequestList.RowSpacing))
+              LazyColumn(
+                  modifier = Modifier.weight(ChipsDescriptionRatio),
+                  verticalArrangement = Arrangement.spacedBy(TypeChipColumnSpacing)) {
+                    val sortedRequestTypes = request.requestType.sortedBy { it.ordinal }
+                    items(sortedRequestTypes.size) { index ->
+                      val requestType = sortedRequestTypes[index]
+                      TypeChip(
+                          requestType = requestType,
+                      )
+                    }
+                  }
             }
+      }
+    }
+
+    @Composable
+    fun TitleAndDescription(request: Request, modifier: Modifier = Modifier) {
+      Column(modifier = modifier) {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
+          Text(
+              request.title,
+              maxLines = 1,
+              overflow = TextOverflow.Ellipsis,
+              fontSize = ConstantRequestList.RequestItemTitleFontSize,
+              fontWeight = FontWeight.SemiBold,
+              modifier = Modifier.testTag(RequestListTestTags.REQUEST_ITEM_TITLE).weight(WEIGHT))
+        }
+        Spacer(modifier = Modifier.height(ConstantRequestList.RequestItemDescriptionSpacing))
+        Text(
+            request.description,
+            color = appPalette().text.copy(alpha = 0.8f),
+            fontSize = ConstantRequestList.RequestItemDescriptionFontSize,
+            modifier = Modifier.fillMaxSize().testTag(RequestListTestTags.REQUEST_ITEM_DESCRIPTION),
+            maxLines = MAX_PARAM,
+            overflow = TextOverflow.Ellipsis)
+      }
+    }
+
+    @Composable
+    fun TypeChip(
+        requestType: RequestType,
+        modifier: Modifier = Modifier,
+    ) {
+      Surface(
+          color = appPalette().getRequestTypeBackgroundColor(requestType),
+          shape = RoundedCornerShape(16.dp),
+          modifier = modifier.fillMaxWidth(),
+          border =
+              BorderStroke(TypeChipBorderWidth, appPalette().getRequestTypeColor(requestType))) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.fillMaxHeight().padding(horizontal = TypeChipTextPadding)) {
+                  Text(
+                      text = requestType.displayString(),
+                      color = appPalette().getRequestTypeColor(requestType),
+                      fontSize = 12.sp,
+                      fontWeight = FontWeight.Medium,
+                      maxLines = 1)
+                }
           }
     }
-  }
-}
 
-@Composable
-fun TitleAndDescription(request: Request, modifier: Modifier = Modifier) {
-  Column(modifier = modifier) {
-    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
-      Text(
-          request.title,
-          maxLines = 1,
-          overflow = TextOverflow.Ellipsis,
-          fontSize = ConstantRequestList.RequestItemTitleFontSize,
-          fontWeight = FontWeight.SemiBold,
-          modifier = Modifier.testTag(RequestListTestTags.REQUEST_ITEM_TITLE).weight(WEIGHT))
+    /** Floating add button to navigate to the add-request screen. */
+    @Composable
+    fun AddButton(navigationActions: NavigationActions?) {
+      FloatingActionButton(
+          onClick = { navigationActions?.navigateTo(Screen.AddRequest) },
+          containerColor = appPalette().accent,
+          modifier = Modifier.testTag(RequestListTestTags.REQUEST_ADD_BUTTON)) {
+            Icon(
+                imageVector = Icons.Default.Add,
+                contentDescription = "Add Request",
+                tint = appPalette().white)
+          }
     }
-    Spacer(modifier = Modifier.height(ConstantRequestList.RequestItemDescriptionSpacing))
-    Text(
-        request.description,
-        color = appPalette().text.copy(alpha = 0.8f),
-        fontSize = ConstantRequestList.RequestItemDescriptionFontSize,
-        modifier = Modifier.fillMaxSize().testTag(RequestListTestTags.REQUEST_ITEM_DESCRIPTION),
-        maxLines = MAX_PARAM,
-        overflow = TextOverflow.Ellipsis)
+
+    private const val DIALOG_ERROR_OCCURED = "An error occurred"
+
+    private const val DIALOG_OK = "OK"
+
+    /** Simple alert dialog to surface user-facing errors. */
+    @Composable
+    private fun ErrorDialog(message: String, onDismiss: () -> Unit) {
+      AlertDialog(
+          onDismissRequest = onDismiss,
+          title = { Text(DIALOG_ERROR_OCCURED) },
+          text = {
+            Text(message, modifier = Modifier.testTag(RequestListTestTags.ERROR_MESSAGE_DIALOG))
+          },
+          confirmButton = {
+            TextButton(
+                onClick = onDismiss,
+                modifier = Modifier.testTag(RequestListTestTags.OK_BUTTON_ERROR_DIALOG)) {
+                  Text(DIALOG_OK)
+                }
+          })
+    }
   }
-}
-
-@Composable
-fun TypeChip(
-    requestType: RequestType,
-    modifier: Modifier = Modifier,
-) {
-  Surface(
-      color = appPalette().getRequestTypeBackgroundColor(requestType),
-      shape = RoundedCornerShape(16.dp),
-      modifier = modifier.fillMaxWidth(),
-      border = BorderStroke(TypeChipBorderWidth, appPalette().getRequestTypeColor(requestType))) {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier.fillMaxHeight().padding(horizontal = TypeChipTextPadding)) {
-              Text(
-                  text = requestType.displayString(),
-                  color = appPalette().getRequestTypeColor(requestType),
-                  fontSize = 12.sp,
-                  fontWeight = FontWeight.Medium,
-                  maxLines = 1)
-            }
-      }
-}
-
-/** Floating add button to navigate to the add-request screen. */
-@Composable
-fun AddButton(navigationActions: NavigationActions?) {
-  FloatingActionButton(
-      onClick = { navigationActions?.navigateTo(Screen.AddRequest) },
-      containerColor = appPalette().accent,
-      modifier = Modifier.testTag(RequestListTestTags.REQUEST_ADD_BUTTON)) {
-        Icon(
-            imageVector = Icons.Default.Add,
-            contentDescription = "Add Request",
-            tint = appPalette().white)
-      }
-}
-
-private const val DIALOG_ERROR_OCCURED = "An error occurred"
-
-private const val DIALOG_OK = "OK"
-
-/** Simple alert dialog to surface user-facing errors. */
-@Composable
-private fun ErrorDialog(message: String, onDismiss: () -> Unit) {
-  AlertDialog(
-      onDismissRequest = onDismiss,
-      title = { Text(DIALOG_ERROR_OCCURED) },
-      text = {
-        Text(message, modifier = Modifier.testTag(RequestListTestTags.ERROR_MESSAGE_DIALOG))
-      },
-      confirmButton = {
-        TextButton(
-            onClick = onDismiss,
-            modifier = Modifier.testTag(RequestListTestTags.OK_BUTTON_ERROR_DIALOG)) {
-              Text(DIALOG_OK)
-            }
-      })
 }
 
 // Preview for rendering improvements during development
