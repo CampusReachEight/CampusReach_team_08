@@ -120,4 +120,19 @@ object FirebaseEmulator {
   fun signOut() = auth.signOut()
 
   private data class EmulatorConfig(val authPort: Int, val firestorePort: Int)
+
+  suspend fun updateRequestStatus(requestId: String, status: RequestStatus) {
+    firestore.collection("requests").document(requestId).update("status", status.name).await()
+  }
+
+  suspend fun addTestUserProfile(
+      userId: String,
+      name: String = "Test",
+      lastName: String = "User",
+      kudos: Int = 0
+  ) {
+    val profile =
+        hashMapOf("id" to userId, "name" to name, "lastName" to lastName, "kudos" to kudos)
+    firestore.collection("profiles").document(userId).set(profile).await()
+  }
 }
