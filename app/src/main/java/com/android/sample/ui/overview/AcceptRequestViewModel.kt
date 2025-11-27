@@ -169,4 +169,8 @@ class AcceptRequestViewModelFactory(
     }
     throw IllegalArgumentException("Unknown ViewModel class")
   }
+  /**
+   * FOR TESTING ONLY - Manually sets offline mode state This method is used exclusively in UI tests
+   * to simulate offline scenarios
+   */
 }
