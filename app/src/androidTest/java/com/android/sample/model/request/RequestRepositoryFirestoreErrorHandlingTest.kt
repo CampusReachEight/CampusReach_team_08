@@ -569,4 +569,127 @@ class RequestRepositoryFirestoreErrorHandlingTest : BaseEmulatorTest() {
       }
 
   }*/
+  @Test
+  fun closeRequest_throwsInvalidStatusForCompletedRequest() = runTest {
+    val req = generateRequest(people = listOf("helper1"), status = RequestStatus.COMPLETED)
+    repository.addRequest(req)
+
+    try {
+      repository.closeRequest(req.requestId, listOf("helper1"))
+      fail("Should throw RequestClosureException.InvalidStatus")
+    } catch (e: RequestClosureException.InvalidStatus) {
+      // Exception caught - this covers the throw branch
+      assertTrue(e.message?.contains("Cannot close request") == true)
+    }
+
+    runCatching { repository.deleteRequest(req.requestId) }
+  }
+
+  @Test
+  fun closeRequest_throwsUserNotHelperException() = runTest {
+    val req = generateRequest(people = listOf("actualHelper"))
+    repository.addRequest(req)
+
+    try {
+      repository.closeRequest(req.requestId, listOf("notAHelper"))
+      fail("Should throw RequestClosureException.UserNotHelper")
+    } catch (e: RequestClosureException.UserNotHelper) {
+      // Exception caught - this covers the throw branch
+      assertTrue(e.message?.contains("not in the list") == true)
+    }
+
+    runCatching { repository.deleteRequest(req.requestId) }
+  }
+
+  @Test
+  fun addRequest_throwsWhenNotAuthenticated() = runTest {
+    auth.signOut()
+
+    try {
+      repository.addRequest(request1)
+      fail("Should throw IllegalStateException")
+    } catch (e: IllegalStateException) {
+      assertTrue(e.message?.contains("No authenticated user") == true)
+    } finally {
+      signInUser(DEFAULT_USER_EMAIL, DEFAULT_USER_PASSWORD)
+    }
+  }
+
+  @Test
+  fun addRequest_throwsWhenCreatorIdMismatch() = runTest {
+    val badRequest = request1.copy(creatorId = "different-user-id")
+
+    try {
+      repository.addRequest(badRequest)
+      fail("Should throw IllegalArgumentException")
+    } catch (e: IllegalArgumentException) {
+      assertTrue(e.message?.contains("modify") == true)
+    }
+  }
+
+  @Test
+  fun updateRequest_throwsWhenNotOwner() = runTest {
+    repository.addRequest(request1)
+
+    createAndSignInUser("other@example.com", "password123")
+
+    try {
+      val updated = request1.copy(title = "Unauthorized Update")
+      repository.updateRequest(request1.requestId, updated)
+      fail("Should throw IllegalArgumentException")
+    } catch (e: IllegalArgumentException) {
+      assertTrue(e.message?.contains("modify") == true)
+    } finally {
+      signInUser(DEFAULT_USER_EMAIL, DEFAULT_USER_PASSWORD)
+      runCatching { repository.deleteRequest(request1.requestId) }
+    }
+  }
+
+  @Test
+  fun deleteRequest_throwsWhenNotOwner() = runTest {
+    repository.addRequest(request1)
+
+    createAndSignInUser("other@example.com", "password123")
+
+    try {
+      repository.deleteRequest(request1.requestId)
+      fail("Should throw IllegalArgumentException")
+    } catch (e: IllegalArgumentException) {
+      assertTrue(e.message?.contains("modify") == true)
+    } finally {
+      signInUser(DEFAULT_USER_EMAIL, DEFAULT_USER_PASSWORD)
+      runCatching { repository.deleteRequest(request1.requestId) }
+    }
+  }
+
+  @Test
+  fun getMyRequests_throwsWhenNotAuthenticated() = runTest {
+    auth.signOut()
+
+    try {
+      repository.getMyRequests()
+      fail("Should throw IllegalStateException")
+    } catch (e: IllegalStateException) {
+      assertTrue(e.message?.contains("No authenticated user") == true)
+    } finally {
+      signInUser(DEFAULT_USER_EMAIL, DEFAULT_USER_PASSWORD)
+    }
+  }
+
+  @Test
+  fun closeRequest_throwsWhenNotOwner() = runTest {
+    repository.addRequest(request1)
+
+    createAndSignInUser("other@example.com", "password123")
+
+    try {
+      repository.closeRequest(request1.requestId, emptyList())
+      fail("Should throw IllegalArgumentException")
+    } catch (e: IllegalArgumentException) {
+      assertTrue(e.message?.contains("modify") == true)
+    } finally {
+      signInUser(DEFAULT_USER_EMAIL, DEFAULT_USER_PASSWORD)
+      runCatching { repository.deleteRequest(request1.requestId) }
+    }
+  }
 }

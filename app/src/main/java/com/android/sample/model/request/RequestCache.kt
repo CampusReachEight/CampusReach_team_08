@@ -82,9 +82,7 @@ class RequestCache(private val context: Context) {
   fun clearAll() {
     if (cacheDir.exists()) {
       cacheDir.listFiles()?.forEach { file ->
-        if (!file.delete()) {
-          throw IllegalStateException("Failed to delete cache file: ${file.absolutePath}")
-        }
+        check(file.delete()) { "Failed to delete cache file: ${file.absolutePath}" }
       }
     }
   }
