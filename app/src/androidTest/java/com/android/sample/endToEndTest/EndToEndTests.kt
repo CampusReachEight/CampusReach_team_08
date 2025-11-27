@@ -513,7 +513,7 @@ class EndToEndTests : BaseEmulatorTest() {
     // After save, we are on the view-only details screen; go back to My Requests
     composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
       composeTestRule
-          .onAllNodesWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)
+          .onAllNodesWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON, useUnmergedTree = true)
           .fetchSemanticsNodes()
           .isNotEmpty()
     }
@@ -689,7 +689,7 @@ class EndToEndTests : BaseEmulatorTest() {
     composeTestRule.waitForIdle()
 
     composeTestRule
-        .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)
+        .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON, useUnmergedTree = true)
         .performScrollTo()
         .assertIsDisplayed()
         .performClick()
