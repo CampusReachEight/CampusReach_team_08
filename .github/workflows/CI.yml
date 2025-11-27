@@ -1,14 +1,6 @@
 # =============================================================================
-# Project CI - Test Runner
+# Project CI - Test Runner (Cleaned + Fixed Layout)
 # =============================================================================
-# OPTIMIZED FOR: GitHub-hosted Runners (2 vCPU, 7GB RAM)
-# CONFIGURATION:
-#   - Java 21: Required by latest Firebase CLI.
-#   - API 30 (ATD): Saves ~1GB RAM vs API 34. Stabilizes the pipeline.
-#   - Shards: 2 (Reduces boot timeout/flake probability vs > 2 shards).
-#   - Caching: Firebase Emulators cached to speed up start times.
-# =============================================================================
-
 name: Project CI - Test Runner
 
 on:
@@ -38,7 +30,7 @@ jobs:
 
     defaults:
       run:
-        working-directory:./${{ env.base_folder }}
+        working-directory: ./
 
     steps:
       - name: Checkout repository
@@ -50,11 +42,10 @@ jobs:
       - name: Clear Gradle cache
         run: rm -rf ~/.gradle
 
-      # UPGRADE: Java 21 is now mandatory for Firebase Tools v15+
       - name: Setup JDK 21
         uses: actions/setup-java@v4
         with:
-          distribution: "temurin"
+          distribution: temurin
           java-version: "21"
 
       - name: Cache SonarQube packages
@@ -62,7 +53,6 @@ jobs:
         with:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar
-          restore-keys: ${{ runner.os }}-sonar
 
       - name: Cache Gradle dependencies
         uses: actions/cache@v4
@@ -77,28 +67,27 @@ jobs:
           GOOGLE_SERVICES: ${{ secrets.GOOGLE_SERVICES }}
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         run: |
-          if; then
-            echo "$GOOGLE_SERVICES" | base64 --decode >./app/google-services.json
+          if [ -n "$GOOGLE_SERVICES" ]; then
+            echo "$GOOGLE_SERVICES" | base64 --decode > ./app/google-services.json
           else
-            echo "::warning::GOOGLE_SERVICES secret is not set."
+            echo "::warning:: GOOGLE_SERVICES secret is not set."
           fi
+
           mkdir -p keystore
-          if; then
+          if [ -n "$KEYSTORE_BASE64" ]; then
             echo "$KEYSTORE_BASE64" | base64 --decode > keystore/ci-debug.keystore
           else
-            echo "::warning::KEYSTORE_BASE64 secret is not set."
+            echo "::warning:: KEYSTORE_BASE64 secret is not set."
           fi
 
       - name: Make gradlew executable
-        run: chmod +x./gradlew
+        run: chmod +x ./gradlew
 
-      # STABILITY: Node 20 LTS is more stable for CI than 22
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      # NEW: Cache Firebase Emulator Binaries to silence warning and speed up CI
       - name: Cache Firebase Emulators
         uses: actions/cache@v4
         with:
@@ -110,162 +99,146 @@ jobs:
 
       - name: Validate Firestore rules
         run: |
-          if [! -e "firebase.json" ]; then
+          if [ ! -e "firebase.json" ]; then
             echo "Warning: firebase.json missing"
             exit 0
           fi
-          jq -e '.emulators' firebase.json >/dev/null |
-  
-          | exit 1
+          jq -e '.emulators' firebase.json >/dev/null || exit 1
+
           for e in auth firestore; do
-            jq -e ".emulators.$e" firebase.json >/dev/null |
-          
-          | exit 1
+            jq -e ".emulators.$e" firebase.json >/dev/null || exit 1
           done
+
           if [ -e "firebase/firestore/firestore.rules" ]; then
-            jq -e '.firestore.rules' firebase.json >/dev/null |
-          
-          | exit 1
-          (cd firebase/firestore/test 2>/dev/null && npm install && npm test) |
-          
-          | exit $?
+            jq -e '.firestore.rules' firebase.json >/dev/null || exit 1
+            (cd firebase/firestore/test 2>/dev/null && npm install && npm test) || exit $?
           fi
 
       - name: Check code formatting (KTFmt)
         run: ./gradlew ktfmtCheck
 
-      # OPTIMIZATION: Cap Gradle at 2GB. Use ParallelGC for lower overhead.
       - name: Run unit tests
         run: ./gradlew check --parallel --build-cache -Dorg.gradle.jvmargs="-Xmx2g -XX:+UseParallelGC"
 
-# =============================================================================
-# JOB 2: Instrumentation Tests (Sharded)
-# =============================================================================
+  # =============================================================================
+  # JOB 2: Instrumentation Tests (Sharded)
+  # =============================================================================
   instrumentation-tests:
     name: Instrumentation Tests (Shard ${{ matrix.shard }}/2)
     runs-on: ubuntu-latest
     needs: build-and-unit-tests
 
-  strategy:
-    fail-fast: false
-    matrix:
-      # OPTIMIZATION: 2 Shards is safer than 3 on free tier (less setup overhead)
-      shard:
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1]
 
-  env:
-    app_name: ProjectDebug
-    base_folder: .
+    env:
+      app_name: ProjectDebug
+      base_folder: .
 
-  defaults:
-    run:
-      working-directory:./${{ env.base_folder }}
+    defaults:
+      run:
+        working-directory: ./
 
-  steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        submodules: recursive
-        fetch-depth: 0
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
 
-    - name: Clear Gradle cache
-      run: rm -rf ~/.gradle
+      - name: Clear Gradle cache
+        run: rm -rf ~/.gradle
 
-    # UPGRADE: Java 21
-    - name: Setup JDK 21
-      uses: actions/setup-java@v4
-      with:
-        distribution: "temurin"
-        java-version: "21"
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
 
-    - name: Cache Gradle dependencies
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.gradle/caches
-          ~/.gradle/wrapper
-        key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
 
-    - name: Decode secrets
-      env:
-        GOOGLE_SERVICES: ${{ secrets.GOOGLE_SERVICES }}
-        KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-      run: |
-        if; then
-          echo "$GOOGLE_SERVICES" | base64 --decode >./app/google-services.json
-        else
-          echo "::warning::GOOGLE_SERVICES secret is not set."
-        fi
-        mkdir -p keystore
-        if; then
-          echo "$KEYSTORE_BASE64" | base64 --decode > keystore/ci-debug.keystore
-        else
-          echo "::warning::KEYSTORE_BASE64 secret is not set."
-        fi
+      - name: Decode secrets
+        env:
+          GOOGLE_SERVICES: ${{ secrets.GOOGLE_SERVICES }}
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$GOOGLE_SERVICES" ]; then
+            echo "$GOOGLE_SERVICES" | base64 --decode > ./app/google-services.json
+          else
+            echo "::warning:: GOOGLE_SERVICES secret is not set."
+          fi
 
-    - name: Make gradlew executable
-      run: chmod +x./gradlew
+          mkdir -p keystore
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 --decode > keystore/ci-debug.keystore
+          else
+            echo "::warning:: KEYSTORE_BASE64 secret is not set."
+          fi
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: 20
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
 
-    # NEW: Cache step for Firebase Emulators
-    - name: Cache Firebase Emulators
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/firebase/emulators
-        key: firebase-emulators-${{ runner.os }}
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
-    - name: Install Firebase CLI
-      run: npm install -g firebase-tools
+      - name: Cache Firebase Emulators
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/firebase/emulators
+          key: firebase-emulators-${{ runner.os }}
 
-    - name: Start Firebase emulators
-      run: |
-        if [ -e "firebase.json" ] && jq -e '.emulators' firebase.json >/dev/null; then
-          # CRITICAL: Limit Firebase Java Heap to 1GB to save RAM for Emulator
-          export JAVA_TOOL_OPTIONS="-Xmx1g"
-          firebase emulators:start --only auth,firestore --project demo-project &
-          sleep 15
-        fi
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
 
-    - name: Enable KVM acceleration
-      run: |
-        echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-        sudo udevadm control --reload-rules
-        sudo udevadm trigger --name-match=kvm
+      - name: Start Firebase emulators
+        run: |
+          if [ -e "firebase.json" ] && jq -e '.emulators' firebase.json >/dev/null; then
+            export JAVA_TOOL_OPTIONS="-Xmx1g"
+            firebase emulators:start --only auth,firestore --project demo-project &
+            sleep 15
+          fi
 
-    - name: Run instrumented tests
-      timeout-minutes: 25
-      uses: reactivecircus/android-emulator-runner@v2
-      with:
-        # OPTIMIZATION: API 30 is the "Sweet Spot".
-        # It supports 'google_atd' (Automated Test Device) which strips System UI.
-        # API 34 is too heavy (4GB+ RAM) and causes the flakiness you see.
-        api-level: 30
-        target: google_atd
-        arch: x86_64
-        avd-name: test-avd
-        force-avd-creation: true
-        # RAM: Strict 2GB limit
-        ram-size: 2048M
-        heap-size: 256M
-        disk-size: 2048M
-        # -no-snapshot-save: Prevents "hanging" at end of job
-        emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot-save
-        disable-animations: true
-        # GRADLE: -Xmx2g prevents Gradle from killing the emulator
-          script:./gradlew connectedCheck --parallel --build-cache -Dorg.gradle.jvmargs="-Xmx2g -XX:+UseParallelGC" -PnumShards=2 -PshardIndex=${{ matrix.shard }}
+      - name: Enable KVM acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
 
-    - name: Upload test results
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: test-results-shard-${{ matrix.shard }}
-        path: app/build/reports/androidTests/connected/
+      - name: Run instrumented tests
+        timeout-minutes: 25
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 30
+          target: google_atd
+          arch: x86_64
+          avd-name: test-avd
+          force-avd-creation: true
+          ram-size: 2048M
+          heap-size: 256M
+          disk-size: 2048M
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot-save
+          disable-animations: true
+          script: ./gradlew connectedCheck --parallel --build-cache -Dorg.gradle.jvmargs="-Xmx2g -XX:+UseParallelGC" -PnumShards=2 -PshardIndex=${{ matrix.shard }}
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-shard-${{ matrix.shard }}
+          path: app/build/reports/androidTests/connected/
 
   # =============================================================================
-  # JOB 3: Coverage & SonarCloud Analysis
+  # JOB 3: Coverage & SonarCloud
   # =============================================================================
   coverage-and-analysis:
     name: Coverage & SonarCloud
@@ -279,7 +252,7 @@ jobs:
 
     defaults:
       run:
-        working-directory:./${{ env.base_folder }}
+        working-directory: ./
 
     steps:
       - name: Checkout repository
@@ -288,11 +261,10 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
-      # UPGRADE: Java 21
       - name: Setup JDK 21
         uses: actions/setup-java@v4
         with:
-          distribution: "temurin"
+          distribution: temurin
           java-version: "21"
 
       - name: Cache Gradle dependencies
@@ -308,27 +280,27 @@ jobs:
         with:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar
-          restore-keys: ${{ runner.os }}-sonar
 
       - name: Decode secrets
         env:
           GOOGLE_SERVICES: ${{ secrets.GOOGLE_SERVICES }}
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         run: |
-          if; then
-            echo "$GOOGLE_SERVICES" | base64 --decode >./app/google-services.json
+          if [ -n "$GOOGLE_SERVICES" ]; then
+            echo "$GOOGLE_SERVICES" | base64 --decode > ./app/google-services.json
           else
-            echo "::warning::GOOGLE_SERVICES secret is not set."
+            echo "::warning:: GOOGLE_SERVICES secret is not set."
           fi
+
           mkdir -p keystore
-          if; then
+          if [ -n "$KEYSTORE_BASE64" ]; then
             echo "$KEYSTORE_BASE64" | base64 --decode > keystore/ci-debug.keystore
           else
-            echo "::warning::KEYSTORE_BASE64 secret is not set."
+            echo "::warning:: KEYSTORE_BASE64 secret is not set."
           fi
 
       - name: Make gradlew executable
-        run: chmod +x./gradlew
+        run: chmod +x ./gradlew
 
       - name: Run unit tests for coverage
         run: ./gradlew testDebugUnitTest --parallel --build-cache -Dorg.gradle.jvmargs="-Xmx2g"
@@ -346,4 +318,3 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: ./gradlew sonar --info -Dorg.gradle.jvmargs="-Xmx2g"
-
