@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.sample.model.profile.UserProfileRepository
 import com.android.sample.model.request.Request
+import com.android.sample.model.request.RequestCache
 import com.android.sample.model.request.RequestRepository
 import com.android.sample.model.request.RequestRepositoryFirestore
 import com.google.firebase.firestore.ktx.firestore
@@ -12,6 +13,7 @@ import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class AcceptRequestUIState(
@@ -19,13 +21,15 @@ data class AcceptRequestUIState(
     val creatorName: String? = null,
     val errorMsg: String? = null,
     val accepted: Boolean = false,
-    val isLoading: Boolean = false
+    val isLoading: Boolean = false,
+    val offlineMode: Boolean = false
 )
 
 class AcceptRequestViewModel(
     private val requestRepository: RequestRepository =
         RequestRepositoryFirestore(Firebase.firestore),
-    private val userProfileRepository: UserProfileRepository? = null
+    private val userProfileRepository: UserProfileRepository? = null,
+    private val requestCache: RequestCache? = null
 ) : ViewModel() {
 
   private val _uiState = MutableStateFlow(AcceptRequestUIState())
@@ -84,10 +88,24 @@ class AcceptRequestViewModel(
         Log.d("AcceptRequest", "=== DEBUG END ===")
 
         _uiState.value =
-            AcceptRequestUIState(request = request, accepted = accept, creatorName = creatorName)
+            AcceptRequestUIState(
+                request = request,
+                accepted = accept,
+                creatorName = creatorName,
+                offlineMode = false)
       } catch (e: Exception) {
-        Log.e("AcceptRequestViewModel", "Failed to load request: ${e.message}", e)
-        setErrorMsg("Failed to load request: ${e.message}")
+        try {
+          val cachedRequest = requestCache?.getRequestById(requestID)
+          _uiState.update {
+            it.copy(
+                request = cachedRequest,
+                accepted = requestRepository.hasUserAcceptedRequest(cachedRequest!!),
+                offlineMode = true)
+          }
+        } catch (e: Exception) {
+          Log.e("AcceptRequestViewModel", "Failed to load request: ${e.message}", e)
+          setErrorMsg("Failed to load request: ${e.message}")
+        }
       }
     }
   }
@@ -133,4 +151,26 @@ class AcceptRequestViewModel(
       }
     }
   }
+}
+
+class AcceptRequestViewModelFactory(
+    private val requestRepository: RequestRepository,
+    private val userProfileRepository: UserProfileRepository?,
+    private val requestCache: RequestCache
+) : androidx.lifecycle.ViewModelProvider.Factory {
+  override fun <T : ViewModel> create(modelClass: Class<T>): T {
+    if (modelClass.isAssignableFrom(AcceptRequestViewModel::class.java)) {
+      @Suppress("UNCHECKED_CAST")
+      return AcceptRequestViewModel(
+          requestRepository = requestRepository,
+          userProfileRepository = userProfileRepository,
+          requestCache = requestCache)
+          as T
+    }
+    throw IllegalArgumentException("Unknown ViewModel class")
+  }
+  /**
+   * FOR TESTING ONLY - Manually sets offline mode state This method is used exclusively in UI tests
+   * to simulate offline scenarios
+   */
 }
