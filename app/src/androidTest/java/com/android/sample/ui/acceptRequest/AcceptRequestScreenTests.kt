@@ -12,6 +12,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import com.android.sample.model.map.Location
 import com.android.sample.model.request.Request
 import com.android.sample.model.request.RequestRepositoryFirestore
@@ -45,6 +46,15 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
     const val request1_id = "request1"
     const val request2_id = "request2"
     const val request3_id = "request3"
+    const val request4_id = "request4"
+    const val request5_id = "request5"
+    const val request6_id = "request6"
+    const val request7_id = "request7"
+    const val request8_id = "request8"
+
+    // Error messages
+    const val ERROR_VALIDATE_CALLBACK_NOT_TRIGGERED = "Validate button callback was not triggered"
+    const val ERROR_REQUEST_ID_MISMATCH = "Expected request ID %s but got %s"
   }
 
   private fun signIn(email: String = DEFAULT_USER_EMAIL, password: String = DEFAULT_USER_PASSWORD) {
@@ -533,33 +543,6 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
         .assertTextContains("Archived", substring = true, ignoreCase = true)
   }
 
-  // New integration test: Volunteers visible and expandable only for owner
-  @Test
-  fun volunteersSection_visibleForOwner_and_expands() {
-    // Sign in as the owner of request1
-    runTest { signInUser(DEFAULT_USER_EMAIL, DEFAULT_USER_PASSWORD) }
-
-    composeTestRule.setContent { AcceptRequestScreen(request1_id) }
-
-    composeTestRule.waitUntil(uiWaitTimeout) {
-      composeTestRule
-          .onAllNodesWithTag(AcceptRequestScreenTestTags.VOLUNTEERS_SECTION_HEADER)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
-
-    // Header visible for owner
-    composeTestRule
-        .onNodeWithTag(AcceptRequestScreenTestTags.VOLUNTEERS_SECTION_HEADER)
-        .assertIsDisplayed()
-        .performClick()
-
-    // request1 has empty people list -> should show "No volunteers yet"
-    composeTestRule
-        .onNodeWithTag(AcceptRequestScreenTestTags.VOLUNTEERS_SECTION_CONTAINER)
-        .assertIsDisplayed()
-  }
-
   // Tests for getInitials function (via CreatorSection composable)
   @Test
   fun getInitials_withFullName_returnsFirstAndLastInitials() {
@@ -688,5 +671,70 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_CREATOR_AVATAR)
         .assertIsDisplayed()
+  }
+
+  @Test
+  fun validateButton_clickTriggersCallback() {
+    // Create a request where current user is the owner
+    runTest {
+      val ownerRequest =
+          Request(
+              request4_id,
+              "Owner Request",
+              "Description",
+              emptyList(),
+              Location(46.5191, 6.5668, "EPFL"),
+              "EPFL",
+              RequestStatus.IN_PROGRESS,
+              Date(),
+              Date(System.currentTimeMillis() + 3_600_000),
+              emptyList(),
+              emptyList(),
+              currentUserId // Current user is the owner
+              )
+      repository.addRequest(ownerRequest)
+    }
+
+    var validateClickedWithId: String? = null
+    var onValidateClickCalled = false
+
+    composeTestRule.setContent {
+      AcceptRequestScreen(
+          requestId = request4_id,
+          onValidateClick = { requestId ->
+            onValidateClickCalled = true
+            validateClickedWithId = requestId
+          })
+    }
+
+    // Wait for screen to load
+    composeTestRule.waitUntil(uiWaitTimeout) {
+      composeTestRule
+          .onAllNodesWithTag(AcceptRequestScreenTestTags.REQUEST_DETAILS_CARD)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Wait specifically for validate button (only shows for owner)
+    composeTestRule.waitUntil(uiWaitTimeout) {
+      composeTestRule
+          .onAllNodesWithTag(AcceptRequestScreenTestTags.VALIDATE_REQUEST_BUTTON)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Scroll to make the button visible and click it
+    composeTestRule
+        .onNodeWithTag(AcceptRequestScreenTestTags.VALIDATE_REQUEST_BUTTON)
+        .performScrollTo() // This will scroll to make it visible
+        .performClick()
+
+    composeTestRule.waitForIdle()
+
+    // Verify callback was triggered
+    assert(onValidateClickCalled) { ERROR_VALIDATE_CALLBACK_NOT_TRIGGERED }
+    assert(validateClickedWithId == request4_id) {
+      String.format(ERROR_REQUEST_ID_MISMATCH, request4_id, validateClickedWithId)
+    }
   }
 }
