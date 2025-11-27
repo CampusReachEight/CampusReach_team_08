@@ -260,4 +260,321 @@ class RequestRepositoryFirestoreMockTest {
         tags = emptyList(),
         creatorId = testUserId)
   }
+  // ========== updateRequest - FIXED ==========
+
+  @Test
+  fun updateRequest_throwsWhenVerificationDocDisappears() = runTest {
+    val request = createTestRequest()
+
+    // Mock initial getRequest call - succeeds
+    val initialQuery = mockk<Query>(relaxed = true)
+    val initialSnapshot = mockk<QuerySnapshot>(relaxed = true)
+    val initialDoc = mockk<DocumentSnapshot>(relaxed = true)
+    val initialMetadata = mockk<SnapshotMetadata>(relaxed = true)
+
+    every { mockCollection.whereEqualTo("requestId", testRequestId) } returns initialQuery
+    every { initialQuery.get(Source.SERVER) } returns Tasks.forResult(initialSnapshot)
+    every { initialSnapshot.metadata } returns initialMetadata
+    every { initialMetadata.isFromCache } returns false
+    every { initialSnapshot.documents } returns listOf(initialDoc)
+    every { initialDoc.data } returns request.toMap()
+    every { initialDoc.exists() } returns true
+
+    // Mock the set operation - succeeds
+    every { mockDocument.set(any()) } returns Tasks.forResult(null)
+
+    // Mock verification get - document doesn't exist (verifyRequest.exists() == false)
+    val verifyDoc = mockk<DocumentSnapshot>(relaxed = true)
+    every { verifyDoc.exists() } returns false
+    every { mockDocument.get(Source.SERVER) } returns Tasks.forResult(verifyDoc)
+
+    try {
+      repository.updateRequest(testRequestId, request)
+      fail("Should throw Exception")
+    } catch (e: Exception) {
+      assertTrue(e.message?.contains("Failed to update request") == true)
+      assertTrue(
+          e.message?.contains("Request disappeared during update") == true ||
+              e.cause?.message?.contains("Request disappeared during update") == true)
+    }
+  }
+
+  @Test
+  fun updateRequest_throwsWhenVerificationIsFromCache() = runTest {
+    val request = createTestRequest()
+
+    // Mock initial getRequest
+    val initialQuery = mockk<Query>(relaxed = true)
+    val initialSnapshot = mockk<QuerySnapshot>(relaxed = true)
+    val initialDoc = mockk<DocumentSnapshot>(relaxed = true)
+    val initialMetadata = mockk<SnapshotMetadata>(relaxed = true)
+
+    every { mockCollection.whereEqualTo("requestId", testRequestId) } returns initialQuery
+    every { initialQuery.get(Source.SERVER) } returns Tasks.forResult(initialSnapshot)
+    every { initialSnapshot.metadata } returns initialMetadata
+    every { initialMetadata.isFromCache } returns false
+    every { initialSnapshot.documents } returns listOf(initialDoc)
+    every { initialDoc.data } returns request.toMap()
+    every { initialDoc.exists() } returns true
+
+    every { mockDocument.set(any()) } returns Tasks.forResult(null)
+
+    // Verification is from cache
+    val verifyDoc = mockk<DocumentSnapshot>(relaxed = true)
+    val verifyMetadata = mockk<SnapshotMetadata>(relaxed = true)
+    every { verifyDoc.exists() } returns true
+    every { verifyDoc.metadata } returns verifyMetadata
+    every { verifyMetadata.isFromCache } returns true
+    every { mockDocument.get(Source.SERVER) } returns Tasks.forResult(verifyDoc)
+
+    try {
+      repository.updateRequest(testRequestId, request)
+      fail("Should throw Exception")
+    } catch (e: Exception) {
+      assertTrue(
+          e is IllegalStateException || e.message?.contains("Failed to update request") == true)
+      assertTrue(
+          e.message?.contains("Cannot verify request update") == true ||
+              e.cause?.message?.contains("Cannot verify request update") == true)
+    }
+  }
+
+  @Test
+  fun updateRequest_throwsOnNonUnavailableFirestoreException() = runTest {
+    val request = createTestRequest()
+
+    // Mock initial getRequest
+    val query = mockk<Query>(relaxed = true)
+    val snapshot = mockk<QuerySnapshot>(relaxed = true)
+    val doc = mockk<DocumentSnapshot>(relaxed = true)
+    val metadata = mockk<SnapshotMetadata>(relaxed = true)
+
+    every { mockCollection.whereEqualTo("requestId", testRequestId) } returns query
+    every { query.get(Source.SERVER) } returns Tasks.forResult(snapshot)
+    every { snapshot.metadata } returns metadata
+    every { metadata.isFromCache } returns false
+    every { snapshot.documents } returns listOf(doc)
+    every { doc.data } returns request.toMap()
+    every { doc.exists() } returns true
+
+    val exception = mockk<FirebaseFirestoreException>(relaxed = true)
+    every { exception.code } returns FirebaseFirestoreException.Code.PERMISSION_DENIED
+    every { exception.message } returns "Permission denied"
+    every { mockDocument.set(any()) } returns Tasks.forException(exception)
+
+    try {
+      repository.updateRequest(testRequestId, request)
+      fail("Should throw Exception")
+    } catch (e: Exception) {
+      // Gets wrapped in "Failed to update request"
+      assertTrue(e.message?.contains("Failed to update request") == true)
+      assertTrue(e.cause is FirebaseFirestoreException)
+    }
+  }
+
+  @Test
+  fun updateRequest_throwsWhenNotOwner() = runTest {
+    val request = createTestRequest().copy(creatorId = "different-user")
+
+    val query = mockk<Query>(relaxed = true)
+    val snapshot = mockk<QuerySnapshot>(relaxed = true)
+    val doc = mockk<DocumentSnapshot>(relaxed = true)
+    val metadata = mockk<SnapshotMetadata>(relaxed = true)
+
+    every { mockCollection.whereEqualTo("requestId", testRequestId) } returns query
+    every { query.get(Source.SERVER) } returns Tasks.forResult(snapshot)
+    every { snapshot.metadata } returns metadata
+    every { metadata.isFromCache } returns false
+    every { snapshot.documents } returns listOf(doc)
+    every { doc.data } returns request.toMap()
+    every { doc.exists() } returns true
+
+    try {
+      repository.updateRequest(testRequestId, request)
+      fail("Should throw IllegalArgumentException")
+    } catch (e: IllegalArgumentException) {
+      assertTrue(e.message?.contains("Can only modify") == true)
+    }
+  }
+
+  // ========== deleteRequest - FIXED ==========
+
+  @Test
+  fun deleteRequest_throwsWhenVerificationDocStillExists() = runTest {
+    val request = createTestRequest()
+
+    // Mock initial getRequest
+    val initialQuery = mockk<Query>(relaxed = true)
+    val initialSnapshot = mockk<QuerySnapshot>(relaxed = true)
+    val initialDoc = mockk<DocumentSnapshot>(relaxed = true)
+    val initialMetadata = mockk<SnapshotMetadata>(relaxed = true)
+
+    every { mockCollection.whereEqualTo("requestId", testRequestId) } returns initialQuery
+    every { initialQuery.get(Source.SERVER) } returns Tasks.forResult(initialSnapshot)
+    every { initialSnapshot.metadata } returns initialMetadata
+    every { initialMetadata.isFromCache } returns false
+    every { initialSnapshot.documents } returns listOf(initialDoc)
+    every { initialDoc.data } returns request.toMap()
+    every { initialDoc.exists() } returns true
+
+    every { mockDocument.delete() } returns Tasks.forResult(null)
+
+    // Verification - doc still exists!
+    val verifyDoc = mockk<DocumentSnapshot>(relaxed = true)
+    every { verifyDoc.exists() } returns true
+    every { mockDocument.get(Source.SERVER) } returns Tasks.forResult(verifyDoc)
+
+    try {
+      repository.deleteRequest(testRequestId)
+      fail("Should throw Exception")
+    } catch (e: Exception) {
+      assertTrue(e.message?.contains("Failed to") == true)
+      assertTrue(
+          e.message?.contains("verify request deletion") == true ||
+              e.cause?.message?.contains("verify request deletion") == true)
+    }
+  }
+
+  @Test
+  fun deleteRequest_throwsWhenVerificationIsFromCache() = runTest {
+    val request = createTestRequest()
+
+    // Mock initial getRequest
+    val initialQuery = mockk<Query>(relaxed = true)
+    val initialSnapshot = mockk<QuerySnapshot>(relaxed = true)
+    val initialDoc = mockk<DocumentSnapshot>(relaxed = true)
+    val initialMetadata = mockk<SnapshotMetadata>(relaxed = true)
+
+    every { mockCollection.whereEqualTo("requestId", testRequestId) } returns initialQuery
+    every { initialQuery.get(Source.SERVER) } returns Tasks.forResult(initialSnapshot)
+    every { initialSnapshot.metadata } returns initialMetadata
+    every { initialMetadata.isFromCache } returns false
+    every { initialSnapshot.documents } returns listOf(initialDoc)
+    every { initialDoc.data } returns request.toMap()
+    every { initialDoc.exists() } returns true
+
+    every { mockDocument.delete() } returns Tasks.forResult(null)
+
+    // Verification is from cache
+    val verifyDoc = mockk<DocumentSnapshot>(relaxed = true)
+    val verifyMetadata = mockk<SnapshotMetadata>(relaxed = true)
+    every { verifyDoc.exists() } returns false
+    every { verifyDoc.metadata } returns verifyMetadata
+    every { verifyMetadata.isFromCache } returns true
+    every { mockDocument.get(Source.SERVER) } returns Tasks.forResult(verifyDoc)
+
+    try {
+      repository.deleteRequest(testRequestId)
+      fail("Should throw Exception")
+    } catch (e: Exception) {
+      assertTrue(
+          e is IllegalStateException || e.message?.contains("Failed to delete request") == true)
+      assertTrue(
+          e.message?.contains("Cannot verify request deletion") == true ||
+              e.cause?.message?.contains("Cannot verify request deletion") == true)
+    }
+  }
+
+  @Test
+  fun deleteRequest_throwsOnNonUnavailableFirestoreException() = runTest {
+    val request = createTestRequest()
+
+    val query = mockk<Query>(relaxed = true)
+    val snapshot = mockk<QuerySnapshot>(relaxed = true)
+    val doc = mockk<DocumentSnapshot>(relaxed = true)
+    val metadata = mockk<SnapshotMetadata>(relaxed = true)
+
+    every { mockCollection.whereEqualTo("requestId", testRequestId) } returns query
+    every { query.get(Source.SERVER) } returns Tasks.forResult(snapshot)
+    every { snapshot.metadata } returns metadata
+    every { metadata.isFromCache } returns false
+    every { snapshot.documents } returns listOf(doc)
+    every { doc.data } returns request.toMap()
+    every { doc.exists() } returns true
+
+    val exception = mockk<FirebaseFirestoreException>(relaxed = true)
+    every { exception.code } returns FirebaseFirestoreException.Code.DATA_LOSS
+    every { mockDocument.delete() } returns Tasks.forException(exception)
+
+    try {
+      repository.deleteRequest(testRequestId)
+      fail("Should throw Exception")
+    } catch (e: Exception) {
+      assertTrue(e.message?.contains("Failed to delete request") == true)
+      assertTrue(e.cause is FirebaseFirestoreException)
+    }
+  }
+
+  @Test
+  fun deleteRequest_throwsWhenNotOwner() = runTest {
+    val request = createTestRequest().copy(creatorId = "different-user")
+
+    val query = mockk<Query>(relaxed = true)
+    val snapshot = mockk<QuerySnapshot>(relaxed = true)
+    val doc = mockk<DocumentSnapshot>(relaxed = true)
+    val metadata = mockk<SnapshotMetadata>(relaxed = true)
+
+    every { mockCollection.whereEqualTo("requestId", testRequestId) } returns query
+    every { query.get(Source.SERVER) } returns Tasks.forResult(snapshot)
+    every { snapshot.metadata } returns metadata
+    every { metadata.isFromCache } returns false
+    every { snapshot.documents } returns listOf(doc)
+    every { doc.data } returns request.toMap()
+    every { doc.exists() } returns true
+
+    try {
+      repository.deleteRequest(testRequestId)
+      fail("Should throw IllegalArgumentException")
+    } catch (e: IllegalArgumentException) {
+      assertTrue(e.message?.contains("Can only modify") == true)
+    }
+  }
+
+  // ========== getMyRequests - FIXED ==========
+
+  @Test
+  fun getMyRequests_throwsOnNonUnavailableFirestoreException() = runTest {
+    val exception = mockk<FirebaseFirestoreException>(relaxed = true)
+    every { exception.code } returns FirebaseFirestoreException.Code.INTERNAL
+
+    val query = mockk<Query>(relaxed = true)
+    every { mockCollection.whereEqualTo("creatorId", testUserId) } returns query
+    every { query.get(Source.SERVER) } returns Tasks.forException(exception)
+
+    try {
+      repository.getMyRequests()
+      fail("Should throw Exception")
+    } catch (e: Exception) {
+      assertTrue(e.message?.contains("Failed to retrieve requests for user") == true)
+      assertTrue(e.cause is FirebaseFirestoreException)
+    }
+  }
+
+  // ========== closeRequest - FIXED ==========
+
+  @Test
+  fun closeRequest_throwsWhenNotOwner() = runTest {
+    val request =
+        createTestRequest().copy(creatorId = "different-user", status = RequestStatus.IN_PROGRESS)
+
+    val query = mockk<Query>(relaxed = true)
+    val snapshot = mockk<QuerySnapshot>(relaxed = true)
+    val doc = mockk<DocumentSnapshot>(relaxed = true)
+    val metadata = mockk<SnapshotMetadata>(relaxed = true)
+
+    every { mockCollection.whereEqualTo("requestId", testRequestId) } returns query
+    every { query.get(Source.SERVER) } returns Tasks.forResult(snapshot)
+    every { snapshot.metadata } returns metadata
+    every { metadata.isFromCache } returns false
+    every { snapshot.documents } returns listOf(doc)
+    every { doc.data } returns request.toMap()
+    every { doc.exists() } returns true
+
+    try {
+      repository.closeRequest(testRequestId, listOf("helper1"))
+      fail("Should throw IllegalArgumentException")
+    } catch (e: IllegalArgumentException) {
+      assertTrue(e.message?.contains("Can only modify") == true)
+    }
+  }
 }
