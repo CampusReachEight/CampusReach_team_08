@@ -3,6 +3,8 @@ package com.android.sample.ui.profile.publicProfile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.sample.model.profile.UserProfileRepository
+import com.android.sample.model.profile.UserProfileRepositoryFirestore
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,7 +21,10 @@ data class PublicProfileUiState(
 
 private const val TIME_OUT = 15_000L
 
-class PublicProfileViewModel(private val repository: UserProfileRepository) : ViewModel() {
+class PublicProfileViewModel(
+    private val repository: UserProfileRepository =
+        UserProfileRepositoryFirestore(FirebaseFirestore.getInstance())
+) : ViewModel() {
 
   private val _uiState = MutableStateFlow(PublicProfileUiState())
   val uiState: StateFlow<PublicProfileUiState> = _uiState.asStateFlow()
