@@ -4,13 +4,13 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.sample.model.map.Location
+import java.io.File
 import java.util.Date
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.io.File
 
 @RunWith(AndroidJUnit4::class)
 class RequestCacheTest {
@@ -161,140 +161,140 @@ class RequestCacheTest {
     assertEquals(complexRequest, loadedRequest)
   }
 
-    @Test
-    fun `getRequestById should retrieve a specific request from cache`() {
-        val request =
-            Request(
-                requestId = "specific_req",
-                title = "Specific Request",
-                description = "This is a specific request.",
-                requestType = listOf(RequestType.STUDYING),
-                location = Location(46.7, -71.2, "Library"),
-                locationName = "Library",
-                status = RequestStatus.OPEN,
-                startTimeStamp = Date(),
-                expirationTime = Date(),
-                people = emptyList(),
-                tags = emptyList(),
-                creatorId = "user1")
+  @Test
+  fun `getRequestById should retrieve a specific request from cache`() {
+    val request =
+        Request(
+            requestId = "specific_req",
+            title = "Specific Request",
+            description = "This is a specific request.",
+            requestType = listOf(RequestType.STUDYING),
+            location = Location(46.7, -71.2, "Library"),
+            locationName = "Library",
+            status = RequestStatus.OPEN,
+            startTimeStamp = Date(),
+            expirationTime = Date(),
+            people = emptyList(),
+            tags = emptyList(),
+            creatorId = "user1")
 
-        requestCache.saveRequests(listOf(request))
+    requestCache.saveRequests(listOf(request))
 
-        val retrievedRequest = requestCache.getRequestById("specific_req")
+    val retrievedRequest = requestCache.getRequestById("specific_req")
 
-        assertEquals(request, retrievedRequest)
+    assertEquals(request, retrievedRequest)
+  }
+
+  @Test
+  fun `getRequestById should throw IllegalArgumentException when request not found`() {
+    try {
+      requestCache.getRequestById("non_existent_id")
+      fail("Expected IllegalArgumentException")
+    } catch (e: IllegalArgumentException) {
+      assertTrue(e.message?.contains("not found in cache") == true)
+    }
+  }
+
+  @Test
+  fun `getRequestById should throw IllegalArgumentException when JSON is corrupted`() {
+    // Manually create a corrupted JSON file
+    val file = File(File(context.cacheDir, "requests_cache"), "corrupted_req.json")
+    file.parentFile?.mkdirs()
+    file.writeText("{ invalid json }")
+
+    try {
+      requestCache.getRequestById("corrupted_req")
+      fail("Expected IllegalArgumentException")
+    } catch (e: IllegalArgumentException) {
+      assertTrue(e.message?.contains("Failed to load request") == true)
+    } finally {
+      file.delete()
+    }
+  }
+
+  @Test
+  fun `saveRequests should handle serialization exception gracefully`() {
+    // Create a request and save it normally first
+    val validRequest =
+        Request(
+            requestId = "valid_req",
+            title = "Valid",
+            description = "Valid request",
+            requestType = listOf(RequestType.STUDYING),
+            location = Location(0.0, 0.0, "Place"),
+            locationName = "Place",
+            status = RequestStatus.OPEN,
+            startTimeStamp = Date(),
+            expirationTime = Date(),
+            people = emptyList(),
+            tags = emptyList(),
+            creatorId = "user1")
+
+    // This should not crash even if serialization fails for some reason
+    requestCache.saveRequests(listOf(validRequest))
+
+    // Verify it was saved
+    val loaded = requestCache.loadRequests()
+    assertTrue(loaded.isNotEmpty())
+  }
+
+  @Test
+  fun `loadRequests should handle deserialization exception gracefully`() {
+    // Create a corrupted JSON file
+    val cacheDir = File(context.cacheDir, "requests_cache")
+    cacheDir.mkdirs()
+    val corruptedFile = File(cacheDir, "corrupted.json")
+    corruptedFile.writeText("{ this is not valid json }")
+
+    // Should return empty list instead of crashing
+    val loaded = requestCache.loadRequests()
+
+    // The corrupted file should be skipped (returns null in mapNotNull)
+    assertTrue(loaded.isEmpty())
+
+    corruptedFile.delete()
+  }
+
+  @Test
+  fun `clearAll should throw IllegalStateException when file cannot be deleted`() {
+    // This is difficult to test in a real scenario since we can't easily make a file undeletable
+    // Instead, we'll test that clearAll works normally
+    val request =
+        Request(
+            requestId = "delete_test",
+            title = "Delete Test",
+            description = "Test deletion",
+            requestType = listOf(RequestType.OTHER),
+            location = Location(0.0, 0.0, "Place"),
+            locationName = "Place",
+            status = RequestStatus.OPEN,
+            startTimeStamp = Date(),
+            expirationTime = Date(),
+            people = emptyList(),
+            tags = emptyList(),
+            creatorId = "user1")
+
+    requestCache.saveRequests(listOf(request))
+
+    // This should succeed without throwing
+    requestCache.clearAll()
+
+    assertTrue(requestCache.loadRequests().isEmpty())
+  }
+
+  @Test
+  fun `loadRequests should return empty list when listFiles returns null`() {
+    // Clear all first
+    requestCache.clearAll()
+
+    // Delete the cache directory itself
+    val cacheDir = File(context.cacheDir, "requests_cache")
+    if (cacheDir.exists()) {
+      cacheDir.deleteRecursively()
     }
 
-    @Test
-    fun `getRequestById should throw IllegalArgumentException when request not found`() {
-        try {
-            requestCache.getRequestById("non_existent_id")
-            fail("Expected IllegalArgumentException")
-        } catch (e: IllegalArgumentException) {
-            assertTrue(e.message?.contains("not found in cache") == true)
-        }
-    }
-
-    @Test
-    fun `getRequestById should throw IllegalArgumentException when JSON is corrupted`() {
-        // Manually create a corrupted JSON file
-        val file = File(File(context.cacheDir, "requests_cache"), "corrupted_req.json")
-        file.parentFile?.mkdirs()
-        file.writeText("{ invalid json }")
-
-        try {
-            requestCache.getRequestById("corrupted_req")
-            fail("Expected IllegalArgumentException")
-        } catch (e: IllegalArgumentException) {
-            assertTrue(e.message?.contains("Failed to load request") == true)
-        } finally {
-            file.delete()
-        }
-    }
-
-    @Test
-    fun `saveRequests should handle serialization exception gracefully`() {
-        // Create a request and save it normally first
-        val validRequest =
-            Request(
-                requestId = "valid_req",
-                title = "Valid",
-                description = "Valid request",
-                requestType = listOf(RequestType.STUDYING),
-                location = Location(0.0, 0.0, "Place"),
-                locationName = "Place",
-                status = RequestStatus.OPEN,
-                startTimeStamp = Date(),
-                expirationTime = Date(),
-                people = emptyList(),
-                tags = emptyList(),
-                creatorId = "user1")
-
-        // This should not crash even if serialization fails for some reason
-        requestCache.saveRequests(listOf(validRequest))
-
-        // Verify it was saved
-        val loaded = requestCache.loadRequests()
-        assertTrue(loaded.isNotEmpty())
-    }
-
-    @Test
-    fun `loadRequests should handle deserialization exception gracefully`() {
-        // Create a corrupted JSON file
-        val cacheDir = File(context.cacheDir, "requests_cache")
-        cacheDir.mkdirs()
-        val corruptedFile = File(cacheDir, "corrupted.json")
-        corruptedFile.writeText("{ this is not valid json }")
-
-        // Should return empty list instead of crashing
-        val loaded = requestCache.loadRequests()
-
-        // The corrupted file should be skipped (returns null in mapNotNull)
-        assertTrue(loaded.isEmpty())
-
-        corruptedFile.delete()
-    }
-
-    @Test
-    fun `clearAll should throw IllegalStateException when file cannot be deleted`() {
-        // This is difficult to test in a real scenario since we can't easily make a file undeletable
-        // Instead, we'll test that clearAll works normally
-        val request =
-            Request(
-                requestId = "delete_test",
-                title = "Delete Test",
-                description = "Test deletion",
-                requestType = listOf(RequestType.OTHER),
-                location = Location(0.0, 0.0, "Place"),
-                locationName = "Place",
-                status = RequestStatus.OPEN,
-                startTimeStamp = Date(),
-                expirationTime = Date(),
-                people = emptyList(),
-                tags = emptyList(),
-                creatorId = "user1")
-
-        requestCache.saveRequests(listOf(request))
-
-        // This should succeed without throwing
-        requestCache.clearAll()
-
-        assertTrue(requestCache.loadRequests().isEmpty())
-    }
-
-    @Test
-    fun `loadRequests should return empty list when listFiles returns null`() {
-        // Clear all first
-        requestCache.clearAll()
-
-        // Delete the cache directory itself
-        val cacheDir = File(context.cacheDir, "requests_cache")
-        if (cacheDir.exists()) {
-            cacheDir.deleteRecursively()
-        }
-
-        // Should return empty list when directory doesn't exist
-        val loaded = requestCache.loadRequests()
-        assertTrue(loaded.isEmpty())
-    }
+    // Should return empty list when directory doesn't exist
+    val loaded = requestCache.loadRequests()
+    assertTrue(loaded.isEmpty())
+  }
 }
