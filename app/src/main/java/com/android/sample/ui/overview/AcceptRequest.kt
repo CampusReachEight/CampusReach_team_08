@@ -247,55 +247,56 @@ fun AcceptRequestScreen(
                   Spacer(
                       modifier = Modifier.height(AcceptRequestScreenConstants.BUTTON_TOP_SPACING))
 
-                    // Action Button (Accept/Cancel for non-owners, Edit for owners)
-                    if (requestState.offlineMode) {
-                        return@Scaffold
-                    }
-                FilledTonalButton(
-                    onClick = {
-                      if (isOwner) {
-                        onEditClick(requestId)
-                      } else if (requestState.accepted) {
-                        acceptRequestViewModel.cancelAcceptanceToRequest(requestId)
-                      } else {
-                        acceptRequestViewModel.acceptRequest(requestId)
-                      }
-                    },
-                    enabled = !requestState.isLoading,
-                    modifier =
-                        Modifier.fillMaxWidth()
-                            .height(AcceptRequestScreenConstants.BUTTON_HEIGHT)
-                            .testTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)) {
-                      if (requestState.isLoading) {
-                        CircularProgressIndicator(
-                            modifier =
-                                Modifier.size(AcceptRequestScreenConstants.CIRCULAR_PROGRESS_SIZE),
-                            color = MaterialTheme.colorScheme.onSecondaryContainer)
-                      } else {
-                        Text(
-                            text =
-                                if (isOwner) AcceptRequestScreenLabels.EDIT_REQUEST
-                                else if (requestState.accepted)
-                                    AcceptRequestScreenLabels.CANCEL_ACCEPTANCE
-                                else AcceptRequestScreenLabels.ACCEPT_REQUEST,
-                            style = MaterialTheme.typography.labelLarge)
-                      }
-                    }
-
-                if (isOwner) {
-                  Spacer(modifier = Modifier.height(AcceptRequestScreenConstants.SECTION_SPACING))
-
+                  // Action Button (Accept/Cancel for non-owners, Edit for owners)
+                  if (requestState.offlineMode) {
+                    return@Scaffold
+                  }
                   FilledTonalButton(
-                      onClick = { onValidateClick(requestId) },
+                      onClick = {
+                        if (isOwner) {
+                          onEditClick(requestId)
+                        } else if (requestState.accepted) {
+                          acceptRequestViewModel.cancelAcceptanceToRequest(requestId)
+                        } else {
+                          acceptRequestViewModel.acceptRequest(requestId)
+                        }
+                      },
+                      enabled = !requestState.isLoading,
                       modifier =
                           Modifier.fillMaxWidth()
                               .height(AcceptRequestScreenConstants.BUTTON_HEIGHT)
-                              .testTag(AcceptRequestScreenTestTags.VALIDATE_REQUEST_BUTTON)) {
-                        Text(
-                            text = AcceptRequestScreenLabels.VALIDATE_REQUEST,
-                            style = MaterialTheme.typography.labelLarge)
+                              .testTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)) {
+                        if (requestState.isLoading) {
+                          CircularProgressIndicator(
+                              modifier =
+                                  Modifier.size(
+                                      AcceptRequestScreenConstants.CIRCULAR_PROGRESS_SIZE),
+                              color = MaterialTheme.colorScheme.onSecondaryContainer)
+                        } else {
+                          Text(
+                              text =
+                                  if (isOwner) AcceptRequestScreenLabels.EDIT_REQUEST
+                                  else if (requestState.accepted)
+                                      AcceptRequestScreenLabels.CANCEL_ACCEPTANCE
+                                  else AcceptRequestScreenLabels.ACCEPT_REQUEST,
+                              style = MaterialTheme.typography.labelLarge)
+                        }
                       }
-                }
+
+                  if (isOwner) {
+                    Spacer(modifier = Modifier.height(AcceptRequestScreenConstants.SECTION_SPACING))
+
+                    FilledTonalButton(
+                        onClick = { onValidateClick(requestId) },
+                        modifier =
+                            Modifier.fillMaxWidth()
+                                .height(AcceptRequestScreenConstants.BUTTON_HEIGHT)
+                                .testTag(AcceptRequestScreenTestTags.VALIDATE_REQUEST_BUTTON)) {
+                          Text(
+                              text = AcceptRequestScreenLabels.VALIDATE_REQUEST,
+                              style = MaterialTheme.typography.labelLarge)
+                        }
+                  }
 
                   // Volunteers expandable section (owners only)
                   if (isOwner) {
