@@ -4,11 +4,16 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.navigation.compose.rememberNavController
+import com.android.sample.ui.navigation.NavigationActions
+import com.android.sample.ui.navigation.NavigationScreen
+import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.profile.publicProfile.FollowButton
 import com.android.sample.ui.profile.publicProfile.PublicProfile
 import com.android.sample.ui.profile.publicProfile.PublicProfileHeader
@@ -257,5 +262,26 @@ class PublicProfileScreenTest {
     val pub = callUserProfileToPublic(upInstance)
 
     assertEquals("Unknown", pub.name)
+  }
+
+  @Test
+  fun navigates_to_public_profile_screen() {
+    composeRule.setContent {
+      val navController = rememberNavController()
+      val navigationActions = NavigationActions(navController)
+      NavigationScreen(
+          navController = navController, navigationActions = navigationActions, testMode = true)
+    }
+    composeRule.waitForIdle()
+
+    // click the hidden test-only button and verify Public Profile opens
+    composeRule.onNodeWithTag(NavigationTestTags.PUBLIC_PROFILE_BUTTON).performClick()
+    composeRule.waitForIdle()
+    composeRule.onNodeWithTag(NavigationTestTags.PUBLIC_PROFILE_SCREEN).assertIsDisplayed()
+
+    // clean up: go back and assert requests visible
+    composeRule.onNodeWithTag(ProfileTestTags.PROFILE_TOP_BAR_BACK_BUTTON).performClick()
+    composeRule.waitForIdle()
+    composeRule.onNodeWithTag(NavigationTestTags.PUBLIC_PROFILE_SCREEN).assertIsNotDisplayed()
   }
 }

@@ -17,4 +17,5 @@ object PublicProfileTestTags {
   const val PROFILE_INFORMATION = "ProfileInformation"
   const val ERROR_BANNER = "ErrorBanner"
   const val LOADING_BUFFER = "ProfileLoadingBuffer"
+  const val BACK_BUTTON = "PublicProfileBackButton"
 }

@@ -1,8 +1,10 @@
 package com.android.sample.ui.navigation
 
 import android.annotation.SuppressLint
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -13,6 +15,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.credentials.CredentialManager
@@ -61,7 +64,8 @@ fun NavigationScreen(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
     navigationActions: NavigationActions = NavigationActions(navController),
-    credentialManager: CredentialManager = CredentialManager.create(LocalContext.current)
+    credentialManager: CredentialManager = CredentialManager.create(LocalContext.current),
+    testMode: Boolean = false
 ) {
 
   val user = FirebaseAuth.getInstance().currentUser
@@ -247,6 +251,17 @@ fun NavigationScreen(
         MapScreen(viewModel = mapViewModel, navigationActions = navigationActions)
       }
     }
+  }
+
+  if (testMode) {
+    Text(
+        text = "",
+        modifier =
+            Modifier.size(1.dp) // minimal footprint so it doesn't affect layout
+                .testTag(NavigationTestTags.PUBLIC_PROFILE_BUTTON)
+                .clickable { navigationActions.navigateTo(Screen.PublicProfile("preset_test_id")) }
+                .semantics {} // keep node discoverable by test framework
+        )
   }
 }
 
