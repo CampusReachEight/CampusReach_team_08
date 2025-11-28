@@ -19,7 +19,8 @@ data class Request(
     val expirationTime: Date,
     val people: List<String>,
     val tags: List<Tags>,
-    val creatorId: String
+    val creatorId: String,
+    val selectedHelpers: List<String> = emptyList()
 ) {
 
   val viewStatus: RequestStatus
@@ -64,6 +65,14 @@ data class Request(
             Location(0.0, 0.0, "")
           }
 
+      // Handle selectedHelpers - default to empty list if not present (backward compatibility)
+      val selectedHelpers =
+          try {
+            (map["selectedHelpers"] as? List<*>)?.map { it as String } ?: emptyList()
+          } catch (e: Exception) {
+            emptyList()
+          }
+
       val request =
           Request(
               requestId = req("requestId"),
@@ -77,7 +86,8 @@ data class Request(
               expirationTime = (req<Timestamp>("expirationTime")).toDate(),
               people = (req<List<*>>("people")).map { it as String },
               tags = (req<List<*>>("tags")).map { Tags.valueOf(it as String) },
-              creatorId = req("creatorId"))
+              creatorId = req("creatorId"),
+              selectedHelpers = selectedHelpers)
 
       return request.copy(status = request.viewStatus) // Fetching from db now returns "True" status
     }
@@ -100,7 +110,8 @@ data class Request(
           "expirationTime" to Timestamp(expirationTime),
           "people" to people,
           "tags" to tags.map { it.name },
-          "creatorId" to creatorId)
+          "creatorId" to creatorId,
+          "selectedHelpers" to selectedHelpers) // NEW: Serialize selectedHelpers
 
   // Build a robust searchable text derived from toMap, including display variants for enums
   fun toSearchText(): String {
@@ -151,7 +162,7 @@ data class Request(
               "requestId",
               "startTimeStamp",
               "expirationTime",
-          )
+              "selectedHelpers")
           .forEach { key -> map[key].flattenToText(this) }
 
       // Include any other fields that may be added in the future
@@ -170,7 +181,8 @@ data class Request(
                     "location",
                     "requestId",
                     "startTimeStamp",
-                    "expirationTime")
+                    "expirationTime",
+                    "selectedHelpers")
           }
           .sorted()
           .forEach { key -> map[key].flattenToText(this) }

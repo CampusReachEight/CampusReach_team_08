@@ -91,6 +91,10 @@ class RequestListTests : BaseEmulatorTest() {
       return requests.filter { it.creatorId == currentUid }
     }
 
+    override suspend fun getAcceptedRequests(): List<Request> {
+      return emptyList()
+    }
+
     override suspend fun closeRequest(requestId: String, selectedHelperIds: List<String>): Boolean {
       return false
     }
@@ -249,6 +253,10 @@ class RequestListTests : BaseEmulatorTest() {
                 override suspend fun isOwnerOfRequest(request: Request): Boolean = false
 
                 override suspend fun getMyRequests(): List<Request> {
+                  return emptyList()
+                }
+
+                override suspend fun getAcceptedRequests(): List<Request> {
                   return emptyList()
                 }
 
@@ -601,6 +609,10 @@ class RequestListTests : BaseEmulatorTest() {
       override suspend fun isOwnerOfRequest(request: Request): Boolean = false
 
       override suspend fun getMyRequests(): List<Request> {
+        return emptyList()
+      }
+
+      override suspend fun getAcceptedRequests(): List<Request> {
         return emptyList()
       }
 

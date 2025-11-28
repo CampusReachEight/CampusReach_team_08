@@ -19,6 +19,7 @@ import java.util.Date
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestCoroutineDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runBlockingTest
 import kotlinx.coroutines.test.setMain
@@ -667,6 +668,186 @@ class ValidateRequestViewModelTest {
 
     // Then - expects exception
   }
+  // ==================== confirmAndClose() with Use Case Tests ====================
+
+  @Test
+  fun confirmAndClose_success_whenUseCaseReturnsSuccess() =
+      testDispatcher.runBlockingTest {
+        // Given
+        coEvery { requestRepository.getRequest(testRequestId) } returns testRequest
+        coEvery { requestRepository.isOwnerOfRequest(testRequest) } returns true
+        coEvery { userProfileRepository.getUserProfile(HELPER_1) } returns testHelper1
+        coEvery { userProfileRepository.getUserProfile(ID_HELPER2) } returns testHelper2
+
+        // Mock use case success
+        coEvery { requestRepository.closeRequest(testRequestId, listOf(HELPER_1)) } returns true
+        coEvery { requestRepository.getRequest(testRequestId) } returns testRequest
+        coEvery { userProfileRepository.awardKudosBatch(any()) } just Runs
+        coEvery {
+          userProfileRepository.awardKudos(
+              testCreatorId, KudosConstants.KUDOS_FOR_CREATOR_RESOLUTION)
+        } just Runs
+
+        viewModel =
+            ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
+
+        // Select a helper and show confirmation
+        viewModel.toggleHelperSelection(HELPER_1)
+        viewModel.showConfirmation()
+
+        // When
+        viewModel.confirmAndClose()
+
+        // Then
+        assertTrue(viewModel.state is ValidationState.Success)
+      }
+
+  @Test
+  fun confirmAndClose_success_whenUseCaseReturnsPartialSuccess() =
+      testDispatcher.runBlockingTest {
+        // Given
+        coEvery { requestRepository.getRequest(testRequestId) } returns testRequest
+        coEvery { requestRepository.isOwnerOfRequest(testRequest) } returns true
+        coEvery { userProfileRepository.getUserProfile(HELPER_1) } returns testHelper1
+        coEvery { userProfileRepository.getUserProfile(ID_HELPER2) } returns testHelper2
+
+        // Mock use case partial success (request closed, kudos failed)
+        coEvery { requestRepository.closeRequest(testRequestId, listOf(HELPER_1)) } returns true
+        coEvery { requestRepository.getRequest(testRequestId) } returns testRequest
+        coEvery { userProfileRepository.awardKudosBatch(any()) } throws Exception("Kudos failed")
+
+        viewModel =
+            ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
+
+        viewModel.toggleHelperSelection(HELPER_1)
+        viewModel.showConfirmation()
+
+        // When
+        viewModel.confirmAndClose()
+
+        // Then - Should still show success even though kudos partially failed
+        assertTrue(viewModel.state is ValidationState.Success)
+      }
+
+  @Test
+  fun confirmAndClose_error_whenUseCaseReturnsFailure() =
+      testDispatcher.runBlockingTest {
+        // Given
+        coEvery { requestRepository.getRequest(testRequestId) } returns testRequest
+        coEvery { requestRepository.isOwnerOfRequest(testRequest) } returns true
+        coEvery { userProfileRepository.getUserProfile(HELPER_1) } returns testHelper1
+        coEvery { userProfileRepository.getUserProfile(ID_HELPER2) } returns testHelper2
+
+        // Mock use case failure
+        val exception = RequestClosureException.InvalidStatus(RequestStatus.COMPLETED)
+        coEvery { requestRepository.closeRequest(testRequestId, listOf(HELPER_1)) } throws exception
+
+        viewModel =
+            ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
+
+        viewModel.toggleHelperSelection(HELPER_1)
+        viewModel.showConfirmation()
+
+        // When
+        viewModel.confirmAndClose()
+
+        // Then
+        assertTrue(viewModel.state is ValidationState.Error)
+        val errorState = viewModel.state as ValidationState.Error
+        assertTrue(errorState.message.contains("Failed to close request"))
+        assertTrue(errorState.canRetry)
+      }
+
+  @Test
+  fun confirmAndClose_error_whenUnexpectedException() =
+      testDispatcher.runBlockingTest {
+        // Given
+        coEvery { requestRepository.getRequest(testRequestId) } returns testRequest
+        coEvery { requestRepository.isOwnerOfRequest(testRequest) } returns true
+        coEvery { userProfileRepository.getUserProfile(HELPER_1) } returns testHelper1
+        coEvery { userProfileRepository.getUserProfile(ID_HELPER2) } returns testHelper2
+
+        // Mock unexpected exception
+        coEvery { requestRepository.closeRequest(testRequestId, listOf(HELPER_1)) } throws
+            Exception(NETWORK_ERROR)
+
+        viewModel =
+            ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
+
+        viewModel.toggleHelperSelection(HELPER_1)
+        viewModel.showConfirmation()
+
+        // When
+        viewModel.confirmAndClose()
+
+        // Then
+        assertTrue(viewModel.state is ValidationState.Error)
+        val errorState = viewModel.state as ValidationState.Error
+        assertTrue(errorState.message.contains(UNEXPECTED_ERROR_OCCURED))
+        assertTrue(errorState.canRetry)
+      }
+
+  @Test
+  fun confirmAndClose_doesNothing_whenStateIsNotConfirming() =
+      testDispatcher.runBlockingTest {
+        // Given - ViewModel in Ready state
+        coEvery { requestRepository.getRequest(testRequestId) } returns testRequest
+        coEvery { requestRepository.isOwnerOfRequest(testRequest) } returns true
+        coEvery { userProfileRepository.getUserProfile(HELPER_1) } returns testHelper1
+        coEvery { userProfileRepository.getUserProfile(ID_HELPER2) } returns testHelper2
+
+        viewModel =
+            ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
+
+        val initialState = viewModel.state
+
+        // When - Try to confirm without showing confirmation first
+        viewModel.confirmAndClose()
+
+        // Then - State should not change
+        assertEquals(initialState, viewModel.state)
+
+        // Verify use case was never called
+        coVerify(exactly = 0) { requestRepository.closeRequest(any(), any()) }
+      }
+
+  @Test
+  fun confirmAndClose_setsProcessingState_beforeExecutingUseCase() =
+      testDispatcher.runBlockingTest {
+        // Given
+        coEvery { requestRepository.getRequest(testRequestId) } returns testRequest
+        coEvery { requestRepository.isOwnerOfRequest(testRequest) } returns true
+        coEvery { userProfileRepository.getUserProfile(HELPER_1) } returns testHelper1
+        coEvery { userProfileRepository.getUserProfile(ID_HELPER2) } returns testHelper2
+
+        // Mock slow use case execution
+        coEvery { requestRepository.closeRequest(testRequestId, listOf(HELPER_1)) } coAnswers
+            {
+              kotlinx.coroutines.delay(50)
+              true
+            }
+        coEvery { requestRepository.getRequest(testRequestId) } returns testRequest
+        coEvery { userProfileRepository.awardKudosBatch(any()) } just Runs
+        coEvery { userProfileRepository.awardKudos(any(), any()) } just Runs
+
+        viewModel =
+            ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
+
+        viewModel.toggleHelperSelection(HELPER_1)
+        viewModel.showConfirmation()
+
+        // When
+        viewModel.confirmAndClose()
+
+        // Give coroutine a moment to start but not finish
+        testScheduler.apply {
+          advanceTimeBy(10)
+          runCurrent()
+        }
+
+        // Then - Should be in Processing state
+        assertTrue(viewModel.state is ValidationState.Processing)
+      }
 
   // ==================== Helper Methods ====================
 

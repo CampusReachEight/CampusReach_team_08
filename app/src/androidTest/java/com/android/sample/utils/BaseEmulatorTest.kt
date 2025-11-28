@@ -69,13 +69,17 @@ abstract class BaseEmulatorTest {
   protected suspend fun createAndSignInUser(email: String, password: String) {
     try {
       auth.createUserWithEmailAndPassword(email, password).await()
-
       auth.signInWithEmailAndPassword(email, password).await()
-
+      kotlinx.coroutines.delay(100)
+    } catch (e: com.google.firebase.auth.FirebaseAuthUserCollisionException) {
+      auth.signInWithEmailAndPassword(email, password).await()
       kotlinx.coroutines.delay(100)
     } catch (e: Exception) {
       auth.signInWithEmailAndPassword(email, password).await()
       kotlinx.coroutines.delay(100)
     }
+
+    // ADD THIS LINE:
+    currentUserId = auth.currentUser?.uid ?: error("Failed to sign in user $email")
   }
 }
