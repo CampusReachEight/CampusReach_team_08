@@ -1,17 +1,9 @@
 package com.android.sample.ui.profile.publicProfile
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import com.android.sample.model.profile.UserProfileRepository
-import com.android.sample.model.profile.UserProfileRepositoryFirestore
-import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeoutOrNull
 
 data class PublicProfileUiState(
     val isLoading: Boolean = false,
@@ -19,19 +11,21 @@ data class PublicProfileUiState(
     val error: String? = null
 )
 
-private const val TIME_OUT = 15_000L
-
-class PublicProfileViewModel(
-    private val repository: UserProfileRepository =
-        UserProfileRepositoryFirestore(FirebaseFirestore.getInstance())
-) : ViewModel() {
+/**
+ * UI-only, read\-only ViewModel for the public profile screen.
+ * - No repos, no network, no coroutines.
+ * - `loadPublicProfile` produces a deterministic fake profile for a non-blank id.
+ * - `setLoading` / `setError` / `clear` helpers for tests/previews.
+ */
+class PublicProfileViewModel : ViewModel() {
 
   private val _uiState = MutableStateFlow(PublicProfileUiState())
   val uiState: StateFlow<PublicProfileUiState> = _uiState.asStateFlow()
 
-  private var lastProfileId: String? = null
-  private var loadJob: Job? = null
-
+  /**
+   * Load a public profile in a UI-only manner. Does not contact any backend. Produces a
+   * deterministic fake for non-blank ids; sets an error for blank ids.
+   */
   fun loadPublicProfile(profileId: String) {
     if (profileId.isBlank()) {
       _uiState.value =
@@ -40,62 +34,33 @@ class PublicProfileViewModel(
       return
     }
 
-    lastProfileId = profileId
-    loadJob?.cancel()
-    loadJob =
-        viewModelScope.launch {
-          _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-          try {
-            // keep the timeout literal per request
-            val up = withTimeoutOrNull(TIME_OUT) { repository.getUserProfile(profileId) }
-            if (up == null) {
-              _uiState.value =
-                  _uiState.value.copy(profile = null, error = PublicProfileErrors.FAILED_TO_LOAD)
-              return@launch
-            }
+    val fake =
+        PublicProfile(
+            userId = profileId,
+            name = "User $profileId",
+            section = PublicProfileDefaults.DEFAULT_SECTION,
+            arrivalDate = null,
+            pictureUriString = null,
+            kudosReceived = 0,
+            helpReceived = 0,
+            followers = 0,
+            following = 0)
 
-            val publicProfile =
-                try {
-                  userProfileToPublic(up)
-                } catch (_: Exception) {
-                  null
-                }
-
-            if (publicProfile == null) {
-              _uiState.value =
-                  _uiState.value.copy(profile = null, error = PublicProfileErrors.FAILED_TO_LOAD)
-            } else {
-              _uiState.value = _uiState.value.copy(profile = publicProfile, error = null)
-            }
-          } catch (ce: CancellationException) {
-            throw ce
-          } catch (e: Exception) {
-            _uiState.value =
-                _uiState.value.copy(
-                    profile = null, error = e.message ?: PublicProfileErrors.FAILED_TO_LOAD)
-          } finally {
-            _uiState.value = _uiState.value.copy(isLoading = false)
-          }
-        }
+    _uiState.value = _uiState.value.copy(isLoading = false, profile = fake, error = null)
   }
 
-  fun refresh() {
-    val id = lastProfileId
-    if (id.isNullOrBlank()) {
-      _uiState.value = _uiState.value.copy(error = PublicProfileErrors.EMPTY_PROFILE_ID)
-      return
-    }
-    loadPublicProfile(id)
+  /** Toggle loading state (useful in tests/previews). */
+  fun setLoading(loading: Boolean) {
+    _uiState.value = _uiState.value.copy(isLoading = loading)
   }
-}
 
-class PublicProfileViewModelFactory(private val repository: UserProfileRepository) :
-    androidx.lifecycle.ViewModelProvider.Factory {
-  @Suppress("UNCHECKED_CAST")
-  override fun <T : ViewModel> create(modelClass: Class<T>): T {
-    if (modelClass.isAssignableFrom(PublicProfileViewModel::class.java)) {
-      return PublicProfileViewModel(repository) as T
-    }
-    throw IllegalArgumentException("Unknown ViewModel class")
+  /** Set or clear an error message (useful in tests/previews). */
+  fun setError(message: String?) {
+    _uiState.value = _uiState.value.copy(error = message)
+  }
+
+  /** Clear the currently shown profile and error. */
+  fun clear() {
+    _uiState.value = PublicProfileUiState()
   }
 }

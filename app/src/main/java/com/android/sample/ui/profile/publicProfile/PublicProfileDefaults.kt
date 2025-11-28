@@ -6,5 +6,5 @@ object PublicProfileDefaults {
   const val DEFAULT_NAME = "Unknown"
   const val DEFAULT_SECTION = "None"
   const val EMPTY = ""
-  const val DEFAULT_PROFILE_ID = ""
+  const val DEFAULT_PUBLIC_PROFILE_ID = ""
 }
