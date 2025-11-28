@@ -1,18 +1,21 @@
 package com.android.sample.ui.profile.publicProfile
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -21,18 +24,19 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.ui.profile.ProfileDimens
+import com.android.sample.ui.profile.ProfilePicture
 import com.android.sample.ui.profile.ProfileState
+import com.android.sample.ui.profile.ProfileTestTags
 import com.android.sample.ui.profile.composables.ErrorBanner
 import com.android.sample.ui.profile.composables.ProfileInformation
 import com.android.sample.ui.profile.composables.ProfileLoadingBuffer
 import com.android.sample.ui.profile.composables.ProfileStats
 import com.android.sample.ui.profile.composables.ProfileTopBar
+import com.android.sample.ui.theme.AppColors
+import com.android.sample.ui.theme.AppPalette
 import com.android.sample.ui.theme.appPalette
 
 /**
@@ -119,40 +123,57 @@ fun PublicProfileScreen(
 fun PublicProfileHeader(
     state: PublicProfileUiState,
     isFollowing: Boolean,
-    onFollowToggle: () -> Unit
+    onFollowToggle: () -> Unit,
+    modifier: Modifier = Modifier,
+    palette: AppPalette = appPalette()
 ) {
-  val profile = state.profile
+    val accent = palette.accent
+    val textColor = AppColors.WhiteColor
 
-  Row(
-      verticalAlignment = Alignment.CenterVertically,
-      horizontalArrangement = Arrangement.SpaceBetween,
-      modifier = Modifier.testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-          // Simple avatar placeholder (tests only assert presence by tag)
-          Box(
-              modifier =
-                  Modifier.size(72.dp)
-                      .background(Color.LightGray)
-                      .testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_PROFILE_PICTURE))
+    // Text limits to avoid overflow in smaller devices
+    val maxNameLength = 25
+    val maxEmailLength = 30
 
-          Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
+    val uiUtils = com.android.sample.ui.UiUtils()
+    val displayName = uiUtils.ellipsizeWithMiddle(state.profile?.name ?: "Unknown", maxLength = maxNameLength)
+    val displayEmail = uiUtils.ellipsizeWithMiddle(state.profile?.email ?: "unknown", maxLength = maxEmailLength)
 
-          Column {
-            Text(
-                text = profile?.name ?: "",
-                fontSize = 20.sp,
-                modifier = Modifier.testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_NAME))
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = profile?.section ?: "",
-                fontSize = 14.sp,
-                modifier = Modifier.testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_EMAIL))
-          }
+    Card(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(ProfileDimens.HeaderPadding)
+                .testTag(ProfileTestTags.PROFILE_HEADER),
+        colors = CardDefaults.cardColors(containerColor = accent),
+        elevation = CardDefaults.cardElevation(defaultElevation = ProfileDimens.CardElevation)) {
+        Box(modifier = Modifier.padding(ProfileDimens.HeaderPadding)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                ProfilePicture(
+                    profileId = state.profile?.userId ?: "",
+                    modifier =
+                        Modifier.size(ProfileDimens.ProfilePicture)
+                            .testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_PROFILE_PICTURE))
+                Spacer(modifier = Modifier.width(ProfileDimens.HeaderSpacer))
+                Column {
+                    Text(
+                        text = displayName,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = textColor,
+                        modifier = Modifier.testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_NAME))
+                    Text(
+                        text = displayEmail,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = textColor,
+                        modifier = Modifier.testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_EMAIL))
+                }
+                Spacer(modifier = Modifier.weight(1f))
+                FollowButton(
+                    isFollowing = isFollowing,
+                    onToggle = onFollowToggle
+                )
+            }
         }
-
-        // Follow / Unfollow button on the right
-        FollowButton(isFollowing = isFollowing, onToggle = onFollowToggle)
-      }
+    }
 }
 
 /**

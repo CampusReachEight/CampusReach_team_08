@@ -37,6 +37,7 @@ class PublicProfileViewModel : ViewModel() {
     val fake =
         PublicProfile(
             userId = profileId,
+            email = "unknown",
             name = "User $profileId",
             section = PublicProfileDefaults.DEFAULT_SECTION,
             arrivalDate = null,

@@ -21,6 +21,7 @@ package com.android.sample.ui.profile.publicProfile
  */
 data class PublicProfile(
     val userId: String,
+    val email: String,
     val name: String,
     val section: String,
     val arrivalDate: String?, // formatted date or null
