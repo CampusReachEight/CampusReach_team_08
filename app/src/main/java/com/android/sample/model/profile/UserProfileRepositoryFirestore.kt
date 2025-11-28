@@ -1,5 +1,7 @@
 package com.android.sample.model.profile
 
+import com.android.sample.ui.request_validation.HelpReceivedConstants
+import com.android.sample.ui.request_validation.HelpReceivedException
 import com.android.sample.ui.request_validation.KudosConstants
 import com.android.sample.ui.request_validation.KudosException
 import com.google.firebase.auth.ktx.auth
@@ -244,41 +246,64 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
         }
     }
 
+    /**
+     * Records help received for a user by incrementing their public and private `helpReceived` fields in
+     * Firestore. Validation is applied before any network operation:
+     *
+     * - Amount must be greater than the minimum defined in [com.android.sample.ui.request_validation.HelpReceivedConstants].
+     * - Amount must not exceed the per-transaction maximum defined in the same constants object.
+     *
+     * The increment is performed inside a Firestore transaction so the public and private documents are
+     * updated atomically. Known help-related failures are propagated as specific
+     * [com.android.sample.ui.request_validation.HelpReceivedException] subclasses; unexpected errors are
+     * wrapped in a transaction failure exception.
+     *
+     * @param userId The id of the user receiving help.
+     * @param amount The amount of help to record (must be positive and within safety limits).
+     * @throws com.android.sample.ui.request_validation.HelpReceivedException.InvalidAmount when the
+     *   provided amount is invalid (non-positive).
+     * @throws com.android.sample.ui.request_validation.HelpReceivedException.AmountExceedsLimit when
+     *   the provided amount exceeds the configured per-transaction maximum.
+     * @throws com.android.sample.ui.request_validation.HelpReceivedException.UserNotFound when the
+     *   user public/private profiles do not exist.
+     * @throws com.android.sample.ui.request_validation.HelpReceivedException.TransactionFailed when
+     *   the Firestore transaction fails unexpectedly.
+     */
     override suspend fun receiveHelp(userId: String, amount: Int) {
-        if (amount <= ZERO) {
-            throw IllegalArgumentException("Help received amount must be positive")
+        // Validate amount using constants to keep business rules centralized
+        if (amount <= HelpReceivedConstants.MIN_HELP_RECEIVED) {
+            throw HelpReceivedException.InvalidAmount(amount)
+        }
+        if (amount > HelpReceivedConstants.MAX_HELP_RECEIVED_PER_TRANSACTION) {
+            throw HelpReceivedException.InvalidAmount(amount)
         }
 
         try {
             val publicDocRef = publicCollectionRef.document(userId)
             val privateDocRef = privateCollectionRef.document(userId)
 
-            // Run a transaction to ensure both documents exist and updates are atomic
+            // Run transaction to ensure both docs exist and updates are atomic
             db.runTransaction { transaction ->
                 val publicSnapshot = transaction.get(publicDocRef)
                 val privateSnapshot = transaction.get(privateDocRef)
 
                 if (!publicSnapshot.exists() || !privateSnapshot.exists()) {
-                    throw NoSuchElementException("UserProfile with ID $userId not found")
+                    throw HelpReceivedException.UserNotFound(userId)
                 }
 
-                // Increment helpReceived field in both documents
-                transaction.update(
-                    publicDocRef,
-                    "helpReceived",
-                    FieldValue.increment(amount.toLong()))
-                transaction.update(
-                    privateDocRef,
-                    "helpReceived",
-                    FieldValue.increment(amount.toLong()))
+                // Atomically increment helpReceived in both documents
+                transaction.update(publicDocRef, "helpReceived", FieldValue.increment(amount.toLong()))
+                transaction.update(privateDocRef, "helpReceived", FieldValue.increment(amount.toLong()))
 
-                // ensure the transaction returns a value
+                // runTransaction requires a return value; use null for Unit
                 null
             }.await()
-        } catch (e: NoSuchElementException) {
+        } catch (e: HelpReceivedException) {
+            // Propagate known help-related exceptions unchanged
             throw e
         } catch (e: Exception) {
-            throw KudosException.TransactionFailed("receive_help", e)
+            // Wrap unexpected failures in a documented help-specific exception
+            throw HelpReceivedException.TransactionFailed("Failed to record help for user: $userId", e)
         }
     }
 }
