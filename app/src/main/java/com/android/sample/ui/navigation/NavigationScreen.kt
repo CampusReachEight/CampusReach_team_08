@@ -25,6 +25,7 @@ import androidx.navigation.navigation
 import com.android.sample.model.map.FusedLocationProvider
 import com.android.sample.model.map.NominatimLocationRepository
 import com.android.sample.model.profile.UserProfileRepositoryFirestore
+import com.android.sample.model.request.RequestCache
 import com.android.sample.model.request.RequestRepositoryFirestore
 import com.android.sample.ui.authentication.SignInScreen
 import com.android.sample.ui.authentication.SignInViewModel
@@ -32,10 +33,12 @@ import com.android.sample.ui.map.MapScreen
 import com.android.sample.ui.map.MapViewModel
 import com.android.sample.ui.overview.AcceptRequestScreen
 import com.android.sample.ui.overview.AcceptRequestViewModel
+import com.android.sample.ui.overview.AcceptRequestViewModelFactory
 import com.android.sample.ui.profile.ProfileScreen
 import com.android.sample.ui.profile.ProfileViewModel
 import com.android.sample.ui.request.RequestListScreen
 import com.android.sample.ui.request.RequestListViewModel
+import com.android.sample.ui.request.RequestListViewModelFactory
 import com.android.sample.ui.request.edit.EditRequestScreen
 import com.android.sample.ui.request.edit.EditRequestViewModel
 import com.android.sample.ui.request.edit.EditRequestViewModelFactory
@@ -57,10 +60,13 @@ fun NavigationScreen(
     navigationActions: NavigationActions = NavigationActions(navController),
     credentialManager: CredentialManager = CredentialManager.create(LocalContext.current)
 ) {
+  // caches
+  val requestCache = RequestCache(LocalContext.current)
 
   val user = FirebaseAuth.getInstance().currentUser
   var isSignedIn by rememberSaveable { mutableStateOf(user != null) }
   val startDestination = if (!isSignedIn) "login" else "requests"
+
   // repositories
   val requestRepository = RequestRepositoryFirestore(Firebase.firestore)
   val locationRepository = NominatimLocationRepository(client = OkHttpClient())
@@ -71,7 +77,10 @@ fun NavigationScreen(
   val signInViewModel: SignInViewModel = viewModel()
   val profileViewModel: ProfileViewModel = viewModel()
   val mapViewModel: MapViewModel = viewModel()
-  val requestListViewModel: RequestListViewModel = viewModel()
+  val requestListViewModel: RequestListViewModel =
+      viewModel(
+          factory =
+              RequestListViewModelFactory(showOnlyMyRequests = false, requestCache = requestCache))
   val editRequestViewModel: EditRequestViewModel =
       viewModel(
           factory =
@@ -79,7 +88,14 @@ fun NavigationScreen(
                   requestRepository = requestRepository,
                   locationRepository = locationRepository,
                   locationProvider = fusedLocationProvider))
-  val acceptRequestViewModel: AcceptRequestViewModel = viewModel()
+
+  val acceptRequestViewModel: AcceptRequestViewModel =
+      viewModel(
+          factory =
+              AcceptRequestViewModelFactory(
+                  requestRepository = requestRepository,
+                  userProfileRepository = UserProfileRepositoryFirestore(Firebase.firestore),
+                  requestCache = requestCache))
 
   NavHost(
       navController = navController,

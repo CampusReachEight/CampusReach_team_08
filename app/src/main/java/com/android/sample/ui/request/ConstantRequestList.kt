@@ -28,6 +28,8 @@ object ConstantRequestList {
   val RequestItemProfileHeightPadding = 5.dp
   val TypeChipTextPadding = 4.dp
   val TypeChipTextSize = 12.sp
+  val TypeChipTextSizeFactor = 0.6f // used for text auto-sizing inside chip
+  val TypeChipCornerRadius = 16.dp
   val TypeChipBorderWidth = 0.5.dp
   val TypeChipColumnSpacing = 3.dp
 

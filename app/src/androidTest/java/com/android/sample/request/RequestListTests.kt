@@ -21,6 +21,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.navigation.NavHostController
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.sample.model.map.Location
 import com.android.sample.model.profile.UserProfile
@@ -33,6 +34,7 @@ import com.android.sample.model.request.RequestStatus
 import com.android.sample.model.request.RequestType
 import com.android.sample.model.request.Tags
 import com.android.sample.model.request.displayString
+import com.android.sample.ui.navigation.NavigationActions
 import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.profile.ProfilePictureTestTags
 import com.android.sample.ui.profile.UserSections
@@ -51,6 +53,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.Mockito.mock
 
 @RunWith(AndroidJUnit4::class)
 class RequestListTests : BaseEmulatorTest() {
@@ -1219,5 +1222,105 @@ class RequestListTests : BaseEmulatorTest() {
     composeTestRule.onNodeWithText("Completed Req").assertDoesNotExist()
     composeTestRule.onNodeWithText("Cancelled Req").assertDoesNotExist()
     composeTestRule.onNodeWithText("Archived Req").assertDoesNotExist()
+  }
+
+  @Test
+  fun offlineModeBannerIsDisplayedWhenInOfflineMode() {
+    val requests = sampleRequests(listOf("u1"))
+    val vm = getFakeVm(requests)
+
+    composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
+
+    composeTestRule.waitUntil(5_000) { vm.state.value.requests.isNotEmpty() }
+
+    // Set offline mode using test method
+    vm.setOfflineMode(true)
+
+    composeTestRule.waitForIdle()
+
+    // Verify offline banner is displayed
+    composeTestRule
+        .onNodeWithText("You are in offline mode. Displaying cached requests.")
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun requestListScreenUsesDefaultViewModelFactory() {
+    val requests = sampleRequests(listOf("u1"))
+
+    // Don't pass a ViewModel - let it use the default factory
+    composeTestRule.setContent { RequestListScreen(showOnlyMyRequests = false) }
+
+    composeTestRule.waitForIdle()
+
+    // Screen should render without crashing
+    composeTestRule.onNodeWithTag(NavigationTestTags.REQUESTS_SCREEN).assertIsDisplayed()
+  }
+
+  @Test
+  fun requestListScreenUsesCustomViewModelFactory() {
+    val requests = sampleRequests(listOf("u1"))
+
+    // Don't pass a ViewModel - let it use the default factory with showOnlyMyRequests = true
+    composeTestRule.setContent { RequestListScreen(showOnlyMyRequests = true) }
+
+    composeTestRule.waitForIdle()
+
+    // Screen should render without crashing
+    composeTestRule.onNodeWithTag(NavigationTestTags.REQUESTS_SCREEN).assertIsDisplayed()
+  }
+
+  @Test
+  fun addButtonNavigatesToAddRequest() {
+    val requests = sampleRequests(listOf("u1"))
+    val vm = getFakeVm(requests)
+
+    var navigatedToAddRequest = false
+
+    // Create a mock NavHostController
+    val mockNavController = mock(NavHostController::class.java)
+
+    val mockNavActions =
+        object : NavigationActions(mockNavController) {
+          override fun navigateTo(screen: com.android.sample.ui.navigation.Screen) {
+            if (screen is com.android.sample.ui.navigation.Screen.AddRequest) {
+              navigatedToAddRequest = true
+            }
+          }
+
+          override fun goBack() {}
+        }
+
+    composeTestRule.setContent {
+      RequestListScreen(requestListViewModel = vm, navigationActions = mockNavActions)
+    }
+
+    composeTestRule.waitUntil(5_000) { vm.state.value.requests.isNotEmpty() }
+
+    // Click the add button
+    composeTestRule.onNodeWithTag(RequestListTestTags.REQUEST_ADD_BUTTON).performClick()
+
+    composeTestRule.waitForIdle()
+
+    assert(navigatedToAddRequest) { "Should navigate to AddRequest screen" }
+  }
+
+  @Test
+  fun addButtonWithNullNavigationDoesNotCrash() {
+    val requests = sampleRequests(listOf("u1"))
+    val vm = getFakeVm(requests)
+
+    composeTestRule.setContent {
+      RequestListScreen(requestListViewModel = vm, navigationActions = null)
+    }
+
+    composeTestRule.waitUntil(5_000) { vm.state.value.requests.isNotEmpty() }
+
+    // Click the add button with null navigation - should not crash
+    composeTestRule.onNodeWithTag(RequestListTestTags.REQUEST_ADD_BUTTON).performClick()
+
+    composeTestRule.waitForIdle()
+
+    // No assertion needed - just verifying no crash
   }
 }
