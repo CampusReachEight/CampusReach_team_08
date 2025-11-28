@@ -28,16 +28,16 @@ import com.android.sample.model.profile.UserProfile
 import com.android.sample.model.profile.UserProfileRepository
 import com.android.sample.ui.profile.ProfilePicture
 import com.android.sample.ui.request_validation.ValidateRequestConstants.SCREEN_TITLE
+import kotlinx.coroutines.launch
 
 /**
  * Main screen for validating and closing a request. Allows the request creator to select helpers
  * and award kudos.
  *
- * @param requestId The ID of the request to validate
- * @param viewModel The ViewModel managing the validation state
+ * @param state The current validation state
  * @param userProfileRepository Repository for loading user profiles (for ProfilePicture)
- * @param onRequestClosed Callback invoked when request is successfully closed
- * @param onNavigateBack Callback to navigate back
+ * @param callbacks Callbacks for user actions
+ * @param modifier Modifier for styling and testing
  */
 @Composable
 fun ValidateRequestScreen(
@@ -46,6 +46,8 @@ fun ValidateRequestScreen(
     callbacks: ValidateRequestCallbacks,
     modifier: Modifier = Modifier
 ) {
+  // scope for launching suspend repository operations from UI events
+  val coroutineScope = rememberCoroutineScope()
 
   // Handle success navigation
   LaunchedEffect(state) {
@@ -85,7 +87,27 @@ fun ValidateRequestScreen(
               ConfirmationDialog(
                   selectedHelpers = state.selectedHelpers,
                   kudosToAward = state.kudosToAward,
-                  onConfirm = callbacks.onConfirmAndClose,
+                  onConfirm = {
+                      // Launch suspend operations without blocking the UI
+                      coroutineScope.launch {
+                          try {
+                              // Award kudos (batch) to all selected helpers first
+                              val awards = state.selectedHelpers.associate { it.id to KudosConstants.KUDOS_PER_HELPER }
+                              userProfileRepository.awardKudosBatch(awards)
+
+                              // Increment help received for each helper (increment by 1)
+                              state.selectedHelpers.forEach { helper ->
+                                  userProfileRepository.receiveHelp(helper.id, 1)
+                              }
+
+                              // Notify caller that confirm flow completed
+                              callbacks.onConfirmAndClose()
+                          } catch (_: Exception) {
+                              // On failure, surface retry/back behavior via provided callback
+                              callbacks.onRetry()
+                          }
+                      }
+                  },
                   onDismiss = callbacks.onCancelConfirmation)
             }
             is ValidationState.Processing -> {
