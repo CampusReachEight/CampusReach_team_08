@@ -1,8 +1,10 @@
 package com.android.sample.ui.navigation
 
 import android.annotation.SuppressLint
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -13,14 +15,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.credentials.CredentialManager
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import androidx.navigation.navigation
 import com.android.sample.model.map.FusedLocationProvider
 import com.android.sample.model.map.NominatimLocationRepository
@@ -36,6 +41,7 @@ import com.android.sample.ui.overview.AcceptRequestViewModel
 import com.android.sample.ui.overview.AcceptRequestViewModelFactory
 import com.android.sample.ui.profile.ProfileScreen
 import com.android.sample.ui.profile.ProfileViewModel
+import com.android.sample.ui.profile.publicProfile.PublicProfileScreen
 import com.android.sample.ui.request.RequestListScreen
 import com.android.sample.ui.request.RequestListViewModel
 import com.android.sample.ui.request.RequestListViewModelFactory
@@ -52,13 +58,17 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.firestore
 import okhttp3.OkHttpClient
 
+private const val PUBLIC_PROFILE_VM_KEY_PREFIX = "PublicProfile_"
+private const val INVALID_USER_ID_MESSAGE = "Invalid user id"
+
 @SuppressLint("ViewModelConstructorInComposable")
 @Composable
 fun NavigationScreen(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
     navigationActions: NavigationActions = NavigationActions(navController),
-    credentialManager: CredentialManager = CredentialManager.create(LocalContext.current)
+    credentialManager: CredentialManager = CredentialManager.create(LocalContext.current),
+    testMode: Boolean = false
 ) {
   // caches
   val requestCache = RequestCache(LocalContext.current)
@@ -171,6 +181,41 @@ fun NavigationScreen(
             onNavigateBack = { navigationActions.goBack() },
             viewModel = editRequestViewModel)
       }
+      composable(
+          Screen.PublicProfile.route,
+          arguments =
+              listOf(
+                  navArgument(Screen.PublicProfile.ARG_USER_ID) { type = NavType.StringType })) {
+              navBackStackEntry ->
+            val userId = navBackStackEntry.arguments?.getString(Screen.PublicProfile.ARG_USER_ID)
+
+            if (userId.isNullOrBlank()) {
+              // missing or empty id: show a minimal inline error UI and navigate back
+              PlaceHolderScreen(
+                  text = INVALID_USER_ID_MESSAGE,
+                  modifier = Modifier.testTag(NavigationTestTags.PUBLIC_PROFILE_SCREEN),
+                  withBottomBar = false)
+              navigationActions.goBack()
+              return@composable
+            }
+
+            val id = userId
+            val publicProfileViewModel:
+                com.android.sample.ui.profile.publicProfile.PublicProfileViewModel =
+                viewModel(key = "$PUBLIC_PROFILE_VM_KEY_PREFIX$id")
+
+            androidx.compose.runtime.LaunchedEffect(id) {
+              try {
+                publicProfileViewModel.loadPublicProfile(id)
+              } catch (e: Exception) {
+                // loading failed: navigate back (could be extended to show a Snackbar or retry UI)
+                navigationActions.goBack()
+              }
+            }
+
+            PublicProfileScreen(
+                viewModel = publicProfileViewModel, onBackClick = { navigationActions.goBack() })
+          }
     }
 
     navigation(startDestination = Screen.Events.route, route = "events") {
@@ -222,6 +267,17 @@ fun NavigationScreen(
         MapScreen(viewModel = mapViewModel, navigationActions = navigationActions)
       }
     }
+  }
+
+  if (testMode) {
+    Text(
+        text = "",
+        modifier =
+            Modifier.size(1.dp) // minimal footprint so it doesn't affect layout
+                .testTag(NavigationTestTags.PUBLIC_PROFILE_BUTTON)
+                .clickable { navigationActions.navigateTo(Screen.PublicProfile("preset_test_id")) }
+                .semantics {} // keep node discoverable by test framework
+        )
   }
 }
 

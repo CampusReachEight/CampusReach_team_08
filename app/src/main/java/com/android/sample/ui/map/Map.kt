@@ -880,7 +880,6 @@ fun ListOfRequest(
             items(list.size) { index ->
               val request = list[index]
               RequestListItem(
-                  viewModel = viewModel(),
                   request = request,
                   onClick = {
                     coroutineScope.launch {
