@@ -7,6 +7,7 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.tasks.await
+import kotlin.text.get
 
 const val PUBLIC_PROFILES_PATH = "public_profiles"
 const val PRIVATE_PROFILES_PATH = "private_profiles"
@@ -244,6 +245,40 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
     }
 
     override suspend fun receiveHelp(userId: String, amount: Int) {
-        TODO("Not yet implemented")
+        if (amount <= ZERO) {
+            throw IllegalArgumentException("Help received amount must be positive")
+        }
+
+        try {
+            val publicDocRef = publicCollectionRef.document(userId)
+            val privateDocRef = privateCollectionRef.document(userId)
+
+            // Run a transaction to ensure both documents exist and updates are atomic
+            db.runTransaction { transaction ->
+                val publicSnapshot = transaction.get(publicDocRef)
+                val privateSnapshot = transaction.get(privateDocRef)
+
+                if (!publicSnapshot.exists() || !privateSnapshot.exists()) {
+                    throw NoSuchElementException("UserProfile with ID $userId not found")
+                }
+
+                // Increment helpReceived field in both documents
+                transaction.update(
+                    publicDocRef,
+                    "helpReceived",
+                    FieldValue.increment(amount.toLong()))
+                transaction.update(
+                    privateDocRef,
+                    "helpReceived",
+                    FieldValue.increment(amount.toLong()))
+
+                // ensure the transaction returns a value
+                null
+            }.await()
+        } catch (e: NoSuchElementException) {
+            throw e
+        } catch (e: Exception) {
+            throw KudosException.TransactionFailed("receive_help", e)
+        }
     }
 }
