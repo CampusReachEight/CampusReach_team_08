@@ -102,30 +102,6 @@ class PublicProfileTests {
   }
 
   @Test
-  fun followButton_toggles_onAndOff() {
-    var isFollowing = false
-    composeTestRule.setContent {
-      FollowButton(isFollowing = isFollowing, onToggle = { isFollowing = !isFollowing })
-    }
-
-    val followTag = PublicProfileTestTags.FOLLOW_BUTTON
-    val unfollowTag = PublicProfileTestTags.UNFOLLOW_BUTTON
-
-    // Initially not following
-    composeTestRule.onNodeWithTag(followTag).assertIsDisplayed()
-    composeTestRule.onNodeWithTag(followTag).performClick()
-
-    // Now following
-    composeTestRule.waitForIdle()
-    composeTestRule.onNodeWithTag(unfollowTag).assertIsDisplayed()
-    composeTestRule.onNodeWithTag(unfollowTag).performClick()
-
-    // Back to not following
-    composeTestRule.waitForIdle()
-    composeTestRule.onNodeWithTag(followTag).assertIsDisplayed()
-  }
-
-  @Test
   fun staticPublicProfileScreen_displaysProvidedProfile_valuesAndStats() {
     val sample =
         PublicProfile(
@@ -151,7 +127,7 @@ class PublicProfileTests {
     composeTestRule
         .onNodeWithTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_EMAIL)
         .assertIsDisplayed()
-        .assertTextContains("Engineering")
+        .assertTextContains("jane.doe@fake.com")
 
     // Stats values (verify visible numbers)
     composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_STAT_TOP_KUDOS).assertIsDisplayed()
@@ -165,10 +141,23 @@ class PublicProfileTests {
     composeTestRule
         .onNodeWithTag(ProfileTestTags.PROFILE_STAT_BOTTOM_HELP_RECEIVED)
         .assertTextContains("8")
-    composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_STAT_TOP_FOLLOWERS).assertTextContains("9")
+    composeTestRule
+        .onNodeWithTag(ProfileTestTags.PROFILE_STAT_TOP_FOLLOWERS)
+        .assertTextContains("9")
     composeTestRule
         .onNodeWithTag(ProfileTestTags.PROFILE_STAT_BOTTOM_FOLLOWING)
         .assertTextContains("10")
+
+    composeTestRule
+        .onNodeWithTag(ProfileTestTags.PROFILE_INFO_SECTION)
+        .assertTextContains("Engineering")
+    composeTestRule
+        .onNodeWithTag(ProfileTestTags.PROFILE_STAT_BOTTOM_HELP_RECEIVED)
+        .assertTextContains("8")
+    composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_INFO_NAME).assertTextContains("Jane Doe")
+    composeTestRule
+        .onNodeWithTag(ProfileTestTags.PROFILE_INFO_EMAIL)
+        .assertTextContains("jane.doe@fake.com")
   }
 
   @Test

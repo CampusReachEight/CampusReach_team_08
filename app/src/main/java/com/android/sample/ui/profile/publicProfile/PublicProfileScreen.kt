@@ -110,7 +110,8 @@ fun PublicProfileScreen(
                   PublicProfileHeader(
                       state = if (profile != null) shownState else vmState,
                       isFollowing = isFollowing,
-                      onFollowToggle = { isFollowing = !isFollowing })
+                      onFollowToggle = { isFollowing = !isFollowing },
+                      modifier = Modifier.testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER))
                   Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
                   ProfileStats(state = hiddenState)
                   Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
