@@ -18,7 +18,7 @@ env:
 
 jobs:
   # -----------------------------------------------------------------
-  # JOB 1: Build & Setup (The Producer)
+  # JOB 1: Build & Setup
   # -----------------------------------------------------------------
   build-and-prepare:
     name: Build and Prepare
@@ -60,7 +60,7 @@ jobs:
             ~/.gradle/wrapper
           key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
 
-      # --- CACHE 1: Firebase ---
+      # --- CACHE 1: Firebase Tools ---
       - name: Cache Firebase Tools
         id: firebase-cache
         uses: actions/cache@v4
@@ -120,7 +120,7 @@ jobs:
           key: build-output-${{ github.sha }}
 
   # -----------------------------------------------------------------
-  # JOB 2: Run Tests (Merged Unit + Integration)
+  # JOB 2: Run Tests (Unit & Instrumentation)
   # -----------------------------------------------------------------
   run-tests:
     name: Run Tests (Unit & Int)
@@ -225,7 +225,6 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      # State Logic
       - name: Download Test State
         uses: actions/download-artifact@v4
         with:
@@ -233,8 +232,8 @@ jobs:
           path: .state
         continue-on-error: true
 
-      # --- MAIN TEST EXECUTION (Calls the new script) ---
-      - name: Run All Tests (Selective)
+      # --- EXECUTE TESTS (Merged Script) ---
+      - name: Run Tests (Unit & Int)
         timeout-minutes: 45
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -247,7 +246,7 @@ jobs:
           disable-animations: true
           script: .github/scripts/run_tests.sh
 
-      # Upload Updated State
+      # --- UPLOAD ARTIFACTS ---
       - name: Upload Test State
         if: always()
         uses: actions/upload-artifact@v4
@@ -256,7 +255,6 @@ jobs:
           path: .state/test-status.json
           overwrite: true
 
-      # Upload Coverage (Merged from Unit + Android automatically by the script running both)
       - name: Upload Run Coverage
         if: always()
         uses: actions/upload-artifact@v4
@@ -266,7 +264,6 @@ jobs:
             app/build/outputs/code_coverage/**/connected/*.ec
             app/build/**/*.exec
 
-      # Upload Results
       - name: Upload Run Results
         if: always()
         uses: actions/upload-artifact@v4
@@ -277,7 +274,7 @@ jobs:
             app/build/test-results/testDebugUnitTest
 
   # -----------------------------------------------------------------
-  # JOB 3: Coverage & Sonar (The Consumer)
+  # JOB 3: Coverage & Sonar
   # -----------------------------------------------------------------
   coverage-and-sonar:
     name: Coverage and Sonar
@@ -331,9 +328,9 @@ jobs:
           merge-multiple: true
           path: app/build/outputs/code_coverage/debugAndroidTest/connected/
 
-      # Since we merged, unit test coverage is already in the artifacts pattern above.
-      # We just need to ensure they land in a place Jacoco sees, or merge them manually if needed.
-      # Gradle's jacocoTestReport usually finds .exec files in build directory.
+      # Note: Gradle JaCoCo plugin usually expects execution files in specific paths.
+      # If it fails to find them, we might need to move them. But typically the artifact download structure
+      # should restore them to where Gradle expects if the path in artifact upload was correct.
 
       - name: Generate Merged Coverage Report
         run: ./gradlew jacocoTestReport
