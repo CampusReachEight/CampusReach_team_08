@@ -64,6 +64,7 @@ class ValidateRequestViewModelTest {
           email = HELPER1_EMAIL,
           photo = null,
           kudos = 100,
+          helpReceived = 3,
           section = UserSections.COMPUTER_SCIENCE,
           arrivalDate = Date())
   private val testHelper2 =
@@ -74,6 +75,7 @@ class ValidateRequestViewModelTest {
           email = HELPER2_EMAIL,
           photo = null,
           kudos = 50,
+          helpReceived = 1,
           section = UserSections.MATHEMATICS,
           arrivalDate = Date())
   private val testRequest =

@@ -8,8 +8,8 @@ import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
-import kotlinx.coroutines.tasks.await
 import kotlin.text.get
+import kotlinx.coroutines.tasks.await
 
 const val PUBLIC_PROFILES_PATH = "public_profiles"
 const val PRIVATE_PROFILES_PATH = "private_profiles"
@@ -27,283 +27,284 @@ private const val ZERO = 0
  */
 class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserProfileRepository {
 
-    // Path structure: "public_profiles/{userId}" and "private_profiles/{userId}" (userId same in
-    // both)
+  // Path structure: "public_profiles/{userId}" and "private_profiles/{userId}" (userId same in
+  // both)
 
-    private val publicCollectionRef = db.collection(PUBLIC_PROFILES_PATH)
-    private val privateCollectionRef = db.collection(PRIVATE_PROFILES_PATH)
+  private val publicCollectionRef = db.collection(PUBLIC_PROFILES_PATH)
+  private val privateCollectionRef = db.collection(PRIVATE_PROFILES_PATH)
 
-    private fun notAuthenticated(): Unit = throw IllegalStateException("No authenticated user")
+  private fun notAuthenticated(): Unit = throw IllegalStateException("No authenticated user")
 
-    private fun notAuthorized(): Unit =
-        throw IllegalArgumentException("Can only modify the currently authenticated user's profile")
+  private fun notAuthorized(): Unit =
+      throw IllegalArgumentException("Can only modify the currently authenticated user's profile")
 
-    override fun getCurrentUserId(): String = Firebase.auth.currentUser?.uid ?: ""
+  override fun getCurrentUserId(): String = Firebase.auth.currentUser?.uid ?: ""
 
-    // Fix: Document ID should be the authenticated user's UID
-    override fun getNewUid(): String {
-        if (Firebase.auth.currentUser == null) {
-            notAuthenticated()
-        }
-        return Firebase.auth.currentUser!!.uid
+  // Fix: Document ID should be the authenticated user's UID
+  override fun getNewUid(): String {
+    if (Firebase.auth.currentUser == null) {
+      notAuthenticated()
+    }
+    return Firebase.auth.currentUser!!.uid
+  }
+
+  // Retrieves all public user profiles
+  override suspend fun getAllUserProfiles(): List<UserProfile> {
+    return publicCollectionRef.get().await().documents.mapNotNull { doc ->
+      doc.data?.let { UserProfile.fromMap(it) }
+    }
+  }
+
+  // Retrieves a user profile by ID
+  override suspend fun getUserProfile(userId: String): UserProfile {
+    val currentUserId = Firebase.auth.currentUser?.uid
+    val collectionRef = if (userId == currentUserId) privateCollectionRef else publicCollectionRef
+
+    return collectionRef.document(userId).get().await().data?.let { UserProfile.fromMap(it) }
+        ?: throw NoSuchElementException("UserProfile with ID $userId not found")
+  }
+
+  // Blurs email (and potentially other fields) for public profiles, keep full details in private
+  // profile
+  override suspend fun addUserProfile(userProfile: UserProfile) {
+    val currentUserId = Firebase.auth.currentUser?.uid ?: notAuthenticated()
+    if (userProfile.id != currentUserId) {
+      // We assume profile is added post-authentication and user can only add their own profile
+      notAuthorized()
     }
 
-    // Retrieves all public user profiles
-    override suspend fun getAllUserProfiles(): List<UserProfile> {
-        return publicCollectionRef.get().await().documents.mapNotNull { doc ->
-            doc.data?.let { UserProfile.fromMap(it) }
-        }
+    // Add to private collection with full details
+    privateCollectionRef.document(userProfile.id).set(userProfile.toMap()).await()
+
+    // Create a public version with blurred email
+    // Blur other fields as needed here ...
+    val publicProfile = userProfile.copy(email = null)
+
+    // Add to public collection
+    publicCollectionRef.document(userProfile.id).set(publicProfile.toMap()).await()
+  }
+
+  override suspend fun updateUserProfile(userId: String, updatedProfile: UserProfile) {
+    val currentUserId = Firebase.auth.currentUser?.uid ?: notAuthenticated()
+    if (userId != currentUserId || updatedProfile.id != currentUserId) {
+      notAuthorized()
     }
 
-    // Retrieves a user profile by ID
-    override suspend fun getUserProfile(userId: String): UserProfile {
-        val currentUserId = Firebase.auth.currentUser?.uid
-        val collectionRef = if (userId == currentUserId) privateCollectionRef else publicCollectionRef
+    // Update private profile with full details
+    privateCollectionRef.document(userId).set(updatedProfile.toMap()).await()
 
-        return collectionRef.document(userId).get().await().data?.let { UserProfile.fromMap(it) }
-            ?: throw NoSuchElementException("UserProfile with ID $userId not found")
+    // Update public profile with blurred email
+    // Blur other fields as needed here ...
+    val publicProfile = updatedProfile.copy(email = null)
+
+    // Update public profile
+    publicCollectionRef.document(userId).set(publicProfile.toMap()).await()
+  }
+
+  override suspend fun deleteUserProfile(userId: String) {
+    val currentUserId = Firebase.auth.currentUser?.uid ?: notAuthenticated()
+    if (userId != currentUserId) {
+      notAuthorized()
     }
 
-    // Blurs email (and potentially other fields) for public profiles, keep full details in private
-    // profile
-    override suspend fun addUserProfile(userProfile: UserProfile) {
-        val currentUserId = Firebase.auth.currentUser?.uid ?: notAuthenticated()
-        if (userProfile.id != currentUserId) {
-            // We assume profile is added post-authentication and user can only add their own profile
-            notAuthorized()
-        }
+    // Delete from both collections
+    privateCollectionRef.document(userId).delete().await()
+    publicCollectionRef.document(userId).delete().await()
+  }
 
-        // Add to private collection with full details
-        privateCollectionRef.document(userProfile.id).set(userProfile.toMap()).await()
+  /**
+   * Searches public user profiles by first or last name using Firestore prefix range queries. Uses
+   * the standard [query, query+"\uf8ff") bounds for efficient server-side filtering. Performs a
+   * second query on lastNameLowercase if needed, deduplicates results and applies a client-side
+   * contains() filter for substring matching, then enforces the limit.
+   */
+  override suspend fun searchUserProfiles(query: String, limit: Int): List<UserProfile> {
+    if (query.length < 2) return emptyList()
+    val normalizedQuery = query.lowercase().trim()
+    if (normalizedQuery.isEmpty()) return emptyList()
 
-        // Create a public version with blurred email
-        // Blur other fields as needed here ...
-        val publicProfile = userProfile.copy(email = null)
+    return try {
+      // First: prefix search on nameLowercase
+      val nameQuerySnapshot =
+          publicCollectionRef
+              .whereGreaterThanOrEqualTo("nameLowercase", normalizedQuery)
+              .whereLessThan("nameLowercase", normalizedQuery + "\uf8ff")
+              .limit(limit.toLong())
+              .get()
+              .await()
 
-        // Add to public collection
-        publicCollectionRef.document(userProfile.id).set(publicProfile.toMap()).await()
-    }
+      val byName = nameQuerySnapshot.documents.mapNotNull { it.data?.let(UserProfile::fromMap) }
 
-    override suspend fun updateUserProfile(userId: String, updatedProfile: UserProfile) {
-        val currentUserId = Firebase.auth.currentUser?.uid ?: notAuthenticated()
-        if (userId != currentUserId || updatedProfile.id != currentUserId) {
-            notAuthorized()
-        }
+      val remaining = limit - byName.size
 
-        // Update private profile with full details
-        privateCollectionRef.document(userId).set(updatedProfile.toMap()).await()
-
-        // Update public profile with blurred email
-        // Blur other fields as needed here ...
-        val publicProfile = updatedProfile.copy(email = null)
-
-        // Update public profile
-        publicCollectionRef.document(userId).set(publicProfile.toMap()).await()
-    }
-
-    override suspend fun deleteUserProfile(userId: String) {
-        val currentUserId = Firebase.auth.currentUser?.uid ?: notAuthenticated()
-        if (userId != currentUserId) {
-            notAuthorized()
-        }
-
-        // Delete from both collections
-        privateCollectionRef.document(userId).delete().await()
-        publicCollectionRef.document(userId).delete().await()
-    }
-
-    /**
-     * Searches public user profiles by first or last name using Firestore prefix range queries. Uses
-     * the standard [query, query+"\uf8ff") bounds for efficient server-side filtering. Performs a
-     * second query on lastNameLowercase if needed, deduplicates results and applies a client-side
-     * contains() filter for substring matching, then enforces the limit.
-     */
-    override suspend fun searchUserProfiles(query: String, limit: Int): List<UserProfile> {
-        if (query.length < 2) return emptyList()
-        val normalizedQuery = query.lowercase().trim()
-        if (normalizedQuery.isEmpty()) return emptyList()
-
-        return try {
-            // First: prefix search on nameLowercase
-            val nameQuerySnapshot =
+      val byLastName =
+          if (remaining > ZERO) {
+            // Second: prefix search on lastNameLowercase if we still need more results
+            val lastNameSnapshot =
                 publicCollectionRef
-                    .whereGreaterThanOrEqualTo("nameLowercase", normalizedQuery)
-                    .whereLessThan("nameLowercase", normalizedQuery + "\uf8ff")
-                    .limit(limit.toLong())
+                    .whereGreaterThanOrEqualTo("lastNameLowercase", normalizedQuery)
+                    .whereLessThan("lastNameLowercase", normalizedQuery + "\uf8ff")
+                    .limit(remaining.toLong())
                     .get()
                     .await()
-
-            val byName = nameQuerySnapshot.documents.mapNotNull { it.data?.let(UserProfile::fromMap) }
-
-            val remaining = limit - byName.size
-
-            val byLastName =
-                if (remaining > ZERO) {
-                    // Second: prefix search on lastNameLowercase if we still need more results
-                    val lastNameSnapshot =
-                        publicCollectionRef
-                            .whereGreaterThanOrEqualTo("lastNameLowercase", normalizedQuery)
-                            .whereLessThan("lastNameLowercase", normalizedQuery + "\uf8ff")
-                            .limit(remaining.toLong())
-                            .get()
-                            .await()
-                    lastNameSnapshot.documents.mapNotNull { it.data?.let(UserProfile::fromMap) }
-                } else {
-                    emptyList()
-                }
-
-            // Combine, deduplicate and apply substring filtering for robustness
-            (byName + byLastName)
-                .distinctBy { it.id }
-                .filter {
-                    it.nameLowercase.contains(normalizedQuery) ||
-                            it.lastNameLowercase.contains(normalizedQuery)
-                }
-                .take(limit)
-        } catch (e: Exception) {
-            // Graceful degradation: return empty list on any error
+            lastNameSnapshot.documents.mapNotNull { it.data?.let(UserProfile::fromMap) }
+          } else {
             emptyList()
-        }
+          }
+
+      // Combine, deduplicate and apply substring filtering for robustness
+      (byName + byLastName)
+          .distinctBy { it.id }
+          .filter {
+            it.nameLowercase.contains(normalizedQuery) ||
+                it.lastNameLowercase.contains(normalizedQuery)
+          }
+          .take(limit)
+    } catch (e: Exception) {
+      // Graceful degradation: return empty list on any error
+      emptyList()
+    }
+  }
+
+  override suspend fun awardKudos(userId: String, amount: Int) {
+    // Validation
+    if (amount <= ZERO) {
+      throw KudosException.InvalidAmount(amount)
     }
 
-    override suspend fun awardKudos(userId: String, amount: Int) {
-        // Validation
-        if (amount <= ZERO) {
-            throw KudosException.InvalidAmount(amount)
-        }
-
-        if (amount > KudosConstants.MAX_KUDOS_PER_TRANSACTION) {
-            throw KudosException.InvalidAmount(amount)
-        }
-
-        try {
-            // Check if user exists before awarding (check public profile)
-            val userDoc = publicCollectionRef.document(userId).get().await()
-            if (!userDoc.exists()) {
-                throw KudosException.UserNotFound(userId)
-            }
-
-            // Award kudos atomically using FieldValue.increment
-            // Update both public and private profiles
-            publicCollectionRef
-                .document(userId)
-                .update("kudos", FieldValue.increment(amount.toLong()))
-                .await()
-
-            privateCollectionRef
-                .document(userId)
-                .update("kudos", FieldValue.increment(amount.toLong()))
-                .await()
-        } catch (e: KudosException) {
-            throw e
-        } catch (e: Exception) {
-            throw KudosException.TransactionFailed(userId, e)
-        }
+    if (amount > KudosConstants.MAX_KUDOS_PER_TRANSACTION) {
+      throw KudosException.InvalidAmount(amount)
     }
 
-    override suspend fun awardKudosBatch(awards: Map<String, Int>) {
-        // Validate all amounts first
-        awards.forEach { (_, amount) ->
-            if (amount <= ZERO) {
-                throw KudosException.InvalidAmount(amount)
-            }
-            if (amount > KudosConstants.MAX_KUDOS_PER_TRANSACTION) {
-                throw KudosException.InvalidAmount(amount)
-            }
-        }
+    try {
+      // Check if user exists before awarding (check public profile)
+      val userDoc = publicCollectionRef.document(userId).get().await()
+      if (!userDoc.exists()) {
+        throw KudosException.UserNotFound(userId)
+      }
 
-        // Calculate total kudos to prevent abuse
-        val totalKudos = awards.values.sum()
-        if (totalKudos > KudosConstants.MAX_KUDOS_PER_TRANSACTION) {
-            throw KudosException.InvalidAmount(totalKudos)
-        }
+      // Award kudos atomically using FieldValue.increment
+      // Update both public and private profiles
+      publicCollectionRef
+          .document(userId)
+          .update("kudos", FieldValue.increment(amount.toLong()))
+          .await()
 
-        try {
-            // Use Firestore batch for atomic transaction
-            val batch = db.batch()
+      privateCollectionRef
+          .document(userId)
+          .update("kudos", FieldValue.increment(amount.toLong()))
+          .await()
+    } catch (e: KudosException) {
+      throw e
+    } catch (e: Exception) {
+      throw KudosException.TransactionFailed(userId, e)
+    }
+  }
 
-            awards.forEach { (userId, amount) ->
-                // Verify user exists first
-                val userDoc = publicCollectionRef.document(userId).get().await()
-                if (!userDoc.exists()) {
-                    throw KudosException.UserNotFound(userId)
-                }
-
-                // Add updates to batch for both collections
-                val publicDocRef = publicCollectionRef.document(userId)
-                val privateDocRef = privateCollectionRef.document(userId)
-
-                batch.update(publicDocRef, "kudos", FieldValue.increment(amount.toLong()))
-                batch.update(privateDocRef, "kudos", FieldValue.increment(amount.toLong()))
-            }
-
-            // Commit all updates atomically
-            batch.commit().await()
-        } catch (e: KudosException) {
-            throw e
-        } catch (e: Exception) {
-            throw KudosException.TransactionFailed("batch_operation", e)
-        }
+  override suspend fun awardKudosBatch(awards: Map<String, Int>) {
+    // Validate all amounts first
+    awards.forEach { (_, amount) ->
+      if (amount <= ZERO) {
+        throw KudosException.InvalidAmount(amount)
+      }
+      if (amount > KudosConstants.MAX_KUDOS_PER_TRANSACTION) {
+        throw KudosException.InvalidAmount(amount)
+      }
     }
 
-    /**
-     * Records help received for a user by incrementing their public and private `helpReceived` fields in
-     * Firestore. Validation is applied before any network operation:
-     *
-     * - Amount must be greater than the minimum defined in [com.android.sample.ui.request_validation.HelpReceivedConstants].
-     * - Amount must not exceed the per-transaction maximum defined in the same constants object.
-     *
-     * The increment is performed inside a Firestore transaction so the public and private documents are
-     * updated atomically. Known help-related failures are propagated as specific
-     * [com.android.sample.ui.request_validation.HelpReceivedException] subclasses; unexpected errors are
-     * wrapped in a transaction failure exception.
-     *
-     * @param userId The id of the user receiving help.
-     * @param amount The amount of help to record (must be positive and within safety limits).
-     * @throws com.android.sample.ui.request_validation.HelpReceivedException.InvalidAmount when the
-     *   provided amount is invalid (non-positive).
-     * @throws com.android.sample.ui.request_validation.HelpReceivedException.AmountExceedsLimit when
-     *   the provided amount exceeds the configured per-transaction maximum.
-     * @throws com.android.sample.ui.request_validation.HelpReceivedException.UserNotFound when the
-     *   user public/private profiles do not exist.
-     * @throws com.android.sample.ui.request_validation.HelpReceivedException.TransactionFailed when
-     *   the Firestore transaction fails unexpectedly.
-     */
-    override suspend fun receiveHelp(userId: String, amount: Int) {
-        // Validate amount using constants to keep business rules centralized
-        if (amount <= HelpReceivedConstants.MIN_HELP_RECEIVED) {
-            throw HelpReceivedException.InvalidAmount(amount)
-        }
-        if (amount > HelpReceivedConstants.MAX_HELP_RECEIVED_PER_TRANSACTION) {
-            throw HelpReceivedException.InvalidAmount(amount)
-        }
-
-        try {
-            val publicDocRef = publicCollectionRef.document(userId)
-            val privateDocRef = privateCollectionRef.document(userId)
-
-            // Run transaction to ensure both docs exist and updates are atomic
-            db.runTransaction { transaction ->
-                val publicSnapshot = transaction.get(publicDocRef)
-                val privateSnapshot = transaction.get(privateDocRef)
-
-                if (!publicSnapshot.exists() || !privateSnapshot.exists()) {
-                    throw HelpReceivedException.UserNotFound(userId)
-                }
-
-                // Atomically increment helpReceived in both documents
-                transaction.update(publicDocRef, "helpReceived", FieldValue.increment(amount.toLong()))
-                transaction.update(privateDocRef, "helpReceived", FieldValue.increment(amount.toLong()))
-
-                // runTransaction requires a return value; use null for Unit
-                null
-            }.await()
-        } catch (e: HelpReceivedException) {
-            // Propagate known help-related exceptions unchanged
-            throw e
-        } catch (e: Exception) {
-            // Wrap unexpected failures in a documented help-specific exception
-            throw HelpReceivedException.TransactionFailed("Failed to record help for user: $userId", e)
-        }
+    // Calculate total kudos to prevent abuse
+    val totalKudos = awards.values.sum()
+    if (totalKudos > KudosConstants.MAX_KUDOS_PER_TRANSACTION) {
+      throw KudosException.InvalidAmount(totalKudos)
     }
+
+    try {
+      // Use Firestore batch for atomic transaction
+      val batch = db.batch()
+
+      awards.forEach { (userId, amount) ->
+        // Verify user exists first
+        val userDoc = publicCollectionRef.document(userId).get().await()
+        if (!userDoc.exists()) {
+          throw KudosException.UserNotFound(userId)
+        }
+
+        // Add updates to batch for both collections
+        val publicDocRef = publicCollectionRef.document(userId)
+        val privateDocRef = privateCollectionRef.document(userId)
+
+        batch.update(publicDocRef, "kudos", FieldValue.increment(amount.toLong()))
+        batch.update(privateDocRef, "kudos", FieldValue.increment(amount.toLong()))
+      }
+
+      // Commit all updates atomically
+      batch.commit().await()
+    } catch (e: KudosException) {
+      throw e
+    } catch (e: Exception) {
+      throw KudosException.TransactionFailed("batch_operation", e)
+    }
+  }
+
+  /**
+   * Records help received for a user by incrementing their public and private `helpReceived` fields
+   * in Firestore. Validation is applied before any network operation:
+   * - Amount must be greater than the minimum defined in
+   *   [com.android.sample.ui.request_validation.HelpReceivedConstants].
+   * - Amount must not exceed the per-transaction maximum defined in the same constants object.
+   *
+   * The increment is performed inside a Firestore transaction so the public and private documents
+   * are updated atomically. Known help-related failures are propagated as specific
+   * [com.android.sample.ui.request_validation.HelpReceivedException] subclasses; unexpected errors
+   * are wrapped in a transaction failure exception.
+   *
+   * @param userId The id of the user receiving help.
+   * @param amount The amount of help to record (must be positive and within safety limits).
+   * @throws com.android.sample.ui.request_validation.HelpReceivedException.InvalidAmount when the
+   *   provided amount is invalid (non-positive).
+   * @throws com.android.sample.ui.request_validation.HelpReceivedException.AmountExceedsLimit when
+   *   the provided amount exceeds the configured per-transaction maximum.
+   * @throws com.android.sample.ui.request_validation.HelpReceivedException.UserNotFound when the
+   *   user public/private profiles do not exist.
+   * @throws com.android.sample.ui.request_validation.HelpReceivedException.TransactionFailed when
+   *   the Firestore transaction fails unexpectedly.
+   */
+  override suspend fun receiveHelp(userId: String, amount: Int) {
+    // Validate amount using constants to keep business rules centralized
+    if (amount <= HelpReceivedConstants.MIN_HELP_RECEIVED) {
+      throw HelpReceivedException.InvalidAmount(amount)
+    }
+    if (amount > HelpReceivedConstants.MAX_HELP_RECEIVED_PER_TRANSACTION) {
+      throw HelpReceivedException.InvalidAmount(amount)
+    }
+
+    try {
+      val publicDocRef = publicCollectionRef.document(userId)
+      val privateDocRef = privateCollectionRef.document(userId)
+
+      // Run transaction to ensure both docs exist and updates are atomic
+      db.runTransaction { transaction ->
+            val publicSnapshot = transaction.get(publicDocRef)
+            val privateSnapshot = transaction.get(privateDocRef)
+
+            if (!publicSnapshot.exists() || !privateSnapshot.exists()) {
+              throw HelpReceivedException.UserNotFound(userId)
+            }
+
+            // Atomically increment helpReceived in both documents
+            transaction.update(publicDocRef, "helpReceived", FieldValue.increment(amount.toLong()))
+            transaction.update(privateDocRef, "helpReceived", FieldValue.increment(amount.toLong()))
+
+            // runTransaction requires a return value; use null for Unit
+            null
+          }
+          .await()
+    } catch (e: HelpReceivedException) {
+      // Propagate known help-related exceptions unchanged
+      throw e
+    } catch (e: Exception) {
+      // Wrap unexpected failures in a documented help-specific exception
+      throw HelpReceivedException.TransactionFailed("Failed to record help for user: $userId", e)
+    }
+  }
 }

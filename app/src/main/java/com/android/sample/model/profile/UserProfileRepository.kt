@@ -78,13 +78,13 @@ interface UserProfileRepository {
    */
   suspend fun awardKudosBatch(awards: Map<String, Int>)
 
-    /**
-     * Records help received by a user by incrementing their help received count.
-     *
-     * @param userId The unique identifier of the user receiving help.
-     * @param amount The amount of help to record (must be positive).
-     * @throws IllegalArgumentException if amount is not positive or exceeds safety limits.
-     * @throws NoSuchElementException if the user profile is not found.
-     */
+  /**
+   * Records help received by a user by incrementing their help received count.
+   *
+   * @param userId The unique identifier of the user receiving help.
+   * @param amount The amount of help to record (must be positive).
+   * @throws IllegalArgumentException if amount is not positive or exceeds safety limits.
+   * @throws NoSuchElementException if the user profile is not found.
+   */
   suspend fun receiveHelp(userId: String, amount: Int)
 }

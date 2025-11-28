@@ -79,6 +79,7 @@ class ProfileViewModel(
                     email = user.email,
                     photo = null,
                     kudos = 0,
+                    helpReceived = 0,
                     section = UserSections.NONE,
                     arrivalDate = Date())
             repository.addUserProfile(new)
@@ -201,6 +202,7 @@ class ProfileViewModel(
                 email = current.email,
                 photo = current.photo,
                 kudos = current.kudos,
+                helpReceived = current.helpReceived,
                 section = userSection,
                 arrivalDate = current.arrivalDate)
 

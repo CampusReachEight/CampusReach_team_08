@@ -88,25 +88,28 @@ fun ValidateRequestScreen(
                   selectedHelpers = state.selectedHelpers,
                   kudosToAward = state.kudosToAward,
                   onConfirm = {
-                      // Launch suspend operations without blocking the UI
-                      coroutineScope.launch {
-                          try {
-                              // Award kudos (batch) to all selected helpers first
-                              val awards = state.selectedHelpers.associate { it.id to KudosConstants.KUDOS_PER_HELPER }
-                              userProfileRepository.awardKudosBatch(awards)
+                    // Launch suspend operations without blocking the UI
+                    coroutineScope.launch {
+                      try {
+                        // Award kudos (batch) to all selected helpers first
+                        val awards =
+                            state.selectedHelpers.associate {
+                              it.id to KudosConstants.KUDOS_PER_HELPER
+                            }
+                        userProfileRepository.awardKudosBatch(awards)
 
-                              // Increment help received for each helper (increment by 1)
-                              state.selectedHelpers.forEach { helper ->
-                                  userProfileRepository.receiveHelp(helper.id, 1)
-                              }
+                        // Increment help received for each helper (increment by 1)
+                        state.selectedHelpers.forEach { helper ->
+                          userProfileRepository.receiveHelp(helper.id, 1)
+                        }
 
-                              // Notify caller that confirm flow completed
-                              callbacks.onConfirmAndClose()
-                          } catch (_: Exception) {
-                              // On failure, surface retry/back behavior via provided callback
-                              callbacks.onRetry()
-                          }
+                        // Notify caller that confirm flow completed
+                        callbacks.onConfirmAndClose()
+                      } catch (_: Exception) {
+                        // On failure, surface retry/back behavior via provided callback
+                        callbacks.onRetry()
                       }
+                    }
                   },
                   onDismiss = callbacks.onCancelConfirmation)
             }
