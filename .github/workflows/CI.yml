@@ -1,8 +1,5 @@
 name: Project CI - Test Runner
 
-# Triggers:
-# - Runs on commits pushed to main, feature, bugfix, and hotfix branches
-# - Runs when a pull request is opened, synchronized, or reopened
 on:
   push:
     branches:
@@ -16,10 +13,12 @@ on:
       - synchronize
       - reopened
 
+env:
+  FIREBASE_VERSION: '13.29.1'
+
 jobs:
   # -----------------------------------------------------------------
-  # JOB 1: Build & Setup
-  # Compiles the app once to verify integrity and populates the cache.
+  # JOB 1: Build & Setup (The Producer)
   # -----------------------------------------------------------------
   build-and-prepare:
     name: Build and Prepare
@@ -31,25 +30,21 @@ jobs:
       run:
         working-directory: ./${{ env.base_folder }}
     steps:
-      # Step 1: Checkout repository source code
       - name: Checkout
         uses: actions/checkout@v4
         with:
           submodules: recursive
           fetch-depth: 0
 
-      # Step 2: Clean Gradle cache
       - name: Remove current gradle cache
         run: rm -rf ~/.gradle
 
-      # Step 3: Setup JDK 17
       - name: Setup JDK
         uses: actions/setup-java@v4
         with:
           distribution: "temurin"
           java-version: "17"
 
-      # Step 4: Restore SonarQube dependency cache
       - name: Cache SonarQube packages
         uses: actions/cache@v4
         with:
@@ -57,7 +52,6 @@ jobs:
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
 
-      # Step 5: Restore Gradle dependency cache
       - name: Retrieve gradle cache
         uses: actions/cache@v4
         with:
@@ -66,7 +60,31 @@ jobs:
             ~/.gradle/wrapper
           key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
 
-      # Step 6: Decode Secrets and Setup Environment
+      # --- CACHE 1: Firebase ---
+      - name: Cache Firebase Tools
+        id: firebase-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm-global
+            ~/.cache/firebase/emulators
+          key: firebase-tools-${{ runner.os }}-${{ env.FIREBASE_VERSION }}
+
+      - name: Setup Node & Firebase
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Configure NPM Global Path
+        run: |
+          mkdir -p ~/.npm-global
+          npm config set prefix '~/.npm-global'
+          echo "$HOME/.npm-global/bin" >> $GITHUB_PATH
+
+      - name: Install Firebase CLI
+        if: steps.firebase-cache.outputs.cache-hit != 'true'
+        run: npm install -g firebase-tools@${{ env.FIREBASE_VERSION }}
+
       - name: Run Setup Script
         env:
           GOOGLE_SERVICES: ${{ secrets.GOOGLE_SERVICES }}
@@ -75,17 +93,6 @@ jobs:
           chmod +x .github/scripts/setup_env.sh
           .github/scripts/setup_env.sh
 
-      # Step 7: Install NodeJS
-      - name: Setup NodeJS
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      # Step 8: Install Firebase CLI globally
-      - name: Install Firebase CLI
-        run: npm install -g firebase-tools
-
-      # Step 9: Validate Firestore configuration and rules
       - name: Firestore Security Rules tests
         run: |
           if [ ! -e "firebase.json" ]; then
@@ -96,20 +103,27 @@ jobs:
             (cd firebase/firestore/test 2>/dev/null && npm install && npm test) || exit $?
           fi
 
-      # Step 10: Run Kotlin formatting check
       - name: KTFmt Check
         run: ./gradlew ktfmtCheck
 
-      # Step 11: Pre-assemble APKs
       - name: Assemble Debug and AndroidTest
         run: ./gradlew assembleDebug assembleAndroidTest --build-cache
 
+      # --- CACHE 2: Build Output ---
+      - name: Cache Build Folder
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            app/build
+            .gradle/kotlin-profile
+            .gradle/generated-gradle-jars
+          key: build-output-${{ github.sha }}
+
   # -----------------------------------------------------------------
-  # JOB 2: Unit Tests
-  # Runs standard unit tests and Lint checks. Fast and stable.
+  # JOB 2: Run Tests (Merged Unit + Integration)
   # -----------------------------------------------------------------
-  unit-tests:
-    name: Unit Tests
+  run-tests:
+    name: Run Tests (Unit & Int)
     needs: build-and-prepare
     runs-on: ubuntu-latest
     env:
@@ -118,86 +132,20 @@ jobs:
       run:
         working-directory: ./${{ env.base_folder }}
     steps:
-      # Step 1: Checkout code
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      # Step 2: Setup JDK 17
-      - name: Setup JDK
-        uses: actions/setup-java@v4
-        with:
-          distribution: "temurin"
-          java-version: "17"
-
-      # Step 3: Restore Gradle Cache
-      - name: Retrieve gradle cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-
-      # Step 4: Re-run Setup Script
-      - name: Run Setup Script
-        env:
-          GOOGLE_SERVICES: ${{ secrets.GOOGLE_SERVICES }}
-          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-        run: |
-          chmod +x .github/scripts/setup_env.sh
-          .github/scripts/setup_env.sh
-
-      # Step 5: Run Unit Tests and Lint
-      - name: Run Unit Tests and Lint
-        run: ./gradlew testDebugUnitTest lintDebug --build-cache
-
-      # Step 6: Upload Unit Test Coverage (Wildcard fix)
-      - name: Upload Unit Test Coverage
-        uses: actions/upload-artifact@v4
-        with:
-          name: jacoco-unit
-          path: app/build/**/*.exec
-          if-no-files-found: error
-
-      # Step 7: Upload Unit Test Results (XML)
-      - name: Upload Unit Test Results
-        uses: actions/upload-artifact@v4
-        with:
-          name: junit-unit
-          path: app/build/test-results/testDebugUnitTest
-
-  # -----------------------------------------------------------------
-  # JOB 3: Instrumentation Tests (The Loop)
-  # Uses Python script to determine which tests to rerun based on artifacts.
-  # -----------------------------------------------------------------
-  android-instrumented-tests:
-    name: Instrumentation Tests
-    needs: unit-tests
-    runs-on: ubuntu-latest
-    env:
-      base_folder: .
-    defaults:
-      run:
-        working-directory: ./${{ env.base_folder }}
-    steps:
-      # Step 1: Checkout code
       - name: Checkout
         uses: actions/checkout@v4
         with:
           submodules: recursive
 
-      # Step 2: Create Safe Branch Name (Slash fix)
       - name: Create Safe Branch Name
         run: echo "SAFE_BRANCH=$(echo '${{ github.ref_name }}' | sed 's|/|-|g')" >> $GITHUB_ENV
 
-      # Step 3: Setup JDK 17
       - name: Setup JDK
         uses: actions/setup-java@v4
         with:
           distribution: "temurin"
           java-version: "17"
 
-      # Step 4: Restore Gradle Cache
       - name: Retrieve gradle cache
         uses: actions/cache@v4
         with:
@@ -206,8 +154,52 @@ jobs:
             ~/.gradle/wrapper
           key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
 
-      # Step 5: Re-run Setup Script & Make Test Runner Executable
-      # IMPORTANT: We also chmod the new run_tests.sh here!
+      # --- RESTORE 1: Build Output ---
+      - name: Restore Build Folder
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            app/build
+            .gradle/kotlin-profile
+            .gradle/generated-gradle-jars
+          key: build-output-${{ github.sha }}
+          fail-on-cache-miss: true
+
+      # --- RESTORE 2: AVD ---
+      - name: AVD Cache
+        uses: actions/cache@v4
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-${{ runner.os }}-api-36
+
+      # --- RESTORE 3: Firebase ---
+      - name: Cache Firebase Tools
+        id: firebase-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm-global
+            ~/.cache/firebase/emulators
+          key: firebase-tools-${{ runner.os }}-${{ env.FIREBASE_VERSION }}
+
+      - name: Setup Node & Firebase
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Configure NPM Global Path
+        run: |
+          mkdir -p ~/.npm-global
+          npm config set prefix '~/.npm-global'
+          echo "$HOME/.npm-global/bin" >> $GITHUB_PATH
+
+      - name: Install Firebase CLI
+        if: steps.firebase-cache.outputs.cache-hit != 'true'
+        run: npm install -g firebase-tools@${{ env.FIREBASE_VERSION }}
+
       - name: Run Setup Script
         env:
           GOOGLE_SERVICES: ${{ secrets.GOOGLE_SERVICES }}
@@ -217,35 +209,23 @@ jobs:
           chmod +x .github/scripts/run_tests.sh
           .github/scripts/setup_env.sh
 
-      # Step 6: Setup NodeJS
-      - name: Setup NodeJS
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      # Step 7: Install Firebase CLI
-      - name: Install Firebase CLI
-        run: npm install -g firebase-tools
-
-      # Step 8: Start Firebase emulators
       - name: Start Firebase emulators
         run: |
           if [ -e "firebase.json" ] && jq -e '.emulators' firebase.json >/dev/null; then
-            echo "Starting Firebase emulators for instrumentation tests..."
+            echo "Starting Firebase emulators..."
             firebase emulators:start --only auth,firestore --project demo-project &
             echo "Firebase emulators started"
           else
-            echo "Firebase emulators not configured, skipping emulator startup..."
+            echo "Firebase emulators not configured..."
           fi
 
-      # Step 9: Enable KVM for hardware acceleration
       - name: Enable KVM group perms
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      # Step 10: Download previous Test State (if any)
+      # State Logic
       - name: Download Test State
         uses: actions/download-artifact@v4
         with:
@@ -253,42 +233,21 @@ jobs:
           path: .state
         continue-on-error: true
 
-      # Step 11: Determine Tests to Run
-      - name: Determine Tests to Run
-        id: test_selector
-        run: |
-          python3 .github/scripts/manage_test_state.py get_args \
-            --state-file .state/test-status.json > tests_to_run.txt
-          
-          TESTS=$(cat tests_to_run.txt)
-          echo "Determined tests: $TESTS"
-          echo "TEST_FILTER=$TESTS" >> $GITHUB_ENV
-
-      # Step 12: Run instrumentation tests on Emulator
-      # FIX: Now calls the external script to avoid multi-line syntax errors
-      - name: Run instrumentation tests
-        if: env.TEST_FILTER != 'NONE'
-        timeout-minutes: 35
+      # --- MAIN TEST EXECUTION (Calls the new script) ---
+      - name: Run All Tests (Selective)
+        timeout-minutes: 45
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 36
           target: google_apis
           arch: x86_64
           avd-name: github
-          force-avd-creation: true
+          force-avd-creation: false # Use cached AVD
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -skin 1080x2400
           disable-animations: true
           script: .github/scripts/run_tests.sh
 
-      # Step 13: Update Test State JSON
-      - name: Update Test State
-        if: always()
-        run: |
-          python3 .github/scripts/manage_test_state.py update_state \
-            --state-file .state/test-status.json \
-            --xml-dir app/build/outputs/androidTest-results/connected
-
-      # Step 14: Upload updated Test State
+      # Upload Updated State
       - name: Upload Test State
         if: always()
         uses: actions/upload-artifact@v4
@@ -297,29 +256,32 @@ jobs:
           path: .state/test-status.json
           overwrite: true
 
-      # Step 15: Upload Run Coverage (.ec files)
+      # Upload Coverage (Merged from Unit + Android automatically by the script running both)
       - name: Upload Run Coverage
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: jacoco-android-run-${{ github.run_attempt }}
-          path: app/build/outputs/code_coverage/**/connected/*.ec
+          name: jacoco-run-${{ github.run_attempt }}
+          path: |
+            app/build/outputs/code_coverage/**/connected/*.ec
+            app/build/**/*.exec
 
-      # Step 16: Upload Run Results (XML)
+      # Upload Results
       - name: Upload Run Results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: junit-android-run-${{ github.run_attempt }}
-          path: app/build/outputs/androidTest-results/connected
+          name: junit-run-${{ github.run_attempt }}
+          path: |
+            app/build/outputs/androidTest-results/connected
+            app/build/test-results/testDebugUnitTest
 
   # -----------------------------------------------------------------
-  # JOB 4: Coverage & Sonar
-  # Aggregates results from Unit tests and ALL Android runs.
+  # JOB 3: Coverage & Sonar (The Consumer)
   # -----------------------------------------------------------------
   coverage-and-sonar:
     name: Coverage and Sonar
-    needs: [unit-tests, android-instrumented-tests]
+    needs: [run-tests]
     if: always()
     runs-on: ubuntu-latest
     env:
@@ -328,20 +290,17 @@ jobs:
       run:
         working-directory: ./${{ env.base_folder }}
     steps:
-      # Step 1: Checkout code
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # Step 2: Setup JDK 17
       - name: Setup JDK
         uses: actions/setup-java@v4
         with:
           distribution: "temurin"
           java-version: "17"
 
-      # Step 3: Restore Gradle Cache
       - name: Retrieve gradle cache
         uses: actions/cache@v4
         with:
@@ -350,7 +309,6 @@ jobs:
             ~/.gradle/wrapper
           key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
 
-      # Step 4: Restore Sonar Cache
       - name: Cache SonarQube packages
         uses: actions/cache@v4
         with:
@@ -358,7 +316,6 @@ jobs:
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
 
-      # Step 5: Re-run Setup Script
       - name: Run Setup Script
         env:
           GOOGLE_SERVICES: ${{ secrets.GOOGLE_SERVICES }}
@@ -367,34 +324,26 @@ jobs:
           chmod +x .github/scripts/setup_env.sh
           .github/scripts/setup_env.sh
 
-      # Step 6: Download Unit Coverage
-      - name: Download Unit Coverage
+      - name: Download All Coverage
         uses: actions/download-artifact@v4
         with:
-          name: jacoco-unit
-          path: app/build/jacoco/
-          merge-multiple: true
-
-      # Step 7: Download All Android Coverage
-      - name: Download All Android Coverage
-        uses: actions/download-artifact@v4
-        with:
-          pattern: jacoco-android-run-*
+          pattern: jacoco-run-*
           merge-multiple: true
           path: app/build/outputs/code_coverage/debugAndroidTest/connected/
 
-      # Step 8: Generate Merged Report
+      # Since we merged, unit test coverage is already in the artifacts pattern above.
+      # We just need to ensure they land in a place Jacoco sees, or merge them manually if needed.
+      # Gradle's jacocoTestReport usually finds .exec files in build directory.
+
       - name: Generate Merged Coverage Report
         run: ./gradlew jacocoTestReport
 
-      # Step 9: Upload Final Coverage Report
       - name: Upload coverage
         uses: actions/upload-artifact@v4
         with:
           name: Coverage report
           path: app/build/reports/jacoco/jacocoTestReport
 
-      # Step 10: Run SonarCloud Analysis
       - name: SonarCloud analysis
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
