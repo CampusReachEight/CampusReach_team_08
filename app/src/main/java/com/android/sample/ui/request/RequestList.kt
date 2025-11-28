@@ -1,5 +1,6 @@
 package com.android.sample.ui.request
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -13,6 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -32,7 +34,10 @@ import com.android.sample.ui.navigation.Screen
 import com.android.sample.ui.profile.ProfilePicture
 import com.android.sample.ui.request.ConstantRequestList.TypeChipBorderWidth
 import com.android.sample.ui.request.ConstantRequestList.TypeChipColumnSpacing
+import com.android.sample.ui.request.ConstantRequestList.TypeChipCornerRadius
 import com.android.sample.ui.request.ConstantRequestList.TypeChipTextPadding
+import com.android.sample.ui.request.ConstantRequestList.TypeChipTextSize
+import com.android.sample.ui.request.ConstantRequestList.TypeChipTextSizeFactor
 import com.android.sample.ui.theme.TopNavigationBar
 import com.android.sample.ui.theme.appPalette
 
@@ -311,6 +316,7 @@ fun TitleAndDescription(request: Request, modifier: Modifier = Modifier) {
   }
 }
 
+@SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
 fun TypeChip(
     requestType: RequestType,
@@ -318,18 +324,31 @@ fun TypeChip(
 ) {
   Surface(
       color = appPalette().getRequestTypeBackgroundColor(requestType),
-      shape = RoundedCornerShape(16.dp),
-      modifier = modifier.fillMaxWidth(),
+      shape = RoundedCornerShape(TypeChipCornerRadius),
+      modifier = modifier.fillMaxWidth(), // Fill the available width
       border = BorderStroke(TypeChipBorderWidth, appPalette().getRequestTypeColor(requestType))) {
-        Box(
+        BoxWithConstraints(
             contentAlignment = Alignment.Center,
-            modifier = Modifier.fillMaxHeight().padding(horizontal = TypeChipTextPadding)) {
+            modifier = Modifier.padding(horizontal = TypeChipTextPadding)) {
+              val baseFontSize = TypeChipTextSize
+              val textLength = requestType.displayString().length
+
+              val density = LocalDensity.current
+              val availableWidthPx = with(density) { maxWidth.toPx() }
+
+              val baseFontSizePx = with(density) { baseFontSize.toPx() }
+
+              val estimatedTextWidth = textLength * baseFontSizePx * TypeChipTextSizeFactor
+              val scaleFactor = (availableWidthPx / estimatedTextWidth).coerceAtMost(1.0f)
+
               Text(
                   text = requestType.displayString(),
                   color = appPalette().getRequestTypeColor(requestType),
-                  fontSize = 12.sp,
+                  fontSize = baseFontSize * scaleFactor,
                   fontWeight = FontWeight.Medium,
-                  maxLines = 1)
+                  maxLines = 1,
+                  overflow = TextOverflow.Clip // Prevent ellipsis from showing up unnecessarily
+                  )
             }
       }
 }
