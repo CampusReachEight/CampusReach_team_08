@@ -120,7 +120,7 @@ jobs:
           key: build-output-${{ github.sha }}
 
   # -----------------------------------------------------------------
-  # JOB 2: Run Tests (Unit & Instrumentation)
+  # JOB 2: Run Tests (Merged Unit + Integration)
   # -----------------------------------------------------------------
   run-tests:
     name: Run Tests (Unit & Int)
@@ -225,6 +225,7 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
+      # State Logic: Download
       - name: Download Test State
         uses: actions/download-artifact@v4
         with:
@@ -246,7 +247,19 @@ jobs:
           disable-animations: true
           script: .github/scripts/run_tests.sh
 
-      # --- UPLOAD ARTIFACTS ---
+      # State Logic: Update (Run ONLY if XML results exist, ensuring data isn't lost)
+      - name: Update Test State
+        if: always()
+        run: |
+          if [ -d "app/build/outputs/androidTest-results/connected" ]; then
+            python3 .github/scripts/manage_test_state.py update_state \
+              --state-file .state/test-status.json \
+              --xml-dir app/build/outputs/androidTest-results/connected
+          else
+            echo "No Android test results found. Skipping state update."
+          fi
+
+      # Upload Updated State
       - name: Upload Test State
         if: always()
         uses: actions/upload-artifact@v4
@@ -255,6 +268,7 @@ jobs:
           path: .state/test-status.json
           overwrite: true
 
+      # Upload Coverage (Merged from Unit + Android automatically by the script running both)
       - name: Upload Run Coverage
         if: always()
         uses: actions/upload-artifact@v4
@@ -264,6 +278,7 @@ jobs:
             app/build/outputs/code_coverage/**/connected/*.ec
             app/build/**/*.exec
 
+      # Upload Results
       - name: Upload Run Results
         if: always()
         uses: actions/upload-artifact@v4
@@ -328,9 +343,8 @@ jobs:
           merge-multiple: true
           path: app/build/outputs/code_coverage/debugAndroidTest/connected/
 
-      # Note: Gradle JaCoCo plugin usually expects execution files in specific paths.
-      # If it fails to find them, we might need to move them. But typically the artifact download structure
-      # should restore them to where Gradle expects if the path in artifact upload was correct.
+      # We move the unit test coverage (which is in root .exec) to where Jacoco expects it if needed,
+      # or rely on Jacoco plugin finding all execs. Typically, standard location works.
 
       - name: Generate Merged Coverage Report
         run: ./gradlew jacocoTestReport

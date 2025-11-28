@@ -20,8 +20,8 @@ def save_state(state_file, state):
     with open(state_file, 'w') as f:
         json.dump(state, f, indent=2)
 
-def update_state_from_xml(state, xml_dir, suite_name):
-    # Recursively find all xml files
+def update_state_from_xml(state, xml_dir):
+    # Recursively find all xml files in the Android results directory
     xml_files = glob(os.path.join(xml_dir, "**/*.xml"), recursive=True)
 
     found_count = 0
@@ -43,70 +43,61 @@ def update_state_from_xml(state, xml_dir, suite_name):
                     continue
 
                 found_count += 1
-                # Unique ID
                 test_id = f"{classname}#{name}"
 
-                # Determine Status
                 failure = tc.find("failure")
                 error = tc.find("error")
                 status = "failed" if (failure is not None or error is not None) else "passed"
 
-                # Update state with Suite info
-                # Note: We persist the status. If it was previously recorded, we overwrite it.
+                # We only track Android tests individually
                 state["tests"][test_id] = {
                     "status": status,
-                    "suite": suite_name
+                    "suite": "android"
                 }
         except Exception as e:
             print(f"Warning: Could not parse {xml_file}: {e}")
 
-    print(f">> Parsed {found_count} test results for suite '{suite_name}'.")
+    print(f">> Parsed {found_count} Android test results.")
     return state
 
-def get_gradle_args(state, target_suite):
-    # Filter memory for tests belonging to this suite
-    suite_tests = {k: v for k, v in state["tests"].items() if v.get("suite") == target_suite}
+def get_android_args(state):
+    # Filter for Android tests only
+    android_tests = {k: v for k, v in state["tests"].items() if v.get("suite") == "android"}
 
-    # If we have NO record of tests for this suite, it means we've never run them.
-    # So we must RUN_ALL.
-    if not suite_tests:
+    # If no Android tests recorded, it's a fresh run -> RUN_ALL
+    if not android_tests:
         return "RUN_ALL"
 
-    # Find failed tests for this specific suite
-    failed_tests = [tid for tid, data in suite_tests.items() if data.get("status") == "failed"]
+    # Find failed tests
+    failed_tests = [tid for tid, data in android_tests.items() if data.get("status") == "failed"]
 
-    # If we have history, but no failures, we can skip.
+    # If history exists but no failures, we can skip Android tests (NONE)
     if not failed_tests:
         return "NONE"
 
-    if target_suite == "android":
-        # Android Format: com.package.Class#method
-        return ",".join(failed_tests)
-    else:
-        # Unit Test Format: --tests "com.package.Class.method"
-        # Convert '#' to '.' because testDebugUnitTest uses dots for methods
-        return " ".join([f'--tests "{t.replace("#", ".")}"' for t in failed_tests])
+    # Return comma-separated list of failed tests
+    return ",".join(failed_tests)
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("mode", choices=["get_args", "update_state"])
     parser.add_argument("--state-file", required=True)
     parser.add_argument("--xml-dir")
-    parser.add_argument("--suite", choices=["unit", "android"], required=True)
+    # Removed --suite argument as we simplified the logic
 
     args = parser.parse_args()
 
     state = load_state(args.state_file)
 
     if args.mode == "get_args":
-        print(get_gradle_args(state, args.suite))
+        print(get_android_args(state))
 
     elif args.mode == "update_state":
         if not args.xml_dir:
             raise ValueError("--xml-dir required for update_state")
-        updated = update_state_from_xml(state, args.xml_dir, args.suite)
+        updated = update_state_from_xml(state, args.xml_dir)
         save_state(args.state_file, updated)
-        print(f">> State updated for suite '{args.suite}'. Database now holds {len(updated['tests'])} total tests (Unit + Android).")
+        print(f">> State updated. Database now holds {len(updated['tests'])} Android tests.")
 
 if __name__ == "__main__":
     main()
