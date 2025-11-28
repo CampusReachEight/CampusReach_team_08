@@ -22,9 +22,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.ui.profile.ProfileDimens
 import com.android.sample.ui.profile.ProfilePicture
@@ -51,72 +55,71 @@ fun PublicProfileScreen(
     onBackClick: () -> Unit = {},
     defaultProfileId: String = PublicProfileDefaults.DEFAULT_PUBLIC_PROFILE_ID
 ) {
-  // If caller provided an explicit profile, render static UI only.
-  // Otherwise use the ViewModel (and auto-load preview id).
-  if (profile == null) {
-    LaunchedEffect(defaultProfileId) { viewModel.loadPublicProfile(defaultProfileId) }
-  }
+    // If caller provided an explicit profile, render static UI only.
+    // Otherwise use the ViewModel (and auto-load preview id).
+    if (profile == null) {
+        LaunchedEffect(defaultProfileId) { viewModel.loadPublicProfile(defaultProfileId) }
+    }
 
-  val vmState by viewModel.uiState.collectAsState()
+    val vmState by viewModel.uiState.collectAsState()
 
-  val shownState =
-      if (profile != null) {
-        PublicProfileUiState(isLoading = false, profile = profile, error = null)
-      } else {
-        PublicProfileUiState(
-            isLoading = vmState.isLoading, profile = vmState.profile, error = vmState.error)
-      }
-
-  val hiddenState =
-      if (profile != null) {
-        mapPublicToProfile(profile)
-      } else {
-        ProfileState(
-            isLoading = vmState.isLoading,
-            userName = vmState.profile?.name ?: "",
-            userSection = vmState.profile?.section ?: "",
-            profilePictureUrl = vmState.profile?.pictureUriString,
-            kudosReceived = vmState.profile?.kudosReceived ?: 0,
-            helpReceived = vmState.profile?.helpReceived ?: 0,
-            followers = vmState.profile?.followers ?: 0,
-            following = vmState.profile?.following ?: 0,
-            isLoggingOut = false,
-            isEditMode = false)
-      }
-
-  // Static/read-only follow state for public profiles
-  val isFollowing = false
-
-  Scaffold(
-      modifier = Modifier.testTag(PublicProfileTestTags.PUBLIC_PROFILE_SCREEN),
-      containerColor = appPalette().primary,
-      topBar = { ProfileTopBar(onBackClick) }) { padding ->
-        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
-          when {
-            shownState.isLoading -> ProfileLoadingBuffer(Modifier.fillMaxSize())
-            else ->
-                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                  shownState.error?.let {
-                    ErrorBanner(it)
-                    Spacer(modifier = Modifier.height(ProfileDimens.Vertical))
-                  }
-
-                  // Use the VM-backed state for header composition when available, otherwise derive
-                  // from
-                  // the provided profile.
-                  PublicProfileHeader(
-                      state = if (profile != null) shownState else vmState,
-                      isFollowing = isFollowing,
-                      onFollowToggle = { /* no-op for static UI */})
-                  Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
-                  ProfileStats(state = hiddenState)
-                  Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
-                  ProfileInformation(state = hiddenState)
-                  Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
-                }
-          }
+    val shownState =
+        if (profile != null) {
+            PublicProfileUiState(isLoading = false, profile = profile, error = null)
+        } else {
+            PublicProfileUiState(
+                isLoading = vmState.isLoading, profile = vmState.profile, error = vmState.error)
         }
-      }
+
+    val hiddenState =
+        if (profile != null) {
+            mapPublicToProfile(profile)
+        } else {
+            ProfileState(
+                isLoading = vmState.isLoading,
+                userName = vmState.profile?.name ?: "",
+                userSection = vmState.profile?.section ?: "",
+                profilePictureUrl = vmState.profile?.pictureUriString,
+                kudosReceived = vmState.profile?.kudosReceived ?: 0,
+                helpReceived = vmState.profile?.helpReceived ?: 0,
+                followers = vmState.profile?.followers ?: 0,
+                following = vmState.profile?.following ?: 0,
+                isLoggingOut = false,
+                isEditMode = false)
+        }
+
+    var isFollowing by remember { mutableStateOf(false) }
+
+    Scaffold(
+        modifier = Modifier.testTag(PublicProfileTestTags.PUBLIC_PROFILE_SCREEN),
+        containerColor = appPalette().primary,
+        topBar = { ProfileTopBar(onBackClick) }) { padding ->
+        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+            when {
+                shownState.isLoading -> ProfileLoadingBuffer(Modifier.fillMaxSize())
+                else ->
+                    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                        shownState.error?.let {
+                            ErrorBanner(it)
+                            Spacer(modifier = Modifier.height(ProfileDimens.Vertical))
+                        }
+
+                        // Use the VM-backed state for header composition when available, otherwise derive
+                        // from
+                        // the provided profile.
+                        PublicProfileHeader(
+                            state = if (profile != null) shownState else vmState,
+                            isFollowing = isFollowing,
+                            onFollowToggle = { isFollowing = !isFollowing })
+                        Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
+                        ProfileStats(state = hiddenState)
+                        Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
+                        ProfileInformation(state = hiddenState)
+                        Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
+                    }
+            }
+        }
+    }
 }
 
 @Composable
@@ -182,24 +185,30 @@ fun PublicProfileHeader(
  */
 @Composable
 fun FollowButton(isFollowing: Boolean, onToggle: () -> Unit) {
-  val tag =
-      if (isFollowing) PublicProfileTestTags.UNFOLLOW_BUTTON
-      else PublicProfileTestTags.FOLLOW_BUTTON
-  ElevatedButton(onClick = onToggle, modifier = Modifier.testTag(tag)) {
-    Text(text = if (isFollowing) "Unfollow" else "Follow")
-  }
+    val tag =
+        if (isFollowing) PublicProfileTestTags.UNFOLLOW_BUTTON
+        else PublicProfileTestTags.FOLLOW_BUTTON
+    ElevatedButton(onClick = onToggle, modifier = Modifier.testTag(tag)) {
+        Text(text = if (isFollowing) "Unfollow" else "Follow")
+    }
 }
 
 fun mapPublicToProfile(publicProfile: PublicProfile): ProfileState {
-  return ProfileState(
-      isLoading = false,
-      userName = publicProfile.name,
-      userSection = publicProfile.section,
-      profilePictureUrl = publicProfile.pictureUriString,
-      kudosReceived = publicProfile.kudosReceived,
-      helpReceived = publicProfile.helpReceived,
-      followers = publicProfile.followers,
-      following = publicProfile.following,
-      isLoggingOut = false,
-      isEditMode = false)
+    return ProfileState(
+        isLoading = false,
+        userName = publicProfile.name,
+        userSection = publicProfile.section,
+        profilePictureUrl = publicProfile.pictureUriString,
+        kudosReceived = publicProfile.kudosReceived,
+        helpReceived = publicProfile.helpReceived,
+        followers = publicProfile.followers,
+        following = publicProfile.following,
+        isLoggingOut = false,
+        isEditMode = false)
+}
+
+@Preview
+@Composable
+fun PublicProfileScreenPreview() {
+    PublicProfileScreen()
 }
