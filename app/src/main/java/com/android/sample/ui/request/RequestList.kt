@@ -125,7 +125,7 @@ private fun TypeChip(type: RequestType, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun RequestListItem(
+fun RequestListItem(
     request: Request,
     onClick: () -> Unit = {},
     onProfileClick: (String) -> Unit = {},
