@@ -9,8 +9,13 @@ import org.junit.Test
  * See [testing documentation](http://d.android.com/tools/testing).
  */
 class ExampleUnitTest {
+  companion object {
+    // Set this to true to fail the test
+    const val TEST_FAIL = true
+  }
+
   @Test
   fun addition_isCorrect() {
-    assertEquals(4, 2 + 2)
+    assertTrue(TEST_FAIL)
   }
 }
