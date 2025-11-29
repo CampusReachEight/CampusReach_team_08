@@ -801,11 +801,11 @@ private class FakeUserProfileRepository(
 
   override suspend fun receiveHelp(userId: String, amount: Int) {
     if (amount <= 0) throw IllegalArgumentException("Amount must be positive: $amount")
-    if (!profileCache.containsKey(userId))
-        throw NoSuchElementException("Profile not found: $userId")
+    val profile = profileCache[userId] ?: throw NoSuchElementException("Profile not found: $userId")
     if (userId in failReceiveFor) throw Exception("Simulated receiveHelp failure for $userId")
 
-    val profile = profileCache[userId]!!
+    // Increment helpReceived and persist the updated profile
+    profileCache[userId] = profile.copy(helpReceived = profile.helpReceived + 1)
   }
 }
 

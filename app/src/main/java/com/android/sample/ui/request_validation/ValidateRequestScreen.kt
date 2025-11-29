@@ -100,7 +100,8 @@ fun ValidateRequestScreen(
 
                         // Increment help received for each helper (increment by 1)
                         state.selectedHelpers.forEach { helper ->
-                          userProfileRepository.receiveHelp(helper.id, 1)
+                          userProfileRepository.receiveHelp(
+                              helper.id, HelpReceivedConstants.HELP_RECEIVED_PER_HELP)
                         }
 
                         // Notify caller that confirm flow completed
