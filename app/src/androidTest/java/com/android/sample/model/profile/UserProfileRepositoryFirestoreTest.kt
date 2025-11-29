@@ -3,6 +3,8 @@ package com.android.sample.model.profile
 import android.util.Log
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.sample.ui.profile.UserSections
+import com.android.sample.ui.request_validation.HelpReceivedConstants
+import com.android.sample.ui.request_validation.HelpReceivedException
 import com.android.sample.ui.request_validation.KudosConstants
 import com.android.sample.ui.request_validation.KudosException
 import com.android.sample.utils.BaseEmulatorTest
@@ -20,6 +22,8 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assert.*
+import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
@@ -109,7 +113,7 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
       batch.commit().await()
 
       // Small delay to ensure deletion completes
-      kotlinx.coroutines.delay(500)
+      delay(500)
     } catch (e: Exception) {
       Log.e("TestCleanup", "Error clearing test data", e)
     }
@@ -423,7 +427,7 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
 
         advanceUntilIdle()
 
-        kotlinx.coroutines.delay(500) // Real delay for Firestore indexing
+        delay(500) // Real delay for Firestore indexing
 
         val results = repository.searchUserProfiles("joh")
 
@@ -759,4 +763,34 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
     // Then
     assertEquals(100, repository.getUserProfile(profile.id).kudos)
   }
+
+  @Test
+  fun receiveHelp_throwsInvalidAmount_whenAmountIsZero(): HelpReceivedException.InvalidAmount? =
+      runBlocking {
+        val amount = 0
+        val userId = "user-1"
+        assertThrows(HelpReceivedException.InvalidAmount::class.java) {
+          runBlocking { repository.receiveHelp(userId, amount) }
+        }
+      }
+
+  @Test
+  fun receiveHelp_throwsInvalidAmount_whenAmountIsNegative(): HelpReceivedException.InvalidAmount? =
+      runBlocking {
+        val amount = -3
+        val userId = "user-2"
+        assertThrows(HelpReceivedException.InvalidAmount::class.java) {
+          runBlocking { repository.receiveHelp(userId, amount) }
+        }
+      }
+
+  @Test
+  fun receiveHelp_throwsInvalidAmount_whenAmountExceedsMax(): HelpReceivedException.InvalidAmount? =
+      runBlocking {
+        val amount = HelpReceivedConstants.MAX_HELP_RECEIVED_PER_TRANSACTION + 1
+        val userId = "user-3"
+        assertThrows(HelpReceivedException.InvalidAmount::class.java) {
+          runBlocking { repository.receiveHelp(userId, amount) }
+        }
+      }
 }

@@ -14,7 +14,7 @@ object HelpReceivedConstants {
   const val MIN_HELP_RECEIVED = 0
 
   /** Safety limit: maximum help units that can be recorded in a single transaction. */
-  const val MAX_HELP_RECEIVED_PER_TRANSACTION = 1000
+  const val MAX_HELP_RECEIVED_PER_TRANSACTION = 1
 }
 
 /** Exceptions specific to help\-received operations. */
