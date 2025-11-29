@@ -10,6 +10,7 @@ import com.android.sample.utils.FirebaseEmulator
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import java.util.Date
+import kotlin.text.get
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
@@ -757,5 +758,57 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
 
     // Then
     assertEquals(100, repository.getUserProfile(profile.id).kudos)
+  }
+
+  @Test
+  fun receiveHelp_throws_InvalidAmount_for_min_or_lower() = runTest {
+    val profile = testProfile1.copy(id = currentUserId)
+    repository.addUserProfile(profile)
+
+    val invalidAmount =
+        com.android.sample.ui.request_validation.HelpReceivedConstants.MIN_HELP_RECEIVED
+
+    assertThrows(
+        com.android.sample.ui.request_validation.HelpReceivedException.InvalidAmount::class.java) {
+          runBlocking { repository.receiveHelp(profile.id, invalidAmount) }
+        }
+  }
+
+  @Test
+  fun receiveHelp_throws_UserNotFound_for_non_existent_user() = runTest {
+    val nonExistentUserId = "non-existent-user-id"
+    val amount =
+        com.android.sample.ui.request_validation.HelpReceivedConstants.MIN_HELP_RECEIVED + 1
+
+    assertThrows(
+        com.android.sample.ui.request_validation.HelpReceivedException.UserNotFound::class.java) {
+          runBlocking { repository.receiveHelp(nonExistentUserId, amount) }
+        }
+  }
+
+  @Test
+  fun receiveHelp_increments_helpReceived_in_public_and_private_collections() = runTest {
+    val profile = testProfile1.copy(id = currentUserId)
+    repository.addUserProfile(profile)
+
+    advanceUntilIdle()
+    delay(250)
+
+    val amount = 5
+    repository.receiveHelp(profile.id, amount)
+
+    advanceUntilIdle()
+    delay(300)
+
+    val publicDoc = db.collection(PUBLIC_PROFILES_PATH).document(profile.id).get().await()
+    assertTrue(publicDoc.exists())
+    assertEquals(amount, (publicDoc.get("helpReceived") as Number).toInt())
+
+    val privateDoc = db.collection(PRIVATE_PROFILES_PATH).document(profile.id).get().await()
+    assertTrue(privateDoc.exists())
+    assertEquals(amount, (privateDoc.get("helpReceived") as Number).toInt())
+
+    val fetchedProfile = repository.getUserProfile(profile.id)
+    assertEquals(amount, fetchedProfile.helpReceived)
   }
 }
