@@ -156,6 +156,17 @@ fun AcceptRequestScreen(
             })
       },
       content = { pd ->
+        if (requestState.isLoadingDetails) {
+          Box(
+              modifier = Modifier.fillMaxWidth().padding(pd),
+              contentAlignment = Alignment.Center,
+          ) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(AcceptRequestScreenConstants.CIRCULAR_PROGRESS_SIZE))
+          }
+          return@Scaffold
+        }
+
         Column(modifier = Modifier.padding(pd)) {
           if (requestState.offlineMode) {
             Text(
