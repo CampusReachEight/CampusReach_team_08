@@ -110,6 +110,10 @@ class MapsViewModelTest {
       return emptyList()
     }
 
+    override suspend fun getAcceptedRequests(): List<Request> {
+      return emptyList()
+    }
+
     override suspend fun closeRequest(requestId: String, selectedHelperIds: List<String>): Boolean {
       return true
     }

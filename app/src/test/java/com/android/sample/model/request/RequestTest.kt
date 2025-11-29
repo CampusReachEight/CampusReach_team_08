@@ -413,4 +413,59 @@ class RequestTest {
     assertEquals(request1, request2)
     assertNotEquals(request1, request3)
   }
+
+  @Test
+  fun toMap_includesSelectedHelpers() {
+    val request = createTestRequest().copy(selectedHelpers = listOf("helper1", "helper2"))
+    val map = request.toMap()
+
+    assertTrue(map.containsKey("selectedHelpers"))
+    @Suppress("UNCHECKED_CAST") val helpers = map["selectedHelpers"] as List<String>
+    assertEquals(2, helpers.size)
+    assertTrue(helpers.contains("helper1"))
+  }
+
+  @Test
+  fun fromMap_deserializesSelectedHelpers() {
+    val map =
+        mapOf(
+            "requestId" to "req1",
+            "title" to "Test",
+            "description" to "Desc",
+            "requestType" to listOf("STUDYING"),
+            "location" to mapOf("latitude" to 46.5191, "longitude" to 6.5668, "name" to "EPFL"),
+            "locationName" to "EPFL",
+            "status" to "OPEN",
+            "startTimeStamp" to Timestamp(Date()),
+            "expirationTime" to Timestamp(Date(System.currentTimeMillis() + 3600000)),
+            "people" to listOf("user1"),
+            "tags" to listOf("URGENT"),
+            "creatorId" to "user123",
+            "selectedHelpers" to listOf("helper1", "helper2"))
+
+    val request = Request.fromMap(map)
+    assertEquals(2, request.selectedHelpers.size)
+  }
+
+  @Test
+  fun fromMap_handlesAbsentSelectedHelpers() {
+    // Old requests without selectedHelpers field
+    val map =
+        mapOf(
+            "requestId" to "req1",
+            "title" to "Test",
+            "description" to "Desc",
+            "requestType" to listOf("STUDYING"),
+            "location" to mapOf("latitude" to 46.5191, "longitude" to 6.5668, "name" to "EPFL"),
+            "locationName" to "EPFL",
+            "status" to "OPEN",
+            "startTimeStamp" to Timestamp(Date()),
+            "expirationTime" to Timestamp(Date(System.currentTimeMillis() + 3600000)),
+            "people" to listOf("user1"),
+            "tags" to listOf("URGENT"),
+            "creatorId" to "user123")
+
+    val request = Request.fromMap(map)
+    assertTrue(request.selectedHelpers.isEmpty())
+  }
 }

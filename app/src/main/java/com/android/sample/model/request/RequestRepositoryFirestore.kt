@@ -10,9 +10,7 @@ import kotlinx.coroutines.tasks.await
 
 const val REQUESTS_COLLECTION_PATH = "requests"
 
-class RequestRepositoryFirestore(
-    private val db: FirebaseFirestore,
-) : RequestRepository {
+class RequestRepositoryFirestore(private val db: FirebaseFirestore) : RequestRepository {
   // Path structure: "requests/{requestId}"
 
   private val collectionRef = db.collection(REQUESTS_COLLECTION_PATH)
@@ -293,6 +291,18 @@ class RequestRepositoryFirestore(
     }
   }
 
+  override suspend fun getAcceptedRequests(): List<Request> {
+    val currentUserId = Firebase.auth.currentUser?.uid ?: notAuthenticated()
+
+    return collectionRef
+        .whereArrayContains("people", currentUserId)
+        .get()
+        .await()
+        .documents
+        .mapNotNull { doc -> doc.data?.let { Request.fromMap(it) } }
+        .filter { it.creatorId != currentUserId } // Exclude own requests
+  }
+
   override suspend fun closeRequest(requestId: String, selectedHelperIds: List<String>): Boolean {
     val currentUserId = Firebase.auth.currentUser?.uid ?: notAuthenticated()
 
@@ -318,8 +328,12 @@ class RequestRepositoryFirestore(
     }
 
     try {
-      // Update status to COMPLETED
-      val updatedRequest = existingRequest.copy(status = RequestStatus.COMPLETED)
+      // Update status to COMPLETED and save selectedHelpers
+      val updatedRequest =
+          existingRequest.copy(
+              status = RequestStatus.COMPLETED,
+              selectedHelpers = selectedHelperIds // NEW: Save who received kudos
+              )
       collectionRef.document(requestId).set(updatedRequest.toMap()).await()
 
       // Verify the status was updated

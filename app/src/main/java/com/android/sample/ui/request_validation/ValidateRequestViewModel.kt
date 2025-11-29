@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.android.sample.model.profile.UserProfile
 import com.android.sample.model.profile.UserProfileRepository
+import com.android.sample.model.request.CloseRequestUseCase
 import com.android.sample.model.request.Request
 import com.android.sample.model.request.RequestClosureException
 import com.android.sample.model.request.RequestRepository
@@ -87,6 +88,7 @@ class ValidateRequestViewModel(
     loadRequestData()
   }
 
+  private val closeRequestUseCase = CloseRequestUseCase(requestRepository, userProfileRepository)
   /** Loads the request and all helper profiles. */
   private fun loadRequestData() {
     viewModelScope.launch {
@@ -221,32 +223,19 @@ class ValidateRequestViewModel(
         // Extract selected helper IDs
         val selectedHelperIds = currentState.selectedHelpers.map { it.id }
 
-        // Close the request first and check if creator should receive kudos
-        // This value is set to false for now and in the future can be set
-        // to award kudos to the creator upon resolution.
-        // this could incentivise users to actually credit their helpers
-        // val shouldAwardCreator = false
-        // requestRepository.closeRequest(
-        // requestId = requestId, selectedHelperIds = selectedHelperIds)
-        requestRepository.closeRequest(requestId = requestId, selectedHelperIds = selectedHelperIds)
-        // Prepare kudos awards map
-        val kudosAwards = mutableMapOf<String, Int>()
-
-        // Add kudos for selected helpers
-        selectedHelperIds.forEach { helperId ->
-          kudosAwards[helperId] = KudosConstants.KUDOS_PER_HELPER
-        }
-
-        // Award kudos
-        if (kudosAwards.isNotEmpty()) {
-          try {
-            userProfileRepository.awardKudosBatch(kudosAwards)
-          } catch (e: KudosException) {
-            android.util.Log.e(VALIDATE_REQUEST, FAILED_TO_AWARD_KUDOS_ERROR, e)
+        // NEW: Use the use case instead of calling repository directly
+        when (val result = closeRequestUseCase.execute(requestId, selectedHelperIds)) {
+          is com.android.sample.model.request.CloseRequestResult.Success -> {
+            state = ValidationState.Success
+          }
+          is com.android.sample.model.request.CloseRequestResult.PartialSuccess -> {
+            // Request closed but some kudos failed - still count as success for UI
+            state = ValidationState.Success
+          }
+          is com.android.sample.model.request.CloseRequestResult.Failure -> {
+            throw result.error
           }
         }
-
-        state = ValidationState.Success
       } catch (e: RequestClosureException) {
         state =
             ValidationState.Error(
