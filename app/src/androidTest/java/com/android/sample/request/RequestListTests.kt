@@ -156,6 +156,7 @@ class RequestListTests : BaseEmulatorTest() {
               email = null,
               photo = null,
               kudos = 0,
+              helpReceived = 0,
               section = UserSections.NONE,
               arrivalDate = Date())
       if (userId in withImage) {
@@ -180,6 +181,10 @@ class RequestListTests : BaseEmulatorTest() {
 
     override suspend fun awardKudosBatch(awards: Map<String, Int>) {
       return Unit
+    }
+
+    override suspend fun receiveHelp(userId: String, amount: Int) {
+      return
     }
   }
 

@@ -133,7 +133,7 @@ class MapsViewModelTest {
     }
 
     override suspend fun getUserProfile(userId: String): UserProfile {
-      return UserProfile("", "", "", "", null, 0, UserSections.COMPUTER_SCIENCE, Date(0L))
+      return UserProfile("", "", "", "", null, 0, 0, UserSections.COMPUTER_SCIENCE, Date(0L))
     }
 
     override suspend fun addUserProfile(userProfile: UserProfile) {}
@@ -151,6 +151,10 @@ class MapsViewModelTest {
     }
 
     override suspend fun awardKudosBatch(awards: Map<String, Int>) {
+      return
+    }
+
+    override suspend fun receiveHelp(userId: String, amount: Int) {
       return
     }
   }

@@ -58,6 +58,7 @@ class UserProfileTest {
             email = "john.doe@example.com",
             photo = null,
             kudos = 42,
+            helpReceived = 2,
             section = UserSections.COMPUTER_SCIENCE,
             arrivalDate = Date())
 

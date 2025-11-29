@@ -50,6 +50,7 @@ class AcceptRequestViewModelTests {
           email = "john@example.com",
           photo = null,
           kudos = 0,
+          helpReceived = 0,
           section = UserSections.COMPUTER_SCIENCE,
           arrivalDate = Date())
 
