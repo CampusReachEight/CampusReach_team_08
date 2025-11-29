@@ -19,9 +19,9 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class MainActivityTest : TestCase() {
 
-    private companion object {
-        const val TEST_FAIL = true
-    }
+  private companion object {
+    const val TEST_FAIL = true
+  }
 
   @get:Rule val composeTestRule = createAndroidComposeRule<MainActivity>()
 
@@ -34,8 +34,8 @@ class MainActivityTest : TestCase() {
     }
   }
 
-    @Test
-    fun test_fail() {
-        assertFalse(TEST_FAIL)
-    }
+  @Test
+  fun test_fail() {
+    assertFalse(TEST_FAIL)
+  }
 }
