@@ -1,6 +1,6 @@
 package com.android.sample
 
-import org.junit.Assert.*
+import org.junit.Assert.assertFalse
 import org.junit.Test
 
 /**
@@ -9,13 +9,13 @@ import org.junit.Test
  * See [testing documentation](http://d.android.com/tools/testing).
  */
 class ExampleUnitTest {
-  companion object {
+  private companion object {
     // Set this to true to fail the test
     const val TEST_FAIL = true
   }
 
   @Test
   fun addition_isCorrect() {
-    assertTrue(TEST_FAIL.not())
+    assertFalse(TEST_FAIL)
   }
 }
