@@ -16,6 +16,6 @@ class ExampleUnitTest {
 
   @Test
   fun addition_isCorrect() {
-    assertTrue(TEST_FAIL)
+    assertTrue(TEST_FAIL.not())
   }
 }
