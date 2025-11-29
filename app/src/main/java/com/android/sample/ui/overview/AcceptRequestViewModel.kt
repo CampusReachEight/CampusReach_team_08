@@ -107,6 +107,7 @@ class AcceptRequestViewModel(
                 isLoadingDetails = false)
           }
         } catch (e: Exception) {
+            _uiState.update { it.copy(isLoadingDetails = false) }
           Log.e("AcceptRequestViewModel", "Failed to load request: ${e.message}", e)
           setErrorMsg("Failed to load request: ${e.message}")
         }
