@@ -45,6 +45,7 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
         section = section,
         photo = null,
         kudos = 0,
+        helpReceived = 0,
         arrivalDate = Date())
   }
 
