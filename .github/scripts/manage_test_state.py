@@ -60,6 +60,46 @@ def update_state_from_xml(state, xml_dir):
     print(f">> Parsed {found_count} Android test results.")
     return state
 
+def update_unit_state_from_xml(state, xml_dir):
+    """Parse unit test XML results from app/build/test-results/testDebugUnitTest/"""
+    xml_files = glob(os.path.join(xml_dir, "*.xml"))
+
+    found_count = 0
+    if not xml_files:
+        print(f"No XML files found in {xml_dir}")
+        return state
+
+    for xml_file in xml_files:
+        try:
+            tree = ET.parse(xml_file)
+            root = tree.getroot()
+
+            testcases = root.findall(".//testcase")
+            for tc in testcases:
+                classname = tc.get("classname")
+                name = tc.get("name")
+
+                if not classname or not name:
+                    continue
+
+                found_count += 1
+                # Use dot separator for unit tests (different from Android's #)
+                test_id = f"{classname}.{name}"
+
+                failure = tc.find("failure")
+                error = tc.find("error")
+                status = "failed" if (failure is not None or error is not None) else "passed"
+
+                state["tests"][test_id] = {
+                    "status": status,
+                    "suite": "unit"
+                }
+        except Exception as e:
+            print(f"Warning: Could not parse {xml_file}: {e}")
+
+    print(f">> Parsed {found_count} unit test results.")
+    return state
+
 def get_android_args(state):
     # Filter for Android tests only
     android_tests = {k: v for k, v in state["tests"].items() if v.get("suite") == "android"}
@@ -78,26 +118,53 @@ def get_android_args(state):
     # Return comma-separated list of failed tests
     return ",".join(failed_tests)
 
+def get_unit_args(state):
+    """Generate --tests filter for unit tests"""
+    unit_tests = {k: v for k, v in state["tests"].items() if v.get("suite") == "unit"}
+
+    # If no unit tests recorded, it's a fresh run -> RUN_ALL
+    if not unit_tests:
+        return "RUN_ALL"
+
+    # Find failed tests
+    failed_tests = [tid for tid, data in unit_tests.items() if data.get("status") == "failed"]
+
+    # If history exists but no failures, all passed
+    if not failed_tests:
+        return "NONE"
+
+    # Format for Gradle: --tests "ClassName.methodName" --tests "Class2.method2"
+    return " ".join([f'--tests "{test}"' for test in failed_tests])
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("mode", choices=["get_args", "update_state"])
     parser.add_argument("--state-file", required=True)
     parser.add_argument("--xml-dir")
-    # Removed --suite argument as we simplified the logic
+    parser.add_argument("--suite", choices=["unit", "android"], default="android")
 
     args = parser.parse_args()
 
     state = load_state(args.state_file)
 
     if args.mode == "get_args":
-        print(get_android_args(state))
+        if args.suite == "unit":
+            print(get_unit_args(state))
+        else:
+            print(get_android_args(state))
 
     elif args.mode == "update_state":
         if not args.xml_dir:
             raise ValueError("--xml-dir required for update_state")
-        updated = update_state_from_xml(state, args.xml_dir)
-        save_state(args.state_file, updated)
-        print(f">> State updated. Database now holds {len(updated['tests'])} Android tests.")
+
+        if args.suite == "unit":
+            updated = update_unit_state_from_xml(state, args.xml_dir)
+            save_state(args.state_file, updated)
+            print(f">> State updated. Database now holds {len(updated['tests'])} tests ({args.suite} suite).")
+        else:
+            updated = update_state_from_xml(state, args.xml_dir)
+            save_state(args.state_file, updated)
+            print(f">> State updated. Database now holds {len(updated['tests'])} tests ({args.suite} suite).")
 
 if __name__ == "__main__":
     main()

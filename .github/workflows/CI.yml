@@ -225,11 +225,19 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      # State Logic: Download
+      # State Logic: Download Android Test State
       - name: Download Test State
         uses: actions/download-artifact@v4
         with:
           name: test-state-${{ env.SAFE_BRANCH }}-${{ github.sha }}
+          path: .state
+        continue-on-error: true
+
+      # State Logic: Download Unit Test State
+      - name: Download Unit Test State
+        uses: actions/download-artifact@v4
+        with:
+          name: unit-test-state-${{ env.SAFE_BRANCH }}-${{ github.sha }}
           path: .state
         continue-on-error: true
 
@@ -259,13 +267,22 @@ jobs:
             echo "No Android test results found. Skipping state update."
           fi
 
-      # Upload Updated State
+      # Upload Updated Android Test State
       - name: Upload Test State
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-state-${{ env.SAFE_BRANCH }}-${{ github.sha }}
           path: .state/test-status.json
+          overwrite: true
+
+      # Upload Updated Unit Test State
+      - name: Upload Unit Test State
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-state-${{ env.SAFE_BRANCH }}-${{ github.sha }}
+          path: .state/unit-test-status.json
           overwrite: true
 
       # Upload Coverage (Merged from Unit + Android automatically by the script running both)

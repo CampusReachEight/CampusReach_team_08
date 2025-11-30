@@ -27,7 +27,27 @@ else
     echo ">> ❌ Unit Tests failed with exit code $UNIT_EXIT_CODE"
 fi
 
-# Note: We do NOT update the JSON state for unit tests yet (Checkpoint 2).
+# Update Unit Test State (Checkpoint 2)
+echo ""
+echo ">> Updating Unit Test State..."
+if [ -d "app/build/test-results/testDebugUnitTest" ]; then
+    set +e
+    python3 .github/scripts/manage_test_state.py update_state \
+      --state-file .state/unit-test-status.json \
+      --xml-dir app/build/test-results/testDebugUnitTest \
+      --suite unit
+    UNIT_STATE_UPDATE_EXIT=$?
+    set -e
+
+    if [ $UNIT_STATE_UPDATE_EXIT -eq 0 ]; then
+        echo ">> ✅ Unit test state updated."
+    else
+        echo ">> ⚠️ Unit test state update encountered issues (exit code $UNIT_STATE_UPDATE_EXIT)."
+    fi
+else
+    echo ">> ⚠️ No unit test results found to parse."
+fi
+
 # Continue to Android tests regardless of unit test result.
 
 # --- PHASE 2: ANDROID TESTS ---
