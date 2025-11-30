@@ -13,12 +13,38 @@ UNIT_EXIT_CODE=0
 ANDROID_EXIT_CODE=0
 
 # --- PHASE 1: UNIT TESTS ---
-# Run unit tests, but capture exit code to allow Android tests to run
 echo ""
-echo ">> [1/2] Running ALL Unit Tests..."
+echo ">> [1/2] Calculating UNIT Filter..."
+
+# Check if state file exists
+if [ ! -f .state/unit-test-status.json ]; then
+    echo ">> No previous unit test state found. Defaulting to RUN_ALL."
+    UNIT_FILTER="RUN_ALL"
+else
+    # Calculate filter based on previous unit test results
+    UNIT_FILTER=$(python3 .github/scripts/manage_test_state.py get_args --state-file .state/unit-test-status.json --suite unit)
+fi
+
+echo ">> Unit Filter: $UNIT_FILTER"
+
+# Handle NONE case - for unit tests, we always rerun (fast enough)
+if [ "$UNIT_FILTER" == "NONE" ]; then
+    echo ">> ✅ All Unit Tests previously passed. Running all anyway (fast enough)."
+    UNIT_FILTER="RUN_ALL"
+fi
+
+# Execute based on filter
 set +e  # Temporarily disable exit on error
-./gradlew testDebugUnitTest --build-cache --configuration-cache
-UNIT_EXIT_CODE=$?
+if [ "$UNIT_FILTER" == "RUN_ALL" ]; then
+    echo ">> 🔄 Running ALL Unit Tests..."
+    ./gradlew testDebugUnitTest --build-cache --configuration-cache
+    UNIT_EXIT_CODE=$?
+else
+    echo ">> ⚠️ Rerunning FAILED Unit Tests..."
+    # Use eval to properly expand --tests arguments
+    eval "./gradlew testDebugUnitTest $UNIT_FILTER --build-cache --configuration-cache"
+    UNIT_EXIT_CODE=$?
+fi
 set -e  # Re-enable exit on error
 
 if [ $UNIT_EXIT_CODE -eq 0 ]; then
