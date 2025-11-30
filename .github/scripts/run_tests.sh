@@ -12,6 +12,9 @@ mkdir -p .state
 UNIT_EXIT_CODE=0
 ANDROID_EXIT_CODE=0
 
+# Configuration: Allow skipping unit tests when all passed (default: false for safety)
+SKIP_PASSED_UNIT_TESTS="${SKIP_PASSED_UNIT_TESTS:-false}"
+
 # --- PHASE 1: UNIT TESTS ---
 echo ""
 echo ">> [1/2] Calculating UNIT Filter..."
@@ -27,35 +30,45 @@ fi
 
 echo ">> Unit Filter: $UNIT_FILTER"
 
-# Handle NONE case - for unit tests, we always rerun (fast enough)
+# Handle NONE case - behavior matches Android tests
 if [ "$UNIT_FILTER" == "NONE" ]; then
-    echo ">> ✅ All Unit Tests previously passed. Running all anyway (fast enough)."
-    UNIT_FILTER="RUN_ALL"
+    if [ "$SKIP_PASSED_UNIT_TESTS" == "true" ]; then
+        echo ">> ✅ All Unit Tests previously passed. Skipping."
+        UNIT_EXIT_CODE=0
+        # Skip execution entirely
+    else
+        echo ">> ✅ All Unit Tests previously passed. Running all anyway (default: conservative)."
+        UNIT_FILTER="RUN_ALL"
+    fi
 fi
 
-# Execute based on filter
-set +e  # Temporarily disable exit on error
-if [ "$UNIT_FILTER" == "RUN_ALL" ]; then
-    echo ">> 🔄 Running ALL Unit Tests..."
-    ./gradlew testDebugUnitTest --build-cache --configuration-cache
-    UNIT_EXIT_CODE=$?
-else
-    echo ">> ⚠️ Rerunning FAILED Unit Tests..."
-    # Use eval to properly expand --tests arguments
-    eval "./gradlew testDebugUnitTest $UNIT_FILTER --build-cache --configuration-cache"
-    UNIT_EXIT_CODE=$?
-fi
-set -e  # Re-enable exit on error
+# Execute based on filter (skip execution if NONE and skip enabled)
+if [ "$UNIT_FILTER" != "NONE" ] || [ "$SKIP_PASSED_UNIT_TESTS" == "false" ]; then
+    set +e  # Temporarily disable exit on error
+    if [ "$UNIT_FILTER" == "RUN_ALL" ]; then
+        echo ">> 🔄 Running ALL Unit Tests..."
+        ./gradlew testDebugUnitTest --build-cache --configuration-cache
+        UNIT_EXIT_CODE=$?
+    else
+        echo ">> ⚠️ Rerunning FAILED Unit Tests..."
+        # Use eval to properly expand --tests arguments
+        eval "./gradlew testDebugUnitTest $UNIT_FILTER --build-cache --configuration-cache"
+        UNIT_EXIT_CODE=$?
+    fi
+    set -e  # Re-enable exit on error
 
-if [ $UNIT_EXIT_CODE -eq 0 ]; then
-    echo ">> ✅ Unit Tests passed."
-else
-    echo ">> ❌ Unit Tests failed with exit code $UNIT_EXIT_CODE"
+    if [ $UNIT_EXIT_CODE -eq 0 ]; then
+        echo ">> ✅ Unit Tests passed."
+    else
+        echo ">> ❌ Unit Tests failed with exit code $UNIT_EXIT_CODE"
+    fi
 fi
 
-# Update Unit Test State (Checkpoint 2)
+# Update Unit Test State (Checkpoint 2) - only if tests ran
 echo ""
-echo ">> Updating Unit Test State..."
+if [ "$UNIT_FILTER" != "NONE" ] || [ "$SKIP_PASSED_UNIT_TESTS" == "false" ]; then
+    echo ">> Updating Unit Test State..."
+fi
 if [ -d "app/build/test-results/testDebugUnitTest" ]; then
     set +e
     python3 .github/scripts/manage_test_state.py update_state \

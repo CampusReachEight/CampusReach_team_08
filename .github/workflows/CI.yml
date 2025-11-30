@@ -244,6 +244,8 @@ jobs:
       # --- EXECUTE TESTS (Merged Script) ---
       - name: Run Tests (Unit & Int)
         timeout-minutes: 45
+        env:
+          SKIP_PASSED_UNIT_TESTS: 'false'  # Set to 'true' to skip unit tests when all passed (matches Android behavior)
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 36
