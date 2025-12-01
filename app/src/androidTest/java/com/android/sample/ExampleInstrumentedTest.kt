@@ -20,7 +20,7 @@ import org.junit.runner.RunWith
 class MainActivityTest : TestCase() {
 
   private companion object {
-    const val TEST_FAIL = true
+    const val TEST_FAIL = false
   }
 
   @get:Rule val composeTestRule = createAndroidComposeRule<MainActivity>()
