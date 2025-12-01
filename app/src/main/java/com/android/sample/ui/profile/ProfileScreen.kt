@@ -66,9 +66,3 @@ fun ProfileScreen(
         }
       }
 }
-
-@Preview
-@Composable
-fun ProfileScreenPreview() {
-  ProfileScreen()
-}
