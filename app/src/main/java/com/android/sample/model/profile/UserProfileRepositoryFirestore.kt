@@ -284,8 +284,8 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
 
       // Run transaction to ensure both docs exist and updates are atomic
       db.runTransaction { transaction ->
-            val publicSnapshot = transaction.get(publicDocRef)
-            val privateSnapshot = transaction.get(privateDocRef)
+            val publicSnapshot = transaction[publicDocRef]
+            val privateSnapshot = transaction[privateDocRef]
 
             if (!publicSnapshot.exists() || !privateSnapshot.exists()) {
               throw HelpReceivedException.UserNotFound(userId)
