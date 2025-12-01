@@ -110,14 +110,14 @@ if [ "$ANDROID_FILTER" == "NONE" ]; then
 elif [ "$ANDROID_FILTER" == "RUN_ALL" ]; then
   echo ">> 🔄 Running ALL Android Tests..."
   set +e  # Temporarily disable exit on error
-  ./gradlew connectedCheck --parallel --build-cache --configuration-cache
+  ./gradlew createDebugCoverageReport --parallel --build-cache --configuration-cache
   ANDROID_EXIT_CODE=$?
   set -e  # Re-enable exit on error
 else
   echo ">> ⚠️ Rerunning FAILED Android Tests..."
   # Pass comma-separated list directly
   set +e  # Temporarily disable exit on error
-  ./gradlew connectedCheck -Pandroid.testInstrumentationRunnerArguments.class="$ANDROID_FILTER" --parallel --build-cache --configuration-cache
+  ./gradlew createDebugCoverageReport -Pandroid.testInstrumentationRunnerArguments.class="$ANDROID_FILTER" --parallel --build-cache --configuration-cache
   ANDROID_EXIT_CODE=$?
   set -e  # Re-enable exit on error
 fi
@@ -127,6 +127,15 @@ if [ $ANDROID_EXIT_CODE -eq 0 ]; then
 else
     echo ">> ❌ Android Tests failed with exit code $ANDROID_EXIT_CODE"
 fi
+
+# Debug: Show where coverage files were generated
+echo ""
+echo ">> 📊 Coverage Files Generated:"
+echo ">> Unit Test Coverage (.exec):"
+find app/build -name "*.exec" -type f 2>/dev/null || echo "   No .exec files found"
+echo ">> Android Test Coverage (.ec):"
+find app/build -name "*.ec" -type f 2>/dev/null || echo "   No .ec files found"
+echo ""
 
 # Update State for Android Tests
 # Always attempt to update state, even if tests failed
