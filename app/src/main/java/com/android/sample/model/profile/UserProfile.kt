@@ -3,9 +3,12 @@ package com.android.sample.model.profile
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import com.android.sample.model.serializers.DateSerializer
+import com.android.sample.model.serializers.UriSerializer
 import com.android.sample.ui.profile.UserSections
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.Blob
+import kotlinx.serialization.Serializable
 import java.io.ByteArrayOutputStream
 import java.util.Date
 
@@ -37,15 +40,18 @@ const val MAX_PHOTO_SIZE_BYTES = 100 * 1024 // 100KB
  * - userData: <TBD> (an additional user-specific data sub-class containing preferences, settings,
  *   favorites etc.)
  */
+@Serializable
 data class UserProfile(
     val id: String,
     val name: String,
     val lastName: String,
     val email:
         String?, // User (or default settings) can choose to not share email with others -> nullable
+    @Serializable(with = UriSerializer::class)
     val photo: Uri?, // Nullable Bitmap for user photo in case user hasn't set one
     val kudos: Int,
     val section: UserSections,
+    @Serializable(with = DateSerializer::class)
     val arrivalDate: Date,
 ) {
 

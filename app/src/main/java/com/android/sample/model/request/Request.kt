@@ -1,6 +1,6 @@
 package com.android.sample.model.request
 
-import com.android.sample.model.date.DateSerializer
+import com.android.sample.model.serializers.DateSerializer
 import com.android.sample.model.map.Location
 import com.google.firebase.Timestamp
 import java.util.Date
