@@ -6,6 +6,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.sample.ui.authentication.SignInScreenTestTags
 import com.kaspersky.kaspresso.testcases.api.testcase.TestCase
+import junit.framework.TestCase.assertFalse
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -18,6 +19,10 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class MainActivityTest : TestCase() {
 
+  private companion object {
+    const val TEST_FAIL = false
+  }
+
   @get:Rule val composeTestRule = createAndroidComposeRule<MainActivity>()
 
   @Test
@@ -27,5 +32,10 @@ class MainActivityTest : TestCase() {
       composeTestRule.onNodeWithTag(SignInScreenTestTags.LOGIN_TITLE).assertIsDisplayed()
       composeTestRule.onNodeWithTag(SignInScreenTestTags.APP_LOGO).assertIsDisplayed()
     }
+  }
+
+  @Test
+  fun test_fail() {
+    assertFalse(TEST_FAIL)
   }
 }
