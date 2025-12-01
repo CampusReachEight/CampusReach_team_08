@@ -62,6 +62,16 @@ if [ "$UNIT_FILTER" != "NONE" ] || [ "$SKIP_PASSED_UNIT_TESTS" == "false" ]; the
     else
         echo ">> ❌ Unit Tests failed with exit code $UNIT_EXIT_CODE"
     fi
+
+    # Verify coverage files were generated
+    echo ""
+    echo ">> Verifying Unit Test Coverage Files..."
+    if [ -d "app/build/jacoco" ]; then
+        find app/build/jacoco -name "*.exec" -type f -exec ls -lh {} \;
+    fi
+    if [ -d "app/build/outputs/unit_test_code_coverage" ]; then
+        find app/build/outputs/unit_test_code_coverage -name "*.exec" -type f -exec ls -lh {} \;
+    fi
 fi
 
 # Update Unit Test State (Checkpoint 2) - only if tests ran
@@ -126,6 +136,18 @@ if [ $ANDROID_EXIT_CODE -eq 0 ]; then
     echo ">> ✅ Android Tests passed."
 else
     echo ">> ❌ Android Tests failed with exit code $ANDROID_EXIT_CODE"
+fi
+
+# Verify coverage files were generated
+if [ "$ANDROID_FILTER" != "NONE" ]; then
+    echo ""
+    echo ">> Verifying Android Test Coverage Files..."
+    if [ -d "app/build/outputs/code_coverage" ]; then
+        echo "Coverage files found:"
+        find app/build/outputs/code_coverage -name "*.ec" -type f -exec ls -lh {} \;
+    else
+        echo "⚠️  WARNING: No coverage directory found at app/build/outputs/code_coverage"
+    fi
 fi
 
 # Update State for Android Tests

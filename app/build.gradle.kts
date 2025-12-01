@@ -231,8 +231,14 @@ tasks.withType<Test> {
     }
 }
 tasks.register("jacocoTestReport", JacocoReport::class) {
+    // Depend on unit tests, but don't fail if Android test task doesn't exist
     dependsOn("testDebugUnitTest")
-    mustRunAfter("testDebugUnitTest", "connectedDebugAndroidTest")
+
+    // Note: We don't add createDebugAndroidTestCoverageReport as a dependency because:
+    // 1. It's not always run in CI (uses connectedCheck instead)
+    // 2. Coverage files are collected and organized separately in CI workflow
+    // This task focuses on merging already-generated coverage files
+    mustRunAfter("testDebugUnitTest", "connectedDebugAndroidTest", "connectedCheck")
 
     reports {
         xml.required = true
@@ -260,18 +266,69 @@ tasks.register("jacocoTestReport", JacocoReport::class) {
     sourceDirectories.setFrom(files(mainSrc))
     classDirectories.setFrom(files(debugTree))
 
+    // Collect execution data from multiple possible locations
+    // This supports both local runs and CI where files are organized differently
     executionData.setFrom(fileTree(buildDir) {
+        // Unit test coverage files
         include("outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec")
-        include("outputs/code_coverage/debugAndroidTest/connected/**/coverage.ec")
         include("jacoco/testDebugUnitTest.exec")
+        include("jacoco/*.exec")
+
+        // Android test coverage files (multiple possible locations)
+        include("outputs/code_coverage/debugAndroidTest/connected/**/coverage.ec")
+        include("outputs/code_coverage/debugAndroidTest/connected/**/*.ec")
+        include("outputs/code_coverage/**/*.ec")
+
+        // Coverage artifacts organized by CI
+        include("coverage-artifacts/**/*.exec")
+        include("coverage-artifacts/**/*.ec")
     })
 
     doFirst {
-        println("JacocoTestReport - Looking for execution data in: $buildDir")
-        executionData.files.forEach { file ->
-            println("  Found: ${file.absolutePath} (${if (file.exists()) "exists" else "missing"})")
+        println("=================================================")
+        println("JacocoTestReport - Coverage File Discovery")
+        println("=================================================")
+        println("Build directory: $buildDir")
+        println()
+
+        // Find and categorize coverage files
+        val execFiles = fileTree(buildDir).matching {
+            include("**/*.exec")
+        }.files
+
+        val ecFiles = fileTree(buildDir).matching {
+            include("**/*.ec")
+        }.files
+
+        println("Unit Test Coverage Files (.exec): ${execFiles.size}")
+        execFiles.forEach { file ->
+            println("  ✓ ${file.absolutePath} (${file.length()} bytes)")
         }
-        println("Class directories: ${classDirectories.files}")
+
+        println()
+        println("Android Test Coverage Files (.ec): ${ecFiles.size}")
+        ecFiles.forEach { file ->
+            println("  ✓ ${file.absolutePath} (${file.length()} bytes)")
+        }
+
+        println()
+        println("Execution Data Files Matched by Task:")
+        val matchedFiles = executionData.files.filter { it.exists() }
+        if (matchedFiles.isEmpty()) {
+            println("  ⚠️  WARNING: No coverage files found!")
+            println("  This will result in 0% coverage report.")
+        } else {
+            matchedFiles.forEach { file ->
+                println("  ✓ ${file.absolutePath}")
+            }
+        }
+
+        println()
+        println("Class directories: ${classDirectories.files.size} directories")
+        classDirectories.files.take(3).forEach { dir ->
+            println("  - $dir")
+        }
+        println("=================================================")
     }
 }
 configurations.forEach { configuration ->

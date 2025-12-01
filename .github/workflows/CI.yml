@@ -294,8 +294,9 @@ jobs:
         with:
           name: jacoco-run-${{ github.run_attempt }}
           path: |
-            app/build/outputs/code_coverage/**/connected/*.ec
-            app/build/**/*.exec
+            app/build/outputs/code_coverage/**/*.ec
+            app/build/jacoco/**/*.exec
+            app/build/outputs/unit_test_code_coverage/**/*.exec
 
       # Upload Results
       - name: Upload Run Results
@@ -375,20 +376,60 @@ jobs:
 
       - name: Organize Coverage Files
         run: |
+          echo "=========================================="
+          echo "Coverage File Organization"
+          echo "=========================================="
+          
           # Create proper directory structure for coverage files
           mkdir -p app/build/outputs/unit_test_code_coverage/debugUnitTest
           mkdir -p app/build/outputs/code_coverage/debugAndroidTest/connected/emulator
           
-          # Move unit test coverage files
-          find app/build/coverage-artifacts -name "*.exec" -exec cp {} app/build/outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec \; || echo "No .exec files found"
+          # Show what we downloaded
+          echo ""
+          echo "Downloaded coverage artifacts:"
+          find app/build/coverage-artifacts -type f 2>/dev/null || echo "No coverage-artifacts directory found"
           
-          # Move Android test coverage files
-          find app/build/coverage-artifacts -name "*.ec" -exec cp {} app/build/outputs/code_coverage/debugAndroidTest/connected/emulator/coverage.ec \; || echo "No .ec files found"
+          # Count files
+          EXEC_COUNT=$(find app/build/coverage-artifacts -name "*.exec" 2>/dev/null | wc -l)
+          EC_COUNT=$(find app/build/coverage-artifacts -name "*.ec" 2>/dev/null | wc -l)
           
-          # List coverage files found
-          echo "Coverage files organized:"
-          ls -lah app/build/outputs/unit_test_code_coverage/debugUnitTest/ || echo "No unit test coverage"
-          ls -lah app/build/outputs/code_coverage/debugAndroidTest/connected/emulator/ || echo "No Android test coverage"
+          echo ""
+          echo "Found $EXEC_COUNT .exec files (unit tests)"
+          echo "Found $EC_COUNT .ec files (Android tests)"
+          
+          # Copy unit test coverage files (use the last one if multiple exist)
+          if [ $EXEC_COUNT -gt 0 ]; then
+            find app/build/coverage-artifacts -name "*.exec" -print0 | while IFS= read -r -d '' file; do
+              echo "  Copying: $file"
+              cp "$file" app/build/outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec
+            done
+          else
+            echo "⚠️  WARNING: No .exec files found for unit tests!"
+          fi
+          
+          # Copy Android test coverage files (merge if multiple exist)
+          if [ $EC_COUNT -gt 0 ]; then
+            find app/build/coverage-artifacts -name "*.ec" -print0 | while IFS= read -r -d '' file; do
+              echo "  Copying: $file"
+              cp "$file" app/build/outputs/code_coverage/debugAndroidTest/connected/emulator/coverage.ec
+            done
+          else
+            echo "⚠️  WARNING: No .ec files found for Android tests!"
+          fi
+          
+          # List final organized coverage files
+          echo ""
+          echo "=========================================="
+          echo "Final Coverage Files:"
+          echo "=========================================="
+          echo ""
+          echo "Unit Test Coverage:"
+          ls -lah app/build/outputs/unit_test_code_coverage/debugUnitTest/ 2>/dev/null || echo "  ❌ No unit test coverage files"
+          
+          echo ""
+          echo "Android Test Coverage:"
+          ls -lah app/build/outputs/code_coverage/debugAndroidTest/connected/emulator/ 2>/dev/null || echo "  ❌ No Android test coverage files"
+          echo "=========================================="
 
       - name: Generate Merged Coverage Report
         run: ./gradlew jacocoTestReport --info
