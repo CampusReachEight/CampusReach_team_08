@@ -88,7 +88,7 @@ fun ProfileStats(state: ProfileState, palette: AppPalette = appPalette()) {
         StatGroupCard(
             labelTop = "Kudos",
             topValue = state.kudosReceived,
-            labelBottom = "Help Received",
+            labelBottom = "Help\u00A0Received",
             bottomValue = state.helpReceived,
             modifier = Modifier.weight(1f),
             topTag = ProfileTestTags.PROFILE_STAT_TOP_KUDOS,
