@@ -10,7 +10,6 @@ import com.android.sample.utils.FirebaseEmulator
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import java.util.Date
-import kotlin.text.get
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
@@ -32,6 +31,10 @@ import org.junit.runner.RunWith
 class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
 
   private lateinit var repository: UserProfileRepositoryFirestore
+
+  private companion object {
+    private const val FIRESTORE_WRITE_DELAY_MS: Long = 300L
+  }
 
   fun generateProfile(
       id: String,
@@ -136,7 +139,7 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
     }
 
     batch.commit().await()
-    delay(200)
+    delay(FIRESTORE_WRITE_DELAY_MS)
   }
 
   private suspend fun getPublicProfilesCount(): Int {
@@ -157,7 +160,7 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
     val profile = testProfile1.copy(id = currentUserId)
     repository.addUserProfile(profile)
     advanceUntilIdle()
-    delay(200)
+    delay(FIRESTORE_WRITE_DELAY_MS)
 
     assertEquals(1, getPublicProfilesCount())
     assertEquals(1, getPrivateProfilesCount())
@@ -179,7 +182,7 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
         repository.addUserProfile(profile)
 
         advanceUntilIdle()
-        delay(300)
+        delay(FIRESTORE_WRITE_DELAY_MS)
 
         val privateProfile = repository.getUserProfile(currentUserId)
 
@@ -442,7 +445,7 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
     addProfileFor(DEFAULT_USER_EMAIL, name = "Alice", lastName = "Smith")
     addProfileFor(DEFAULT_USER_EMAIL, name = "Alice", lastName = "Smith")
     advanceUntilIdle()
-    delay(200)
+    delay(FIRESTORE_WRITE_DELAY_MS)
     val results = repository.searchUserProfiles("smi")
     assertTrue(results.any { it.name == "Alice" && it.lastName == "Smith" })
     assertFalse(results.any { it.name == "John" && it.lastName == "Doe" })
@@ -781,13 +784,13 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
     repository.addUserProfile(profile)
 
     advanceUntilIdle()
-    delay(250)
+    delay(FIRESTORE_WRITE_DELAY_MS)
 
     val amount = 1
     repository.receiveHelp(profile.id, amount)
 
     advanceUntilIdle()
-    delay(300)
+    delay(FIRESTORE_WRITE_DELAY_MS)
 
     val publicDoc = db.collection(PUBLIC_PROFILES_PATH).document(profile.id).get().await()
     assertTrue(publicDoc.exists())
