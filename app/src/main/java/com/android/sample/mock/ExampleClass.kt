@@ -7,11 +7,11 @@ data class ExampleClass(
     private val stringExample: String
 ) {
 
-  fun exampleFun(): Any {
+  fun functionExample(): Any {
     return if (boolExample) {
-      intExample
-    } else {
       stringExample
+    } else {
+      intExample
     }
   }
 }

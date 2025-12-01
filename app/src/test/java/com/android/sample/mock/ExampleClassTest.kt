@@ -7,7 +7,7 @@ class ExampleClassTest {
 
   @Test
   fun simpleExampleTest() {
-    val exampleClass = ExampleClass(true, 1, "1")
-    assertEquals("Simple test", exampleClass.exampleFun(), 1)
+    val exampleClass = ExampleClass(false, 1, "1")
+    assertEquals("Simple test", exampleClass.functionExample(), 1)
   }
 }

@@ -15,8 +15,8 @@ class ExampleClassInstrumentedTest {
   @Test
   fun testExampleFunWithTrueBranch() {
     // Test the true branch (returns int)
-    val exampleClass = ExampleClass(boolExample = true, intExample = 42, stringExample = "test")
-    val result = exampleClass.exampleFun()
+    val exampleClass = ExampleClass(boolExample = false, intExample = 42, stringExample = "test")
+    val result = exampleClass.functionExample()
     assertEquals(42, result)
   }
 }
