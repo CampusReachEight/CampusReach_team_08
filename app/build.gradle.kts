@@ -231,11 +231,14 @@ tasks.withType<Test> {
     }
 }
 tasks.register("jacocoTestReport", JacocoReport::class) {
+    dependsOn("testDebugUnitTest")
     mustRunAfter("testDebugUnitTest", "connectedDebugAndroidTest")
+
     reports {
         xml.required = true
         html.required = true
     }
+
     val fileFilter = listOf(
         "**/R.class",
         "**/R$*.class",
@@ -245,16 +248,31 @@ tasks.register("jacocoTestReport", JacocoReport::class) {
         "android/**/*.*",
         "**/sigchecks/**",
     )
-    val debugTree = fileTree("${project.buildDir}/tmp/kotlin-classes/debug") {
+
+    val buildDir = layout.buildDirectory.get().asFile
+
+    val debugTree = fileTree("$buildDir/tmp/kotlin-classes/debug") {
         exclude(fileFilter)
     }
+
     val mainSrc = "${project.projectDir}/src/main/java"
+
     sourceDirectories.setFrom(files(mainSrc))
     classDirectories.setFrom(files(debugTree))
-    executionData.setFrom(fileTree(project.buildDir) {
+
+    executionData.setFrom(fileTree(buildDir) {
         include("outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec")
-        include("outputs/code_coverage/debugAndroidTest/connected/*/coverage.ec")
+        include("outputs/code_coverage/debugAndroidTest/connected/**/coverage.ec")
+        include("jacoco/testDebugUnitTest.exec")
     })
+
+    doFirst {
+        println("JacocoTestReport - Looking for execution data in: $buildDir")
+        executionData.files.forEach { file ->
+            println("  Found: ${file.absolutePath} (${if (file.exists()) "exists" else "missing"})")
+        }
+        println("Class directories: ${classDirectories.files}")
+    }
 }
 configurations.forEach { configuration ->
     configuration.exclude("com.google.protobuf", "protobuf-lite")
