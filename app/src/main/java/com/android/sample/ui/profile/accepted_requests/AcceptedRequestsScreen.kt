@@ -1,6 +1,5 @@
 package com.android.sample.ui.request.accepted
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -14,7 +13,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -46,7 +44,9 @@ private const val ERROR_DIALOG_TITLE = "Error"
 private const val ERROR_DIALOG_BUTTON = "OK"
 private const val DIALOG_CLOSE_BUTTON = "Close"
 
+private val SHADOW_SIZE = 4.dp
 private val BADGE_SIZE = 12.dp
+private val BADGE_ICON_SIZE = 16.dp
 private val DIALOG_PADDING = 24.dp
 private val DIALOG_SPACING = 16.dp
 private val DIALOG_SMALL_SPACING = 8.dp
@@ -65,6 +65,7 @@ private const val LABEL_LOCATION = "Location:"
 private const val LABEL_START_TIME = "Start Time:"
 private const val LABEL_EXPIRATION = "Expiration:"
 private const val LABEL_HELPERS = "People Accepted:"
+
 private const val LABEL_CREATOR = "Creator:"
 
 private const val DATE_FORMAT_PATTERN = "MMM dd, yyyy HH:mm"
@@ -266,24 +267,26 @@ private const val GREY = 0xFF9E9E9E
 private fun KudosStatusBadge(kudosStatus: KudosStatus, modifier: Modifier = Modifier) {
   val (color, icon) =
       when (kudosStatus) {
-        KudosStatus.RECEIVED -> Color(LIGHT_GREEN) to Icons.Default.CheckCircle // Green
-        KudosStatus.NOT_RECEIVED -> Color(BRIGHT_RED) to Icons.Default.Close // Red
-        KudosStatus.PENDING -> Color(GREY) to Icons.Default.Schedule // Gray
+        KudosStatus.RECEIVED -> Color(LIGHT_GREEN) to Icons.Default.CheckCircle
+        KudosStatus.NOT_RECEIVED -> Color(BRIGHT_RED) to Icons.Default.Close
+        KudosStatus.PENDING -> Color(GREY) to Icons.Default.Schedule
       }
 
-  Box(
-      modifier =
-          modifier
-              .size(BADGE_SIZE)
-              .clip(CircleShape)
-              .background(color)
-              .testTag(AcceptedRequestsTestTags.KUDOS_BADGE),
-      contentAlignment = Alignment.Center) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = Color.White,
-            modifier = Modifier.size(DIALOG_SMALL_SPACING))
+  Surface(
+      modifier = modifier.size(BADGE_SIZE),
+      shape = CircleShape,
+      color = color,
+      shadowElevation = SHADOW_SIZE,
+      tonalElevation = SHADOW_SIZE) {
+        Box(
+            modifier = Modifier.fillMaxSize().testTag(AcceptedRequestsTestTags.KUDOS_BADGE),
+            contentAlignment = Alignment.Center) {
+              Icon(
+                  imageVector = icon,
+                  contentDescription = null,
+                  tint = Color.White,
+                  modifier = Modifier.size(BADGE_ICON_SIZE))
+            }
       }
 }
 

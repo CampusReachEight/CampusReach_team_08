@@ -61,32 +61,37 @@ fun ProfileActions(
             style = MaterialTheme.typography.titleMedium,
             color = palette.text,
             modifier = Modifier.padding(bottom = ProfileDimens.Vertical))
-        // Logout action item
-        ActionItem(
-            icon = Icons.Default.Logout,
-            title = TITLE_LOG_OUT,
-            subtitle = FURTHER_SECURE_YOUR_ACCOUNT_FOR_SAFETY,
-            tag = ProfileTestTags.PROFILE_ACTION_LOG_OUT,
-            onClick = onLogoutClick)
-        // About app button
-        ActionItem(
-            icon = Icons.Default.Info,
-            title = TITLE_ABOUT,
-            subtitle = FIND_OUT_MORE,
-            tag = ProfileTestTags.PROFILE_ACTION_ABOUT_APP)
-        // My request button
+
+        // My request button - FIRST
         ActionItem(
             icon = Icons.Default.Info,
             title = TITLE_MY_REQUESTS,
             subtitle = SEE_AND_EDIT,
             tag = ProfileTestTags.PROFILE_ACTION_MY_REQUEST,
             onClick = onMyRequestClick)
+
+        // Accepted requests button - SECOND
         ActionItem(
             icon = Icons.Default.Info,
             title = "Accepted Requests",
             subtitle = "View requests you've accepted as a helper",
             tag = ProfileTestTags.PROFILE_ACTION_ACCEPTED_REQUESTS,
             onClick = onAcceptedRequestsClick)
+
+        // About app button - THIRD
+        ActionItem(
+            icon = Icons.Default.Info,
+            title = TITLE_ABOUT,
+            subtitle = FIND_OUT_MORE,
+            tag = ProfileTestTags.PROFILE_ACTION_ABOUT_APP)
+
+        // Logout action item - LAST
+        ActionItem(
+            icon = Icons.Default.Logout,
+            title = TITLE_LOG_OUT,
+            subtitle = FURTHER_SECURE_YOUR_ACCOUNT_FOR_SAFETY,
+            tag = ProfileTestTags.PROFILE_ACTION_LOG_OUT,
+            onClick = onLogoutClick)
       }
 }
 

@@ -28,6 +28,10 @@ fun ProfileScreen(
     navigationActions: NavigationActions? = null
 ) {
   val state by viewModel.state.collectAsState()
+  var shouldShowContent by remember { mutableStateOf(false) }
+
+  // Defer content rendering to next frame to avoid initial jank
+  LaunchedEffect(Unit) { shouldShowContent = true }
 
   Scaffold(
       modifier = Modifier.testTag(NavigationTestTags.PROFILE_SCREEN),
@@ -35,7 +39,7 @@ fun ProfileScreen(
       topBar = { ProfileTopBar(onBackClick) }) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
           when {
-            state.isLoading -> ProfileLoadingBuffer(Modifier.fillMaxSize())
+            state.isLoading || !shouldShowContent -> ProfileLoadingBuffer(Modifier.fillMaxSize())
             else ->
                 ProfileContent(
                     state = state,
@@ -60,7 +64,6 @@ fun ProfileScreen(
               initialName = state.userName,
               initialSection = state.userSection,
               onSave = { newName, newSection ->
-                // Persist to Firestore and update UI when done
                 viewModel.saveProfileChanges(newName, newSection)
                 viewModel.setEditMode(false)
               },
