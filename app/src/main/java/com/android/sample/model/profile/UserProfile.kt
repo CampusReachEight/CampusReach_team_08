@@ -45,6 +45,7 @@ data class UserProfile(
         String?, // User (or default settings) can choose to not share email with others -> nullable
     val photo: Uri?, // Nullable Bitmap for user photo in case user hasn't set one
     val kudos: Int,
+    val helpReceived: Int,
     val section: UserSections,
     val arrivalDate: Date,
 ) {
@@ -85,6 +86,7 @@ data class UserProfile(
           email = data["email"] as String?,
           photo = data["photo"]?.let { uriString -> Uri.parse(uriString as String) },
           kudos = (data["kudos"] as Number).toInt(),
+          helpReceived = (data["helpReceived"] as? Number)?.toInt() ?: 0,
           section = section,
           arrivalDate = arrival)
     }
@@ -101,7 +103,7 @@ data class UserProfile(
         } else {
           bitmap
         }
-      } catch (e: Exception) {
+      } catch (_: Exception) {
         // Decoding failed / Possibly corrupted data
         null
       }

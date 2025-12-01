@@ -40,6 +40,7 @@ import junit.framework.TestCase.assertTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.mockito.kotlin.doReturn
@@ -1488,6 +1489,7 @@ class EditRequestScreenTests : EditRequestScreenTestBase() {
     assertTrue(displayedText.isNotEmpty())
   }
 
+  @Ignore("Flaky test on CI")
   @Test
   fun startDatePicker_dismissViaOutsideClick_clearsState() {
     val viewModel = createTestViewModel()

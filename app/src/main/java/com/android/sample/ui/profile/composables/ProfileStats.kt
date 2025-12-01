@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -40,39 +41,50 @@ fun StatGroupCard(
       elevation = CardDefaults.cardElevation(defaultElevation = ProfileDimens.CardElevation)) {
         Column(
             modifier =
-                Modifier.fillMaxWidth()
+                Modifier.fillMaxSize()
                     .padding(
                         vertical = ProfileDimens.StatCardVerticalPadding,
                         horizontal = ProfileDimens.StatCardHorizontalPadding),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center) {
-              Text(
-                  text = labelTop,
-                  style = MaterialTheme.typography.bodySmall,
-                  color = palette.text,
-                  textAlign = TextAlign.Center)
-              Spacer(modifier = Modifier.height(ProfileDimens.StatCardSpacer))
-              Text(
-                  text = topValue.toString(),
-                  style = MaterialTheme.typography.titleLarge,
-                  fontWeight = FontWeight.Bold,
-                  color = palette.accent,
-                  textAlign = TextAlign.Center,
-                  modifier = Modifier.testTag(topTag))
-              Spacer(modifier = Modifier.height(ProfileDimens.StatCardSpacer))
-              Text(
-                  text = labelBottom,
-                  style = MaterialTheme.typography.bodySmall,
-                  color = palette.text,
-                  textAlign = TextAlign.Center)
-              Spacer(modifier = Modifier.height(ProfileDimens.StatCardSpacer))
-              Text(
-                  text = bottomValue.toString(),
-                  style = MaterialTheme.typography.titleLarge,
-                  fontWeight = FontWeight.Bold,
-                  color = palette.accent,
-                  textAlign = TextAlign.Center,
-                  modifier = Modifier.testTag(bottomTag))
+            horizontalAlignment = Alignment.CenterHorizontally) {
+              // Top half (weighted) to ensure vertical symmetry across cards
+              Column(
+                  modifier = Modifier.weight(1f),
+                  horizontalAlignment = Alignment.CenterHorizontally,
+                  verticalArrangement = Arrangement.Center) {
+                    Text(
+                        text = labelTop,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = palette.text,
+                        textAlign = TextAlign.Center)
+                    Spacer(modifier = Modifier.height(ProfileDimens.StatCardSpacer))
+                    Text(
+                        text = topValue.toString(),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = palette.accent,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.testTag(topTag))
+                  }
+
+              // Bottom half (weighted) to ensure vertical symmetry across cards
+              Column(
+                  modifier = Modifier.weight(1f),
+                  horizontalAlignment = Alignment.CenterHorizontally,
+                  verticalArrangement = Arrangement.Center) {
+                    Text(
+                        text = labelBottom,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = palette.text,
+                        textAlign = TextAlign.Center)
+                    Spacer(modifier = Modifier.height(ProfileDimens.StatCardSpacer))
+                    Text(
+                        text = bottomValue.toString(),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = palette.accent,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.testTag(bottomTag))
+                  }
             }
       }
 }
@@ -88,12 +100,13 @@ fun ProfileStats(state: ProfileState, palette: AppPalette = appPalette()) {
         StatGroupCard(
             labelTop = "Kudos",
             topValue = state.kudosReceived,
-            labelBottom = "Help Received",
+            labelBottom = "Help\u00A0Received",
             bottomValue = state.helpReceived,
             modifier = Modifier.weight(1f),
             topTag = ProfileTestTags.PROFILE_STAT_TOP_KUDOS,
             bottomTag = ProfileTestTags.PROFILE_STAT_BOTTOM_HELP_RECEIVED,
             palette = palette)
+
         StatGroupCard(
             labelTop = "Followers",
             topValue = state.followers,

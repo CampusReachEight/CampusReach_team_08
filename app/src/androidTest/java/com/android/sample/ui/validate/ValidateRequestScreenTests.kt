@@ -311,6 +311,67 @@ class ValidateRequestScreenTest {
     assertEquals(TestAssertions.SINGLE_INVOCATION, callbackTracker.cancelConfirmationCount)
   }
 
+  @Test
+  fun confirmingState_confirmButtonClick_awardsKudosAndRecordsHelp() {
+    // Given - create helpers with helpReceived = 0 so increment can be asserted
+    val helper1 = TestDataFactory.createTestHelper(index = 1).copy(helpReceived = 0)
+    val helper2 = TestDataFactory.createTestHelper(index = 2).copy(helpReceived = 0)
+    val selectedHelpers = listOf(helper1, helper2)
+    fakeUserProfileRepository = FakeUserProfileRepository(selectedHelpers)
+    setUpScreen(state = TestDataFactory.createConfirmingState(selectedHelpers = selectedHelpers))
+
+    // When - click confirm
+    composeTestRule.onNodeWithTag(ValidateRequestConstants.TAG_CONFIRM_BUTTON).performClick()
+    composeTestRule.waitForIdle()
+
+    // Then - confirm callback called and repositories updated
+    assertEquals(TestAssertions.SINGLE_INVOCATION, callbackTracker.confirmAndCloseCount)
+    kotlinx.coroutines.runBlocking {
+      val updated1 = fakeUserProfileRepository.getUserProfile(helper1.id)
+      val updated2 = fakeUserProfileRepository.getUserProfile(helper2.id)
+      assertEquals(helper1.kudos + KudosConstants.KUDOS_PER_HELPER, updated1.kudos)
+      assertEquals(helper2.kudos + KudosConstants.KUDOS_PER_HELPER, updated2.kudos)
+      assertEquals(helper1.helpReceived + 1, updated1.helpReceived)
+      assertEquals(helper2.helpReceived + 1, updated2.helpReceived)
+    }
+  }
+
+  @Test
+  fun confirmingState_confirmButtonClick_awardBatchFails_callsRetry() {
+    // Given: simulate award batch failure for user-1
+    val helper = TestDataFactory.createTestHelper(index = 1).copy(helpReceived = 0)
+    fakeUserProfileRepository =
+        FakeUserProfileRepository(listOf(helper), failAwardFor = setOf(helper.id))
+    setUpScreen(state = TestDataFactory.createConfirmingState(selectedHelpers = listOf(helper)))
+
+    // When
+    composeTestRule.onNodeWithTag(ValidateRequestConstants.TAG_CONFIRM_BUTTON).performClick()
+    composeTestRule.waitForIdle()
+
+    // Then - retry callback should be invoked and cannot confirm/close
+    assertEquals(TestAssertions.SINGLE_INVOCATION, callbackTracker.retryCount)
+    assertEquals(TestAssertions.NO_INVOCATIONS, callbackTracker.confirmAndCloseCount)
+  }
+
+  @Test
+  fun confirmingState_confirmButtonClick_receiveHelpFails_callsRetry() {
+    // Given: simulate receiveHelp failure for user-2
+    val helper1 = TestDataFactory.createTestHelper(index = 1).copy(helpReceived = 0)
+    val helper2 = TestDataFactory.createTestHelper(index = 2).copy(helpReceived = 0)
+    fakeUserProfileRepository =
+        FakeUserProfileRepository(listOf(helper1, helper2), failReceiveFor = setOf(helper2.id))
+    setUpScreen(
+        state = TestDataFactory.createConfirmingState(selectedHelpers = listOf(helper1, helper2)))
+
+    // When
+    composeTestRule.onNodeWithTag(ValidateRequestConstants.TAG_CONFIRM_BUTTON).performClick()
+    composeTestRule.waitForIdle()
+
+    // Then - receiveHelp failure should surface as retry
+    assertEquals(TestAssertions.SINGLE_INVOCATION, callbackTracker.retryCount)
+    assertEquals(TestAssertions.NO_INVOCATIONS, callbackTracker.confirmAndCloseCount)
+  }
+
   // ==================== PROCESSING STATE TESTS ====================
 
   @Test
@@ -661,8 +722,11 @@ private object TestRequestDefaults {
  * Fake UserProfileRepository for testing. Returns predefined helper profiles without Firebase
  * dependencies.
  */
-private class FakeUserProfileRepository(private var helpers: List<UserProfile>) :
-    UserProfileRepository {
+private class FakeUserProfileRepository(
+    private var helpers: List<UserProfile>,
+    private val failAwardFor: Set<String> = emptySet(),
+    private val failReceiveFor: Set<String> = emptySet()
+) : UserProfileRepository {
 
   private val profileCache = mutableMapOf<String, UserProfile>()
   private var uidCounter = 0
@@ -728,7 +792,20 @@ private class FakeUserProfileRepository(private var helpers: List<UserProfile>) 
   }
 
   override suspend fun awardKudosBatch(awards: Map<String, Int>) {
+    // Simulate configured batch failures
+    val failing = awards.keys.firstOrNull { it in failAwardFor }
+    if (failing != null) throw Exception("Simulated award batch failure for $failing")
+
     awards.forEach { (userId, kudos) -> awardKudos(userId, kudos) }
+  }
+
+  override suspend fun receiveHelp(userId: String, amount: Int) {
+    if (amount <= 0) throw IllegalArgumentException("Amount must be positive: $amount")
+    val profile = profileCache[userId] ?: throw NoSuchElementException("Profile not found: $userId")
+    if (userId in failReceiveFor) throw Exception("Simulated receiveHelp failure for $userId")
+
+    // Increment helpReceived and persist the updated profile
+    profileCache[userId] = profile.copy(helpReceived = profile.helpReceived + 1)
   }
 }
 
@@ -775,6 +852,7 @@ private object TestDataFactory {
         photo = null,
         kudos = TestUserDefaults.KUDOS + index * TestUserDefaults.KUDOS_INCREMENT,
         section = UserSections.COMPUTER_SCIENCE,
+        helpReceived = HelpReceivedConstants.MAX_HELP_RECEIVED_PER_TRANSACTION,
         arrivalDate = Date(TestTimestamps.ARRIVAL_DATE))
   }
 
