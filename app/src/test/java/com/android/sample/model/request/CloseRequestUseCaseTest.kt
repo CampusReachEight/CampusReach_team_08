@@ -49,7 +49,7 @@ class CloseRequestUseCaseTest {
       requestId: String = REQUEST_ID,
       selectedHelpers: List<String>,
       creatorId: String = CREATOR_ID,
-      shouldAwardCreator: Boolean = true
+      shouldAwardCreator: Boolean = false // Changed default to false
   ) {
     coEvery { requestRepository.closeRequest(requestId, selectedHelpers) } returns
         shouldAwardCreator
@@ -74,13 +74,6 @@ class CloseRequestUseCaseTest {
     coVerify { userProfileRepository.awardKudosBatch(createKudosMap(helperIds)) }
   }
 
-  /** Verifies creator kudos were awarded. */
-  private fun verifyCreatorKudosAwarded(creatorId: String = CREATOR_ID) {
-    coVerify {
-      userProfileRepository.awardKudos(creatorId, KudosConstants.KUDOS_FOR_CREATOR_RESOLUTION)
-    }
-  }
-
   /** Verifies no kudos were awarded. */
   private fun verifyNoKudosAwarded() {
     coVerify(exactly = 0) { userProfileRepository.awardKudosBatch(any()) }
@@ -90,19 +83,20 @@ class CloseRequestUseCaseTest {
   // ============ Tests for Successful Execution ============
 
   @Test
-  fun execute_success_awardsKudos_toHelpersAndCreator() = runTest {
+  fun execute_success_awardsKudos_toHelpersOnly() = runTest {
     // Arrange
     val selectedHelpers = listOf(HELPER_1_ID, HELPER_2_ID)
-    mockSuccessfulRequestClosure(selectedHelpers = selectedHelpers)
+    mockSuccessfulRequestClosure(selectedHelpers = selectedHelpers, shouldAwardCreator = false)
     mockSuccessfulKudosAward()
 
     // Act
     val result = useCase.execute(REQUEST_ID, selectedHelpers)
 
     // Assert
-    assertSuccessResult(result, EXPECTED_TWO_HELPERS, creatorAwarded = true)
+    assertSuccessResult(result, EXPECTED_TWO_HELPERS, creatorAwarded = false)
     verifyHelperKudosAwarded(selectedHelpers)
-    verifyCreatorKudosAwarded()
+    // Creator should NOT receive kudos
+    coVerify(exactly = 0) { userProfileRepository.awardKudos(any(), any()) }
   }
 
   @Test
@@ -123,29 +117,31 @@ class CloseRequestUseCaseTest {
   fun execute_success_awardsSingleHelper() = runTest {
     // Arrange
     val selectedHelpers = listOf(HELPER_1_ID)
-    mockSuccessfulRequestClosure(selectedHelpers = selectedHelpers)
+    mockSuccessfulRequestClosure(selectedHelpers = selectedHelpers, shouldAwardCreator = false)
     mockSuccessfulKudosAward()
 
     // Act
     val result = useCase.execute(REQUEST_ID, selectedHelpers)
 
     // Assert
-    assertSuccessResult(result, EXPECTED_SINGLE_HELPER, creatorAwarded = true)
+    assertSuccessResult(result, EXPECTED_SINGLE_HELPER, creatorAwarded = false)
     verifyHelperKudosAwarded(selectedHelpers)
+    // Creator should NOT receive kudos
+    coVerify(exactly = 0) { userProfileRepository.awardKudos(any(), any()) }
   }
 
   @Test
   fun execute_success_awardsManyHelpers() = runTest {
     // Arrange
     val selectedHelpers = listOf(HELPER_1_ID, HELPER_2_ID, HELPER_3_ID, HELPER_4_ID, HELPER_5_ID)
-    mockSuccessfulRequestClosure(selectedHelpers = selectedHelpers)
+    mockSuccessfulRequestClosure(selectedHelpers = selectedHelpers, shouldAwardCreator = false)
     mockSuccessfulKudosAward()
 
     // Act
     val result = useCase.execute(REQUEST_ID, selectedHelpers)
 
     // Assert
-    assertSuccessResult(result, EXPECTED_FIVE_HELPERS, creatorAwarded = true)
+    assertSuccessResult(result, EXPECTED_FIVE_HELPERS, creatorAwarded = false)
     coVerify {
       userProfileRepository.awardKudosBatch(
           match { kudosMap ->
@@ -153,35 +149,30 @@ class CloseRequestUseCaseTest {
                 kudosMap.values.all { it == KudosConstants.KUDOS_PER_HELPER }
           })
     }
+    // Creator should NOT receive kudos
+    coVerify(exactly = 0) { userProfileRepository.awardKudos(any(), any()) }
   }
 
   // ============ Tests for Partial Success ============
 
   @Test
-  fun execute_failure_whenHelperKudosFail() = runTest {
-    val selectedHelpers = listOf("helper1")
-    coEvery { requestRepository.closeRequest("req1", selectedHelpers) } returns true
-    coEvery { userProfileRepository.awardKudosBatch(any()) } throws Exception("Network error")
-
-    val result = useCase.execute("req1", selectedHelpers)
-
-    // When kudos awarding throws, it becomes a Failure, not PartialSuccess
-    assertTrue(result is CloseRequestResult.Failure)
-  }
-
-  @Test
-  fun execute_partialSuccess_whenCreatorKudosFail() = runTest {
+  fun execute_partialSuccess_whenHelperKudosFail() = runTest {
     // Arrange
     val selectedHelpers = listOf(HELPER_1_ID)
-    mockSuccessfulRequestClosure(selectedHelpers = selectedHelpers)
-    coEvery { userProfileRepository.awardKudosBatch(any()) } just Runs
-    coEvery { userProfileRepository.awardKudos(CREATOR_ID, any()) } throws Exception(ERROR_NETWORK)
+    coEvery { requestRepository.closeRequest(REQUEST_ID, selectedHelpers) } returns false
+    coEvery { userProfileRepository.awardKudosBatch(any()) } throws Exception(ERROR_NETWORK)
 
     // Act
     val result = useCase.execute(REQUEST_ID, selectedHelpers)
 
     // Assert
-    assertPartialSuccessResult(result)
+    // When request closes successfully but kudos fail, it's a PartialSuccess
+    assertTrue("Expected PartialSuccess result", result is CloseRequestResult.PartialSuccess)
+    val partialResult = result as CloseRequestResult.PartialSuccess
+    assertTrue("Request should be marked as closed", partialResult.requestClosed)
+    assertTrue(
+        "Should have failed kudos results",
+        partialResult.kudosResults.any { it is KudosAwardResult.Failed })
   }
 
   // ============ Tests for Failure ============

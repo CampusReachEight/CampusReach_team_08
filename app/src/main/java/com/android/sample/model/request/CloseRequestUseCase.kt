@@ -42,13 +42,13 @@ class CloseRequestUseCase(
         val helperResult = awardKudosToHelpers(selectedHelperIds)
         kudosResults.add(helperResult)
       }
-
+      /*
       // Step 3: Award kudos to creator if applicable
       if (creatorShouldReceiveKudos) {
         val request = requestRepository.getRequest(requestId)
         val creatorResult = awardKudosToCreator(request.creatorId)
         kudosResults.add(creatorResult)
-      }
+      }*/
 
       // Determine overall result
       val allKudosSucceeded = kudosResults.all { it is KudosAwardResult.Success }
@@ -79,7 +79,7 @@ class CloseRequestUseCase(
       KudosAwardResult.Failed(helperIds, e)
     }
   }
-
+  /*
   private suspend fun awardKudosToCreator(creatorId: String): KudosAwardResult {
     return try {
       userProfileRepository.awardKudos(creatorId, KudosConstants.KUDOS_FOR_CREATOR_RESOLUTION)
@@ -89,9 +89,8 @@ class CloseRequestUseCase(
       Log.e(TAG, "Failed to award kudos to creator: ${e.message}", e)
       KudosAwardResult.Failed(listOf(creatorId), e)
     }
-  }
+  }*/
 }
-
 /** Result of closing a request with kudos awarding. */
 sealed class CloseRequestResult {
   /** Request closed successfully and all kudos awarded. */
