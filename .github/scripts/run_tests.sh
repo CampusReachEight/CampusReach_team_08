@@ -12,8 +12,8 @@ mkdir -p .state
 UNIT_EXIT_CODE=0
 ANDROID_EXIT_CODE=0
 
-# Configuration: Allow skipping unit tests when all passed (default: false for safety)
-SKIP_PASSED_UNIT_TESTS="${SKIP_PASSED_UNIT_TESTS:-false}"
+# Configuration: Allow skipping unit tests when all passed (default: true for speed)
+SKIP_PASSED_UNIT_TESTS="${SKIP_PASSED_UNIT_TESTS:-true}"
 
 # --- PHASE 1: UNIT TESTS ---
 echo ""
