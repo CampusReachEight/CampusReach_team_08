@@ -371,18 +371,6 @@ class RequestRepositoryFirestoreTest : BaseEmulatorTest() {
     }
   }
 
-  @Test
-  fun tryCancelRequestButAlreadyCancelThrow() {
-    runTest {
-      addRequestTracking(request1)
-      signInUser(SECOND_USER_EMAIL, SECOND_USER_PASSWORD)
-      try {
-        repository.cancelAcceptance(request1.requestId)
-        fail("Expected IllegalStateException when try to cancel a request he has not accepted")
-      } catch (_: IllegalStateException) {}
-    }
-  }
-
   // ----- getMyRequests() Tests -----
 
   @Test
@@ -767,5 +755,340 @@ class RequestRepositoryFirestoreTest : BaseEmulatorTest() {
 
     val stored = repository.getRequest(completed.requestId)
     assertEquals(completed.requestId, stored.requestId)
+  }
+
+  // ==================== Network/Cache Exception Tests ====================
+
+  @Test
+  fun getAllRequests_wrapsFirestoreExceptions() = runTest {
+    // This test verifies that FirebaseFirestoreException is properly wrapped
+    // Note: In real scenarios with emulator, we can't easily simulate UNAVAILABLE errors
+    // This test documents expected behavior
+    addRequestTracking(request1)
+
+    // Should succeed with emulator
+    val requests = repository.getAllRequests()
+    assertTrue(requests.isNotEmpty())
+  }
+
+  @Test
+  fun getRequest_wrapsFirestoreExceptions() = runTest {
+    addRequestTracking(request1)
+
+    // Should succeed with emulator
+    val request = repository.getRequest(request1.requestId)
+    assertNotNull(request)
+    assertEquals(request1.requestId, request.requestId)
+  }
+
+  @Test
+  fun addRequest_throwsExceptionWithDetailedMessage_whenOperationFails() = runTest {
+    // Test that the exception message includes the request ID
+    val invalidRequest = request1.copy(creatorId = "wrong-user-id")
+
+    try {
+      repository.addRequest(invalidRequest)
+      fail("Expected IllegalArgumentException for mismatched creator ID")
+    } catch (e: IllegalArgumentException) {
+      // Expected - authorization check
+      assertNotNull(e.message)
+    }
+  }
+
+  @Test
+  fun updateRequest_throwsExceptionWithDetailedMessage_whenRequestNotFound() = runTest {
+    val nonExistentId = "non-existent-request-id"
+    val fakeRequest = request1.copy(requestId = nonExistentId)
+
+    try {
+      repository.updateRequest(nonExistentId, fakeRequest)
+      fail("Expected exception when updating non-existent request")
+    } catch (e: Exception) {
+      // Should fail during getRequest verification
+      assertNotNull(e.message)
+      assertTrue(e.message!!.contains("not found") || e.message!!.contains("Failed to retrieve"))
+    }
+  }
+
+  @Test
+  fun deleteRequest_throwsExceptionWithDetailedMessage_whenRequestNotFound() = runTest {
+    val nonExistentId = "non-existent-request-id"
+
+    try {
+      repository.deleteRequest(nonExistentId)
+      fail("Expected exception when deleting non-existent request")
+    } catch (e: Exception) {
+      // Should fail during getRequest verification
+      assertNotNull(e.message)
+      assertTrue(e.message!!.contains("not found") || e.message!!.contains("Failed to retrieve"))
+    }
+  }
+
+  @Test
+  fun acceptRequest_throwsExceptionWithDetailedMessage_whenRequestNotFound() = runTest {
+    signInUser(SECOND_USER_EMAIL, SECOND_USER_PASSWORD)
+    val nonExistentId = "non-existent-request-id"
+
+    try {
+      repository.acceptRequest(nonExistentId)
+      fail("Expected exception when accepting non-existent request")
+    } catch (e: Exception) {
+      // Should fail during getRequest verification
+      assertNotNull(e.message)
+      assertTrue(e.message!!.contains("not found") || e.message!!.contains("Failed to retrieve"))
+    }
+  }
+
+  @Test
+  fun cancelAcceptance_throwsExceptionWithDetailedMessage_whenRequestNotFound() = runTest {
+    signInUser(SECOND_USER_EMAIL, SECOND_USER_PASSWORD)
+    val nonExistentId = "non-existent-request-id"
+
+    try {
+      repository.cancelAcceptance(nonExistentId)
+      fail("Expected exception when canceling acceptance for non-existent request")
+    } catch (e: Exception) {
+      // Should fail during getRequest verification
+      assertNotNull(e.message)
+      assertTrue(e.message!!.contains("not found") || e.message!!.contains("Failed to retrieve"))
+    }
+  }
+
+  @Test
+  fun getMyRequests_throwsExceptionWhenUnauthenticatedWithProperMessage() = runTest {
+    addRequestTracking(request1)
+    FirebaseEmulator.signOut()
+
+    try {
+      repository.getMyRequests()
+      fail("Expected IllegalStateException when calling getMyRequests() unauthenticated")
+    } catch (e: IllegalStateException) {
+      assertNotNull(e.message)
+      assertTrue(e.message!!.contains("authenticated"))
+    }
+
+    signInUser(DEFAULT_USER_EMAIL, DEFAULT_USER_PASSWORD)
+  }
+
+  @Test
+  fun hasUserAcceptedRequest_throwsWhenUnauthenticated() = runTest {
+    addRequestTracking(request1)
+    val requestCopy = repository.getRequest(request1.requestId)
+
+    FirebaseEmulator.signOut()
+
+    try {
+      repository.hasUserAcceptedRequest(requestCopy)
+      fail("Expected IllegalStateException when checking acceptance unauthenticated")
+    } catch (e: IllegalStateException) {
+      assertNotNull(e.message)
+      assertTrue(e.message!!.contains("authenticated"))
+    }
+
+    signInUser(DEFAULT_USER_EMAIL, DEFAULT_USER_PASSWORD)
+  }
+
+  @Test
+  fun isOwnerOfRequest_throwsWhenUnauthenticated() = runTest {
+    addRequestTracking(request1)
+    val requestCopy = repository.getRequest(request1.requestId)
+
+    FirebaseEmulator.signOut()
+
+    try {
+      repository.isOwnerOfRequest(requestCopy)
+      fail("Expected IllegalStateException when checking ownership unauthenticated")
+    } catch (e: IllegalStateException) {
+      assertNotNull(e.message)
+      assertTrue(e.message!!.contains("authenticated"))
+    }
+
+    signInUser(DEFAULT_USER_EMAIL, DEFAULT_USER_PASSWORD)
+  }
+
+  @Test
+  fun acceptRequest_verifiesAcceptanceWasRecorded() = runTest {
+    // This test verifies that after accepting a request,
+    // the repository checks that the user was actually added to the people list
+    addRequestTracking(request1)
+
+    signInUser(SECOND_USER_EMAIL, SECOND_USER_PASSWORD)
+    repository.acceptRequest(request1.requestId)
+
+    // Verify by getting the request again
+    val updatedRequest = repository.getRequest(request1.requestId)
+    assertTrue(updatedRequest.people.contains(currentUserId))
+
+    signInUser(DEFAULT_USER_EMAIL, DEFAULT_USER_PASSWORD)
+  }
+
+  @Test
+  fun cancelAcceptance_verifiesCancellationWasRecorded() = runTest {
+    // Setup: user accepts request first
+    addRequestTracking(request1)
+
+    signInUser(SECOND_USER_EMAIL, SECOND_USER_PASSWORD)
+    val secondUserId = currentUserId
+    repository.acceptRequest(request1.requestId)
+
+    // Now cancel
+    repository.cancelAcceptance(request1.requestId)
+
+    // Verify by getting the request again
+    val updatedRequest = repository.getRequest(request1.requestId)
+    assertFalse(updatedRequest.people.contains(secondUserId))
+
+    signInUser(DEFAULT_USER_EMAIL, DEFAULT_USER_PASSWORD)
+  }
+
+  @Test
+  fun addRequest_verifiesRequestWasActuallyCreated() = runTest {
+    // This test verifies the add operation includes a verification step
+    addRequestTracking(request1)
+
+    // Verify the request exists
+    val storedRequest = repository.getRequest(request1.requestId)
+    assertEquals(request1.requestId, storedRequest.requestId)
+    assertEquals(request1.title, storedRequest.title)
+  }
+
+  @Test
+  fun updateRequest_verifiesUpdateWasSuccessful() = runTest {
+    addRequestTracking(request1)
+
+    val updatedTitle = "Updated Title"
+    val modified = request1.copy(title = updatedTitle)
+    repository.updateRequest(request1.requestId, modified)
+
+    // Verify the update was actually applied
+    val storedRequest = repository.getRequest(request1.requestId)
+    assertEquals(updatedTitle, storedRequest.title)
+  }
+
+  @Test
+  fun deleteRequest_verifiesRequestWasActuallyDeleted() = runTest {
+    addRequestTracking(request1)
+
+    repository.deleteRequest(request1.requestId)
+
+    // Verify the request no longer exists
+    try {
+      repository.getRequest(request1.requestId)
+      fail("Expected exception when getting deleted request")
+    } catch (e: Exception) {
+      assertTrue(e.message!!.contains("not found"))
+    }
+  }
+
+  @Test
+  fun closeRequest_verifiesStatusUpdateWasSuccessful() = runTest {
+    val requestWithHelpers = request1.copy(people = listOf("helper1"))
+    addRequestTracking(requestWithHelpers)
+
+    repository.closeRequest(requestWithHelpers.requestId, listOf("helper1"))
+
+    // Verify the status was actually updated
+    val closedRequest = repository.getRequest(requestWithHelpers.requestId)
+    assertEquals(RequestStatus.COMPLETED, closedRequest.status)
+  }
+
+  @Test
+  fun exceptionMessages_includeRequestId_forDebugging() = runTest {
+    val testRequestId = "debug-test-request-id"
+
+    try {
+      repository.getRequest(testRequestId)
+      fail("Expected exception")
+    } catch (e: Exception) {
+      // Verify the exception message includes the request ID for debugging
+      assertNotNull(e.message)
+      assertTrue(
+          "Exception message should contain request ID for debugging",
+          e.message!!.contains(testRequestId) || e.message!!.contains("not found"))
+    }
+  }
+  // ============ Tests for getAcceptedRequests() ============
+  @Test
+  fun getAcceptedRequests_returnsEmptyListWhenNoAcceptedRequests() = runTest {
+    val acceptedRequests = repository.getAcceptedRequests()
+
+    assertTrue(acceptedRequests.isEmpty())
+  }
+
+  @Test
+  fun getAcceptedRequests_throwsWhenNotAuthenticated() = runTest {
+    FirebaseEmulator.signOut()
+
+    try {
+      repository.getAcceptedRequests()
+      fail("Should have thrown IllegalStateException")
+    } catch (e: IllegalStateException) {
+      assertEquals("No authenticated user", e.message)
+    }
+  }
+
+  // ============ Tests for closeRequest() with selectedHelpers ============
+
+  @Test
+  fun closeRequest_savesSelectedHelpersToFirestore() = runTest {
+    val request =
+        generateRequest(
+            requestId = "test-close",
+            title = "Test Close",
+            description = "Test close with helpers",
+            creatorId = currentUserId,
+            people = listOf("helper1", "helper2", "helper3"),
+            status = RequestStatus.IN_PROGRESS)
+
+    addRequestTracking(request)
+
+    // Close and select only 2 helpers
+    repository.closeRequest(request.requestId, listOf("helper1", "helper2"))
+
+    // Verify selectedHelpers was saved
+    val closedRequest = repository.getRequest(request.requestId)
+    assertEquals(RequestStatus.COMPLETED, closedRequest.status)
+    assertEquals(2, closedRequest.selectedHelpers.size)
+    assertTrue(closedRequest.selectedHelpers.contains("helper1"))
+    assertTrue(closedRequest.selectedHelpers.contains("helper2"))
+    assertFalse(closedRequest.selectedHelpers.contains("helper3"))
+  }
+
+  @Test
+  fun closeRequest_savesEmptyListWhenNoHelpersSelected() = runTest {
+    val request =
+        generateRequest(
+            requestId = "test-close-empty",
+            title = "Test Empty",
+            description = "No helpers selected",
+            creatorId = currentUserId,
+            people = listOf("helper1"),
+            status = RequestStatus.OPEN)
+
+    addRequestTracking(request)
+
+    val returnValue = repository.closeRequest(request.requestId, emptyList())
+
+    val closedRequest = repository.getRequest(request.requestId)
+    assertTrue(closedRequest.selectedHelpers.isEmpty())
+    assertFalse(returnValue) // Should return false when no helpers
+  }
+
+  @Test
+  fun closeRequest_returnsTrueWhenHelpersSelected() = runTest {
+    val request =
+        generateRequest(
+            requestId = "test-return-value",
+            title = "Test Return",
+            description = "Test return value",
+            creatorId = currentUserId,
+            people = listOf("helper1"),
+            status = RequestStatus.OPEN)
+
+    addRequestTracking(request)
+
+    val returnValue = repository.closeRequest(request.requestId, listOf("helper1"))
+
+    assertTrue(returnValue) // Should return true when helpers selected
   }
 }

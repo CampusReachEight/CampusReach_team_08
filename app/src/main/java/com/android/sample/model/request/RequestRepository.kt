@@ -90,6 +90,15 @@ interface RequestRepository {
   suspend fun getMyRequests(): List<Request>
 
   /**
+   * Retrieves all requests that the current user has accepted as a helper. Excludes requests
+   * created by the current user.
+   *
+   * @return A list of requests where the current user is in the 'people' list.
+   * @throws IllegalStateException if no user is authenticated.
+   */
+  suspend fun getAcceptedRequests(): List<Request>
+
+  /**
    * Closes a request and marks it as completed. This operation can only be performed by the request
    * creator and only if the request status is OPEN or IN_PROGRESS.
    *
@@ -98,9 +107,8 @@ interface RequestRepository {
    * 2. Validates that the request status allows closing (OPEN or IN_PROGRESS)
    * 3. Validates that all selected users actually accepted the request
    * 4. Updates the request status to COMPLETED
-   *
-   * Note: Kudos awarding is handled separately through the UserProfileRepository to maintain
-   * separation of concerns.
+   * 5. Saves the selectedHelperIds to the request document
+   * 6. Awards kudos to the selected helpers
    *
    * @param requestId The unique identifier of the request to close.
    * @param selectedHelperIds List of user IDs who should receive kudos. Can be empty.

@@ -11,16 +11,20 @@ import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.test.platform.app.InstrumentationRegistry
 import com.android.sample.model.map.Location
 import com.android.sample.model.request.Request
+import com.android.sample.model.request.RequestCache
 import com.android.sample.model.request.RequestRepositoryFirestore
 import com.android.sample.model.request.RequestStatus
 import com.android.sample.model.request.RequestType
 import com.android.sample.model.request.Tags
 import com.android.sample.ui.overview.AcceptRequestScreen
 import com.android.sample.ui.overview.AcceptRequestScreenTestTags
+import com.android.sample.ui.overview.AcceptRequestViewModel
 import com.android.sample.utils.BaseEmulatorTest
 import com.android.sample.utils.FirebaseEmulator
 import java.util.Calendar
@@ -543,6 +547,33 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
         .assertTextContains("Archived", substring = true, ignoreCase = true)
   }
 
+  // New integration test: Volunteers visible and expandable only for owner
+  @Test
+  fun volunteersSection_visibleForOwner_and_expands() {
+    // Sign in as the owner of request1
+    runTest { signInUser(DEFAULT_USER_EMAIL, DEFAULT_USER_PASSWORD) }
+
+    composeTestRule.setContent { AcceptRequestScreen(request1_id) }
+
+    composeTestRule.waitUntil(uiWaitTimeout) {
+      composeTestRule
+          .onAllNodesWithTag(AcceptRequestScreenTestTags.VOLUNTEERS_SECTION_HEADER)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Header visible for owner
+    composeTestRule
+        .onNodeWithTag(AcceptRequestScreenTestTags.VOLUNTEERS_SECTION_HEADER)
+        .assertExists()
+        .performClick()
+
+    // request1 has empty people list -> should show "No volunteers yet"
+    composeTestRule
+        .onNodeWithTag(AcceptRequestScreenTestTags.VOLUNTEERS_SECTION_CONTAINER)
+        .assertExists()
+  }
+
   // Tests for getInitials function (via CreatorSection composable)
   @Test
   fun getInitials_withFullName_returnsFirstAndLastInitials() {
@@ -736,5 +767,72 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
     assert(validateClickedWithId == request4_id) {
       String.format(ERROR_REQUEST_ID_MISMATCH, request4_id, validateClickedWithId)
     }
+  }
+
+  @Test
+  fun offlineModeBannerDisplaysWhenInOfflineMode() = runTest {
+    // Create a fake request ID that doesn't exist in Firestore
+    val fakeRequestId = "nonexistent-request-id-12345"
+
+    // Create cache with the request
+    val cache = RequestCache(InstrumentationRegistry.getInstrumentation().targetContext)
+    cache.saveRequests(listOf(request1.copy(requestId = fakeRequestId)))
+
+    val viewModel =
+        AcceptRequestViewModel(
+            requestRepository = repository, userProfileRepository = null, requestCache = cache)
+
+    composeTestRule.setContent {
+      AcceptRequestScreen(requestId = fakeRequestId, acceptRequestViewModel = viewModel)
+    }
+
+    // Wait for the error to trigger cache fallback
+    composeTestRule.waitForIdle()
+    Thread.sleep(2000) // Give time for repository failure and cache fallback
+
+    composeTestRule
+        .onNodeWithText("You are currently in offline mode", substring = true)
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun volunteersLazyRowWithMultipleVolunteers() = runTest {
+    signIn(DEFAULT_USER_EMAIL)
+
+    val requestWithVolunteers =
+        Request(
+            requestId = request6_id,
+            title = "Request with volunteers",
+            description = "Testing volunteers",
+            requestType = listOf(RequestType.STUDYING),
+            location = Location(46.5191, 6.5668, "EPFL"),
+            locationName = "EPFL",
+            status = RequestStatus.OPEN,
+            startTimeStamp = Date(),
+            expirationTime = Date(System.currentTimeMillis() + 3_600_000),
+            people = listOf("volunteer1", "volunteer2", "volunteer3"),
+            tags = emptyList(),
+            creatorId = currentUserId)
+    repository.addRequest(requestWithVolunteers)
+
+    composeTestRule.setContent { AcceptRequestScreen(requestId = request6_id) }
+
+    composeTestRule.waitUntil(uiWaitTimeout) {
+      composeTestRule
+          .onAllNodesWithTag(AcceptRequestScreenTestTags.REQUEST_TOP_BAR)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    composeTestRule
+        .onNodeWithTag(AcceptRequestScreenTestTags.VOLUNTEERS_SECTION_HEADER)
+        .performScrollTo()
+        .performClick()
+
+    composeTestRule.waitForIdle()
+
+    composeTestRule
+        .onNodeWithTag(AcceptRequestScreenTestTags.VOLUNTEERS_SECTION_CONTAINER)
+        .assertIsDisplayed()
   }
 }

@@ -2,22 +2,22 @@ package com.android.sample.model.request
 
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FirebaseFirestoreException
+import com.google.firebase.firestore.Source
 import com.google.firebase.ktx.Firebase
 import java.util.UUID
 import kotlinx.coroutines.tasks.await
 
 const val REQUESTS_COLLECTION_PATH = "requests"
 
-class RequestRepositoryFirestore(
-    private val db: FirebaseFirestore,
-) : RequestRepository {
+class RequestRepositoryFirestore(private val db: FirebaseFirestore) : RequestRepository {
   // Path structure: "requests/{requestId}"
 
   private val collectionRef = db.collection(REQUESTS_COLLECTION_PATH)
 
-  private fun notAuthenticated(): Unit = throw IllegalStateException("No authenticated user")
+  private fun notAuthenticated(): Nothing = throw IllegalStateException("No authenticated user")
 
-  private fun notAuthorized(): Unit =
+  private fun notAuthorized(): Nothing =
       throw IllegalArgumentException("Can only modify the currently authenticated user's requests")
 
   override fun getNewRequestId(): String {
@@ -25,8 +25,24 @@ class RequestRepositoryFirestore(
   }
 
   override suspend fun getAllRequests(): List<Request> {
-    return collectionRef.get().await().documents.mapNotNull { doc ->
-      doc.data?.let { Request.fromMap(it) }
+    return try {
+      val snapshot = collectionRef.get(Source.SERVER).await()
+
+      if (snapshot.metadata.isFromCache) {
+        throw IllegalStateException(
+            "Cannot retrieve requests: data from cache (network unavailable)")
+      }
+
+      snapshot.documents.mapNotNull { doc -> doc.data?.let { Request.fromMap(it) } }
+    } catch (e: FirebaseFirestoreException) {
+      if (e.code == FirebaseFirestoreException.Code.UNAVAILABLE) {
+        throw IllegalStateException("Network unavailable: cannot retrieve requests from server", e)
+      }
+      throw Exception("Failed to retrieve all requests: ${e.message}", e)
+    } catch (e: IllegalStateException) {
+      throw e
+    } catch (e: Exception) {
+      throw Exception("Failed to retrieve all requests", e)
     }
   }
 
@@ -47,13 +63,29 @@ class RequestRepositoryFirestore(
   }
 
   override suspend fun getRequest(requestId: String): Request {
-    return collectionRef
-        .whereEqualTo("requestId", requestId)
-        .get()
-        .await()
-        .documents
-        .firstNotNullOfOrNull { doc -> doc.data?.let { Request.fromMap(it) } }
-        ?: throw Exception("Request with ID $requestId not found")
+    return try {
+      val snapshot = collectionRef.whereEqualTo("requestId", requestId).get(Source.SERVER).await()
+
+      if (snapshot.metadata.isFromCache) {
+        throw IllegalStateException(
+            "Cannot retrieve request: data from cache (network unavailable)")
+      }
+
+      snapshot.documents.firstNotNullOfOrNull { doc -> doc.data?.let { Request.fromMap(it) } }
+          ?: throw Exception("Request with ID $requestId not found")
+    } catch (e: FirebaseFirestoreException) {
+      if (e.code == FirebaseFirestoreException.Code.UNAVAILABLE) {
+        throw IllegalStateException("Network unavailable: cannot retrieve request from server", e)
+      }
+      throw Exception("Failed to retrieve request with ID $requestId: ${e.message}", e)
+    } catch (e: IllegalStateException) {
+      throw e
+    } catch (e: Exception) {
+      if (e.message?.contains("not found") == true) {
+        throw e
+      }
+      throw Exception("Failed to retrieve request with ID $requestId", e)
+    }
   }
 
   override suspend fun addRequest(request: Request) {
@@ -63,7 +95,30 @@ class RequestRepositoryFirestore(
       notAuthorized()
     }
 
-    collectionRef.document(request.requestId).set(request.toMap()).await()
+    try {
+      collectionRef.document(request.requestId).set(request.toMap()).await()
+
+      // Verify the request was actually added
+      val addedRequest = collectionRef.document(request.requestId).get(Source.SERVER).await()
+      if (!addedRequest.exists()) {
+        throw Exception("Failed to verify request creation for ID ${request.requestId}")
+      }
+      if (addedRequest.metadata.isFromCache) {
+        throw IllegalStateException(
+            "Cannot verify request creation: data from cache (network unavailable)")
+      }
+    } catch (e: FirebaseFirestoreException) {
+      if (e.code == FirebaseFirestoreException.Code.UNAVAILABLE) {
+        throw IllegalStateException("Network unavailable: cannot add request to server", e)
+      }
+      throw Exception("Failed to add request with ID ${request.requestId}: ${e.message}", e)
+    } catch (e: IllegalStateException) {
+      throw e
+    } catch (e: IllegalArgumentException) {
+      throw e
+    } catch (e: Exception) {
+      throw Exception("Failed to add request with ID ${request.requestId}", e)
+    }
   }
 
   override suspend fun updateRequest(requestId: String, updatedRequest: Request) {
@@ -78,7 +133,30 @@ class RequestRepositoryFirestore(
 
     require(requestId == updatedRequest.requestId) { "Request ID cannot be changed" }
 
-    collectionRef.document(requestId).set(updatedRequest.toMap()).await()
+    try {
+      collectionRef.document(requestId).set(updatedRequest.toMap()).await()
+
+      // Verify the update was successful
+      val verifyRequest = collectionRef.document(requestId).get(Source.SERVER).await()
+      if (!verifyRequest.exists()) {
+        throw Exception("Request disappeared during update for ID $requestId")
+      }
+      if (verifyRequest.metadata.isFromCache) {
+        throw IllegalStateException(
+            "Cannot verify request update: data from cache (network unavailable)")
+      }
+    } catch (e: FirebaseFirestoreException) {
+      if (e.code == FirebaseFirestoreException.Code.UNAVAILABLE) {
+        throw IllegalStateException("Network unavailable: cannot update request on server", e)
+      }
+      throw Exception("Failed to update request with ID $requestId: ${e.message}", e)
+    } catch (e: IllegalStateException) {
+      throw e
+    } catch (e: IllegalArgumentException) {
+      throw e
+    } catch (e: Exception) {
+      throw Exception("Failed to update request with ID $requestId", e)
+    }
   }
 
   override suspend fun deleteRequest(requestId: String) {
@@ -91,7 +169,30 @@ class RequestRepositoryFirestore(
       notAuthorized()
     }
 
-    collectionRef.document(requestId).delete().await()
+    try {
+      collectionRef.document(requestId).delete().await()
+
+      // Verify the request was actually deleted
+      val deletedRequest = collectionRef.document(requestId).get(Source.SERVER).await()
+      if (deletedRequest.exists()) {
+        throw Exception("Failed to verify request deletion for ID $requestId")
+      }
+      if (deletedRequest.metadata.isFromCache) {
+        throw IllegalStateException(
+            "Cannot verify request deletion: data from cache (network unavailable)")
+      }
+    } catch (e: FirebaseFirestoreException) {
+      if (e.code == FirebaseFirestoreException.Code.UNAVAILABLE) {
+        throw IllegalStateException("Network unavailable: cannot delete request from server", e)
+      }
+      throw Exception("Failed to delete request with ID $requestId: ${e.message}", e)
+    } catch (e: IllegalStateException) {
+      throw e
+    } catch (e: IllegalArgumentException) {
+      throw e
+    } catch (e: Exception) {
+      throw Exception("Failed to delete request with ID $requestId", e)
+    }
   }
 
   override fun hasUserAcceptedRequest(request: Request): Boolean {
@@ -106,8 +207,26 @@ class RequestRepositoryFirestore(
 
     check(!hasUserAcceptedRequest(request)) { "You have already accepted this request" }
     check(request.creatorId != currentUserId) { "You cannot accept your own request" }
-    val list = request.people + currentUserId
-    collectionRef.document(requestId).update("people", list).await()
+
+    try {
+      val list = request.people + currentUserId
+      collectionRef.document(requestId).update("people", list).await()
+
+      // Verify the acceptance was recorded
+      val updatedRequest = getRequest(requestId)
+      if (!updatedRequest.people.contains(currentUserId)) {
+        throw Exception("Failed to verify request acceptance for ID $requestId")
+      }
+    } catch (e: FirebaseFirestoreException) {
+      if (e.code == FirebaseFirestoreException.Code.UNAVAILABLE) {
+        throw IllegalStateException("Network unavailable: cannot accept request on server", e)
+      }
+      throw Exception("Failed to accept request with ID $requestId: ${e.message}", e)
+    } catch (e: IllegalStateException) {
+      throw e
+    } catch (e: Exception) {
+      throw Exception("Failed to accept request with ID $requestId", e)
+    }
   }
 
   override suspend fun cancelAcceptance(requestId: String) {
@@ -119,8 +238,26 @@ class RequestRepositoryFirestore(
     check(request.creatorId != currentUserId) {
       "You cannot revoke acceptance on a request you created"
     }
-    val list = request.people - currentUserId
-    collectionRef.document(requestId).update("people", list).await()
+
+    try {
+      val list = request.people - currentUserId
+      collectionRef.document(requestId).update("people", list).await()
+
+      // Verify the cancellation was recorded
+      val updatedRequest = getRequest(requestId)
+      if (updatedRequest.people.contains(currentUserId)) {
+        throw Exception("Failed to verify acceptance cancellation for ID $requestId")
+      }
+    } catch (e: FirebaseFirestoreException) {
+      if (e.code == FirebaseFirestoreException.Code.UNAVAILABLE) {
+        throw IllegalStateException("Network unavailable: cannot cancel acceptance on server", e)
+      }
+      throw Exception("Failed to cancel acceptance for request with ID $requestId: ${e.message}", e)
+    } catch (e: IllegalStateException) {
+      throw e
+    } catch (e: Exception) {
+      throw Exception("Failed to cancel acceptance for request with ID $requestId", e)
+    }
   }
 
   override suspend fun isOwnerOfRequest(request: Request): Boolean {
@@ -131,12 +268,39 @@ class RequestRepositoryFirestore(
   override suspend fun getMyRequests(): List<Request> {
     val currentUserId = Firebase.auth.currentUser?.uid ?: notAuthenticated()
 
+    return try {
+      val snapshot =
+          collectionRef.whereEqualTo("creatorId", currentUserId).get(Source.SERVER).await()
+
+      if (snapshot.metadata.isFromCache) {
+        throw IllegalStateException(
+            "Cannot retrieve user requests: data from cache (network unavailable)")
+      }
+
+      snapshot.documents.mapNotNull { doc -> doc.data?.let { Request.fromMap(it) } }
+    } catch (e: FirebaseFirestoreException) {
+      if (e.code == FirebaseFirestoreException.Code.UNAVAILABLE) {
+        throw IllegalStateException(
+            "Network unavailable: cannot retrieve user requests from server", e)
+      }
+      throw Exception("Failed to retrieve requests for user $currentUserId: ${e.message}", e)
+    } catch (e: IllegalStateException) {
+      throw e
+    } catch (e: Exception) {
+      throw Exception("Failed to retrieve requests for user $currentUserId", e)
+    }
+  }
+
+  override suspend fun getAcceptedRequests(): List<Request> {
+    val currentUserId = Firebase.auth.currentUser?.uid ?: notAuthenticated()
+
     return collectionRef
-        .whereEqualTo("creatorId", currentUserId)
+        .whereArrayContains("people", currentUserId)
         .get()
         .await()
         .documents
         .mapNotNull { doc -> doc.data?.let { Request.fromMap(it) } }
+        .filter { it.creatorId != currentUserId } // Exclude own requests
   }
 
   override suspend fun closeRequest(requestId: String, selectedHelperIds: List<String>): Boolean {
@@ -164,12 +328,29 @@ class RequestRepositoryFirestore(
     }
 
     try {
-      // Update status to COMPLETED
-      val updatedRequest = existingRequest.copy(status = RequestStatus.COMPLETED)
+      // Update status to COMPLETED and save selectedHelpers
+      val updatedRequest =
+          existingRequest.copy(
+              status = RequestStatus.COMPLETED,
+              selectedHelpers = selectedHelperIds // NEW: Save who received kudos
+              )
       collectionRef.document(requestId).set(updatedRequest.toMap()).await()
+
+      // Verify the status was updated
+      val verifiedRequest = getRequest(requestId)
+      if (verifiedRequest.status != RequestStatus.COMPLETED) {
+        throw Exception("Failed to verify request closure status update for ID $requestId")
+      }
 
       // Return true if creator should receive kudos (at least one helper selected)
       return selectedHelperIds.isNotEmpty()
+    } catch (e: RequestClosureException) {
+      throw e
+    } catch (e: FirebaseFirestoreException) {
+      if (e.code == FirebaseFirestoreException.Code.UNAVAILABLE) {
+        throw IllegalStateException("Network unavailable: cannot close request on server", e)
+      }
+      throw RequestClosureException.UpdateFailed(requestId, e)
     } catch (e: Exception) {
       throw RequestClosureException.UpdateFailed(requestId, e)
     }

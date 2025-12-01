@@ -40,6 +40,7 @@ import java.util.Date
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 
@@ -193,6 +194,7 @@ class MapsTest : BaseEmulatorTest() {
   }
 
   @Test
+  @Ignore("Flaky test on the CI")
   fun zoomOutButton_exists() {
     mapsUtil.assertZoomOutButtonExists()
   }

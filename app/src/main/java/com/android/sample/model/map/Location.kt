@@ -1,6 +1,9 @@
 package com.android.sample.model.map
 
+import kotlinx.serialization.Serializable
+
 /** A data class representing a geographical location with latitude, longitude, and a name. */
+@Serializable
 data class Location(
     val latitude: Double,
     val longitude: Double,
