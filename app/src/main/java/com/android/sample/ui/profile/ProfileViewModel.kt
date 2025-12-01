@@ -219,4 +219,8 @@ class ProfileViewModel(
   fun onMyRequestsClick(navigationActions: NavigationActions?) {
     navigationActions?.navigateTo(Screen.MyRequest)
   }
+
+  fun onAcceptedRequestsClick(navigationActions: NavigationActions?) {
+    navigationActions?.navigateTo(Screen.AcceptedRequests)
+  }
 }

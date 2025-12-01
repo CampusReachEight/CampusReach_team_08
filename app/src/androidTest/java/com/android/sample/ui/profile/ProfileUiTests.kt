@@ -14,6 +14,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.navigation.compose.rememberNavController
 import com.android.sample.ui.navigation.NavigationActions
 import com.android.sample.ui.navigation.Screen
@@ -706,6 +707,122 @@ class ProfileUiTests {
     composeTestRule.runOnIdle {
       assertTrue("Expected navigation to be called", navigationCalled)
       assertTrue("Expected navigation to MyRequest screen", correctScreen)
+    }
+  }
+  // ----- Accepted Requests Action -----
+  @Test
+  fun acceptedRequests_action_isDisplayed_and_hasClickAction() {
+    composeTestRule.setContent { ProfileActions() }
+
+    composeTestRule
+        .onNodeWithTag(ProfileTestTags.PROFILE_ACTION_ACCEPTED_REQUESTS)
+        .assertIsDisplayed()
+    composeTestRule.onNodeWithText("Accepted Requests").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithTag(ProfileTestTags.PROFILE_ACTION_ACCEPTED_REQUESTS)
+        .assertHasClickAction()
+  }
+
+  @Test
+  fun acceptedRequests_action_triggersCallback() {
+    var triggered = false
+    composeTestRule.setContent { ProfileActions(onAcceptedRequestsClick = { triggered = true }) }
+
+    composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_ACTION_ACCEPTED_REQUESTS).performClick()
+    composeTestRule.runOnIdle { assertTrue(triggered) }
+  }
+
+  @Test
+  fun acceptedRequests_button_callsViewModel_onAcceptedRequestsClick() = runTest {
+    var navigationCalled = false
+    var correctScreen = false
+
+    composeTestRule.setContent {
+      val navController = rememberNavController()
+      val mockNavigationActions =
+          object : NavigationActions(navController) {
+            override fun navigateTo(screen: Screen) {
+              navigationCalled = true
+              if (screen is Screen.AcceptedRequests) {
+                correctScreen = true
+              }
+            }
+          }
+
+      val viewModel = ProfileViewModel(attachAuthListener = false)
+
+      ProfileActions(
+          onAcceptedRequestsClick = { viewModel.onAcceptedRequestsClick(mockNavigationActions) })
+    }
+
+    composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_ACTION_ACCEPTED_REQUESTS).performClick()
+
+    composeTestRule.runOnIdle {
+      assertTrue("Expected navigation to be called", navigationCalled)
+      assertTrue("Expected navigation to AcceptedRequests screen", correctScreen)
+    }
+  }
+
+  @Test
+  fun profileActions_containsAllThreeActions_withUniqueTags() {
+    composeTestRule.setContent { ProfileActions() }
+
+    // Verify all three actions are present exactly once
+    composeTestRule.onAllNodesWithTag(ProfileTestTags.PROFILE_ACTION_LOG_OUT).assertCountEquals(1)
+    composeTestRule.onAllNodesWithTag(ProfileTestTags.PROFILE_ACTION_ABOUT_APP).assertCountEquals(1)
+    composeTestRule
+        .onAllNodesWithTag(ProfileTestTags.PROFILE_ACTION_MY_REQUEST)
+        .assertCountEquals(1)
+    composeTestRule
+        .onAllNodesWithTag(ProfileTestTags.PROFILE_ACTION_ACCEPTED_REQUESTS)
+        .assertCountEquals(1)
+
+    // Verify all are clickable
+    composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_ACTION_LOG_OUT).assertHasClickAction()
+    composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_ACTION_ABOUT_APP).assertHasClickAction()
+    composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_ACTION_MY_REQUEST).assertHasClickAction()
+    composeTestRule
+        .onNodeWithTag(ProfileTestTags.PROFILE_ACTION_ACCEPTED_REQUESTS)
+        .assertHasClickAction()
+  }
+
+  @Test
+  fun profileScreen_acceptedRequestsButton_triggersViewModelMethod() = runTest {
+    var navigationCalled = false
+    var correctScreen = false
+
+    composeTestRule.setContent {
+      val navController = rememberNavController()
+      val mockNavigationActions =
+          object : NavigationActions(navController) {
+            override fun navigateTo(screen: Screen) {
+              navigationCalled = true
+              if (screen is Screen.AcceptedRequests) {
+                correctScreen = true
+              }
+            }
+          }
+
+      val viewModel = ProfileViewModel(attachAuthListener = false)
+
+      ProfileScreen(
+          viewModel = viewModel, onBackClick = {}, navigationActions = mockNavigationActions)
+    }
+
+    composeTestRule.waitForIdle()
+
+    // Use scrollTo to ensure the button is visible
+    composeTestRule
+        .onNodeWithTag(ProfileTestTags.PROFILE_ACTION_ACCEPTED_REQUESTS)
+        .assertExists()
+        .performScrollTo() // NEW: scroll to the button
+        .performClick()
+
+    composeTestRule.waitForIdle()
+
+    composeTestRule.runOnIdle {
+      assertTrue("Expected navigation to be called", navigationCalled)
+      assertTrue("Expected navigation to AcceptedRequests screen", correctScreen)
     }
   }
 }

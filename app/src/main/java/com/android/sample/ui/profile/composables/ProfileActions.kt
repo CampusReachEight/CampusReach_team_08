@@ -48,6 +48,7 @@ private const val SEE_AND_EDIT = "See and edit your own request"
 fun ProfileActions(
     onLogoutClick: () -> Unit = {},
     onMyRequestClick: () -> Unit = {},
+    onAcceptedRequestsClick: () -> Unit = {},
     palette: AppPalette = appPalette()
 ) {
   Column(
@@ -80,6 +81,12 @@ fun ProfileActions(
             subtitle = SEE_AND_EDIT,
             tag = ProfileTestTags.PROFILE_ACTION_MY_REQUEST,
             onClick = onMyRequestClick)
+        ActionItem(
+            icon = Icons.Default.Info,
+            title = "Accepted Requests",
+            subtitle = "View requests you've accepted as a helper",
+            tag = ProfileTestTags.PROFILE_ACTION_ACCEPTED_REQUESTS,
+            onClick = onAcceptedRequestsClick)
       }
 }
 

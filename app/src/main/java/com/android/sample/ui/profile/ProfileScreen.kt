@@ -41,6 +41,9 @@ fun ProfileScreen(
                     state = state,
                     onLogoutRequested = { viewModel.showLogoutDialog() },
                     onMyRequestAction = { viewModel.onMyRequestsClick(navigationActions) },
+                    onAcceptedRequestsAction = {
+                      viewModel.onAcceptedRequestsClick(navigationActions)
+                    },
                     onEditRequested = { viewModel.setEditMode(true) },
                     modifier = Modifier.fillMaxSize())
           }
