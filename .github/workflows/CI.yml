@@ -347,6 +347,17 @@ jobs:
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
 
+      # --- RESTORE Build Output (Critical for Jacoco class matching) ---
+      - name: Restore Build Folder
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            app/build
+            .gradle/kotlin-profile
+            .gradle/generated-gradle-jars
+          key: build-output-${{ github.sha }}
+          fail-on-cache-miss: true
+
       - name: Run Setup Script
         env:
           GOOGLE_SERVICES: ${{ secrets.GOOGLE_SERVICES }}
@@ -360,13 +371,27 @@ jobs:
         with:
           pattern: jacoco-run-*
           merge-multiple: true
-          path: app/build/outputs/code_coverage/debugAndroidTest/connected/
+          path: app/build/coverage-artifacts/
 
-      # We move the unit test coverage (which is in root .exec) to where Jacoco expects it if needed,
-      # or rely on Jacoco plugin finding all execs. Typically, standard location works.
+      - name: Organize Coverage Files
+        run: |
+          # Create proper directory structure for coverage files
+          mkdir -p app/build/outputs/unit_test_code_coverage/debugUnitTest
+          mkdir -p app/build/outputs/code_coverage/debugAndroidTest/connected/emulator
+          
+          # Move unit test coverage files
+          find app/build/coverage-artifacts -name "*.exec" -exec cp {} app/build/outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec \; || echo "No .exec files found"
+          
+          # Move Android test coverage files
+          find app/build/coverage-artifacts -name "*.ec" -exec cp {} app/build/outputs/code_coverage/debugAndroidTest/connected/emulator/coverage.ec \; || echo "No .ec files found"
+          
+          # List coverage files found
+          echo "Coverage files organized:"
+          ls -lah app/build/outputs/unit_test_code_coverage/debugUnitTest/ || echo "No unit test coverage"
+          ls -lah app/build/outputs/code_coverage/debugAndroidTest/connected/emulator/ || echo "No Android test coverage"
 
       - name: Generate Merged Coverage Report
-        run: ./gradlew jacocoTestReport
+        run: ./gradlew jacocoTestReport --info
 
       - name: Upload coverage
         uses: actions/upload-artifact@v4
