@@ -30,6 +30,7 @@ import com.android.sample.ui.authentication.SignInScreen
 import com.android.sample.ui.authentication.SignInViewModel
 import com.android.sample.ui.map.MapScreen
 import com.android.sample.ui.map.MapViewModel
+import com.android.sample.ui.map.MapViewModelFactory
 import com.android.sample.ui.overview.AcceptRequestScreen
 import com.android.sample.ui.overview.AcceptRequestViewModel
 import com.android.sample.ui.profile.ProfileScreen
@@ -70,7 +71,13 @@ fun NavigationScreen(
   // ViewModels
   val signInViewModel: SignInViewModel = viewModel()
   val profileViewModel: ProfileViewModel = viewModel()
-  val mapViewModel: MapViewModel = viewModel()
+  val mapViewModel: MapViewModel =
+      viewModel(
+          factory =
+              MapViewModelFactory(
+                  requestRepository = requestRepository,
+                  profileRepository = userProfileRepository,
+                  locationProvider = fusedLocationProvider))
   val requestListViewModel: RequestListViewModel = viewModel()
   val editRequestViewModel: EditRequestViewModel =
       viewModel(

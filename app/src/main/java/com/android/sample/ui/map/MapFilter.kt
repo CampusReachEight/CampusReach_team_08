@@ -24,6 +24,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.testTag
 import com.android.sample.model.request.RequestOwnership
 import com.android.sample.ui.request.FilterMenuButton
@@ -45,7 +46,8 @@ fun MapFilter(
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation =
-            CardDefaults.cardElevation(defaultElevation = ConstantMap.CARD_DEFAULT_ELEVATION)) {
+            CardDefaults.cardElevation(defaultElevation = ConstantMap.CARD_DEFAULT_ELEVATION),
+        shape = RectangleShape) {
           LazyRow(
               modifier =
                   Modifier.fillMaxWidth()
