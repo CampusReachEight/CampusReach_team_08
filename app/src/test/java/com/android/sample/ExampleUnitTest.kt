@@ -11,7 +11,7 @@ import org.junit.Test
 class ExampleUnitTest {
   private companion object {
     // Set this to true to fail the test
-    const val TEST_FAIL = true
+    const val TEST_FAIL = false
   }
 
   @Test
