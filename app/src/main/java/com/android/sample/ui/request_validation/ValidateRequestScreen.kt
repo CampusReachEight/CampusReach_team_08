@@ -88,6 +88,7 @@ fun ValidateRequestScreen(
                   selectedHelpers = state.selectedHelpers,
                   kudosToAward = state.kudosToAward,
                   onConfirm = {
+                    android.util.Log.d("ValidateRequestScreen", "Confirm dialog clicked: helpers=${state.selectedHelpers.map { it.id }}")
                     // Launch suspend operations without blocking the UI
                     coroutineScope.launch {
                       try {
