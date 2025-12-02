@@ -1,5 +1,6 @@
 package com.android.sample.model.profile
 
+import android.util.Log
 import com.android.sample.ui.request_validation.HelpReceivedConstants
 import com.android.sample.ui.request_validation.HelpReceivedException
 import com.android.sample.ui.request_validation.KudosConstants
@@ -231,10 +232,12 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
 
         // Add updates to batch for both collections
         val publicDocRef = publicCollectionRef.document(userId)
-        val privateDocRef = privateCollectionRef.document(userId)
+
+        val currentKudos = (userDoc.get("kudos") as? Number)?.toLong() ?: 20L
+        Log.d(
+            "KUDOS_BATCH", "awardKudosBatch: `public_profiles`/$userId kudos-before=$currentKudos")
 
         batch.update(publicDocRef, "kudos", FieldValue.increment(amount.toLong()))
-        batch.update(privateDocRef, "kudos", FieldValue.increment(amount.toLong()))
       }
 
       // Commit all updates atomically

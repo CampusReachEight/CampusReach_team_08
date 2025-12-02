@@ -88,7 +88,9 @@ fun ValidateRequestScreen(
                   selectedHelpers = state.selectedHelpers,
                   kudosToAward = state.kudosToAward,
                   onConfirm = {
-                    android.util.Log.d("ValidateRequestScreen", "Confirm dialog clicked: helpers=${state.selectedHelpers.map { it.id }}")
+                    android.util.Log.d(
+                        "ValidateRequestScreen",
+                        "Confirm dialog clicked: helpers=${state.selectedHelpers.map { it.id }}")
                     // Launch suspend operations without blocking the UI
                     coroutineScope.launch {
                       try {
@@ -106,13 +108,12 @@ fun ValidateRequestScreen(
                         }
                         android.util.Log.d("ValidateRequestScreen", "Confirm succeeded")
 
-
-                          // Notify caller that confirm flow completed
+                        // Notify caller that confirm flow completed
                         callbacks.onConfirmAndClose()
                       } catch (e: Exception) {
                         // On failure, surface retry/back behavior via provided callback
-                          android.util.Log.e("ValidateRequestScreen", "Confirm failed", e)
-                          callbacks.onRetry()
+                        android.util.Log.e("ValidateRequestScreen", "Confirm failed", e)
+                        callbacks.onRetry()
                       }
                     }
                   },
