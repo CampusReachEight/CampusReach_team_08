@@ -1,10 +1,9 @@
 package com.android.sample.ui.profile.composables
 
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.android.sample.ui.profile.ProfileDimens
@@ -24,21 +23,35 @@ fun ProfileContent(
     onAcceptedRequestsAction: () -> Unit = {},
     onEditRequested: () -> Unit = {}
 ) {
-  Column(modifier = modifier.verticalScroll(rememberScrollState())) {
-    state.errorMessage?.let {
-      ErrorBanner(it)
-      Spacer(modifier = Modifier.height(ProfileDimens.Vertical))
+  val scrollState = rememberScrollState()
+  LazyColumn(modifier = modifier) {
+    if (state.errorMessage != null) {
+      item {
+        ErrorBanner(state.errorMessage)
+        Spacer(Modifier.height(ProfileDimens.Vertical))
+      }
     }
 
-    ProfileHeader(state = state, onEditRequested = onEditRequested)
-    Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
-    ProfileStats(state = state)
-    Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
-    ProfileInformation(state = state)
-    Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
-    ProfileActions(
-        onLogoutClick = onLogoutRequested,
-        onMyRequestClick = onMyRequestAction,
-        onAcceptedRequestsClick = onAcceptedRequestsAction)
+    item {
+      ProfileHeader(state = state, onEditRequested = onEditRequested)
+      Spacer(Modifier.height(ProfileDimens.Horizontal))
+    }
+
+    item {
+      ProfileStats(state)
+      Spacer(Modifier.height(ProfileDimens.Horizontal))
+    }
+
+    item {
+      ProfileInformation(state)
+      Spacer(Modifier.height(ProfileDimens.Horizontal))
+    }
+
+    item {
+      ProfileActions(
+          onLogoutClick = onLogoutRequested,
+          onMyRequestClick = onMyRequestAction,
+          onAcceptedRequestsClick = onAcceptedRequestsAction)
+    }
   }
 }
