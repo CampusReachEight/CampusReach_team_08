@@ -426,6 +426,7 @@ class EndToEndTests : BaseEmulatorTest() {
     // click on disconnect
     composeTestRule
         .onNodeWithTag(ProfileTestTags.PROFILE_ACTION_LOG_OUT)
+        .performScrollTo()
         .assertIsDisplayed()
         .performClick()
 
@@ -880,6 +881,7 @@ class EndToEndTests : BaseEmulatorTest() {
     // 10. Logout
     composeTestRule
         .onNodeWithTag(ProfileTestTags.PROFILE_ACTION_LOG_OUT)
+        .performScrollTo()
         .assertIsDisplayed()
         .performClick()
 
