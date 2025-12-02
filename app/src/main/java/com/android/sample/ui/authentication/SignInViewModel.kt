@@ -113,6 +113,7 @@ class SignInViewModel(
                 email = user.email,
                 photo = user.photoUrl,
                 kudos = 0,
+                helpReceived = 0,
                 section = UserSections.NONE,
                 arrivalDate = java.util.Date()))
       }

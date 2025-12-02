@@ -137,6 +137,7 @@ class MapsTest : BaseEmulatorTest() {
               DEFAULT_USER_EMAIL,
               null,
               kudos2,
+              helpReceived = 5,
               section2,
               datePlusOneHour)
 
@@ -168,7 +169,15 @@ class MapsTest : BaseEmulatorTest() {
 
       profile1 =
           UserProfile(
-              currentUserId, firstname1, name1, SECOND_USER_EMAIL, null, kudos1, section1, date)
+              currentUserId,
+              firstname1,
+              name1,
+              SECOND_USER_EMAIL,
+              null,
+              kudos1,
+              helpReceived = 1,
+              section1,
+              date)
 
       profileRepository.addUserProfile(profile1)
     }
