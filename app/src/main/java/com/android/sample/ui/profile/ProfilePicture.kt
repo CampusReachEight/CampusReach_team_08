@@ -86,7 +86,7 @@ const val PictureNameRatio = 0.8f
 fun ProfilePicture(
     profileRepository: UserProfileRepository = UserProfileRepositoryFirestore(Firebase.firestore),
     profileId: String,
-    onClick: () -> Unit = {},
+    onClick: (String) -> Unit = {},
     modifier: Modifier = Modifier,
     withName: Boolean = false,
 ) {
@@ -155,8 +155,8 @@ fun ProfilePicture(
       modifier = modifier.fillMaxSize()) {
         val sizeMod = Modifier.weight(PictureNameRatio, fill = true)
 
-        Surface(
-            modifier = sizeMod.aspectRatio(1f).clip(CircleShape).clickable() { onClick() },
+      Surface(
+          modifier = sizeMod.aspectRatio(1f).clip(CircleShape).clickable() { onClick(profileId) },
             shape = CircleShape,
         ) {
           if (loading) {

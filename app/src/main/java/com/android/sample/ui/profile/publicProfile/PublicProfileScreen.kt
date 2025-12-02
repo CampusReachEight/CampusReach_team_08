@@ -57,10 +57,11 @@ fun PublicProfileScreen(
 ) {
   // If caller provided an explicit profile, render static UI only.
   // Otherwise use the ViewModel (and auto-load preview id).
-  if (profile == null) {
-    LaunchedEffect(defaultProfileId) { viewModel.loadPublicProfile(defaultProfileId) }
-  }
-
+    LaunchedEffect(defaultProfileId) {
+        if (profile == null && defaultProfileId.isNotBlank()) {
+            viewModel.loadPublicProfile(defaultProfileId)
+        }
+    }
   val vmState by viewModel.uiState.collectAsState()
 
   val shownState =
@@ -154,11 +155,12 @@ fun PublicProfileHeader(
       elevation = CardDefaults.cardElevation(defaultElevation = ProfileDimens.CardElevation)) {
         Box(modifier = Modifier.padding(ProfileDimens.HeaderPadding)) {
           Row(verticalAlignment = Alignment.CenterVertically) {
-            ProfilePicture(
-                profileId = state.profile?.userId ?: "",
-                modifier =
-                    Modifier.size(ProfileDimens.ProfilePicture)
-                        .testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_PROFILE_PICTURE))
+              ProfilePicture(
+                  profileId = state.profile?.userId ?: "",
+                  onClick = {},
+                  modifier =
+                      Modifier.size(ProfileDimens.ProfilePicture)
+                          .testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_PROFILE_PICTURE))
             Spacer(modifier = Modifier.width(ProfileDimens.HeaderSpacer))
             Column {
               Text(

@@ -36,6 +36,7 @@ import com.android.sample.ui.overview.AcceptRequestViewModel
 import com.android.sample.ui.overview.AcceptRequestViewModelFactory
 import com.android.sample.ui.profile.ProfileScreen
 import com.android.sample.ui.profile.ProfileViewModel
+import com.android.sample.ui.profile.publicProfile.PublicProfileScreen
 import com.android.sample.ui.request.RequestListScreen
 import com.android.sample.ui.request.RequestListViewModel
 import com.android.sample.ui.request.RequestListViewModelFactory
@@ -215,6 +216,14 @@ fun NavigationScreen(
       composable(Screen.MyRequest.route) {
         RequestListScreen(showOnlyMyRequests = true, navigationActions = navigationActions)
       }
+        composable(Screen.PublicProfile.route) { navBackStackEntry ->
+            val userId = navBackStackEntry.arguments?.getString(Screen.PublicProfile.ARG_USER_ID)
+            userId?.let { id ->
+                PublicProfileScreen(
+                    defaultProfileId = id,
+                    onBackClick = { navigationActions.goBack() })
+            }
+        }
     }
 
     navigation(startDestination = Screen.Map.route, route = "map") {
@@ -222,6 +231,8 @@ fun NavigationScreen(
         MapScreen(viewModel = mapViewModel, navigationActions = navigationActions)
       }
     }
+
+
   }
 }
 
