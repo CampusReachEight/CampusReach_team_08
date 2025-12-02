@@ -18,6 +18,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
+private const val UI_WAIT_TIME = 100L
+
 class ProfileViewModel(
     initialState: ProfileState = ProfileState.default(),
     private val fireBaseAuth: FirebaseAuth = FirebaseAuth.getInstance(),
@@ -41,9 +43,11 @@ class ProfileViewModel(
       }
 
   init {
-    // Only add the listener when allowed (tests can set attachAuthListener = false)
     if (attachAuthListener) {
-      fireBaseAuth.addAuthStateListener(authListener)
+      viewModelScope.launch {
+        kotlinx.coroutines.delay(UI_WAIT_TIME)
+        fireBaseAuth.addAuthStateListener(authListener)
+      }
     }
   }
 
