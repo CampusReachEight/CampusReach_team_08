@@ -104,12 +104,15 @@ fun ValidateRequestScreen(
                           userProfileRepository.receiveHelp(
                               helper.id, HelpReceivedConstants.HELP_RECEIVED_PER_HELP)
                         }
+                        android.util.Log.d("ValidateRequestScreen", "Confirm succeeded")
 
-                        // Notify caller that confirm flow completed
+
+                          // Notify caller that confirm flow completed
                         callbacks.onConfirmAndClose()
-                      } catch (_: Exception) {
+                      } catch (e: Exception) {
                         // On failure, surface retry/back behavior via provided callback
-                        callbacks.onRetry()
+                          android.util.Log.e("ValidateRequestScreen", "Confirm failed", e)
+                          callbacks.onRetry()
                       }
                     }
                   },
