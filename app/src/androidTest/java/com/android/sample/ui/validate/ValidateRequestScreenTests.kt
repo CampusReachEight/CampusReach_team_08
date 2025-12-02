@@ -807,6 +807,26 @@ private class FakeUserProfileRepository(
     // Increment helpReceived and persist the updated profile
     profileCache[userId] = profile.copy(helpReceived = profile.helpReceived + 1)
   }
+
+  override suspend fun followUser(targetUserId: String) {
+    return Unit
+  }
+
+  override suspend fun unfollowUser(targetUserId: String) {
+    return Unit
+  }
+
+  override suspend fun isFollowing(targetUserId: String): Boolean {
+    return false
+  }
+
+  override suspend fun getFollowing(): List<String> {
+    return emptyList()
+  }
+
+  override suspend fun getFollowers(): List<String> {
+    return emptyList()
+  }
 }
 
 // ==================== TEST DATA FACTORY ====================

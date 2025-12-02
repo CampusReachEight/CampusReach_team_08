@@ -87,4 +87,49 @@ interface UserProfileRepository {
    * @throws NoSuchElementException if the user profile is not found.
    */
   suspend fun receiveHelp(userId: String, amount: Int)
+
+  /**
+   * Follow a user. Adds currentUserId to targetUserId's followers list, and adds targetUserId to
+   * currentUserId's following list.
+   *
+   * @param targetUserId The user to follow
+   * @throws IllegalStateException if no authenticated user
+   * @throws IllegalArgumentException if trying to follow yourself
+   */
+  suspend fun followUser(targetUserId: String)
+
+  /**
+   * Unfollow a user. Removes currentUserId from targetUserId's followers list, and removes
+   * targetUserId from currentUserId's following list.
+   *
+   * @param targetUserId The user to unfollow
+   * @throws IllegalStateException if no authenticated user
+   * @throws IllegalArgumentException if trying to unfollow yourself
+   */
+  suspend fun unfollowUser(targetUserId: String)
+
+  /**
+   * Check if the current user is following a specific user.
+   *
+   * @param targetUserId The user to check
+   * @return true if current user follows target user, false otherwise
+   * @throws IllegalStateException if no authenticated user
+   */
+  suspend fun isFollowing(targetUserId: String): Boolean
+
+  /**
+   * Get the list of users the current user is following.
+   *
+   * @return List of user IDs
+   * @throws IllegalStateException if no authenticated user
+   */
+  suspend fun getFollowing(): List<String>
+
+  /**
+   * Get the list of users following the current user.
+   *
+   * @return List of user IDs
+   * @throws IllegalStateException if no authenticated user
+   */
+  suspend fun getFollowers(): List<String>
 }

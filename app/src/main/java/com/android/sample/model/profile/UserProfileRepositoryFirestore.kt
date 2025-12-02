@@ -307,4 +307,103 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
       throw HelpReceivedException.TransactionFailed("Failed to record help for user: $userId", e)
     }
   }
+
+  override suspend fun followUser(targetUserId: String) {
+    val currentUserId = getCurrentUserId()
+
+    if (currentUserId == targetUserId) {
+      throw IllegalArgumentException("Cannot follow yourself")
+    }
+
+    try {
+      // Get both profiles
+      val currentUserProfile = getUserProfile(currentUserId)
+      val targetUserProfile = getUserProfile(targetUserId)
+
+      // Check if already following
+      if (currentUserProfile.following.contains(targetUserId)) {
+        return // Already following, do nothing
+      }
+
+      // Update current user's following list
+      val updatedCurrentUser =
+          currentUserProfile.copy(following = currentUserProfile.following + targetUserId)
+
+      // Update target user's followers list
+      val updatedTargetUser =
+          targetUserProfile.copy(followers = targetUserProfile.followers + currentUserId)
+
+      // Save both updates
+      updateUserProfile(currentUserId, updatedCurrentUser)
+      updateUserProfile(targetUserId, updatedTargetUser)
+    } catch (e: Exception) {
+      throw Exception("Failed to follow user $targetUserId: ${e.message}", e)
+    }
+  }
+
+  override suspend fun unfollowUser(targetUserId: String) {
+    val currentUserId = getCurrentUserId()
+
+    if (currentUserId == targetUserId) {
+      throw IllegalArgumentException("Cannot unfollow yourself")
+    }
+
+    try {
+      // Get both profiles
+      val currentUserProfile = getUserProfile(currentUserId)
+      val targetUserProfile = getUserProfile(targetUserId)
+
+      // Check if not following
+      if (!currentUserProfile.following.contains(targetUserId)) {
+        return // Not following, do nothing
+      }
+
+      // Update current user's following list
+      val updatedCurrentUser =
+          currentUserProfile.copy(following = currentUserProfile.following - targetUserId)
+
+      // Update target user's followers list
+      val updatedTargetUser =
+          targetUserProfile.copy(followers = targetUserProfile.followers - currentUserId)
+
+      // Save both updates
+      updateUserProfile(currentUserId, updatedCurrentUser)
+      updateUserProfile(targetUserId, updatedTargetUser)
+    } catch (e: Exception) {
+      throw Exception("Failed to unfollow user $targetUserId: ${e.message}", e)
+    }
+  }
+
+  override suspend fun isFollowing(targetUserId: String): Boolean {
+    val currentUserId = getCurrentUserId()
+
+    try {
+      val currentUserProfile = getUserProfile(currentUserId)
+      return currentUserProfile.following.contains(targetUserId)
+    } catch (e: Exception) {
+      throw Exception("Failed to check follow status for $targetUserId: ${e.message}", e)
+    }
+  }
+
+  override suspend fun getFollowing(): List<String> {
+    val currentUserId = getCurrentUserId()
+
+    try {
+      val userProfile = getUserProfile(currentUserId)
+      return userProfile.following
+    } catch (e: Exception) {
+      throw Exception("Failed to get following list: ${e.message}", e)
+    }
+  }
+
+  override suspend fun getFollowers(): List<String> {
+    val currentUserId = getCurrentUserId()
+
+    try {
+      val userProfile = getUserProfile(currentUserId)
+      return userProfile.followers
+    } catch (e: Exception) {
+      throw Exception("Failed to get followers list: ${e.message}", e)
+    }
+  }
 }

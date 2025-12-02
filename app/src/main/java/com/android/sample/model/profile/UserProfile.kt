@@ -46,6 +46,8 @@ data class UserProfile(
     val photo: Uri?, // Nullable Bitmap for user photo in case user hasn't set one
     val kudos: Int,
     val helpReceived: Int,
+    val followers: List<String> = emptyList(),
+    val following: List<String> = emptyList(),
     val section: UserSections,
     val arrivalDate: Date,
 ) {
@@ -87,6 +89,10 @@ data class UserProfile(
           photo = data["photo"]?.let { uriString -> Uri.parse(uriString as String) },
           kudos = (data["kudos"] as Number).toInt(),
           helpReceived = (data["helpReceived"] as? Number)?.toInt() ?: 0,
+          followers =
+              (data["followers"] as? List<*>)?.mapNotNull { it as? String } ?: emptyList(), // NEW
+          following =
+              (data["following"] as? List<*>)?.mapNotNull { it as? String } ?: emptyList(), // NEW
           section = section,
           arrivalDate = arrival)
     }
@@ -142,6 +148,9 @@ data class UserProfile(
           "email" to email,
           "photo" to photo,
           "kudos" to kudos,
+          "helpReceived" to helpReceived,
+          "followers" to followers,
+          "following" to following,
           "section" to section.name,
           "arrivalDate" to Timestamp(arrivalDate),
           // Used exclusively for search queries

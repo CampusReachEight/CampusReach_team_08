@@ -128,6 +128,8 @@ class MapsTest : BaseEmulatorTest() {
               null,
               kudos2,
               helpReceived = 5,
+              followers = emptyList(),
+              following = emptyList(),
               section2,
               datePlusOneHour)
 
@@ -166,6 +168,8 @@ class MapsTest : BaseEmulatorTest() {
               null,
               kudos1,
               helpReceived = 1,
+              followers = emptyList(),
+              following = emptyList(),
               section1,
               date)
 

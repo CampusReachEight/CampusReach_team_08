@@ -186,6 +186,26 @@ class RequestListTests : BaseEmulatorTest() {
     override suspend fun receiveHelp(userId: String, amount: Int) {
       return
     }
+
+    override suspend fun followUser(targetUserId: String) {
+      return Unit
+    }
+
+    override suspend fun unfollowUser(targetUserId: String) {
+      return Unit
+    }
+
+    override suspend fun isFollowing(targetUserId: String): Boolean {
+      return false
+    }
+
+    override suspend fun getFollowing(): List<String> {
+      return emptyList()
+    }
+
+    override suspend fun getFollowers(): List<String> {
+      return emptyList()
+    }
   }
 
   private fun sampleRequests(creatorIds: List<String>): List<Request> {
