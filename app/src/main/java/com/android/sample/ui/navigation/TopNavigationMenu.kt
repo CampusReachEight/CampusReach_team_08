@@ -1,4 +1,4 @@
-package com.android.sample.ui.theme
+package com.android.sample.ui.navigation
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -11,9 +11,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
-import com.android.sample.ui.navigation.NavigationTab
-import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.profile.ProfilePicture
+import com.android.sample.ui.theme.UiDimens
+import com.android.sample.ui.theme.appPalette
 import com.google.firebase.auth.FirebaseAuth
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -21,7 +21,8 @@ import com.google.firebase.auth.FirebaseAuth
 fun TopNavigationBar(
     selectedTab: NavigationTab,
     onProfileClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    navigationActions: NavigationActions? = null
 ) {
   val title =
       when (selectedTab) {
@@ -41,7 +42,8 @@ fun TopNavigationBar(
       actions = {
         ProfilePicture(
             profileId = FirebaseAuth.getInstance().currentUser?.uid ?: "",
-            onClick = onProfileClick,
+            onClick = { onProfileClick() },
+            navigationActions = navigationActions,
             modifier =
                 Modifier.size(UiDimens.IconMedium).testTag(NavigationTestTags.PROFILE_BUTTON))
       },

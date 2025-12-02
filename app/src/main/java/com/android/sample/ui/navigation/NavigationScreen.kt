@@ -37,6 +37,8 @@ import com.android.sample.ui.overview.AcceptRequestViewModelFactory
 import com.android.sample.ui.profile.ProfileScreen
 import com.android.sample.ui.profile.ProfileViewModel
 import com.android.sample.ui.profile.publicProfile.PublicProfileScreen
+import com.android.sample.ui.profile.publicProfile.PublicProfileViewModel
+import com.android.sample.ui.profile.publicProfile.PublicProfileViewModelFactory
 import com.android.sample.ui.request.RequestListScreen
 import com.android.sample.ui.request.RequestListViewModel
 import com.android.sample.ui.request.RequestListViewModelFactory
@@ -47,7 +49,6 @@ import com.android.sample.ui.request_validation.ValidateRequestCallbacks
 import com.android.sample.ui.request_validation.ValidateRequestScreen
 import com.android.sample.ui.request_validation.ValidateRequestViewModel
 import com.android.sample.ui.request_validation.ValidateRequestViewModelFactory
-import com.android.sample.ui.theme.TopNavigationBar
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.firestore
@@ -216,14 +217,17 @@ fun NavigationScreen(
       composable(Screen.MyRequest.route) {
         RequestListScreen(showOnlyMyRequests = true, navigationActions = navigationActions)
       }
-        composable(Screen.PublicProfile.route) { navBackStackEntry ->
-            val userId = navBackStackEntry.arguments?.getString(Screen.PublicProfile.ARG_USER_ID)
-            userId?.let { id ->
-                PublicProfileScreen(
-                    defaultProfileId = id,
-                    onBackClick = { navigationActions.goBack() })
-            }
+      composable(Screen.PublicProfile.route) { navBackStackEntry ->
+        val userId = navBackStackEntry.arguments?.getString(Screen.PublicProfile.ARG_USER_ID)
+        userId?.let { id ->
+          val publicProfileViewModel: PublicProfileViewModel =
+              viewModel(factory = PublicProfileViewModelFactory(userProfileRepository))
+          PublicProfileScreen(
+              viewModel = publicProfileViewModel,
+              defaultProfileId = id,
+              onBackClick = { navigationActions.goBack() })
         }
+      }
     }
 
     navigation(startDestination = Screen.Map.route, route = "map") {
@@ -231,8 +235,6 @@ fun NavigationScreen(
         MapScreen(viewModel = mapViewModel, navigationActions = navigationActions)
       }
     }
-
-
   }
 }
 
@@ -251,7 +253,7 @@ fun PlaceHolderScreen(
           TopNavigationBar(
               selectedTab = defaultTab,
               onProfileClick = { navigationActions?.navigateTo(Screen.Profile("TODO")) },
-          )
+              navigationActions = navigationActions)
         }
       },
       bottomBar = {

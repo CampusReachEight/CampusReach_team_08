@@ -35,6 +35,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import com.android.sample.model.profile.UserProfile
 import com.android.sample.model.profile.UserProfileRepository
 import com.android.sample.model.profile.UserProfileRepositoryFirestore
+import com.android.sample.ui.navigation.NavigationActions
+import com.android.sample.ui.navigation.Screen
 import com.android.sample.ui.request.ConstantRequestList
 import com.android.sample.ui.theme.AppColors.SecondaryDark
 import com.android.sample.ui.theme.AppColors.WhiteColor
@@ -87,6 +89,7 @@ fun ProfilePicture(
     profileRepository: UserProfileRepository = UserProfileRepositoryFirestore(Firebase.firestore),
     profileId: String,
     onClick: (String) -> Unit = {},
+    navigationActions: NavigationActions? = null,
     modifier: Modifier = Modifier,
     withName: Boolean = false,
 ) {
@@ -155,8 +158,20 @@ fun ProfilePicture(
       modifier = modifier.fillMaxSize()) {
         val sizeMod = Modifier.weight(PictureNameRatio, fill = true)
 
-      Surface(
-          modifier = sizeMod.aspectRatio(1f).clip(CircleShape).clickable() { onClick(profileId) },
+        Surface(
+            modifier =
+                sizeMod.aspectRatio(1f).clip(CircleShape).clickable() {
+                  if (navigationActions != null) {
+                    val currentUserId = profileRepository.getCurrentUserId()
+                    if (profileId == currentUserId) {
+                      navigationActions.navigateTo(Screen.Profile(profileId))
+                    } else {
+                      navigationActions.navigateTo(Screen.PublicProfile(profileId))
+                    }
+                  } else {
+                    onClick(profileId)
+                  }
+                },
             shape = CircleShape,
         ) {
           if (loading) {
