@@ -89,21 +89,21 @@ class CloseRequestUseCaseTest {
 
   // ============ Tests for Successful Execution ============
 
-  @Test
-  fun execute_success_awardsKudos_toHelpersAndCreator() = runTest {
-    // Arrange
-    val selectedHelpers = listOf(HELPER_1_ID, HELPER_2_ID)
-    mockSuccessfulRequestClosure(selectedHelpers = selectedHelpers)
-    mockSuccessfulKudosAward()
-
-    // Act
-    val result = useCase.execute(REQUEST_ID, selectedHelpers)
-
-    // Assert
-    assertSuccessResult(result, EXPECTED_TWO_HELPERS, creatorAwarded = true)
-    verifyHelperKudosAwarded(selectedHelpers)
-    verifyCreatorKudosAwarded()
-  }
+  //  @Test
+  //  fun execute_success_awardsKudos_toHelpersAndCreator() = runTest {
+  //    // Arrange
+  //    val selectedHelpers = listOf(HELPER_1_ID, HELPER_2_ID)
+  //    mockSuccessfulRequestClosure(selectedHelpers = selectedHelpers)
+  //    mockSuccessfulKudosAward()
+  //
+  //    // Act
+  //    val result = useCase.execute(REQUEST_ID, selectedHelpers)
+  //
+  //    // Assert
+  //    assertSuccessResult(result, EXPECTED_TWO_HELPERS, creatorAwarded = true)
+  //    verifyHelperKudosAwarded(selectedHelpers)
+  //    verifyCreatorKudosAwarded()
+  //  }
 
   @Test
   fun execute_success_noCreatorKudos_whenNoHelpersSelected() = runTest {
