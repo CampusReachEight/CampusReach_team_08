@@ -59,9 +59,40 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
   // Retrieves a user profile by ID
   override suspend fun getUserProfile(userId: String): UserProfile {
     val currentUserId = Firebase.auth.currentUser?.uid
-    val collectionRef = if (userId == currentUserId) privateCollectionRef else publicCollectionRef
 
-    return collectionRef.document(userId).get().await().data?.let { UserProfile.fromMap(it) }
+    // If request the current user's profile, fetch from private collection
+    if (userId == currentUserId) {
+      val privateDocRef = privateCollectionRef.document(userId)
+      val privateSnapshot = privateDocRef.get().await()
+      if (!privateSnapshot.exists()) {
+        throw NoSuchElementException("UserProfile with ID $userId not found")
+      }
+
+      try {
+        val publicSnapshot = publicCollectionRef.document(userId).get().await()
+        if (publicSnapshot.exists()) {
+          val publicKudos = (publicSnapshot.get("kudos") as? Number)?.toInt() ?: 0
+          val privateKudos = (privateSnapshot.get("kudos") as? Number)?.toInt() ?: 0
+
+          if (publicKudos != privateKudos) {
+            // Sync private kudos to the public value
+            privateDocRef.update("kudos", publicKudos).await()
+            // Re-fetch private snapshot to return the latest data
+            val updatedPrivateSnapshot = privateDocRef.get().await()
+            return updatedPrivateSnapshot.data?.let { UserProfile.fromMap(it) }
+                ?: throw NoSuchElementException("UserProfile with ID $userId not found after sync")
+          }
+        }
+      } catch (e: Exception) {
+        Log.e("UserProfileRepository", "Error syncing kudos for user $userId: ${e.message}")
+      }
+      return privateSnapshot.data?.let { UserProfile.fromMap(it) }
+          ?: throw NoSuchElementException("UserProfile with ID $userId not found")
+    }
+
+    // For other users, return the public profile
+    val publicDoc = publicCollectionRef.document(userId).get().await()
+    return publicDoc.data?.let { UserProfile.fromMap(it) }
         ?: throw NoSuchElementException("UserProfile with ID $userId not found")
   }
 
