@@ -31,6 +31,7 @@ import com.android.sample.ui.navigation.NavigationActions
 import com.android.sample.ui.navigation.NavigationTab
 import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.navigation.Screen
+import com.android.sample.ui.navigation.TopNavigationBar
 import com.android.sample.ui.profile.ProfilePicture
 import com.android.sample.ui.request.ConstantRequestList.TypeChipBorderWidth
 import com.android.sample.ui.request.ConstantRequestList.TypeChipColumnSpacing
@@ -38,7 +39,6 @@ import com.android.sample.ui.request.ConstantRequestList.TypeChipCornerRadius
 import com.android.sample.ui.request.ConstantRequestList.TypeChipTextPadding
 import com.android.sample.ui.request.ConstantRequestList.TypeChipTextSize
 import com.android.sample.ui.request.ConstantRequestList.TypeChipTextSizeFactor
-import com.android.sample.ui.theme.TopNavigationBar
 import com.android.sample.ui.theme.appPalette
 
 // removed local magic number vals; use ConstantRequestList instead
@@ -151,7 +151,7 @@ fun RequestListScreen(
           TopNavigationBar(
               selectedTab = NavigationTab.Requests,
               onProfileClick = { navigationActions?.navigateTo(Screen.Profile(TEXT_TODO)) },
-          )
+              navigationActions = navigationActions)
         }
       },
       bottomBar = {
@@ -201,6 +201,7 @@ fun RequestListScreen(
                   // Always go to view-only accept screen; owner-specific edit is inside details
                   navigationActions?.navigateTo(Screen.RequestAccept(it.requestId))
                 },
+                navigationActions = navigationActions,
                 modifier = Modifier.fillMaxSize())
           }
         }
@@ -213,6 +214,7 @@ fun RequestList(
     viewModel: RequestListViewModel,
     state: RequestListState,
     onRequestClick: (Request) -> Unit,
+    navigationActions: NavigationActions?,
     modifier: Modifier = Modifier
 ) {
   Column {
@@ -232,7 +234,11 @@ fun RequestList(
                 .testTag(RequestListTestTags.REQUEST_LIST)) {
           items(state.requests.size) { index ->
             val request = state.requests[index]
-            RequestListItem(viewModel = viewModel, request = request, onClick = onRequestClick)
+            RequestListItem(
+                viewModel = viewModel,
+                request = request,
+                onClick = onRequestClick,
+                navigationActions = navigationActions)
           }
         }
   }
@@ -248,6 +254,7 @@ fun RequestListItem(
     viewModel: RequestListViewModel,
     request: Request,
     onClick: (Request) -> Unit,
+    navigationActions: NavigationActions?,
     modifier: Modifier = Modifier
 ) {
 
@@ -264,7 +271,7 @@ fun RequestListItem(
       ProfilePicture(
           profileRepository = viewModel.profileRepository,
           profileId = request.creatorId,
-          onClick = {},
+          navigationActions = navigationActions,
           modifier =
               Modifier.width(ConstantRequestList.RequestItemCreatorSectionSize)
                   .fillMaxHeight()
