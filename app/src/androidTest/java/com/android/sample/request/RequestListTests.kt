@@ -1330,4 +1330,53 @@ class RequestListTests : BaseEmulatorTest() {
 
     // No assertion needed - just verifying no crash
   }
+
+  @Test
+  fun loadingIndicator_isShownInitially() {
+    // Given an empty list → ViewModel will start loading
+    val vm = getFakeVm(emptyList())
+
+    composeTestRule.setContent {
+      CompositionLocalProvider(LocalAppPalette provides DarkPalette) {
+        RequestListScreen(
+            requestListViewModel = vm, navigationActions = mock(NavigationActions::class.java))
+      }
+    }
+
+    // Assert loading indicator is visible
+    composeTestRule
+        .onNodeWithTag(RequestListTestTags.LOADING_INDICATOR, useUnmergedTree = true)
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun loadingIndicator_disappearsWhenDataLoaded() {
+    val requests = sampleRequests(listOf(DEFAULT_USER_ID))
+    val vm = getFakeVm(requests)
+
+    composeTestRule.setContent {
+      CompositionLocalProvider(LocalAppPalette provides DarkPalette) {
+        RequestListScreen(
+            requestListViewModel = vm, navigationActions = mock(NavigationActions::class.java))
+      }
+    }
+
+    // Wait for loading to finish naturally (ViewModel fetch)
+    composeTestRule.waitUntil(timeoutMillis = WAIT_TIMEOUT_MS) {
+      composeTestRule
+          .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM_TITLE, useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Loading icon should be gone
+    composeTestRule
+        .onNodeWithTag(RequestListTestTags.LOADING_INDICATOR, useUnmergedTree = true)
+        .assertDoesNotExist()
+
+    // And list items should be present
+    composeTestRule
+        .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM_TITLE, useUnmergedTree = true)
+        .assertCountEquals(requests.size)
+  }
 }
