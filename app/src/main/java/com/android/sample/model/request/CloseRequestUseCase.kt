@@ -52,12 +52,16 @@ class CloseRequestUseCase(
       }
 
       // Step 4: Record help receive for creator
-      if (creatorShouldReceiveKudos) {
+      if (selectedHelperIds.isNotEmpty()) {
+
+        val request = requestRepository.getRequest(requestId)
+        val creatorId = request.creatorId
+
         try {
-          userProfileRepository.receiveHelp(requestId, HelpReceivedConstants.HELP_RECEIVED_PER_HELP)
-          Log.d(TAG, "Recorded help received for request: $requestId")
+          userProfileRepository.receiveHelp(creatorId, HelpReceivedConstants.HELP_RECEIVED_PER_HELP)
+          Log.d(TAG, "Recorded help received for request: $creatorId")
         } catch (e: Exception) {
-          Log.e(TAG, "Failed to record help received for request $requestId: ${e.message}", e)
+          Log.e(TAG, "Failed to record help received for request $creatorId: ${e.message}", e)
         }
       }
 
