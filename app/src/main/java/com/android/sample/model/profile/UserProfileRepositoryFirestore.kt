@@ -133,7 +133,7 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
     publicCollectionRef.document(userId).set(publicProfile.toMap()).await()
   }
 
-  override suspend fun deleteUserProfile(userId: String): UserProfile? {
+  override suspend fun deleteUserProfile(userId: String) {
     val currentUserId = Firebase.auth.currentUser?.uid ?: notAuthenticated()
     if (userId != currentUserId) {
       notAuthorized()
@@ -143,17 +143,11 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
 
     // Read the private profile before deleting so we can return it
     val privateSnapshot = privateDocRef.get().await()
-    if (!privateSnapshot.exists()) {
-      return null
-    }
-
     val deletedProfile = privateSnapshot.data?.let { UserProfile.fromMap(it) }
 
     // Delete from both collections
     privateDocRef.delete().await()
     publicCollectionRef.document(userId).delete().await()
-
-    return deletedProfile
   }
 
   /**

@@ -45,7 +45,7 @@ interface UserProfileRepository {
    * @param userId The unique identifier of the user profile to delete.
    * @throws Exception if the user profile is not found.
    */
-  suspend fun deleteUserProfile(userId: String): UserProfile?
+  suspend fun deleteUserProfile(userId: String)
 
   /**
    * Searches public user profiles by name (first/last). Uses Firestore queries to minimize data
