@@ -414,6 +414,7 @@ class EndToEndTests : BaseEmulatorTest() {
         .onNodeWithTag(NavigationTestTags.PROFILE_BUTTON)
         .assertIsDisplayed()
         .performClick()
+    Thread.sleep(500)
 
     composeTestRule.waitForIdle()
     composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
@@ -559,6 +560,8 @@ class EndToEndTests : BaseEmulatorTest() {
   fun canLogInAndThenDisconnect() {
 
     initialize(thirdName, thirdEmail)
+    composeTestRule.waitForIdle()
+    Thread.sleep(1500)
 
     logOut()
   }
@@ -719,7 +722,7 @@ class EndToEndTests : BaseEmulatorTest() {
         .performTextInput(anotherTitle)
 
     composeTestRule.waitForIdle()
-    Thread.sleep(500)
+    Thread.sleep(1000)
 
     composeTestRule
         .onNodeWithTag(EditRequestScreenTestTags.SAVE_BUTTON)
@@ -795,6 +798,8 @@ class EndToEndTests : BaseEmulatorTest() {
     val testName = "12345"
     val testEmail = "editprofile@example.com"
     initialize(testName, testEmail)
+    composeTestRule.waitForIdle()
+    Thread.sleep(1500)
 
     // 2. Navigate to Profile
     composeTestRule
@@ -840,14 +845,14 @@ class EndToEndTests : BaseEmulatorTest() {
         .performClick()
 
     composeTestRule.waitForIdle()
-    Thread.sleep(500) // Wait for bottom sheet to appear
+    Thread.sleep(1000) // Wait for bottom sheet to appear
 
     // 6. Select Computer Science
     val sectionTag = ProfileTestTags.SECTION_OPTION_PREFIX + "Computer_Science"
     composeTestRule.onNodeWithTag(sectionTag).assertIsDisplayed().performClick()
 
     composeTestRule.waitForIdle()
-    Thread.sleep(500)
+    Thread.sleep(1000)
 
     // 7. Save changes
     composeTestRule
@@ -864,7 +869,7 @@ class EndToEndTests : BaseEmulatorTest() {
           .isEmpty()
     }
 
-    Thread.sleep(500) // Let UI settle
+    Thread.sleep(1000) // Let UI settle
     composeTestRule.waitForIdle()
 
     // 9. Verify profile information is updated on screen

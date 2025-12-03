@@ -300,22 +300,23 @@ class ProfileUiTests {
   }
 
   @Test
-  fun profileInformation_showsLabels_and_handlesEmptyValues() {
-    val emptyState =
+  fun profileInformation_showsAllFields_whenShowSensitiveInfoTrue() {
+    val state =
         ProfileState.default()
-            .copy(userName = "", userEmail = "", profileId = "", arrivalDate = "", userSection = "")
+            .copy(
+                userName = "John Doe",
+                userEmail = "john@example.com",
+                profileId = "123",
+                arrivalDate = "01/01/2020",
+                userSection = "Engineering")
 
-    composeTestRule.setContent { ProfileInformation(state = emptyState) }
+    composeTestRule.setContent { ProfileInformation(state = state, showSensitiveInfo = true) }
 
-    // Header label remains visible
-    composeTestRule.onNodeWithText("Information").assertIsDisplayed()
-
-    // Each info value exists and is an empty string
-    composeTestRule.onNodeWithTag("profile_info_name").assertTextEquals("")
-    composeTestRule.onNodeWithTag("profile_info_profile_id").assertTextEquals("")
-    composeTestRule.onNodeWithTag("profile_info_arrival_date").assertTextEquals("")
-    composeTestRule.onNodeWithTag("profile_info_section").assertTextEquals("")
-    composeTestRule.onNodeWithTag("profile_info_email").assertTextEquals("")
+    composeTestRule.onNodeWithTag("profile_info_name").assertTextEquals("John Doe")
+    composeTestRule.onNodeWithTag("profile_info_profile_id").assertTextEquals("123")
+    composeTestRule.onNodeWithTag("profile_info_arrival_date").assertTextEquals("01/01/2020")
+    composeTestRule.onNodeWithTag("profile_info_section").assertTextEquals("Engineering")
+    composeTestRule.onNodeWithTag("profile_info_email").assertTextEquals("john@example.com")
   }
 
   @Test
