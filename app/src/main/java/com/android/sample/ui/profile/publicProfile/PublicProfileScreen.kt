@@ -134,7 +134,7 @@ fun PublicProfileHeader(
       if (profile?.lastName.isNullOrBlank()) {
         profile?.name ?: "Unknown"
       } else {
-        "${profile?.name} ${profile?.lastName}"
+        "${profile.name} ${profile.lastName}"
       }
 
   // Get section label
