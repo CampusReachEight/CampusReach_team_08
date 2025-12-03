@@ -72,7 +72,7 @@ class MapWithCurrentLocationTest : BaseEmulatorTest() {
   private val name2 = "Other"
   private val firstName2 = "Mama"
   private val kudos2 = 11
-    private val helpReceived = 0
+  private val helpReceived = 0
   private val section2 = UserSections.MATHEMATICS
   private val randomPerson = "randomPerson"
   private val messageError = "No location"
