@@ -74,6 +74,8 @@ object RequestListTestTags {
   const val REQUEST_TAG_FILTER_SEARCH_BAR = "requestTagFilterSearchBar"
   const val REQUEST_STATUS_FILTER_SEARCH_BAR = "requestStatusFilterSearchBar"
 
+  const val LOADING_INDICATOR = "loadingIndicator"
+
   /**
    * Generates a tag for a given filter type and value within dropdown menus. These tags are
    * dynamically created based on filter values.
@@ -185,7 +187,13 @@ fun RequestListScreen(
                     it.status == com.android.sample.model.request.RequestStatus.IN_PROGRESS
               }
 
-          if (!state.isLoading && toShow.isEmpty()) {
+          if (state.isLoading) {
+            Box(
+                modifier = Modifier.fillMaxSize().testTag(RequestListTestTags.LOADING_INDICATOR),
+                contentAlignment = Alignment.Center) {
+                  CircularProgressIndicator()
+                }
+          } else if (toShow.isEmpty()) {
             Text(
                 text = if (showOnlyMyRequests) NO_REQUEST_YET else NO_REQUEST_NOW,
                 modifier =
