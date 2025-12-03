@@ -45,9 +45,6 @@ fun ValidateRequestScreen(
     callbacks: ValidateRequestCallbacks,
     modifier: Modifier = Modifier
 ) {
-  // scope for launching suspend repository operations from UI events
-  val coroutineScope = rememberCoroutineScope()
-
   // Handle success navigation
   LaunchedEffect(state) {
     if (state is ValidationState.Success) {

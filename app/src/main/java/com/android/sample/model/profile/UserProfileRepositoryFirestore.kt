@@ -71,8 +71,8 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
       try {
         val publicSnapshot = publicCollectionRef.document(userId).get().await()
         if (publicSnapshot.exists()) {
-          val publicKudos = (publicSnapshot.get("kudos") as? Number)?.toInt() ?: 0
-          val privateKudos = (privateSnapshot.get("kudos") as? Number)?.toInt() ?: 0
+          val publicKudos = (publicSnapshot["kudos"] as? Number)?.toInt() ?: 0
+          val privateKudos = (privateSnapshot["kudos"] as? Number)?.toInt() ?: 0
 
           if (publicKudos != privateKudos) {
             // Sync private kudos to the public value
@@ -264,7 +264,7 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
         // Add updates to batch for both collections
         val publicDocRef = publicCollectionRef.document(userId)
 
-        val currentKudos = (userDoc.get("kudos") as? Number)?.toLong() ?: 20L
+        val currentKudos = (userDoc["kudos"] as? Number)?.toLong() ?: 20L
         Log.d(
             "KUDOS_BATCH", "awardKudosBatch: `public_profiles`/$userId kudos-before=$currentKudos")
 
