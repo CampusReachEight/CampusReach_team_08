@@ -62,6 +62,7 @@ class CloseRequestUseCase(
           Log.d(TAG, "Recorded help received for request: $creatorId")
         } catch (e: Exception) {
           Log.e(TAG, "Failed to record help received for request $creatorId: ${e.message}", e)
+          return CloseRequestResult.Failure(e)
         }
       }
 
