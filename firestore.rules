@@ -5,7 +5,17 @@ service cloud.firestore {
     // Public profiles: everyone can read
     match /public_profiles/{userId} {
       allow read: if true;
-      allow write: if true;
+
+      // Owner may create, fully update and delete their public profile
+      allow create, update, delete: if request.auth != null && request.auth.uid == userId;
+
+      // Other authenticated users may only update the single `kudos` field (no other changes)
+      allow update: if request.auth != null
+                    && request.auth.uid != userId
+                    // Only the `kudos` key is allowed to change
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['kudos'])
+                    // `kudos` must be an integer and non-negative
+                    && request.resource.data.kudos is int
     }
 
     // Private profiles: only the owner can read/write
