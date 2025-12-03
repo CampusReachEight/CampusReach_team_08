@@ -799,8 +799,7 @@ class FakeUserProfileRepository(initialProfiles: List<UserProfile> = emptyList()
   override suspend fun updateUserProfile(userId: String, updatedProfile: UserProfile) =
       mutex.withLock { profiles[userId] = updatedProfile.copy() }
 
-  override suspend fun deleteUserProfile(userId: String) =
-      mutex.withLock { profiles.remove(userId) }
+  override suspend fun deleteUserProfile(userId: String) {}
 
   override suspend fun searchUserProfiles(query: String, limit: Int): List<UserProfile> =
       getAllUserProfiles()
