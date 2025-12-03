@@ -137,9 +137,6 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Create Safe Branch Name
-        run: echo "SAFE_BRANCH=$(echo '${{ github.ref_name }}' | sed 's|/|-|g')" >> $GITHUB_ENV
-
       - name: Setup JDK
         uses: actions/setup-java@v4
         with:
@@ -225,27 +222,9 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      # State Logic: Download Android Test State
-      - name: Download Test State
-        uses: actions/download-artifact@v4
-        with:
-          name: test-state-${{ env.SAFE_BRANCH }}-${{ github.sha }}
-          path: .state
-        continue-on-error: true
-
-      # State Logic: Download Unit Test State
-      - name: Download Unit Test State
-        uses: actions/download-artifact@v4
-        with:
-          name: unit-test-state-${{ env.SAFE_BRANCH }}-${{ github.sha }}
-          path: .state
-        continue-on-error: true
-
-      # --- EXECUTE TESTS (Merged Script) ---
+      # --- EXECUTE TESTS ---
       - name: Run Tests (Unit & Int)
         timeout-minutes: 45
-        env:
-          SKIP_PASSED_UNIT_TESTS: 'false'  # Set to 'true' to skip unit tests when all passed (matches Android behavior)
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 36
@@ -257,35 +236,6 @@ jobs:
           disable-animations: true
           script: .github/scripts/run_tests.sh
 
-      # State Logic: Update (Run ONLY if XML results exist, ensuring data isn't lost)
-      - name: Update Test State
-        if: always()
-        run: |
-          if [ -d "app/build/outputs/androidTest-results/connected" ]; then
-            python3 .github/scripts/manage_test_state.py update_state \
-              --state-file .state/test-status.json \
-              --xml-dir app/build/outputs/androidTest-results/connected
-          else
-            echo "No Android test results found. Skipping state update."
-          fi
-
-      # Upload Updated Android Test State
-      - name: Upload Test State
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-state-${{ env.SAFE_BRANCH }}-${{ github.sha }}
-          path: .state/test-status.json
-          overwrite: true
-
-      # Upload Updated Unit Test State
-      - name: Upload Unit Test State
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: unit-test-state-${{ env.SAFE_BRANCH }}-${{ github.sha }}
-          path: .state/unit-test-status.json
-          overwrite: true
 
       # Upload Coverage (Merged from Unit + Android automatically by the script running both)
       - name: Upload Run Coverage

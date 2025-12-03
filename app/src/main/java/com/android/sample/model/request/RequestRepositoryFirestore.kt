@@ -343,7 +343,7 @@ class RequestRepositoryFirestore(private val db: FirebaseFirestore) : RequestRep
       }
 
       // Return true if creator should receive kudos (at least one helper selected)
-      return selectedHelperIds.isNotEmpty()
+      return false
     } catch (e: RequestClosureException) {
       throw e
     } catch (e: FirebaseFirestoreException) {
