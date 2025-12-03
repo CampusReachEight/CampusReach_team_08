@@ -430,6 +430,50 @@ class PublicProfileTests {
     composeTestRule.onNodeWithTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER).assertIsDisplayed()
   }
 
+  @Test
+  fun viewModel_loadProfileId_handlesRepositoryException() {
+    val mockRepo =
+        object : UserProfileRepository {
+          override fun getNewUid(): String = "mockUid"
+
+          override fun getCurrentUserId(): String = "mockCurrentUser"
+
+          override suspend fun getAllUserProfiles(): List<UserProfile> = emptyList()
+
+          override suspend fun getUserProfile(userId: String): UserProfile {
+            throw Exception("Network error")
+          }
+
+          override suspend fun addUserProfile(userProfile: UserProfile) {}
+
+          override suspend fun updateUserProfile(userId: String, updatedProfile: UserProfile) {}
+
+          override suspend fun deleteUserProfile(userId: String) {}
+
+          override suspend fun searchUserProfiles(query: String, limit: Int): List<UserProfile> =
+              emptyList()
+
+          override suspend fun awardKudos(userId: String, amount: Int) {}
+
+          override suspend fun awardKudosBatch(awards: Map<String, Int>) {}
+
+          override suspend fun receiveHelp(userId: String, amount: Int) {}
+        }
+
+    val viewModel = PublicProfileViewModel(mockRepo)
+
+    viewModel.loadPublicProfile("testUser")
+
+    composeTestRule.waitForIdle()
+
+    composeTestRule.runOnIdle {
+      val state = viewModel.uiState.value
+      assertEquals(false, state.isLoading)
+      assertEquals(null, state.profile)
+      assertTrue(state.error?.contains("Failed to load profile") == true)
+    }
+  }
+
   // Mock repository
   private class MockUserProfileRepository : UserProfileRepository {
     override fun getNewUid(): String = "mockUid"
