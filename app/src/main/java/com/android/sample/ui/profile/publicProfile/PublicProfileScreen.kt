@@ -131,10 +131,10 @@ fun PublicProfileHeader(
 
   // Combine name and lastName
   val fullName =
-      if (profile?.lastName.isNullOrBlank()) {
-        profile?.name ?: "Unknown"
-      } else {
-        "${profile.name} ${profile.lastName}"
+      when {
+        profile == null -> "Unknown"
+        profile.lastName.isBlank() -> profile.name
+        else -> "${profile.name} ${profile.lastName}"
       }
 
   // Get section label

@@ -84,6 +84,8 @@ object ProfileCache {
 
 const val PictureNameRatio = 0.8f
 
+private const val PADDING = 1f
+
 @Composable
 fun ProfilePicture(
     profileRepository: UserProfileRepository = UserProfileRepositoryFirestore(Firebase.firestore),
@@ -160,7 +162,7 @@ fun ProfilePicture(
 
         Surface(
             modifier =
-                sizeMod.aspectRatio(1f).clip(CircleShape).clickable() {
+                sizeMod.aspectRatio(PADDING).clip(CircleShape).clickable() {
                   if (navigationActions != null) {
                     val currentUserId = profileRepository.getCurrentUserId()
                     if (profileId == currentUserId) {
