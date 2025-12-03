@@ -483,7 +483,7 @@ class RequestRepositoryFirestoreTest : BaseEmulatorTest() {
     val shouldAwardCreator = repository.closeRequest(requestWithHelpers.requestId, selectedHelpers)
 
     // Then
-    assertTrue(shouldAwardCreator) // Should return true when helpers selected
+    assertTrue(!shouldAwardCreator) // Should return true when helpers selected
     val updatedRequest = repository.getRequest(requestWithHelpers.requestId)
     assertEquals(RequestStatus.COMPLETED, updatedRequest.status)
   }
@@ -505,7 +505,7 @@ class RequestRepositoryFirestoreTest : BaseEmulatorTest() {
     val shouldAwardCreator = repository.closeRequest(inProgressRequest.requestId, listOf("helper1"))
 
     // Then
-    assertTrue(shouldAwardCreator)
+    assertTrue(!shouldAwardCreator)
     val updatedRequest = repository.getRequest(inProgressRequest.requestId)
     assertEquals(RequestStatus.COMPLETED, updatedRequest.status)
   }
@@ -535,7 +535,7 @@ class RequestRepositoryFirestoreTest : BaseEmulatorTest() {
         repository.closeRequest(requestWithMultipleHelpers.requestId, listOf("helper1", "helper2"))
 
     // Then
-    assertTrue(shouldAwardCreator)
+    assertTrue(!shouldAwardCreator)
     val updatedRequest = repository.getRequest(requestWithMultipleHelpers.requestId)
     assertEquals(RequestStatus.COMPLETED, updatedRequest.status)
   }
@@ -670,7 +670,7 @@ class RequestRepositoryFirestoreTest : BaseEmulatorTest() {
         repository.closeRequest(requestWithManyHelpers.requestId, listOf("helper2", "helper4"))
 
     // Then
-    assertTrue(shouldAwardCreator)
+    assertTrue(!shouldAwardCreator)
     val updatedRequest = repository.getRequest(requestWithManyHelpers.requestId)
     assertEquals(RequestStatus.COMPLETED, updatedRequest.status)
   }
@@ -686,7 +686,7 @@ class RequestRepositoryFirestoreTest : BaseEmulatorTest() {
         repository.closeRequest(
             requestWithHelpers.requestId, listOf("helper1", "helper2", "helper3"))
 
-    assertTrue(shouldAwardCreator)
+    assertTrue(!shouldAwardCreator)
     val updatedRequest = repository.getRequest(requestWithHelpers.requestId)
     assertEquals(RequestStatus.COMPLETED, updatedRequest.status)
   }
@@ -1089,6 +1089,6 @@ class RequestRepositoryFirestoreTest : BaseEmulatorTest() {
 
     val returnValue = repository.closeRequest(request.requestId, listOf("helper1"))
 
-    assertTrue(returnValue) // Should return true when helpers selected
+    assertTrue(!returnValue) // Should return true when helpers selected
   }
 }

@@ -80,13 +80,13 @@ import com.android.sample.ui.navigation.NavigationActions
 import com.android.sample.ui.navigation.NavigationTab
 import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.navigation.Screen
+import com.android.sample.ui.navigation.TopNavigationBar
 import com.android.sample.ui.overview.toDisplayString
 import com.android.sample.ui.profile.ProfilePicture
 import com.android.sample.ui.request.ConstantRequestList
 import com.android.sample.ui.request.RequestListItem
 import com.android.sample.ui.request.RequestSearchFilterViewModel
 import com.android.sample.ui.theme.AppPalette
-import com.android.sample.ui.theme.TopNavigationBar
 import com.android.sample.ui.theme.UiDimens
 import com.android.sample.ui.theme.appPalette
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -371,7 +371,8 @@ private fun MapContent(
         appPalette,
         Modifier.align(Alignment.BottomCenter),
         coroutineScope,
-        cameraPositionState)
+        cameraPositionState,
+        navigationActions)
 
     // Zoom controls
     ZoomControls(
@@ -1262,7 +1263,8 @@ fun ListOfRequest(
     appPalette: AppPalette,
     modifier: Modifier = Modifier,
     coroutineScope: CoroutineScope,
-    cameraPositionState: CameraPositionState
+    cameraPositionState: CameraPositionState,
+    navigationActions: NavigationActions?
 ) {
   uiState.currentListRequest?.let { list ->
     AnimatedBottomSheet(viewModel, appPalette, modifier) {
@@ -1287,7 +1289,8 @@ fun ListOfRequest(
                     }
                     viewModel.updateCurrentRequest(request)
                     viewModel.updateCurrentProfile(request.creatorId)
-                  })
+                  },
+                  navigationActions = navigationActions)
             }
           }
     }

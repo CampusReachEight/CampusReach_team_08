@@ -66,7 +66,11 @@ fun InfoRow(label: String, value: String, palette: AppPalette = appPalette()) {
 }
 
 @Composable
-fun ProfileInformation(state: ProfileState, palette: AppPalette = appPalette()) {
+fun ProfileInformation(
+    state: ProfileState,
+    palette: AppPalette = appPalette(),
+    showSensitiveInfo: Boolean = true
+) {
   Column(
       modifier =
           Modifier.padding(horizontal = ProfileDimens.Horizontal)
@@ -78,12 +82,25 @@ fun ProfileInformation(state: ProfileState, palette: AppPalette = appPalette()) 
             modifier = Modifier.padding(bottom = ProfileDimens.Vertical))
         InfoRow(label = "Name", value = state.userName, palette = palette)
         Spacer(modifier = Modifier.height(ProfileDimens.InfoSpacer))
-        InfoRow(label = "Profile Id", value = state.profileId, palette = palette)
-        Spacer(modifier = Modifier.height(ProfileDimens.InfoSpacer))
-        InfoRow(label = "Arrival date", value = state.arrivalDate, palette = palette)
-        Spacer(modifier = Modifier.height(ProfileDimens.InfoSpacer))
+
+        // Only show Profile Id in private profile
+        if (showSensitiveInfo && state.profileId.isNotBlank()) {
+          InfoRow(label = "Profile Id", value = state.profileId, palette = palette)
+          Spacer(modifier = Modifier.height(ProfileDimens.InfoSpacer))
+        }
+
+        // Only show Arrival date if it's not empty
+        if (state.arrivalDate.isNotBlank()) {
+          InfoRow(label = "Arrival date", value = state.arrivalDate, palette = palette)
+          Spacer(modifier = Modifier.height(ProfileDimens.InfoSpacer))
+        }
+
         InfoRow(label = "Section", value = state.userSection, palette = palette)
-        Spacer(modifier = Modifier.height(ProfileDimens.InfoSpacer))
-        InfoRow(label = "Email", value = state.userEmail, palette = palette)
+
+        // Only show Email in private profile
+        if (showSensitiveInfo && state.userEmail.isNotBlank()) {
+          Spacer(modifier = Modifier.height(ProfileDimens.InfoSpacer))
+          InfoRow(label = "Email", value = state.userEmail, palette = palette)
+        }
       }
 }

@@ -1,4 +1,4 @@
-package com.android.sample.ui.theme
+package com.android.sample.ui.navigation
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -19,6 +19,8 @@ import com.android.sample.ui.map.ConstantMap
 import com.android.sample.ui.navigation.NavigationTab
 import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.profile.ProfilePicture
+import com.android.sample.ui.theme.UiDimens
+import com.android.sample.ui.theme.appPalette
 import com.google.firebase.auth.FirebaseAuth
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -27,6 +29,7 @@ fun TopNavigationBar(
     selectedTab: NavigationTab,
     onProfileClick: () -> Unit,
     modifier: Modifier = Modifier,
+    navigationActions: NavigationActions? = null,
     onZoomSettingsClick: (() -> Unit)? = null
 ) {
   val title =
@@ -59,7 +62,8 @@ fun TopNavigationBar(
       actions = {
         ProfilePicture(
             profileId = FirebaseAuth.getInstance().currentUser?.uid ?: "",
-            onClick = onProfileClick,
+            onClick = { onProfileClick() },
+            navigationActions = navigationActions,
             modifier =
                 Modifier.size(UiDimens.IconMedium).testTag(NavigationTestTags.PROFILE_BUTTON))
       },
