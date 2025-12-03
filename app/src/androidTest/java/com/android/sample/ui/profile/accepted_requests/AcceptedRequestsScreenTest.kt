@@ -307,6 +307,8 @@ class AcceptedRequestsScreenTest : BaseEmulatorTest() {
     // When
     composeTestRule.onNodeWithText(TITLE_WITH_KUDOS).performClick()
     waitForUI()
+    Thread.sleep(500)
+    composeTestRule.waitForIdle()
 
     // Then
     assertNodeExists(AcceptedRequestsTestTags.REQUEST_DIALOG)
@@ -333,6 +335,8 @@ class AcceptedRequestsScreenTest : BaseEmulatorTest() {
     // When
     composeTestRule.onNodeWithText(TITLE_WITH_KUDOS).performClick()
     waitForUI()
+    Thread.sleep(500)
+    composeTestRule.waitForIdle()
 
     // Then - Check for DIALOG-SPECIFIC elements only (not duplicated in list)
     assertNodeExists(AcceptedRequestsTestTags.REQUEST_DIALOG)
@@ -366,6 +370,8 @@ class AcceptedRequestsScreenTest : BaseEmulatorTest() {
     // When
     composeTestRule.onNodeWithText(TITLE_WITH_KUDOS).performClick()
     waitForUI()
+    Thread.sleep(500)
+    composeTestRule.waitForIdle()
 
     // Then
     assertTextExists(KUDOS_RECEIVED_TEXT)
@@ -392,6 +398,8 @@ class AcceptedRequestsScreenTest : BaseEmulatorTest() {
     // When
     composeTestRule.onNodeWithText(TITLE_WITHOUT_KUDOS).performClick()
     waitForUI()
+    Thread.sleep(500)
+    composeTestRule.waitForIdle()
 
     // Then
     assertTextExists(KUDOS_NOT_RECEIVED_TEXT)
@@ -418,6 +426,8 @@ class AcceptedRequestsScreenTest : BaseEmulatorTest() {
     // When
     composeTestRule.onNodeWithText(TITLE_PENDING).performClick()
     waitForUI()
+    Thread.sleep(500)
+    composeTestRule.waitForIdle()
 
     // Then
     assertTextExists(KUDOS_PENDING_TEXT)
@@ -448,6 +458,8 @@ class AcceptedRequestsScreenTest : BaseEmulatorTest() {
     // When
     composeTestRule.onNodeWithTag(AcceptedRequestsTestTags.DIALOG_CLOSE_BUTTON).performClick()
     waitForUI()
+    Thread.sleep(500)
+    composeTestRule.waitForIdle()
 
     // Then
     assertNodeDoesNotExist(AcceptedRequestsTestTags.REQUEST_DIALOG)
@@ -474,6 +486,8 @@ class AcceptedRequestsScreenTest : BaseEmulatorTest() {
     // When
     composeTestRule.onNodeWithText(TITLE_WITH_KUDOS).performClick()
     waitForUI()
+    Thread.sleep(500)
+    composeTestRule.waitForIdle()
 
     // Then
     assertTextExists(EXPECTED_TWO_PEOPLE.toString())
