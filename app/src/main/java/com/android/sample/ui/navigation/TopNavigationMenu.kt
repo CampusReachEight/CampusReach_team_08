@@ -16,8 +16,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import com.android.sample.ui.map.ConstantMap
-import com.android.sample.ui.navigation.NavigationTab
-import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.profile.ProfilePicture
 import com.android.sample.ui.theme.UiDimens
 import com.android.sample.ui.theme.appPalette
