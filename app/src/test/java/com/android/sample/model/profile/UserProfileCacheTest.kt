@@ -4,10 +4,10 @@ import android.content.Context
 import android.net.Uri
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.android.sample.model.profile.setup.UserProfileCache
 import com.android.sample.ui.profile.UserSections
 import java.io.File
 import java.util.Date
+import kotlinx.serialization.SerializationException
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
@@ -35,7 +35,7 @@ class UserProfileCacheTest {
   }
 
   @Test
-  fun saveProfileAndLoadProfileShouldCorrectlyPersistAndRetrieveAProfile() {
+  fun saveProfileAndGetProfileByIdShouldCorrectlyPersistAndRetrieveAProfile() {
     val profile =
         UserProfile(
             id = "user1",
@@ -48,16 +48,19 @@ class UserProfileCacheTest {
             arrivalDate = Date(1672531200000L))
 
     userProfileCache.saveProfile(profile)
-    val loadedProfile = userProfileCache.loadProfile("user1")
+    val retrievedProfile = userProfileCache.getProfileById("user1")
 
-    assertNotNull(loadedProfile)
-    assertEquals(profile, loadedProfile)
+    assertEquals(profile, retrievedProfile)
   }
 
   @Test
-  fun loadProfileShouldReturnNullWhenProfileDoesNotExist() {
-    val loadedProfile = userProfileCache.loadProfile("non_existent_user")
-    assertNull(loadedProfile)
+  fun getProfileByIdShouldThrowNoSuchElementExceptionWhenProfileDoesNotExist() {
+    try {
+      userProfileCache.getProfileById("non_existent_user")
+      fail("Expected NoSuchElementException")
+    } catch (e: NoSuchElementException) {
+      assertTrue(e.message?.contains("not found in cache") == true)
+    }
   }
 
   @Test
@@ -79,59 +82,56 @@ class UserProfileCacheTest {
         originalProfile.copy(name = "Jane", kudos = 150, section = UserSections.MATHEMATICS)
 
     userProfileCache.saveProfile(updatedProfile)
-    val loadedProfile = userProfileCache.loadProfile("user1")
+    val retrievedProfile = userProfileCache.getProfileById("user1")
 
-    assertNotNull(loadedProfile)
-    assertEquals(updatedProfile, loadedProfile)
-    assertEquals("Jane", loadedProfile?.name)
-    assertEquals(150, loadedProfile?.kudos)
-    assertEquals(UserSections.MATHEMATICS, loadedProfile?.section)
+    assertEquals(updatedProfile, retrievedProfile)
+    assertEquals("Jane", retrievedProfile.name)
+    assertEquals(150, retrievedProfile.kudos)
+    assertEquals(UserSections.MATHEMATICS, retrievedProfile.section)
   }
 
   @Test
-  fun loadAllProfilesShouldReturnAllCachedProfiles() {
-    val profiles =
-        listOf(
-            UserProfile(
-                id = "user1",
-                name = "Alice",
-                lastName = "Smith",
-                email = "alice@example.com",
-                photo = null,
-                kudos = 50,
-                section = UserSections.COMPUTER_SCIENCE,
-                arrivalDate = Date(1672531200000L)),
-            UserProfile(
-                id = "user2",
-                name = "Bob",
-                lastName = "Johnson",
-                email = "bob@example.com",
-                photo = Uri.parse("content://media/image/2"),
-                kudos = 75,
-                section = UserSections.PHYSICS,
-                arrivalDate = Date(1672617600000L)),
-            UserProfile(
-                id = "user3",
-                name = "Charlie",
-                lastName = "Brown",
-                email = null,
-                photo = null,
-                kudos = 25,
-                section = UserSections.NONE,
-                arrivalDate = Date(1672704000000L)))
+  fun saveProfileShouldHandleMultipleProfiles() {
+    val profile1 =
+        UserProfile(
+            id = "user1",
+            name = "Alice",
+            lastName = "Smith",
+            email = "alice@example.com",
+            photo = null,
+            kudos = 50,
+            section = UserSections.COMPUTER_SCIENCE,
+            arrivalDate = Date(1672531200000L))
 
-    profiles.forEach { userProfileCache.saveProfile(it) }
+    val profile2 =
+        UserProfile(
+            id = "user2",
+            name = "Bob",
+            lastName = "Johnson",
+            email = "bob@example.com",
+            photo = Uri.parse("content://media/image/2"),
+            kudos = 75,
+            section = UserSections.PHYSICS,
+            arrivalDate = Date(1672617600000L))
 
-    val loadedProfiles = userProfileCache.loadAllProfiles()
+    val profile3 =
+        UserProfile(
+            id = "user3",
+            name = "Charlie",
+            lastName = "Brown",
+            email = null,
+            photo = null,
+            kudos = 25,
+            section = UserSections.NONE,
+            arrivalDate = Date(1672704000000L))
 
-    assertEquals(profiles.size, loadedProfiles.size)
-    assertEquals(profiles.toSet(), loadedProfiles.toSet())
-  }
+    userProfileCache.saveProfile(profile1)
+    userProfileCache.saveProfile(profile2)
+    userProfileCache.saveProfile(profile3)
 
-  @Test
-  fun loadAllProfilesShouldReturnEmptyListWhenCacheIsEmpty() {
-    val loadedProfiles = userProfileCache.loadAllProfiles()
-    assertTrue(loadedProfiles.isEmpty())
+    assertEquals(profile1, userProfileCache.getProfileById("user1"))
+    assertEquals(profile2, userProfileCache.getProfileById("user2"))
+    assertEquals(profile3, userProfileCache.getProfileById("user3"))
   }
 
   @Test
@@ -154,7 +154,13 @@ class UserProfileCacheTest {
 
     assertTrue(deleted)
     assertFalse(userProfileCache.hasProfile("user1"))
-    assertNull(userProfileCache.loadProfile("user1"))
+
+    try {
+      userProfileCache.getProfileById("user1")
+      fail("Expected NoSuchElementException")
+    } catch (e: NoSuchElementException) {
+      assertTrue(e.message?.contains("not found in cache") == true)
+    }
   }
 
   @Test
@@ -192,8 +198,9 @@ class UserProfileCacheTest {
 
     userProfileCache.deleteProfile("user1")
 
-    assertNull(userProfileCache.loadProfile("user1"))
-    assertNotNull(userProfileCache.loadProfile("user2"))
+    assertFalse(userProfileCache.hasProfile("user1"))
+    assertTrue(userProfileCache.hasProfile("user2"))
+    assertEquals(profile2, userProfileCache.getProfileById("user2"))
   }
 
   @Test
@@ -221,33 +228,36 @@ class UserProfileCacheTest {
 
   @Test
   fun clearAllShouldDeleteAllCachedProfiles() {
-    val profiles =
-        listOf(
-            UserProfile(
-                id = "user1",
-                name = "Alice",
-                lastName = "Smith",
-                email = "alice@example.com",
-                photo = null,
-                kudos = 50,
-                section = UserSections.COMPUTER_SCIENCE,
-                arrivalDate = Date()),
-            UserProfile(
-                id = "user2",
-                name = "Bob",
-                lastName = "Johnson",
-                email = "bob@example.com",
-                photo = null,
-                kudos = 75,
-                section = UserSections.PHYSICS,
-                arrivalDate = Date()))
+    val profile1 =
+        UserProfile(
+            id = "user1",
+            name = "Alice",
+            lastName = "Smith",
+            email = "alice@example.com",
+            photo = null,
+            kudos = 50,
+            section = UserSections.COMPUTER_SCIENCE,
+            arrivalDate = Date())
 
-    profiles.forEach { userProfileCache.saveProfile(it) }
-    assertTrue(userProfileCache.loadAllProfiles().isNotEmpty())
+    val profile2 =
+        UserProfile(
+            id = "user2",
+            name = "Bob",
+            lastName = "Johnson",
+            email = "bob@example.com",
+            photo = null,
+            kudos = 75,
+            section = UserSections.PHYSICS,
+            arrivalDate = Date())
+
+    userProfileCache.saveProfile(profile1)
+    userProfileCache.saveProfile(profile2)
+
+    assertTrue(userProfileCache.hasProfile("user1"))
+    assertTrue(userProfileCache.hasProfile("user2"))
 
     userProfileCache.clearAll()
 
-    assertTrue(userProfileCache.loadAllProfiles().isEmpty())
     assertFalse(userProfileCache.hasProfile("user1"))
     assertFalse(userProfileCache.hasProfile("user2"))
   }
@@ -259,21 +269,16 @@ class UserProfileCacheTest {
             id = "complex-user-456",
             name = "Test: All The Things",
             lastName = "O'Connor-Smith",
-            email =
-                """
-                test+special.chars@example.com
-            """
-                    .trimIndent(),
+            email = "test+special.chars@example.com",
             photo = Uri.parse("content://media/external/images/media/123"),
             kudos = 9999,
             section = UserSections.ARCHITECTURE,
             arrivalDate = Date(1672531200000L))
 
     userProfileCache.saveProfile(complexProfile)
-    val loadedProfile = userProfileCache.loadProfile("complex-user-456")
+    val retrievedProfile = userProfileCache.getProfileById("complex-user-456")
 
-    assertNotNull(loadedProfile)
-    assertEquals(complexProfile, loadedProfile)
+    assertEquals(complexProfile, retrievedProfile)
   }
 
   @Test
@@ -290,17 +295,16 @@ class UserProfileCacheTest {
             arrivalDate = Date(1672531200000L))
 
     userProfileCache.saveProfile(profileWithNulls)
-    val loadedProfile = userProfileCache.loadProfile("user_with_nulls")
+    val retrievedProfile = userProfileCache.getProfileById("user_with_nulls")
 
-    assertNotNull(loadedProfile)
-    assertNull(loadedProfile?.email)
-    assertNull(loadedProfile?.photo)
-    assertEquals(profileWithNulls, loadedProfile)
+    assertNull(retrievedProfile.email)
+    assertNull(retrievedProfile.photo)
+    assertEquals(profileWithNulls, retrievedProfile)
   }
 
   @Test
   fun serializationHandlesAllUserSectionsEnumValues() {
-    val sections = UserSections.values()
+    val sections = UserSections.entries
 
     sections.forEach { section ->
       val profile =
@@ -315,26 +319,28 @@ class UserProfileCacheTest {
               arrivalDate = Date(1672531200000L))
 
       userProfileCache.saveProfile(profile)
-      val loadedProfile = userProfileCache.loadProfile("user_${section.name}")
+      val retrievedProfile = userProfileCache.getProfileById("user_${section.name}")
 
-      assertNotNull(loadedProfile)
-      assertEquals(section, loadedProfile?.section)
+      assertEquals(section, retrievedProfile.section)
     }
   }
 
   @Test
-  fun loadProfileShouldHandleCorruptedJsonGracefully() {
+  fun getProfileByIdShouldThrowSerializationExceptionWhenJsonIsCorrupted() {
     // Manually create a corrupted JSON file
     val file = File(File(context.cacheDir, "user_profiles_cache"), "corrupted_user.json")
     file.parentFile?.mkdirs()
     file.writeText("{ invalid json }")
 
-    val loadedProfile = userProfileCache.loadProfile("corrupted_user")
-
-    assertNull(loadedProfile)
-
-    // Clean up
-    file.delete()
+    try {
+      userProfileCache.getProfileById("corrupted_user")
+      fail("Expected SerializationException")
+    } catch (e: SerializationException) {
+      assertTrue(e.message?.contains("Failed to deserialize") == true)
+      assertTrue(e.message?.contains("corrupted or invalid") == true)
+    } finally {
+      file.delete()
+    }
   }
 
   @Test
@@ -369,12 +375,12 @@ class UserProfileCacheTest {
     userProfileCache.saveProfile(updatedProfile1)
 
     // Verify profile2 was not affected
-    val loadedProfile2 = userProfileCache.loadProfile("user2")
-    assertEquals(profile2, loadedProfile2)
+    val retrievedProfile2 = userProfileCache.getProfileById("user2")
+    assertEquals(profile2, retrievedProfile2)
 
     // Verify profile1 was updated
-    val loadedProfile1 = userProfileCache.loadProfile("user1")
-    assertEquals(150, loadedProfile1?.kudos)
+    val retrievedProfile1 = userProfileCache.getProfileById("user1")
+    assertEquals(150, retrievedProfile1.kudos)
   }
 
   @Test
@@ -391,9 +397,8 @@ class UserProfileCacheTest {
             arrivalDate = Date())
 
     userProfileCache.saveProfile(profile)
-    val loadedProfile = userProfileCache.loadProfile("user-with-special_chars.123")
+    val retrievedProfile = userProfileCache.getProfileById("user-with-special_chars.123")
 
-    assertNotNull(loadedProfile)
-    assertEquals(profile, loadedProfile)
+    assertEquals(profile, retrievedProfile)
   }
 }
