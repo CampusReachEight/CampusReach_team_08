@@ -81,7 +81,8 @@ class UserProfileCacheTest {
     userProfileCache.saveProfile(originalProfile)
 
     val updatedProfile =
-        originalProfile.copy(name = "Jane", kudos = 150, helpReceived = 10, section = UserSections.MATHEMATICS)
+        originalProfile.copy(
+            name = "Jane", kudos = 150, helpReceived = 10, section = UserSections.MATHEMATICS)
 
     userProfileCache.saveProfile(updatedProfile)
     val retrievedProfile = userProfileCache.getProfileById("user1")
@@ -420,4 +421,3 @@ class UserProfileCacheTest {
     assertEquals(profile, retrievedProfile)
   }
 }
-
