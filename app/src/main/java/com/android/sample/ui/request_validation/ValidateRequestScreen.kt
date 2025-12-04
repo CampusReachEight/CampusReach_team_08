@@ -28,7 +28,6 @@ import com.android.sample.model.profile.UserProfile
 import com.android.sample.model.profile.UserProfileRepository
 import com.android.sample.ui.profile.ProfilePicture
 import com.android.sample.ui.request_validation.ValidateRequestConstants.SCREEN_TITLE
-import kotlinx.coroutines.launch
 
 /**
  * Main screen for validating and closing a request. Allows the request creator to select helpers
@@ -46,9 +45,6 @@ fun ValidateRequestScreen(
     callbacks: ValidateRequestCallbacks,
     modifier: Modifier = Modifier
 ) {
-  // scope for launching suspend repository operations from UI events
-  val coroutineScope = rememberCoroutineScope()
-
   // Handle success navigation
   LaunchedEffect(state) {
     if (state is ValidationState.Success) {
@@ -81,36 +77,15 @@ fun ValidateRequestScreen(
                   onValidate = callbacks.onShowConfirmation)
             }
             is ValidationState.Confirming -> {
-              // Keep ready content visible in background (for context)
-              // Note: We need to reconstruct a Ready state for background
-              // Alternatively, we can just show the dialog without background content
               ConfirmationDialog(
                   selectedHelpers = state.selectedHelpers,
                   kudosToAward = state.kudosToAward,
                   onConfirm = {
-                    // Launch suspend operations without blocking the UI
-                    coroutineScope.launch {
-                      try {
-                        // Award kudos (batch) to all selected helpers first
-                        val awards =
-                            state.selectedHelpers.associate {
-                              it.id to KudosConstants.KUDOS_PER_HELPER
-                            }
-                        userProfileRepository.awardKudosBatch(awards)
-
-                        // Increment help received for each helper (increment by 1)
-                        state.selectedHelpers.forEach { helper ->
-                          userProfileRepository.receiveHelp(
-                              helper.id, HelpReceivedConstants.HELP_RECEIVED_PER_HELP)
-                        }
-
-                        // Notify caller that confirm flow completed
-                        callbacks.onConfirmAndClose()
-                      } catch (_: Exception) {
-                        // On failure, surface retry/back behavior via provided callback
-                        callbacks.onRetry()
-                      }
-                    }
+                    android.util.Log.d(
+                        "ValidateRequestScreen",
+                        "Confirm dialog clicked -> delegate close+award to ViewModel")
+                    // Delegate to ViewModel / use case which runs the atomic close + awards.
+                    callbacks.onConfirmAndClose()
                   },
                   onDismiss = callbacks.onCancelConfirmation)
             }
