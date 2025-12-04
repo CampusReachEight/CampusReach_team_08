@@ -9,7 +9,6 @@ import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
-import kotlin.text.get
 import kotlinx.coroutines.tasks.await
 
 const val PUBLIC_PROFILES_PATH = "public_profiles"
@@ -157,10 +156,6 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
 
     val privateDocRef = privateCollectionRef.document(userId)
 
-    // Read the private profile before deleting so we can return it
-    val privateSnapshot = privateDocRef.get().await()
-    val deletedProfile = privateSnapshot.data?.let { UserProfile.fromMap(it) }
-
     // Delete from both collections
     privateDocRef.delete().await()
     publicCollectionRef.document(userId).delete().await()
@@ -214,7 +209,7 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
                 it.lastNameLowercase.contains(normalizedQuery)
           }
           .take(limit)
-    } catch (e: Exception) {
+    } catch (_: Exception) {
       // Graceful degradation: return empty list on any error
       emptyList()
     }
@@ -317,8 +312,6 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
    * @param amount The amount of help to record (must be positive and within safety limits).
    * @throws com.android.sample.ui.request_validation.HelpReceivedException.InvalidAmount when the
    *   provided amount is invalid (non-positive).
-   * @throws com.android.sample.ui.request_validation.HelpReceivedException.AmountExceedsLimit when
-   *   the provided amount exceeds the configured per-transaction maximum.
    * @throws com.android.sample.ui.request_validation.HelpReceivedException.UserNotFound when the
    *   user public/private profiles do not exist.
    * @throws com.android.sample.ui.request_validation.HelpReceivedException.TransactionFailed when
