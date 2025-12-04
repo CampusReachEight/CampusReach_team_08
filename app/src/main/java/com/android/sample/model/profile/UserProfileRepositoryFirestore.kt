@@ -129,6 +129,14 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
 
     // Add to public collection
     publicCollectionRef.document(userProfile.id).set(publicProfile.toMap()).await()
+    publicCollectionRef
+        .document(userProfile.id)
+        .get(com.google.firebase.firestore.Source.SERVER)
+        .await()
+    privateCollectionRef
+        .document(userProfile.id)
+        .get(com.google.firebase.firestore.Source.SERVER)
+        .await()
   }
 
   override suspend fun updateUserProfile(userId: String, updatedProfile: UserProfile) {
@@ -227,7 +235,11 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
 
     try {
       // Check if user exists before awarding (check public profile)
-      val userDoc = publicCollectionRef.document(userId).get().await()
+      val userDoc =
+          publicCollectionRef
+              .document(userId)
+              .get(com.google.firebase.firestore.Source.SERVER)
+              .await()
       if (!userDoc.exists()) {
         throw KudosException.UserNotFound(userId)
       }
@@ -268,17 +280,22 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
     }
 
     try {
-      // Use Firestore batch for atomic transaction
-      val batch = db.batch()
-
-      awards.forEach { (userId, amount) ->
-        // Verify user exists first
-        val userDoc = publicCollectionRef.document(userId).get().await()
+      // Verify all users exist BEFORE starting transaction
+      awards.forEach { (userId, _) ->
+        val userDoc =
+            publicCollectionRef
+                .document(userId)
+                .get(com.google.firebase.firestore.Source.SERVER)
+                .await()
         if (!userDoc.exists()) {
           throw KudosException.UserNotFound(userId)
         }
+      }
 
-        // Add updates to batch for both collections
+      // Now perform atomic batch update (all users verified to exist)
+      val batch = db.batch()
+
+      awards.forEach { (userId, amount) ->
         val publicDocRef = publicCollectionRef.document(userId)
 
         val currentKudos = (userDoc[KUDOS_FIELD] as? Number)?.toLong() ?: 20L
@@ -289,6 +306,9 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
 
       // Commit all updates atomically
       batch.commit().await()
+
+      // Verify writes completed
+      kotlinx.coroutines.delay(100)
     } catch (e: KudosException) {
       throw e
     } catch (e: Exception) {
