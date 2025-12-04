@@ -1,8 +1,10 @@
 package com.android.sample.ui.map
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.android.sample.model.map.Location
+import com.android.sample.model.map.LocationProvider
 import com.android.sample.model.profile.UserProfile
 import com.android.sample.model.profile.UserProfileRepository
 import com.android.sample.model.profile.UserProfileRepositoryFirestore
@@ -17,6 +19,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
@@ -36,8 +39,20 @@ data class MapUIState(
     val currentProfile: UserProfile? = null,
     val currentListRequest: List<Request>? = null,
     val requestOwnership: RequestOwnership = RequestOwnership.ALL,
-    val needToZoom: Boolean = true
+    val needToZoom: Boolean = true,
+    val isLoadingLocation: Boolean = false,
+    val hasAskedLocationPermission: Boolean = false,
+    val currentLocation: LatLng? = null,
+    val zoomPreference: MapZoomPreference = MapZoomPreference.NEAREST_REQUEST,
+    val wasOnAnotherScreen: Boolean = true
 )
+
+/** A class for the preference of the user for automatic zoom */
+enum class MapZoomPreference {
+  NEAREST_REQUEST, // Zoom on the nearest request
+  CURRENT_LOCATION, // Zoom on user's current location
+  NO_AUTO_ZOOM // Don't auto-zoom
+}
 
 /**
  * ViewModel responsible for managing the state of the Map screen.
@@ -49,7 +64,8 @@ class MapViewModel(
     private val requestRepository: RequestRepository =
         RequestRepositoryFirestore(Firebase.firestore),
     val profileRepository: UserProfileRepository =
-        UserProfileRepositoryFirestore(Firebase.firestore)
+        UserProfileRepositoryFirestore(Firebase.firestore),
+    private val locationProvider: LocationProvider
 ) : ViewModel() {
   companion object {
     val EPFL_LOCATION = Location(46.5191, 6.5668, "EPFL")
@@ -86,7 +102,9 @@ class MapViewModel(
 
   /** Refreshes the UI by updating the current request */
   fun updateCurrentRequest(request: Request) {
-    _uiState.value = _uiState.value.copy(currentRequest = request, currentListRequest = null)
+    val loc = LatLng(request.location.latitude, request.location.longitude)
+    _uiState.value =
+        _uiState.value.copy(currentRequest = request, currentListRequest = null, target = loc)
     isHisRequest(request)
   }
 
@@ -150,15 +168,79 @@ class MapViewModel(
     return profileRepository.getCurrentUserId()
   }
 
+  /** Set wasOnAnotherScreen to true */
+  fun goOnAnotherScreen() {
+    _uiState.value = _uiState.value.copy(wasOnAnotherScreen = true)
+  }
+  /** Set wasOnAnotherScreen to false */
+  fun comeBackFromAnotherScreen() {
+    _uiState.value = _uiState.value.copy(wasOnAnotherScreen = false)
+  }
+
   /**
-   * Update target at the first request of this list
+   * Set the target to the previous request the user has clicked on if he was in another screen.
+   *
+   * @return true if it works, false if the user wasn't on another screen or he hasn't clicked on a
+   *   request
+   */
+  private fun setLocToCurrentRequest(): Boolean {
+    if (_uiState.value.wasOnAnotherScreen && _uiState.value.currentRequest != null) {
+      val loc =
+          LatLng(
+              _uiState.value.currentRequest!!.location.latitude,
+              _uiState.value.currentRequest!!.location.longitude)
+      _uiState.value = _uiState.value.copy(target = loc, needToZoom = true)
+      return true
+    }
+    return false
+  }
+
+  /**
+   * Update target depending on argument in UIState and the list of requests
    *
    * @param requests the lists of request
    */
   fun zoomOnRequest(requests: List<Request>) {
-    val loc = requests.firstOrNull()?.location ?: EPFL_LOCATION
-    _uiState.value =
-        _uiState.value.copy(target = LatLng(loc.latitude, loc.longitude), needToZoom = true)
+    if (!setLocToCurrentRequest()) {
+      var location: Location?
+      val currentLocIsNotNull = _uiState.value.currentLocation != null
+      if (_uiState.value.zoomPreference == MapZoomPreference.NO_AUTO_ZOOM) {
+        return
+      }
+      if (currentLocIsNotNull) {
+        location = zoomIfCurrentLocNotNull(requests)
+        if (location == null) {
+          return
+        }
+      } else {
+        location = requests.firstOrNull()?.location ?: EPFL_LOCATION
+      }
+      _uiState.value =
+          _uiState.value.copy(
+              target = LatLng(location.latitude, location.longitude), needToZoom = true)
+    } else {
+      comeBackFromAnotherScreen()
+    }
+  }
+
+  /**
+   * Give the corresponding location in function of some parameters
+   *
+   * @param requests the lists of request
+   * @return a Location
+   */
+  private fun zoomIfCurrentLocNotNull(requests: List<Request>): Location? {
+    return if (requests.isEmpty() ||
+        _uiState.value.zoomPreference == MapZoomPreference.CURRENT_LOCATION) {
+      Location(
+          _uiState.value.currentLocation?.latitude ?: EPFL_LOCATION.latitude,
+          _uiState.value.currentLocation?.longitude ?: EPFL_LOCATION.longitude,
+          ConstantMap.CURR_POS_NAME)
+    } else if (_uiState.value.zoomPreference == MapZoomPreference.NO_AUTO_ZOOM) {
+      return null
+    } else {
+      findClosestRequest(_uiState.value.currentLocation, requests)
+    }
   }
 
   /** Set the needToZoom to false */
@@ -190,6 +272,70 @@ class MapViewModel(
   }
 
   /**
+   * Update zoom preference
+   *
+   * @param preference the preference
+   */
+  fun updateZoomPreference(preference: MapZoomPreference) {
+    if (preference == MapZoomPreference.CURRENT_LOCATION &&
+        _uiState.value.currentLocation == null) {
+      setErrorMsg(ConstantMap.ERROR_MESSAGE_CURRENT_LOCATION)
+    } else {
+      _uiState.update { it.copy(zoomPreference = preference) }
+    }
+  }
+
+  /** Get current location and center map on it */
+  fun getCurrentLocation() {
+    viewModelScope.launch {
+      _uiState.update { it.copy(isLoadingLocation = true) }
+      try {
+        val location = locationProvider.getCurrentLocation()
+        if (location != null) {
+          val locLatLng = LatLng(location.latitude, location.longitude)
+          if (_uiState.value.currentRequest == null) {
+            _uiState.update {
+              it.copy(
+                  target = locLatLng,
+                  needToZoom = true,
+                  isLoadingLocation = false,
+                  hasAskedLocationPermission = true,
+                  currentLocation = locLatLng)
+            }
+          } else {
+            _uiState.update {
+              it.copy(
+                  isLoadingLocation = false,
+                  hasAskedLocationPermission = true,
+                  currentLocation = locLatLng)
+            }
+          }
+        } else {
+          _uiState.update { it.copy(isLoadingLocation = false) }
+        }
+      } catch (e: Exception) {
+        setErrorMsg(ConstantMap.ERROR_FAILED_TO_GET_CURRENT_LOCATION + " ${e.message}")
+        _uiState.update { it.copy(isLoadingLocation = false) }
+      }
+    }
+  }
+
+  /** Set location permission error message */
+  fun setLocationPermissionError() {
+    _uiState.update {
+      it.copy(
+          errorMsg = ConstantMap.ERROR_MESSAGE_LOCATION_PERMISSION,
+          isLoadingLocation = false,
+          hasAskedLocationPermission = true)
+    }
+  }
+
+  /** Mark that we've asked for location permission */
+  fun markLocationPermissionAsked() {
+    _uiState.update { it.copy(hasAskedLocationPermission = true) }
+  }
+
+  /**
    * Fetches all accepted requests and updates the MapUIState. Sets the target location to the first
    * request with a valid location, or to EPFL if no request has a valid address.
    */
@@ -206,20 +352,35 @@ class MapViewModel(
           _uiState.value = _uiState.value.copy(currentRequest = null, isOwner = null)
         } else {
           // currentRequest found and up to date
+          val location = LatLng(updatedCurrent.location.latitude, updatedCurrent.location.longitude)
           _uiState.value =
-              _uiState.value.copy(currentRequest = updatedCurrent, isOwner = _uiState.value.isOwner)
+              _uiState.value.copy(
+                  currentRequest = updatedCurrent,
+                  isOwner = _uiState.value.isOwner,
+                  target = location,
+                  needToZoom = true)
         }
 
-        val loc =
-            _uiState.value.currentRequest?.location
-                ?: requests.firstOrNull()?.location
-                ?: EPFL_LOCATION
-        _uiState.value =
-            _uiState.value.copy(
-                target = LatLng(loc.latitude, loc.longitude), request = requests, needToZoom = true)
+        _uiState.value = _uiState.value.copy(request = requests)
       } catch (e: Exception) {
         setErrorMsg("Failed to load requests: ${e.message}")
       }
     }
+  }
+}
+
+class MapViewModelFactory(
+    private val requestRepository: RequestRepository =
+        RequestRepositoryFirestore(Firebase.firestore),
+    private val profileRepository: UserProfileRepository =
+        UserProfileRepositoryFirestore(Firebase.firestore),
+    private val locationProvider: LocationProvider
+) : ViewModelProvider.Factory {
+  @Suppress(ConstantMap.UNCHECKED_CAST)
+  override fun <T : ViewModel> create(modelClass: Class<T>): T {
+    if (modelClass.isAssignableFrom(MapViewModel::class.java)) {
+      return MapViewModel(requestRepository, profileRepository, locationProvider) as T
+    }
+    throw IllegalArgumentException(ConstantMap.ERROR_VIEW_MODEL_CLASS + "${modelClass.name}")
   }
 }

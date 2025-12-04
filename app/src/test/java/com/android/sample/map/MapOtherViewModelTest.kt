@@ -39,6 +39,7 @@ class MapOtherViewModelTest {
   private lateinit var listWithout12: List<Request>
   private lateinit var listWithout23: List<Request>
   private lateinit var listWithout13: List<Request>
+  private lateinit var fakeFusedLocationProvider: FakeLocProvider
 
   private val ids = "id"
   private val titles = "title"
@@ -70,7 +71,8 @@ class MapOtherViewModelTest {
     Dispatchers.setMain(testDispatcher)
     requestRepository = mock(RequestRepository::class.java)
     profileRepository = mock(UserProfileRepository::class.java)
-    viewModel = MapViewModel(requestRepository, profileRepository)
+    fakeFusedLocationProvider = FakeLocProvider()
+    viewModel = MapViewModel(requestRepository, profileRepository, fakeFusedLocationProvider)
     request1 = doARequest(id = id1, people = people1, creatorId = creatorId1)
     request2 = doARequest(id = id2, people = people2, creatorId = creatorId1)
     request3 = doARequest(id = id3, people = people3, creatorId = creatorId2)

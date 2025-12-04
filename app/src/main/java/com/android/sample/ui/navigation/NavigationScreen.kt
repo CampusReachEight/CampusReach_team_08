@@ -33,6 +33,7 @@ import com.android.sample.ui.authentication.SignInViewModel
 import com.android.sample.ui.authentication.SignInViewModelFactory
 import com.android.sample.ui.map.MapScreen
 import com.android.sample.ui.map.MapViewModel
+import com.android.sample.ui.map.MapViewModelFactory
 import com.android.sample.ui.overview.AcceptRequestScreen
 import com.android.sample.ui.overview.AcceptRequestViewModel
 import com.android.sample.ui.overview.AcceptRequestViewModelFactory
@@ -82,12 +83,18 @@ fun NavigationScreen(
   val userProfileRepository = UserProfileRepositoryFirestore(Firebase.firestore)
 
   // ViewModels
-  val signInViewModel: SignInViewModel =
+    val signInViewModel: SignInViewModel =
+        viewModel(
+            factory =
+                SignInViewModelFactory(
+                    profileRepository = userProfileRepository, profileCache = profileCache))
+  val mapViewModel: MapViewModel =
       viewModel(
           factory =
-              SignInViewModelFactory(
-                  profileRepository = userProfileRepository, profileCache = profileCache))
-  val mapViewModel: MapViewModel = viewModel()
+              MapViewModelFactory(
+                  requestRepository = requestRepository,
+                  profileRepository = userProfileRepository,
+                  locationProvider = fusedLocationProvider))
   val requestListViewModel: RequestListViewModel =
       viewModel(
           factory =
@@ -210,14 +217,16 @@ fun NavigationScreen(
 
     navigation(startDestination = Screen.Profile.route, route = "profile") {
       composable(Screen.Profile.route) { navBackStackEntry ->
+        val userId = navBackStackEntry.arguments?.getString(Screen.Profile.ARG_USER_ID)
         ProfileScreen(
             viewModel =
                 ProfileViewModel(
                     onLogout = {
                       isSignedIn = false
-                      navigationActions.navigateTo(Screen.Login)
-                    },
-                    profileCache = profileCache),
+                      navController.navigate(Screen.Login.route) {
+                        popUpTo(0) // Clears the back stack
+                      }
+                    }),
             onBackClick = { navigationActions.goBack() },
             navigationActions = navigationActions)
       }

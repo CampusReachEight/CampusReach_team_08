@@ -1,5 +1,6 @@
 package com.android.sample.endToEndTest
 
+import android.Manifest
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
@@ -17,6 +18,7 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.test.espresso.Espresso
+import androidx.test.rule.GrantPermissionRule
 import com.android.sample.AppNavigation
 import com.android.sample.model.map.Location
 import com.android.sample.model.request.Request
@@ -48,6 +50,11 @@ import org.junit.Test
 
 class EndToEndTests : BaseEmulatorTest() {
   @get:Rule val composeTestRule = createAndroidComposeRule<ComponentActivity>()
+
+  @get:Rule
+  val permissionRule: GrantPermissionRule =
+      GrantPermissionRule.grant(
+          Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
 
   private lateinit var titles: String
   private lateinit var anotherTitle: String
