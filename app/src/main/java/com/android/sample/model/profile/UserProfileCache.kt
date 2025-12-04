@@ -57,10 +57,8 @@ class UserProfileCache(private val context: Context) {
     return try {
       val profileJson = file.readText()
       json.decodeFromString(UserProfile.serializer(), profileJson)
-    } catch (e: SerializationException) {
-      throw SerializationException(
-          "Failed to deserialize profile with ID $profileId: JSON is corrupted or invalid", e)
-    } catch (e: IOException) {
+    }
+    catch (e: Exception) {
       throw IOException("Failed to read profile with ID $profileId from cache", e)
     }
   }

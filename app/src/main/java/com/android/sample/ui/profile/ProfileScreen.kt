@@ -45,7 +45,6 @@ fun ProfileScreen(
             state.isLoading || !shouldShowContent -> ProfileLoadingBuffer(Modifier.fillMaxSize())
             else -> {
               Column {
-                println("ProfileScreen: offlineMode = ${state.offlineMode}")
                 if (state.offlineMode) {
                   Text(
                       PROFILE_OFFLINE_TEXT,

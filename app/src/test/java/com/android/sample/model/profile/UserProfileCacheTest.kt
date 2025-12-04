@@ -350,10 +350,9 @@ class UserProfileCacheTest {
 
     try {
       userProfileCache.getProfileById("corrupted_user")
-      fail("Expected SerializationException")
-    } catch (e: SerializationException) {
-      assertTrue(e.message?.contains("Failed to deserialize") == true)
-      assertTrue(e.message?.contains("corrupted or invalid") == true)
+      fail("Expected Exception")
+    } catch (e: Exception) {
+      assertTrue(e.message?.contains("Failed to read profile") == true)
     } finally {
       file.delete()
     }

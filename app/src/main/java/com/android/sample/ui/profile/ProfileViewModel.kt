@@ -81,8 +81,6 @@ class ProfileViewModel(
         try {
           profile = profileCache!!.getProfileById(user.uid)
           _state.update { it.copy(offlineMode = true) }
-          println(
-              "ProfileViewModel: Loaded profile from cache with offlineMode = ${_state.value.offlineMode}")
         } catch (_: Exception) {
           throw Exception("Profile not found in backend or cache")
         }
