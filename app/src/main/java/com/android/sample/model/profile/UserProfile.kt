@@ -8,9 +8,9 @@ import com.android.sample.model.serializers.UriSerializer
 import com.android.sample.ui.profile.UserSections
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.Blob
-import kotlinx.serialization.Serializable
 import java.io.ByteArrayOutputStream
 import java.util.Date
+import kotlinx.serialization.Serializable
 
 const val PHOTO_QUALITY = 80 // Compression quality for JPEG (0-100)
 const val PHOTO_DEFAULT_SIZE = 512 // 512x512 pixels
@@ -51,8 +51,7 @@ data class UserProfile(
     val photo: Uri?, // Nullable Bitmap for user photo in case user hasn't set one
     val kudos: Int,
     val section: UserSections,
-    @Serializable(with = DateSerializer::class)
-    val arrivalDate: Date,
+    @Serializable(with = DateSerializer::class) val arrivalDate: Date,
 ) {
 
   // Lowercase versions for case-insensitive search
