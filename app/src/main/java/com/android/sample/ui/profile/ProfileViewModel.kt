@@ -3,6 +3,7 @@ package com.android.sample.ui.profile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.sample.model.profile.UserProfile
+import com.android.sample.model.profile.UserProfileCache
 import com.android.sample.model.profile.UserProfileRepository
 import com.android.sample.model.profile.UserProfileRepositoryFirestore
 import com.android.sample.ui.navigation.NavigationActions
@@ -24,7 +25,8 @@ class ProfileViewModel(
     private val repository: UserProfileRepository =
         UserProfileRepositoryFirestore(FirebaseFirestore.getInstance()),
     private val onLogout: (() -> Unit)? = null,
-    private val attachAuthListener: Boolean = true // NEW: allow tests to disable the auth listener
+    private val attachAuthListener: Boolean = true, // NEW: allow tests to disable the auth listener
+    private val profileCache: UserProfileCache? = null
 ) : ViewModel() {
   private val _state = MutableStateFlow(initialState)
   val state: StateFlow<ProfileState> = _state.asStateFlow()
@@ -70,19 +72,11 @@ class ProfileViewModel(
           try {
             repository.getUserProfile(user.uid)
           } catch (_: Exception) {
-            // Create minimal profile using the display name as-is (no splitting/formatting)
-            val new =
-                UserProfile(
-                    id = repository.getNewUid(),
-                    name = user.displayName.orEmpty(),
-                    lastName = "",
-                    email = user.email,
-                    photo = null,
-                    kudos = 0,
-                    section = UserSections.NONE,
-                    arrivalDate = Date())
-            repository.addUserProfile(new)
-            new
+            try {
+              profileCache!!.getProfileById(user.uid)
+            } catch (_: Exception) {
+              throw Exception("Profile not found in backend or cache")
+            }
           }
 
       loadedProfile = profile

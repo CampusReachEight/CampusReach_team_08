@@ -5,6 +5,7 @@ import androidx.credentials.CustomCredential
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.sample.model.profile.UserProfile
+import com.android.sample.model.profile.UserProfileCache
 import com.android.sample.model.profile.UserProfileRepository
 import com.android.sample.model.profile.UserProfileRepositoryFirestore
 import com.android.sample.ui.profile.UserSections
@@ -30,7 +31,8 @@ import kotlinx.coroutines.launch
  */
 class SignInViewModel(
     val profileRepository: UserProfileRepository =
-        UserProfileRepositoryFirestore(Firebase.firestore)
+        UserProfileRepositoryFirestore(Firebase.firestore),
+    val profileCache: UserProfileCache? = null
 ) : ViewModel() {
 
   private val _loading = MutableStateFlow(false)
@@ -101,11 +103,14 @@ class SignInViewModel(
   fun addUserToDataBase() {
     viewModelScope.launch {
       val user = firebaseAuth.currentUser ?: return@launch
+
       try {
-        profileRepository.getUserProfile(user.uid)
+        val profile = profileRepository.getUserProfile(user.uid)
+        profileCache?.deleteProfile(user.uid)
+        profileCache?.saveProfile(profile)
         return@launch
       } catch (_: NoSuchElementException) {
-        profileRepository.addUserProfile(
+        val profile: UserProfile =
             UserProfile(
                 id = user.uid,
                 name = user.displayName?.split(" ")?.getOrNull(0) ?: "",
@@ -114,8 +119,25 @@ class SignInViewModel(
                 photo = user.photoUrl,
                 kudos = 0,
                 section = UserSections.NONE,
-                arrivalDate = java.util.Date()))
+                arrivalDate = java.util.Date())
+        profileRepository.addUserProfile(profile)
+        profileCache?.deleteProfile(user.uid)
+        profileCache?.saveProfile(profile)
+      } catch (e: Exception) { // Catch other exceptions
+        setError("Failed to retrieve or add user to database: ${e.localizedMessage}")
       }
     }
+  }
+}
+
+class SignInViewModelFactory(
+    private val profileRepository: UserProfileRepository,
+    private val profileCache: UserProfileCache?
+) : androidx.lifecycle.ViewModelProvider.Factory {
+  override fun <T : ViewModel> create(modelClass: Class<T>): T {
+    if (modelClass.isAssignableFrom(SignInViewModel::class.java)) {
+      @Suppress("UNCHECKED_CAST") return SignInViewModel(profileRepository, profileCache) as T
+    }
+    throw IllegalArgumentException("Unknown ViewModel class")
   }
 }
