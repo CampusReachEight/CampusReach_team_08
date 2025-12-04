@@ -83,11 +83,11 @@ fun NavigationScreen(
   val userProfileRepository = UserProfileRepositoryFirestore(Firebase.firestore)
 
   // ViewModels
-    val signInViewModel: SignInViewModel =
-        viewModel(
-            factory =
-                SignInViewModelFactory(
-                    profileRepository = userProfileRepository, profileCache = profileCache))
+  val signInViewModel: SignInViewModel =
+      viewModel(
+          factory =
+              SignInViewModelFactory(
+                  profileRepository = userProfileRepository, profileCache = profileCache))
   val mapViewModel: MapViewModel =
       viewModel(
           factory =
