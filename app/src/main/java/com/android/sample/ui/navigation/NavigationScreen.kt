@@ -24,11 +24,13 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navigation
 import com.android.sample.model.map.FusedLocationProvider
 import com.android.sample.model.map.NominatimLocationRepository
+import com.android.sample.model.profile.UserProfileCache
 import com.android.sample.model.profile.UserProfileRepositoryFirestore
 import com.android.sample.model.request.RequestCache
 import com.android.sample.model.request.RequestRepositoryFirestore
 import com.android.sample.ui.authentication.SignInScreen
 import com.android.sample.ui.authentication.SignInViewModel
+import com.android.sample.ui.authentication.SignInViewModelFactory
 import com.android.sample.ui.map.MapScreen
 import com.android.sample.ui.map.MapViewModel
 import com.android.sample.ui.map.MapViewModelFactory
@@ -64,12 +66,16 @@ fun NavigationScreen(
     navigationActions: NavigationActions = NavigationActions(navController),
     credentialManager: CredentialManager = CredentialManager.create(LocalContext.current)
 ) {
+  val context = LocalContext.current
+
   // caches
-  val requestCache = RequestCache(LocalContext.current)
+  val requestCache = RequestCache(context)
+  val profileCache = UserProfileCache(context)
 
   val user = FirebaseAuth.getInstance().currentUser
   var isSignedIn by rememberSaveable { mutableStateOf(user != null) }
   val startDestination = if (!isSignedIn) "login" else "requests"
+
   // repositories
   val requestRepository = RequestRepositoryFirestore(Firebase.firestore)
   val locationRepository = NominatimLocationRepository(client = OkHttpClient())
@@ -77,8 +83,11 @@ fun NavigationScreen(
   val userProfileRepository = UserProfileRepositoryFirestore(Firebase.firestore)
 
   // ViewModels
-  val signInViewModel: SignInViewModel = viewModel()
-  val profileViewModel: ProfileViewModel = viewModel()
+  val signInViewModel: SignInViewModel =
+      viewModel(
+          factory =
+              SignInViewModelFactory(
+                  profileRepository = userProfileRepository, profileCache = profileCache))
   val mapViewModel: MapViewModel =
       viewModel(
           factory =
@@ -97,6 +106,7 @@ fun NavigationScreen(
                   requestRepository = requestRepository,
                   locationRepository = locationRepository,
                   locationProvider = fusedLocationProvider))
+
   val acceptRequestViewModel: AcceptRequestViewModel =
       viewModel(
           factory =
@@ -207,10 +217,10 @@ fun NavigationScreen(
 
     navigation(startDestination = Screen.Profile.route, route = "profile") {
       composable(Screen.Profile.route) { navBackStackEntry ->
-        val userId = navBackStackEntry.arguments?.getString(Screen.Profile.ARG_USER_ID)
         ProfileScreen(
             viewModel =
                 ProfileViewModel(
+                    profileCache = profileCache,
                     onLogout = {
                       isSignedIn = false
                       navController.navigate(Screen.Login.route) {

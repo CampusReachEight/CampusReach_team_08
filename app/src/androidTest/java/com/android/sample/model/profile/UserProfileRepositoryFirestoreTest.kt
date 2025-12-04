@@ -326,21 +326,24 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
       repository.addUserProfile(profile)
       fail("Expected IllegalStateException when adding profile while not authenticated")
     } catch (_: IllegalStateException) {
-      // Expected exception
+      // Expected exception - could be from authentication or offline check
     }
 
     try {
       repository.getUserProfile("some-user-id")
-      fail("Expected IllegalStateException when getting profile while not authenticated")
+      fail(
+          "Expected NoSuchElementException or IllegalStateException when getting profile while not authenticated")
     } catch (_: NoSuchElementException) {
       // Expected exception
+    } catch (_: IllegalStateException) {
+      // Also acceptable - from cache check
     }
 
     try {
       repository.updateUserProfile("some-user-id", profile)
       fail("Expected IllegalStateException when updating profile while not authenticated")
     } catch (_: IllegalStateException) {
-      // Expected exception
+      // Expected exception - could be from authentication or offline check
     }
 
     try {

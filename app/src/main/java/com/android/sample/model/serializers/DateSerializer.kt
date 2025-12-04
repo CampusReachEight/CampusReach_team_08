@@ -1,4 +1,4 @@
-package com.android.sample.model.date // Or any other appropriate package
+package com.android.sample.model.serializers // Or any other appropriate package
 
 import java.util.Date
 import kotlinx.serialization.KSerializer

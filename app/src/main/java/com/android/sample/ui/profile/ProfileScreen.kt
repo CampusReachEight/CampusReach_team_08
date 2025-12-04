@@ -5,6 +5,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.ui.navigation.NavigationActions
 import com.android.sample.ui.navigation.NavigationTestTags
@@ -20,6 +21,8 @@ import com.android.sample.ui.theme.appPalette
  * - Sub-components are small, focused composables for readability and easier testing.
  * - Keeps behavior identical to previous implementation while improving maintainability.
  */
+const val PROFILE_OFFLINE_TEXT = "You are currently offline"
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
@@ -40,7 +43,15 @@ fun ProfileScreen(
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
           when {
             state.isLoading || !shouldShowContent -> ProfileLoadingBuffer(Modifier.fillMaxSize())
-            else ->
+            else -> {
+              Column {
+                if (state.offlineMode) {
+                  Text(
+                      PROFILE_OFFLINE_TEXT,
+                      color = appPalette().error,
+                      textAlign = TextAlign.Center,
+                      modifier = Modifier.fillMaxWidth())
+                }
                 ProfileContent(
                     state = state,
                     onLogoutRequested = { viewModel.showLogoutDialog() },
@@ -50,6 +61,8 @@ fun ProfileScreen(
                     },
                     onEditRequested = { viewModel.setEditMode(true) },
                     modifier = Modifier.fillMaxSize())
+              }
+            }
           }
 
           // Logout confirmation dialog

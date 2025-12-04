@@ -8,6 +8,7 @@ import com.android.sample.ui.request_validation.KudosException
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Source
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.tasks.await
 
@@ -65,9 +66,11 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
 
   // Retrieves all public user profiles
   override suspend fun getAllUserProfiles(): List<UserProfile> {
-    return publicCollectionRef.get().await().documents.mapNotNull { doc ->
-      doc.data?.let { UserProfile.fromMap(it) }
+    val snapshot = publicCollectionRef.get(Source.SERVER).await()
+    if (snapshot.metadata.isFromCache) {
+      throw IllegalStateException("Data retrieved from cache instead of server")
     }
+    return snapshot.documents.mapNotNull { doc -> doc.data?.let { UserProfile.fromMap(it) } }
   }
 
   // Retrieves a user profile by ID
@@ -82,8 +85,16 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
         throw NoSuchElementException(String.format(MSG_USER_NOT_FOUND, userId))
       }
 
+      val publicSnapshot = publicCollectionRef.document(userId).get().await()
+      if (!privateSnapshot.exists()) {
+        throw NoSuchElementException(String.format(MSG_USER_NOT_FOUND, userId))
+      }
+      if (publicSnapshot.metadata.isFromCache) {
+        throw IllegalStateException("Data retrieved from cache instead of server for user $userId")
+      }
+
       try {
-        val publicSnapshot = publicCollectionRef.document(userId).get().await()
+
         if (publicSnapshot.exists()) {
           val publicKudos = (publicSnapshot[KUDOS_FIELD] as? Number)?.toInt() ?: 0
           val privateKudos = (privateSnapshot[KUDOS_FIELD] as? Number)?.toInt() ?: 0
@@ -120,6 +131,12 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
       notAuthorized()
     }
 
+    // Verify we're online by doing a quick server read
+    val testSnapshot = publicCollectionRef.limit(1).get(Source.SERVER).await()
+    if (testSnapshot.metadata.isFromCache) {
+      throw IllegalStateException("Cannot add user profile while offline")
+    }
+
     // Add to private collection with full details
     privateCollectionRef.document(userProfile.id).set(userProfile.toMap()).await()
 
@@ -129,14 +146,6 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
 
     // Add to public collection
     publicCollectionRef.document(userProfile.id).set(publicProfile.toMap()).await()
-    publicCollectionRef
-        .document(userProfile.id)
-        .get(com.google.firebase.firestore.Source.SERVER)
-        .await()
-    privateCollectionRef
-        .document(userProfile.id)
-        .get(com.google.firebase.firestore.Source.SERVER)
-        .await()
   }
 
   override suspend fun updateUserProfile(userId: String, updatedProfile: UserProfile) {
@@ -187,8 +196,12 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
               .whereGreaterThanOrEqualTo("nameLowercase", normalizedQuery)
               .whereLessThan("nameLowercase", normalizedQuery + "\uf8ff")
               .limit(limit.toLong())
-              .get()
+              .get(Source.SERVER)
               .await()
+
+      if (nameQuerySnapshot.metadata.isFromCache) {
+        throw IllegalStateException("Search data retrieved from cache instead of server")
+      }
 
       val byName = nameQuerySnapshot.documents.mapNotNull { it.data?.let(UserProfile::fromMap) }
 
@@ -202,8 +215,13 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
                     .whereGreaterThanOrEqualTo("lastNameLowercase", normalizedQuery)
                     .whereLessThan("lastNameLowercase", normalizedQuery + "\uf8ff")
                     .limit(remaining.toLong())
-                    .get()
+                    .get(Source.SERVER)
                     .await()
+
+            if (lastNameSnapshot.metadata.isFromCache) {
+              throw IllegalStateException("Search data retrieved from cache instead of server")
+            }
+
             lastNameSnapshot.documents.mapNotNull { it.data?.let(UserProfile::fromMap) }
           } else {
             emptyList()
@@ -235,11 +253,11 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
 
     try {
       // Check if user exists before awarding (check public profile)
-      val userDoc =
-          publicCollectionRef
-              .document(userId)
-              .get(com.google.firebase.firestore.Source.SERVER)
-              .await()
+      val userDoc = publicCollectionRef.document(userId).get(Source.SERVER).await()
+      if (userDoc.metadata.isFromCache) {
+        throw IllegalStateException(
+            "User verification data retrieved from cache instead of server for user $userId")
+      }
       if (!userDoc.exists()) {
         throw KudosException.UserNotFound(userId)
       }
