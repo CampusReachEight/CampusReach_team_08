@@ -73,18 +73,19 @@ class ProfileViewModel(
 
     try {
       // Try load private profile (owner)
-      var profile : UserProfile
+      var profile: UserProfile
       try {
-          profile = repository.getUserProfile(user.uid)
-          _state.update { it.copy(offlineMode = false) }
+        profile = repository.getUserProfile(user.uid)
+        _state.update { it.copy(offlineMode = false) }
       } catch (_: Exception) {
-          try {
-              profile = profileCache!!.getProfileById(user.uid)
-              _state.update { it.copy(offlineMode = true) }
-              println("ProfileViewModel: Loaded profile from cache with offlineMode = ${_state.value.offlineMode}")
-          } catch (_: Exception) {
-              throw Exception("Profile not found in backend or cache")
-          }
+        try {
+          profile = profileCache!!.getProfileById(user.uid)
+          _state.update { it.copy(offlineMode = true) }
+          println(
+              "ProfileViewModel: Loaded profile from cache with offlineMode = ${_state.value.offlineMode}")
+        } catch (_: Exception) {
+          throw Exception("Profile not found in backend or cache")
+        }
       }
 
       loadedProfile = profile
@@ -106,21 +107,20 @@ class ProfileViewModel(
             ?: UserSections.entries.firstOrNull { it.label.equals(raw, ignoreCase = true) }?.label
             ?: "None"
 
-      _state.update {
-            it.copy(
-                userName = displayName,
-                userEmail = profile.email.orEmpty(),
-                profileId = profile.id,
-                kudosReceived = profile.kudos,
-                helpReceived = profile.helpReceived,
-                offlineMode = _state.value.offlineMode,
-                arrivalDate = formatDate(profile.arrivalDate),
-                userSection = sectionLabel,
-                errorMessage = null,
-                isLoading = false,
-                profilePictureUrl = profile.photo?.toString()
-            )
-      }
+    _state.update {
+      it.copy(
+          userName = displayName,
+          userEmail = profile.email.orEmpty(),
+          profileId = profile.id,
+          kudosReceived = profile.kudos,
+          helpReceived = profile.helpReceived,
+          offlineMode = _state.value.offlineMode,
+          arrivalDate = formatDate(profile.arrivalDate),
+          userSection = sectionLabel,
+          errorMessage = null,
+          isLoading = false,
+          profilePictureUrl = profile.photo?.toString())
+    }
   }
 
   private fun formatDate(date: Date): String {

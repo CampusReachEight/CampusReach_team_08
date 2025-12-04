@@ -22,6 +22,7 @@ import com.android.sample.ui.theme.appPalette
  * - Keeps behavior identical to previous implementation while improving maintainability.
  */
 const val PROFILE_OFFLINE_TEXT = "You are currently offline"
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
@@ -43,27 +44,25 @@ fun ProfileScreen(
           when {
             state.isLoading || !shouldShowContent -> ProfileLoadingBuffer(Modifier.fillMaxSize())
             else -> {
-                Column {
-                    println("ProfileScreen: offlineMode = ${state.offlineMode}")
-                    if (state.offlineMode) {
-                        Text(
-                            PROFILE_OFFLINE_TEXT,
-                            color = appPalette().error,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                    ProfileContent(
-                        state = state,
-                        onLogoutRequested = { viewModel.showLogoutDialog() },
-                        onMyRequestAction = { viewModel.onMyRequestsClick(navigationActions) },
-                        onAcceptedRequestsAction = {
-                            viewModel.onAcceptedRequestsClick(navigationActions)
-                        },
-                        onEditRequested = { viewModel.setEditMode(true) },
-                        modifier = Modifier.fillMaxSize()
-                    )
+              Column {
+                println("ProfileScreen: offlineMode = ${state.offlineMode}")
+                if (state.offlineMode) {
+                  Text(
+                      PROFILE_OFFLINE_TEXT,
+                      color = appPalette().error,
+                      textAlign = TextAlign.Center,
+                      modifier = Modifier.fillMaxWidth())
                 }
+                ProfileContent(
+                    state = state,
+                    onLogoutRequested = { viewModel.showLogoutDialog() },
+                    onMyRequestAction = { viewModel.onMyRequestsClick(navigationActions) },
+                    onAcceptedRequestsAction = {
+                      viewModel.onAcceptedRequestsClick(navigationActions)
+                    },
+                    onEditRequested = { viewModel.setEditMode(true) },
+                    modifier = Modifier.fillMaxSize())
+              }
             }
           }
 
