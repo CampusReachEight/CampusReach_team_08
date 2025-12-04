@@ -64,11 +64,14 @@ fun ProfileHeader(
                   modifier = Modifier.testTag(ProfileTestTags.PROFILE_HEADER_EMAIL))
             }
             Spacer(modifier = Modifier.weight(1f))
-            IconButton(
-                onClick = onEditRequested,
-                modifier = Modifier.testTag(ProfileTestTags.PROFILE_HEADER_EDIT_BUTTON)) {
-                  Icon(Icons.Default.Edit, contentDescription = "Edit", tint = surface)
-                }
+              if (!state.offlineMode) {
+                  IconButton(
+                      onClick = onEditRequested,
+                      modifier = Modifier.testTag(ProfileTestTags.PROFILE_HEADER_EDIT_BUTTON)
+                  ) {
+                      Icon(Icons.Default.Edit, contentDescription = "Edit", tint = surface)
+                  }
+              }
           }
         }
       }

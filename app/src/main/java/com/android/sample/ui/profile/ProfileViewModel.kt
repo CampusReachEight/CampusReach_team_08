@@ -17,6 +17,7 @@ import java.util.Locale
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 private const val UI_WAIT_TIME = 100L
@@ -72,19 +73,22 @@ class ProfileViewModel(
 
     try {
       // Try load private profile (owner)
-      val profile =
+      var profile : UserProfile
+      try {
+          profile = repository.getUserProfile(user.uid)
+          _state.update { it.copy(offlineMode = false) }
+      } catch (_: Exception) {
           try {
-            repository.getUserProfile(user.uid)
+              profile = profileCache!!.getProfileById(user.uid)
+              _state.update { it.copy(offlineMode = true) }
+              println("ProfileViewModel: Loaded profile from cache with offlineMode = ${_state.value.offlineMode}")
           } catch (_: Exception) {
-            try {
-              profileCache!!.getProfileById(user.uid)
-            } catch (_: Exception) {
               throw Exception("Profile not found in backend or cache")
-            }
           }
+      }
 
       loadedProfile = profile
-      _state.value = mapProfileToState(profile)
+      mapProfileToState(profile)
     } catch (_: Exception) {
       setError("Failed to load profile")
     } finally {
@@ -92,7 +96,7 @@ class ProfileViewModel(
     }
   }
 
-  private fun mapProfileToState(profile: UserProfile): ProfileState {
+  private fun mapProfileToState(profile: UserProfile) {
     val displayName =
         if (profile.lastName.isBlank()) profile.name else "${profile.name} ${profile.lastName}"
 
@@ -102,21 +106,21 @@ class ProfileViewModel(
             ?: UserSections.entries.firstOrNull { it.label.equals(raw, ignoreCase = true) }?.label
             ?: "None"
 
-    return ProfileState(
-        userName = displayName,
-        userEmail = profile.email.orEmpty(),
-        profileId = profile.id,
-        kudosReceived = profile.kudos,
-        helpReceived = 0,
-        followers = 0,
-        following = 0,
-        arrivalDate = formatDate(profile.arrivalDate),
-        userSection = sectionLabel,
-        isLoading = false,
-        errorMessage = null,
-        isEditMode = false,
-        profilePictureUrl = profile.photo?.toString(),
-        isLoggingOut = false)
+      _state.update {
+            it.copy(
+                userName = displayName,
+                userEmail = profile.email.orEmpty(),
+                profileId = profile.id,
+                kudosReceived = profile.kudos,
+                helpReceived = profile.helpReceived,
+                offlineMode = _state.value.offlineMode,
+                arrivalDate = formatDate(profile.arrivalDate),
+                userSection = sectionLabel,
+                errorMessage = null,
+                isLoading = false,
+                profilePictureUrl = profile.photo?.toString()
+            )
+      }
   }
 
   private fun formatDate(date: Date): String {
@@ -206,7 +210,7 @@ class ProfileViewModel(
         repository.updateUserProfile(updatedProfile.id, updatedProfile)
 
         loadedProfile = updatedProfile
-        _state.value = mapProfileToState(updatedProfile)
+        mapProfileToState(updatedProfile)
       } catch (_: Exception) {
         setError("Failed to save profile")
       } finally {
