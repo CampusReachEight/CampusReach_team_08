@@ -217,10 +217,10 @@ fun NavigationScreen(
 
     navigation(startDestination = Screen.Profile.route, route = "profile") {
       composable(Screen.Profile.route) { navBackStackEntry ->
-        val userId = navBackStackEntry.arguments?.getString(Screen.Profile.ARG_USER_ID)
         ProfileScreen(
             viewModel =
                 ProfileViewModel(
+                    profileCache = profileCache,
                     onLogout = {
                       isSignedIn = false
                       navController.navigate(Screen.Login.route) {
