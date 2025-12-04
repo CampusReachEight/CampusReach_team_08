@@ -8,6 +8,7 @@ object ProfileTestTags {
 
   // Screen
   const val PROFILE_SCREEN = "profile_screen"
+  const val PROFILE_ACTION_ACCEPTED_REQUESTS = "profileActionAcceptedRequests"
 
   // Top bar
   const val PROFILE_TOP_BAR = "profile_top_bar"

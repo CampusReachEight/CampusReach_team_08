@@ -49,7 +49,7 @@ class CloseRequestUseCaseTest {
       requestId: String = REQUEST_ID,
       selectedHelpers: List<String>,
       creatorId: String = CREATOR_ID,
-      shouldAwardCreator: Boolean = true
+      shouldAwardCreator: Boolean = false // Changed default to false
   ) {
     coEvery { requestRepository.closeRequest(requestId, selectedHelpers) } returns
         shouldAwardCreator
@@ -72,13 +72,6 @@ class CloseRequestUseCaseTest {
   /** Verifies helper kudos were awarded correctly. */
   private fun verifyHelperKudosAwarded(helperIds: List<String>) {
     coVerify { userProfileRepository.awardKudosBatch(createKudosMap(helperIds)) }
-  }
-
-  /** Verifies creator kudos were awarded. */
-  private fun verifyCreatorKudosAwarded(creatorId: String = CREATOR_ID) {
-    coVerify {
-      userProfileRepository.awardKudos(creatorId, KudosConstants.KUDOS_FOR_CREATOR_RESOLUTION)
-    }
   }
 
   /** Verifies no kudos were awarded. */

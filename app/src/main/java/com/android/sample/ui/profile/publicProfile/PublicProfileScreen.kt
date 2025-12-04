@@ -30,10 +30,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.android.sample.model.profile.UserProfile
 import com.android.sample.ui.profile.ProfileDimens
 import com.android.sample.ui.profile.ProfilePicture
 import com.android.sample.ui.profile.ProfileState
 import com.android.sample.ui.profile.ProfileTestTags
+import com.android.sample.ui.profile.UserSections
 import com.android.sample.ui.profile.composables.ErrorBanner
 import com.android.sample.ui.profile.composables.ProfileInformation
 import com.android.sample.ui.profile.composables.ProfileLoadingBuffer
@@ -50,42 +52,32 @@ import com.android.sample.ui.theme.appPalette
  */
 @Composable
 fun PublicProfileScreen(
-    profile: PublicProfile? = null,
+    profile: UserProfile? = null,
     viewModel: PublicProfileViewModel = viewModel(),
     onBackClick: () -> Unit = {},
     defaultProfileId: String = PublicProfileDefaults.DEFAULT_PUBLIC_PROFILE_ID
 ) {
   // If caller provided an explicit profile, render static UI only.
   // Otherwise use the ViewModel (and auto-load preview id).
-  if (profile == null) {
-    LaunchedEffect(defaultProfileId) { viewModel.loadPublicProfile(defaultProfileId) }
+  LaunchedEffect(defaultProfileId) {
+    if (profile == null && defaultProfileId.isNotBlank()) {
+      viewModel.loadPublicProfile(defaultProfileId)
+    }
   }
-
   val vmState by viewModel.uiState.collectAsState()
 
   val shownState =
       if (profile != null) {
         PublicProfileUiState(isLoading = false, profile = profile, error = null)
       } else {
-        PublicProfileUiState(
-            isLoading = vmState.isLoading, profile = vmState.profile, error = vmState.error)
+        vmState
       }
 
-  val hiddenState =
+  val profileState =
       if (profile != null) {
-        mapPublicToProfile(profile)
+        mapUserProfileToProfileState(profile)
       } else {
-        ProfileState(
-            isLoading = vmState.isLoading,
-            userName = vmState.profile?.name ?: "",
-            userSection = vmState.profile?.section ?: "",
-            profilePictureUrl = vmState.profile?.pictureUriString,
-            kudosReceived = vmState.profile?.kudosReceived ?: 0,
-            helpReceived = vmState.profile?.helpReceived ?: 0,
-            followers = vmState.profile?.followers ?: 0,
-            following = vmState.profile?.following ?: 0,
-            isLoggingOut = false,
-            isEditMode = false)
+        mapUserProfileToProfileState(vmState.profile)
       }
 
   var isFollowing by remember { mutableStateOf(false) }
@@ -104,18 +96,16 @@ fun PublicProfileScreen(
                     Spacer(modifier = Modifier.height(ProfileDimens.Vertical))
                   }
 
-                  // Use the VM-backed state for header composition when available, otherwise derive
-                  // from
-                  // the provided profile.
                   PublicProfileHeader(
-                      state = if (profile != null) shownState else vmState,
+                      profile = shownState.profile,
                       isFollowing = isFollowing,
                       onFollowToggle = { isFollowing = !isFollowing },
                       modifier = Modifier.testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER))
                   Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
-                  ProfileStats(state = hiddenState)
+                  ProfileStats(state = profileState)
                   Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
-                  ProfileInformation(state = hiddenState)
+                  ProfileInformation(state = profileState, showSensitiveInfo = false)
+
                   Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
                 }
           }
@@ -125,7 +115,7 @@ fun PublicProfileScreen(
 
 @Composable
 fun PublicProfileHeader(
-    state: PublicProfileUiState,
+    profile: UserProfile?,
     isFollowing: Boolean,
     onFollowToggle: () -> Unit,
     modifier: Modifier = Modifier,
@@ -136,13 +126,28 @@ fun PublicProfileHeader(
 
   // Text limits to avoid overflow in smaller devices
   val maxNameLength = 25
-  val maxEmailLength = 30
 
   val uiUtils = com.android.sample.ui.UiUtils()
-  val displayName =
-      uiUtils.ellipsizeWithMiddle(state.profile?.name ?: "Unknown", maxLength = maxNameLength)
-  val displayEmail =
-      uiUtils.ellipsizeWithMiddle(state.profile?.email ?: "unknown", maxLength = maxEmailLength)
+
+  // Combine name and lastName
+  val fullName =
+      when {
+        profile == null -> "Unknown"
+        profile.lastName.isBlank() -> profile.name
+        else -> "${profile.name} ${profile.lastName}"
+      }
+
+  // Get section label
+  val sectionLabel =
+      try {
+        UserSections.entries
+            .firstOrNull { it.name.equals(profile?.section.toString(), ignoreCase = true) }
+            ?.label ?: profile?.section.toString()
+      } catch (e: Exception) {
+        "None"
+      }
+
+  val displayName = uiUtils.ellipsizeWithMiddle(fullName, maxLength = maxNameLength)
 
   Card(
       modifier =
@@ -155,7 +160,8 @@ fun PublicProfileHeader(
         Box(modifier = Modifier.padding(ProfileDimens.HeaderPadding)) {
           Row(verticalAlignment = Alignment.CenterVertically) {
             ProfilePicture(
-                profileId = state.profile?.userId ?: "",
+                profileId = profile?.id ?: "",
+                onClick = {},
                 modifier =
                     Modifier.size(ProfileDimens.ProfilePicture)
                         .testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_PROFILE_PICTURE))
@@ -167,7 +173,7 @@ fun PublicProfileHeader(
                   color = textColor,
                   modifier = Modifier.testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_NAME))
               Text(
-                  text = displayEmail,
+                  text = sectionLabel,
                   style = MaterialTheme.typography.bodyMedium,
                   color = textColor,
                   modifier = Modifier.testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_EMAIL))
@@ -193,19 +199,57 @@ fun FollowButton(isFollowing: Boolean, onToggle: () -> Unit) {
   }
 }
 
-fun mapPublicToProfile(publicProfile: PublicProfile): ProfileState {
+fun mapUserProfileToProfileState(userProfile: UserProfile?): ProfileState {
+  if (userProfile == null) {
+    return ProfileState(
+        isLoading = false,
+        userName = "Unknown",
+        userSection = "None",
+        profilePictureUrl = null,
+        kudosReceived = 0,
+        helpReceived = 0,
+        followers = 0,
+        following = 0,
+        isLoggingOut = false,
+        isEditMode = false)
+  }
+
+  // Combine name and lastName
+  val fullName =
+      if (userProfile.lastName.isBlank()) {
+        userProfile.name
+      } else {
+        "${userProfile.name} ${userProfile.lastName}"
+      }
+
+  // Get section label
+  val sectionLabel =
+      try {
+        UserSections.entries
+            .firstOrNull { it.name.equals(userProfile.section.toString(), ignoreCase = true) }
+            ?.label ?: userProfile.section.toString()
+      } catch (e: Exception) {
+        "None"
+      }
+
   return ProfileState(
       isLoading = false,
-      userName = publicProfile.name,
-      userSection = publicProfile.section,
-      profilePictureUrl = publicProfile.pictureUriString,
-      kudosReceived = publicProfile.kudosReceived,
-      helpReceived = publicProfile.helpReceived,
-      followers = publicProfile.followers,
-      following = publicProfile.following,
+      userName = fullName,
+      userSection = sectionLabel,
+      profilePictureUrl = userProfile.photo?.toString(),
+      kudosReceived = userProfile.kudos,
+      helpReceived = userProfile.helpReceived,
+      followers = 0,
+      following = 0,
+      arrivalDate =
+          try {
+            java.text
+                .SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault())
+                .format(userProfile.arrivalDate)
+          } catch (e: Exception) {
+            ""
+          },
       isLoggingOut = false,
-      userEmail = publicProfile.email,
-      profileId = publicProfile.userId,
       isEditMode = false)
 }
 

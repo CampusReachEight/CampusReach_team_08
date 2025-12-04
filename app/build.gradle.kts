@@ -232,7 +232,7 @@ tasks.withType<Test> {
 }
 tasks.register("jacocoTestReport", JacocoReport::class) {
     dependsOn("testDebugUnitTest")
-    mustRunAfter("testDebugUnitTest", "connectedDebugAndroidTest")
+    mustRunAfter("testDebugUnitTest", "createDebugCoverageReport", "connectedDebugAndroidTest")
 
     reports {
         xml.required = true
@@ -263,7 +263,12 @@ tasks.register("jacocoTestReport", JacocoReport::class) {
     executionData.setFrom(fileTree(buildDir) {
         include("outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec")
         include("outputs/code_coverage/debugAndroidTest/connected/**/coverage.ec")
+        include("outputs/code_coverage/**/connected/**/*.ec")
         include("jacoco/testDebugUnitTest.exec")
+        include("coverage-artifacts/**/*.exec")
+        include("coverage-artifacts/**/*.ec")
+        include("reports/coverage/androidTest/debug/**/*.ec")
+        include("outputs/code-coverage/**/*.ec")  // Alternative path format
     })
 
     doFirst {
@@ -272,6 +277,7 @@ tasks.register("jacocoTestReport", JacocoReport::class) {
             println("  Found: ${file.absolutePath} (${if (file.exists()) "exists" else "missing"})")
         }
         println("Class directories: ${classDirectories.files}")
+        println("Source directories: ${sourceDirectories.files}")
     }
 }
 configurations.forEach { configuration ->
