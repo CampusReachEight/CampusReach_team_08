@@ -297,8 +297,8 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
 
       awards.forEach { (userId, amount) ->
         val publicDocRef = publicCollectionRef.document(userId)
-
-        val currentKudos = (userDoc[KUDOS_FIELD] as? Number)?.toLong() ?: 20L
+        val publicSnapshot = publicDocRef.get(com.google.firebase.firestore.Source.SERVER).await()
+        val currentKudos = publicSnapshot.getLong(KUDOS_FIELD) ?: 0L
         Log.d(KUDOS_BATCH_LOG_TAG, String.format(KUDOS_BATCH_LOG_MSG, userId, currentKudos))
 
         batch.update(publicDocRef, KUDOS_FIELD, FieldValue.increment(amount.toLong()))
