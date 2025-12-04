@@ -7,7 +7,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.sample.ui.profile.UserSections
 import java.io.File
 import java.util.Date
-import kotlinx.serialization.SerializationException
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
