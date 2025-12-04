@@ -231,11 +231,14 @@ tasks.withType<Test> {
     }
 }
 tasks.register("jacocoTestReport", JacocoReport::class) {
-    mustRunAfter("testDebugUnitTest", "connectedDebugAndroidTest")
+    dependsOn("testDebugUnitTest")
+    mustRunAfter("testDebugUnitTest", "createDebugCoverageReport", "connectedDebugAndroidTest")
+
     reports {
         xml.required = true
         html.required = true
     }
+
     val fileFilter = listOf(
         "**/R.class",
         "**/R$*.class",
@@ -245,16 +248,37 @@ tasks.register("jacocoTestReport", JacocoReport::class) {
         "android/**/*.*",
         "**/sigchecks/**",
     )
-    val debugTree = fileTree("${project.buildDir}/tmp/kotlin-classes/debug") {
+
+    val buildDir = layout.buildDirectory.get().asFile
+
+    val debugTree = fileTree("$buildDir/tmp/kotlin-classes/debug") {
         exclude(fileFilter)
     }
+
     val mainSrc = "${project.projectDir}/src/main/java"
+
     sourceDirectories.setFrom(files(mainSrc))
     classDirectories.setFrom(files(debugTree))
-    executionData.setFrom(fileTree(project.buildDir) {
+
+    executionData.setFrom(fileTree(buildDir) {
         include("outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec")
-        include("outputs/code_coverage/debugAndroidTest/connected/*/coverage.ec")
+        include("outputs/code_coverage/debugAndroidTest/connected/**/coverage.ec")
+        include("outputs/code_coverage/**/connected/**/*.ec")
+        include("jacoco/testDebugUnitTest.exec")
+        include("coverage-artifacts/**/*.exec")
+        include("coverage-artifacts/**/*.ec")
+        include("reports/coverage/androidTest/debug/**/*.ec")
+        include("outputs/code-coverage/**/*.ec")  // Alternative path format
     })
+
+    doFirst {
+        println("JacocoTestReport - Looking for execution data in: $buildDir")
+        executionData.files.forEach { file ->
+            println("  Found: ${file.absolutePath} (${if (file.exists()) "exists" else "missing"})")
+        }
+        println("Class directories: ${classDirectories.files}")
+        println("Source directories: ${sourceDirectories.files}")
+    }
 }
 configurations.forEach { configuration ->
     configuration.exclude("com.google.protobuf", "protobuf-lite")

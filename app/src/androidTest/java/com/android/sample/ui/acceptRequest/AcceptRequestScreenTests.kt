@@ -263,7 +263,11 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
       composeTestRule
           .onAllNodesWithTag(AcceptRequestScreenTestTags.REQUEST_TOP_BAR)
           .fetchSemanticsNodes()
-          .isNotEmpty()
+          .any { node ->
+            val text =
+                node.config.getOrNull(SemanticsProperties.Text)?.joinToString("") { it.text } ?: ""
+            text.contains("Here is a good title", ignoreCase = true)
+          }
     }
 
     composeTestRule

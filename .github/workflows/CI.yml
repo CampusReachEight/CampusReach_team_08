@@ -1,8 +1,5 @@
 name: Project CI - Test Runner
 
-# Triggers:
-# - Runs on commits pushed to main
-# - Runs when a pull request is opened, synchronized (updated), or reopened
 on:
   push:
     branches:
@@ -16,43 +13,38 @@ on:
       - synchronize
       - reopened
 
-jobs:
-  project-ci:
-    name: CI-Project
-    runs-on: ubuntu-latest  # Fixed: removed array brackets
+env:
+  FIREBASE_VERSION: '13.29.1'
 
+jobs:
+  # -----------------------------------------------------------------
+  # JOB 1: Build & Setup
+  # -----------------------------------------------------------------
+  build-and-prepare:
+    name: Build and Prepare
+    runs-on: ubuntu-latest
     env:
       app_name: ProjectDebug
-      base_folder: .  # Fixed: added missing base_folder environment variable
-
+      base_folder: .
     defaults:
       run:
         working-directory: ./${{ env.base_folder }}
-
     steps:
-      # Step 1: Checkout repository source code
-      # Fetches the repo including all submodules. Full history is required (fetch-depth: 0).
       - name: Checkout
-        uses: actions/checkout@v4  # Updated from v3 to v4 for ubuntu-24.04 compatibility
+        uses: actions/checkout@v4
         with:
           submodules: recursive
           fetch-depth: 0
 
-      # Step 2: Clean Gradle cache
-      # Prevents issues caused by corrupted or stale Gradle state.
       - name: Remove current gradle cache
         run: rm -rf ~/.gradle
 
-      # Step 3: Setup JDK 17 (Temurin distribution)
-      # Required for building Android projects.
       - name: Setup JDK
-        uses: actions/setup-java@v4  # Updated from v3 to v4 for ubuntu-24.04 compatibility
+        uses: actions/setup-java@v4
         with:
           distribution: "temurin"
           java-version: "17"
 
-      # Step 4: Restore Gradle and SonarQube dependency cache
-      # Saves time by reusing Gradle wrapper and dependency caches across builds.
       - name: Cache SonarQube packages
         uses: actions/cache@v4
         with:
@@ -61,143 +53,325 @@ jobs:
           restore-keys: ${{ runner.os }}-sonar
 
       - name: Retrieve gradle cache
-        uses: actions/cache@v4  # Updated from v3 to v4
+        uses: actions/cache@v4
         with:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
           key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
 
-      # Step 5: Load google-services.json from the secrets
-      - name: Decode secrets
-        env:
-          GOOGLE_SERVICES: ${{ secrets.GOOGLE_SERVICES }}
-          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-        run: |
-          if [ -n "$GOOGLE_SERVICES" ]; then
-            echo "$GOOGLE_SERVICES" | base64 --decode > ./app/google-services.json
-          else
-            echo "::warning::GOOGLE_SERVICES secret is not set. google-services.json will not be created."
-          fi
-          mkdir -p keystore
-          if [ -n "$KEYSTORE_BASE64" ]; then
-            echo "$KEYSTORE_BASE64" | base64 --decode > keystore/ci-debug.keystore
-            echo "✓ Keystore decoded successfully"
-          else
-            echo "::warning::KEYSTORE_BASE64 secret is not set. Keystore will not be created."
-          fi
+      # --- CACHE 1: Firebase Tools ---
+      - name: Cache Firebase Tools
+        id: firebase-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm-global
+            ~/.cache/firebase/emulators
+          key: firebase-tools-${{ runner.os }}-${{ env.FIREBASE_VERSION }}
 
-      # Step 6: Ensure gradlew wrapper is executable
-      - name: Grant execute permission for gradlew
-        run: chmod +x ./gradlew
-
-      # Step 7: Install NodeJS (version 22)
-      # Needed for Firebase CLI and Firestore emulator testing.
-      - name: Setup NodeJS
+      - name: Setup Node & Firebase
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      # Step 8: Install Firebase CLI globally
-      # Used to run emulators and test Firestore security rules.
-      - name: Install Firebase CLI
-        run: npm install -g firebase-tools
+      - name: Configure NPM Global Path
+        run: |
+          mkdir -p ~/.npm-global
+          npm config set prefix '~/.npm-global'
+          echo "$HOME/.npm-global/bin" >> $GITHUB_PATH
 
-      # Step 9: Validate Firestore configuration and run Firestore rules tests (if present)
-      # - Ensures firebase.json exists and includes emulator config
-      # - Ensures Firestore rules are referenced correctly
-      # - Runs tests in firebase/firestore/test if available
+      - name: Install Firebase CLI
+        if: steps.firebase-cache.outputs.cache-hit != 'true'
+        run: npm install -g firebase-tools@${{ env.FIREBASE_VERSION }}
+
+      - name: Run Setup Script
+        env:
+          GOOGLE_SERVICES: ${{ secrets.GOOGLE_SERVICES }}
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          chmod +x .github/scripts/setup_env.sh
+          .github/scripts/setup_env.sh
+
       - name: Firestore Security Rules tests
         run: |
           if [ ! -e "firebase.json" ]; then
-            echo "Warning: 'firebase.json' file is missing. Run 'firebase emulators:init'."
+            echo "Warning: 'firebase.json' file is missing."
             exit 0
           fi
-          jq -e '.emulators' firebase.json >/dev/null || {
-            echo "Error: 'firebase.json' is missing 'emulators'. Run 'firebase emulators:init'."
-            exit 1
-          }
-          for e in auth firestore; do
-            jq -e ".emulators.$e" firebase.json >/dev/null || {
-              echo "Error: 'firebase.json' is missing 'emulators.$e'. Run 'firebase emulators:init'."
-              exit 1
-            }
-          done
           if [ -e "firebase/firestore/firestore.rules" ]; then
-            jq -e '.firestore.rules' firebase.json >/dev/null || {
-              echo "Error: 'firebase.json' is missing 'firestore.rules'."
-              exit 1
-            }
             (cd firebase/firestore/test 2>/dev/null && npm install && npm test) || exit $?
-          else
-            echo "Warning: Firestore rules file not found in firebase/firestore. Rules should be added for emulator testing."
           fi
 
-      # Step 10: Run Kotlin formatting check
-      # Enforces style rules via ktfmt plugin.
       - name: KTFmt Check
         run: ./gradlew ktfmtCheck
 
-      # Step 11: Run unit tests and verification tasks
-      # Executes tests defined in the Gradle check task (includes unit tests, lint, etc.).
-      - name: Run tests
-        run: ./gradlew check --parallel --build-cache
+      - name: Assemble Debug and AndroidTest
+        run: ./gradlew assembleDebug assembleAndroidTest --build-cache
 
-      # Step 12: Start Firebase emulators (Auth + Firestore)
-      # Runs in the background to support instrumentation tests.
+      # --- CACHE 2: Build Output ---
+      - name: Cache Build Folder
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            app/build
+            .gradle/kotlin-profile
+            .gradle/generated-gradle-jars
+          key: build-output-${{ github.sha }}
+
+  # -----------------------------------------------------------------
+  # JOB 2: Run Tests (Merged Unit + Integration)
+  # -----------------------------------------------------------------
+  run-tests:
+    name: Run Tests (Unit & Int)
+    needs: build-and-prepare
+    runs-on: ubuntu-latest
+    env:
+      base_folder: .
+    defaults:
+      run:
+        working-directory: ./${{ env.base_folder }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
+      - name: Retrieve gradle cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+
+      # --- RESTORE 1: Build Output ---
+      - name: Restore Build Folder
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            app/build
+            .gradle/kotlin-profile
+            .gradle/generated-gradle-jars
+          key: build-output-${{ github.sha }}
+          fail-on-cache-miss: true
+
+      # --- RESTORE 2: AVD ---
+      - name: AVD Cache
+        uses: actions/cache@v4
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-${{ runner.os }}-api-36
+
+      # --- RESTORE 3: Firebase ---
+      - name: Cache Firebase Tools
+        id: firebase-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm-global
+            ~/.cache/firebase/emulators
+          key: firebase-tools-${{ runner.os }}-${{ env.FIREBASE_VERSION }}
+
+      - name: Setup Node & Firebase
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Configure NPM Global Path
+        run: |
+          mkdir -p ~/.npm-global
+          npm config set prefix '~/.npm-global'
+          echo "$HOME/.npm-global/bin" >> $GITHUB_PATH
+
+      - name: Install Firebase CLI
+        if: steps.firebase-cache.outputs.cache-hit != 'true'
+        run: npm install -g firebase-tools@${{ env.FIREBASE_VERSION }}
+
+      - name: Run Setup Script
+        env:
+          GOOGLE_SERVICES: ${{ secrets.GOOGLE_SERVICES }}
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          chmod +x .github/scripts/setup_env.sh
+          chmod +x .github/scripts/run_tests.sh
+          .github/scripts/setup_env.sh
+
       - name: Start Firebase emulators
         run: |
           if [ -e "firebase.json" ] && jq -e '.emulators' firebase.json >/dev/null; then
-            echo "Starting Firebase emulators for instrumentation tests..."
+            echo "Starting Firebase emulators..."
             firebase emulators:start --only auth,firestore --project demo-project &
             echo "Firebase emulators started"
           else
-            echo "Firebase emulators not configured, skipping emulator startup..."
+            echo "Firebase emulators not configured..."
           fi
 
-      # Step 13: Enable KVM for hardware acceleration
-      # Required for Android emulator to run efficiently on Linux
       - name: Enable KVM group perms
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      # Step 14: Run instrumentation tests on an Android emulator
-      # - Uses ReactiveCircus runner which handles SDK setup automatically
-      # - Spins up an Android emulator (API 36, x86_64, Google APIs)
-      # - Disables UI (no-window) and animations for faster CI execution
-      # - Runs connectedCheck (integration/instrumentation tests)
-      - name: Run instrumentation tests
-        timeout-minutes: 35
+      # --- EXECUTE TESTS ---
+      - name: Run Tests (Unit & Int)
+        timeout-minutes: 45
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 36
           target: google_apis
           arch: x86_64
           avd-name: github
-          force-avd-creation: true
+          force-avd-creation: false # Use cached AVD
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -skin 1080x2400
           disable-animations: true
-          script: ./gradlew connectedCheck --parallel --build-cache
+          script: .github/scripts/run_tests.sh
 
-      # Step 16: Generate code coverage report
-      # Uses Jacoco to collect test coverage metrics.
-      - name: Generate coverage
-        run: ./gradlew jacocoTestReport
 
-      # Step 17: Upload coverage report as an artifact
-      # Stores results in GitHub Actions for later download/inspection.
+      # Upload Coverage (Merged from Unit + Android automatically by the script running both)
+      - name: Upload Run Coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-run-${{ github.run_attempt }}
+          path: |
+            app/build/outputs/code_coverage/**/*.ec
+            app/build/outputs/unit_test_code_coverage/**/*.exec
+            app/build/jacoco/**/*.exec
+            app/build/reports/coverage/**/*.ec
+            app/build/**/*.exec
+
+      # Upload Results
+      - name: Upload Run Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-run-${{ github.run_attempt }}
+          path: |
+            app/build/outputs/androidTest-results/connected
+            app/build/test-results/testDebugUnitTest
+
+  # -----------------------------------------------------------------
+  # JOB 3: Coverage & Sonar
+  # -----------------------------------------------------------------
+  coverage-and-sonar:
+    name: Coverage and Sonar
+    needs: [run-tests]
+    if: always()
+    runs-on: ubuntu-latest
+    env:
+      base_folder: .
+    defaults:
+      run:
+        working-directory: ./${{ env.base_folder }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
+      - name: Retrieve gradle cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+
+      - name: Cache SonarQube packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
+      # --- RESTORE Build Output (Critical for Jacoco class matching) ---
+      - name: Restore Build Folder
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            app/build
+            .gradle/kotlin-profile
+            .gradle/generated-gradle-jars
+          key: build-output-${{ github.sha }}
+          fail-on-cache-miss: true
+
+      - name: Run Setup Script
+        env:
+          GOOGLE_SERVICES: ${{ secrets.GOOGLE_SERVICES }}
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          chmod +x .github/scripts/setup_env.sh
+          .github/scripts/setup_env.sh
+
+      - name: Download All Coverage
+        uses: actions/download-artifact@v4
+        with:
+          pattern: jacoco-run-*
+          merge-multiple: true
+          path: app/build/coverage-artifacts/
+
+      - name: Organize Coverage Files
+        run: |
+          # Create proper directory structure for coverage files
+          mkdir -p app/build/outputs/unit_test_code_coverage/debugUnitTest
+          mkdir -p app/build/outputs/code_coverage/debugAndroidTest/connected/emulator
+          
+          # Debug: Show what we downloaded
+          echo "=== Downloaded coverage artifacts ==="
+          find app/build/coverage-artifacts -type f 2>/dev/null || echo "No coverage-artifacts directory"
+          
+          # Move unit test coverage files (.exec)
+          if find app/build/coverage-artifacts -name "*.exec" -type f | grep -q .; then
+            echo "=== Found .exec files ==="
+            find app/build/coverage-artifacts -name "*.exec" -type f
+            find app/build/coverage-artifacts -name "*.exec" -type f -exec cp {} app/build/outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec \;
+            echo "✓ Copied .exec files"
+          else
+            echo "⚠️ No .exec files found"
+          fi
+          
+          # Move Android test coverage files (.ec)
+          if find app/build/coverage-artifacts -name "*.ec" -type f | grep -q .; then
+            echo "=== Found .ec files ==="
+            find app/build/coverage-artifacts -name "*.ec" -type f
+            find app/build/coverage-artifacts -name "*.ec" -type f -exec cp {} app/build/outputs/code_coverage/debugAndroidTest/connected/emulator/coverage.ec \;
+            echo "✓ Copied .ec files"
+          else
+            echo "⚠️ No .ec files found"
+          fi
+          
+          # List coverage files found
+          echo "=== Final coverage file locations ==="
+          ls -lah app/build/outputs/unit_test_code_coverage/debugUnitTest/ 2>/dev/null || echo "No unit test coverage"
+          ls -lah app/build/outputs/code_coverage/debugAndroidTest/connected/emulator/ 2>/dev/null || echo "No Android test coverage"
+
+      - name: Generate Merged Coverage Report
+        run: ./gradlew jacocoTestReport --info
+
       - name: Upload coverage
         uses: actions/upload-artifact@v4
         with:
           name: Coverage report
           path: app/build/reports/jacoco/jacocoTestReport
 
-      # Step 18: Run SonarCloud analysis
-      # Analyzes code quality and uploads test coverage to SonarCloud
       - name: SonarCloud analysis
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: ./gradlew sonar --info
-

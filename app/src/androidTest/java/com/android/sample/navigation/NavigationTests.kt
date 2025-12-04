@@ -10,6 +10,7 @@ import com.android.sample.ui.navigation.NavigationActions
 import com.android.sample.ui.navigation.NavigationScreen
 import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.navigation.Screen
+import com.android.sample.ui.request.accepted.AcceptedRequestsTestTags
 import com.android.sample.utils.BaseEmulatorTest
 import com.android.sample.utils.FirebaseEmulator
 import kotlinx.coroutines.test.runTest
@@ -385,6 +386,70 @@ class NavigationTests : BaseEmulatorTest() {
     composeTestRule.runOnUiThread { navigationActions.navigateTo(Screen.AddRequest) }
     composeTestRule.waitForIdle()
     composeTestRule.onNodeWithTag(NavigationTestTags.ADD_REQUEST_SCREEN).assertIsDisplayed()
+
+    // Go back to Requests
+    composeTestRule.runOnUiThread { navigationActions.goBack() }
+    composeTestRule.waitForIdle()
+    composeTestRule.onNodeWithTag(NavigationTestTags.REQUESTS_SCREEN).assertIsDisplayed()
+  }
+
+  @Test
+  fun navigateToAcceptedRequestsScreenFromProfile() {
+    // Start at Requests screen
+    composeTestRule.onNodeWithTag(NavigationTestTags.REQUESTS_SCREEN).assertIsDisplayed()
+
+    // Navigate to Profile screen
+    composeTestRule.onNodeWithTag(NavigationTestTags.PROFILE_BUTTON).performClick()
+    composeTestRule.waitForIdle()
+    composeTestRule.onNodeWithTag(NavigationTestTags.PROFILE_SCREEN).assertIsDisplayed()
+
+    // Navigate to AcceptedRequests screen programmatically
+    composeTestRule.runOnUiThread { navigationActions.navigateTo(Screen.AcceptedRequests) }
+    composeTestRule.waitForIdle()
+
+    // Verify AcceptedRequests screen is displayed
+    composeTestRule.onNodeWithTag(AcceptedRequestsTestTags.SCREEN).assertIsDisplayed()
+  }
+
+  @Test
+  fun goBackFromAcceptedRequestsScreenReturnsToProfile() {
+    // Navigate to Profile screen
+    composeTestRule.onNodeWithTag(NavigationTestTags.PROFILE_BUTTON).performClick()
+    composeTestRule.waitForIdle()
+    composeTestRule.onNodeWithTag(NavigationTestTags.PROFILE_SCREEN).assertIsDisplayed()
+
+    // Navigate to AcceptedRequests screen
+    composeTestRule.runOnUiThread { navigationActions.navigateTo(Screen.AcceptedRequests) }
+    composeTestRule.waitForIdle()
+    composeTestRule.onNodeWithTag(AcceptedRequestsTestTags.SCREEN).assertIsDisplayed()
+
+    // Go back using navigation action
+    composeTestRule.runOnUiThread { navigationActions.goBack() }
+    composeTestRule.waitForIdle()
+
+    // Verify we're back at Profile screen
+    composeTestRule.onNodeWithTag(NavigationTestTags.PROFILE_SCREEN).assertIsDisplayed()
+  }
+
+  @Test
+  fun complexNavigationWithAcceptedRequests() {
+    // Start at Requests
+    composeTestRule.onNodeWithTag(NavigationTestTags.REQUESTS_SCREEN).assertIsDisplayed()
+
+    // Go to Profile
+    composeTestRule.onNodeWithTag(NavigationTestTags.PROFILE_BUTTON).performClick()
+    composeTestRule.waitForIdle()
+    composeTestRule.onNodeWithTag(NavigationTestTags.PROFILE_SCREEN).assertIsDisplayed()
+
+    // Go to AcceptedRequests
+    composeTestRule.runOnUiThread { navigationActions.navigateTo(Screen.AcceptedRequests) }
+    composeTestRule.waitForIdle()
+    composeTestRule.onNodeWithTag(AcceptedRequestsTestTags.SCREEN).assertIsDisplayed()
+
+    // Go back to Profile
+    composeTestRule.runOnUiThread { navigationActions.goBack() }
+    composeTestRule.waitForIdle()
+    composeTestRule.onNodeWithTag(NavigationTestTags.PROFILE_SCREEN).assertIsDisplayed()
 
     // Go back to Requests
     composeTestRule.runOnUiThread { navigationActions.goBack() }

@@ -22,7 +22,8 @@ data class AcceptRequestUIState(
     val errorMsg: String? = null,
     val accepted: Boolean = false,
     val isLoading: Boolean = false,
-    val offlineMode: Boolean = false
+    val offlineMode: Boolean = false,
+    val isLoadingDetails: Boolean = false
 )
 
 class AcceptRequestViewModel(
@@ -56,6 +57,7 @@ class AcceptRequestViewModel(
    */
   fun loadRequest(requestID: String) {
     viewModelScope.launch {
+      _uiState.value = _uiState.value.copy(isLoadingDetails = true)
       try {
         val request = requestRepository.getRequest(requestID)
         val accept = requestRepository.hasUserAcceptedRequest(request)
@@ -92,7 +94,8 @@ class AcceptRequestViewModel(
                 request = request,
                 accepted = accept,
                 creatorName = creatorName,
-                offlineMode = false)
+                offlineMode = false,
+                isLoadingDetails = false)
       } catch (e: Exception) {
         try {
           val cachedRequest = requestCache?.getRequestById(requestID)
@@ -100,9 +103,11 @@ class AcceptRequestViewModel(
             it.copy(
                 request = cachedRequest,
                 accepted = requestRepository.hasUserAcceptedRequest(cachedRequest!!),
-                offlineMode = true)
+                offlineMode = true,
+                isLoadingDetails = false)
           }
         } catch (e: Exception) {
+          _uiState.update { it.copy(isLoadingDetails = false) }
           Log.e("AcceptRequestViewModel", "Failed to load request: ${e.message}", e)
           setErrorMsg("Failed to load request: ${e.message}")
         }

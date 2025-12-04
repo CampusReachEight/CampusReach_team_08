@@ -28,6 +28,8 @@ sealed class Screen(
 
   object MyRequest : Screen(route = "profile/myRequest", NavigationType.SUB_SCREEN)
 
+  object AcceptedRequests : Screen(route = "profile/acceptedRequests", NavigationType.SUB_SCREEN)
+
   data class RequestAccept(val requestId: String) : Screen(route = "requests/accept/${requestId}") {
     companion object {
       const val ARG_REQUEST_ID = REQUEST_ID
@@ -60,6 +62,13 @@ sealed class Screen(
     companion object {
       const val ARG_REQUEST_ID = REQUEST_ID
       const val route = "validateRequest/{$ARG_REQUEST_ID}"
+    }
+  }
+
+  data class PublicProfile(val userId: String) : Screen(route = "profile/public/${userId}") {
+    companion object {
+      const val ARG_USER_ID = "userId"
+      const val route = "profile/public/{$ARG_USER_ID}"
     }
   }
 }
