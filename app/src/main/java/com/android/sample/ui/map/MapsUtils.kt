@@ -1,12 +1,19 @@
 package com.android.sample.ui.map
 
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Rect
+import android.location.LocationManager
+import androidx.activity.compose.ManagedActivityResultLauncher
+import androidx.core.content.ContextCompat
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.toColorInt
+import com.android.sample.model.map.Location
 import com.android.sample.model.request.Request
 import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
@@ -52,6 +59,28 @@ fun getClusterRadiusForZoom(zoomLevel: Float): Double {
   } / (zoomLevel / ConstantMap.ZOOM_DIVIDE) // change with current zoom
 }
 
+/**
+ * Determines the appropriate clustering radius based on the map zoom level. The radius decreases as
+ * the zoom level increases, allowing for more detailed clustering at higher zoom levels. The radius
+ * is also dynamically adjusted based on the exact zoom value.
+ *
+ * @param zoomLevel The current zoom level of the map (typically between 0 and 21)
+ * @return The clustering radius in meters, adjusted for the current zoom level
+ */
+fun getClusterRadiusForZoomForCurrentLocation(zoomLevel: Float): Double {
+  return when {
+    zoomLevel < ConstantMap.MAX_ZOOM_ONE ->
+        ConstantMap.CURR_ZOOM_LEVEL_WORLD // 100km - mondial view
+    zoomLevel < ConstantMap.MAX_ZOOM_TWO -> ConstantMap.CURR_ZOOM_LEVEL_WL // 40km
+    zoomLevel < ConstantMap.MAX_ZOOM_THREE -> ConstantMap.CURR_ZOOM_LEVEL_LAND // 20km - land view
+    zoomLevel < ConstantMap.MAX_ZOOM_FOUR -> ConstantMap.CURR_ZOOM_LEVEL_REGION // 5km - region view
+    zoomLevel < ConstantMap.MAX_ZOOM_FIVE -> ConstantMap.CURR_ZOOM_LEVEL_CITY // 1km
+    zoomLevel < ConstantMap.MAX_ZOOM_SIX -> ConstantMap.CURR_ZOOM_LEVEL_MID // 200m
+    zoomLevel < ConstantMap.MAX_ZOOM_SEVEN -> ConstantMap.CURR_ZOOM_LEVEL_STREET_BIG // 35m
+    else -> ConstantMap.CURR_ZOOM_LEVEL_STREET_SMALL // 15m
+  } / (zoomLevel / ConstantMap.CURR_ZOOM_DIVIDE) // change with current zoom
+}
+
 fun Date.toDisplayStringWithoutHours(): String {
   return this.let { timestamp ->
     SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(timestamp)
@@ -62,10 +91,11 @@ fun Date.toDisplayStringWithoutHours(): String {
  * Creates a marker icon with a number badge.
  *
  * @param count The number to display on the marker badge
+ * @param isAtCurrentLocation is the cluster at same position as user
  * @return A BitmapDescriptor that can be used as a marker icon
  */
-fun createMarkerWithNumber(count: Int): BitmapDescriptor {
-  val bitmap = createMarkerBitmap(count)
+fun createMarkerWithNumber(count: Int, isAtCurrentLocation: Boolean = false): BitmapDescriptor {
+  val bitmap = createMarkerBitmap(count, isAtCurrentLocation)
   return BitmapDescriptorFactory.fromBitmap(bitmap)
 }
 
@@ -73,17 +103,23 @@ fun createMarkerWithNumber(count: Int): BitmapDescriptor {
  * Creates a bitmap for a marker with a number badge.
  *
  * @param count The number to display on the badge
+ * @param isAtCurrentLocation is the user at the same position as cluster
  * @return A Bitmap containing a blue circle with white border and the count number
  */
-fun createMarkerBitmap(count: Int): Bitmap {
+fun createMarkerBitmap(count: Int, isAtCurrentLocation: Boolean = false): Bitmap {
   val size = ConstantMap.SIZE_OF_MARKER
   val bitmap = createBitmap(size, size)
   val canvas = Canvas(bitmap)
 
-  // Circle blue
+  // Circle color: cyan if at current location, blue otherwise
   val circlePaint =
       Paint().apply {
-        color = "#4285F4".toColorInt() // Here I use directly color because I create a marker
+        color =
+            if (isAtCurrentLocation) {
+              "#00BCD4".toColorInt() // Cyan color
+            } else {
+              "#4285F4".toColorInt() // Blue color
+            }
         isAntiAlias = true
         style = Paint.Style.FILL
       }
@@ -93,10 +129,10 @@ fun createMarkerBitmap(count: Int): Bitmap {
       size / ConstantMap.TWO_FLOAT - ConstantMap.FIVE,
       circlePaint)
 
-  // blank border
+  // White border
   val borderPaint =
       Paint().apply {
-        color = Color.WHITE // Use directly Color because it's for a marker
+        color = Color.WHITE
         isAntiAlias = true
         style = Paint.Style.STROKE
         strokeWidth = ConstantMap.THREE_FLOAT
@@ -107,13 +143,12 @@ fun createMarkerBitmap(count: Int): Bitmap {
       size / ConstantMap.TWO_FLOAT - ConstantMap.FIVE,
       borderPaint)
 
-  // Number of request in cluster
+  // Number of requests in cluster
   val textPaint = createTextPaint(count)
 
   val text = count.toString()
   val textBounds = Rect()
   textPaint.getTextBounds(text, ConstantMap.ZERO, text.length, textBounds)
-
   canvas.drawText(
       text,
       size / ConstantMap.TWO_FLOAT,
@@ -178,6 +213,29 @@ fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): D
   val c = ConstantMap.TWO * atan2(sqrt(a), sqrt(ConstantMap.ONE - a))
 
   return earthRadius * c
+}
+
+/**
+ * Finds the closest request to the given current position.
+ *
+ * @param currentPosition The current position as LatLng
+ * @param requests List of requests to search through
+ * @return The closest Request, or null if the list is empty
+ */
+fun findClosestRequest(currentPosition: LatLng?, requests: List<Request>): Location {
+  if (currentPosition == null) {
+    return MapViewModel.EPFL_LOCATION
+  }
+  return requests
+      .minByOrNull { request ->
+        calculateDistance(
+            currentPosition.latitude,
+            currentPosition.longitude,
+            request.location.latitude,
+            request.location.longitude)
+      }
+      ?.location
+      ?: Location(currentPosition.latitude, currentPosition.longitude, ConstantMap.CURR_POS_NAME)
 }
 
 /**
@@ -257,4 +315,130 @@ fun clusterRequestsByDistance(
   }
 
   return clusters
+}
+
+/** Data class representing a cluster and whether it's at the user's current location. */
+data class ClusterWithLocation(val cluster: List<Request>, val isAtCurrentLocation: Boolean)
+
+/**
+ * Checks if current location is near any cluster.
+ *
+ * @param clusters the list of cluster
+ * @param currentLocation the current position
+ * @return if a cluster is near currentPosition
+ */
+fun isCurrentLocationNearAnyCluster(
+    clusters: List<List<Request>>,
+    currentLocation: LatLng,
+    clusterRadiusMeters: Double
+): Boolean {
+  val proximityThreshold = clusterRadiusMeters
+
+  return clusters.any { cluster ->
+    val clusterPosition =
+        if (cluster.size == ConstantMap.ONE) {
+          LatLng(cluster.first().location.latitude, cluster.first().location.longitude)
+        } else {
+          calculateClusterCenter(cluster)
+        }
+
+    calculateDistance(
+        currentLocation.latitude,
+        currentLocation.longitude,
+        clusterPosition.latitude,
+        clusterPosition.longitude) <= proximityThreshold
+  }
+}
+
+/**
+ * Merges current location with nearby clusters (within 50 meters).
+ *
+ * @param clusters the list of cluster
+ * @param currentLocation the current position
+ * @return the list of cluster with the location
+ */
+fun mergeCurrentLocationWithClusters(
+    clusters: List<List<Request>>,
+    currentLocation: LatLng,
+    clusterRadiusMeters: Double
+): List<ClusterWithLocation> {
+  val proximityThreshold = clusterRadiusMeters
+
+  return clusters.map { cluster ->
+    val clusterPosition =
+        if (cluster.size == ConstantMap.ONE) {
+          LatLng(cluster.first().location.latitude, cluster.first().location.longitude)
+        } else {
+          calculateClusterCenter(cluster)
+        }
+
+    val distance =
+        calculateDistance(
+            currentLocation.latitude,
+            currentLocation.longitude,
+            clusterPosition.latitude,
+            clusterPosition.longitude)
+    val isNear = distance <= proximityThreshold
+
+    ClusterWithLocation(cluster, isNear)
+  }
+}
+
+internal class MapPermissionResultHandler(
+    private val viewModel: MapViewModel,
+    private val locationManager: LocationManager
+) {
+  fun handlePermissionResult(permissions: Map<String, Boolean>) {
+    when {
+      permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+          permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true -> {
+        if (isLocationEnabled(locationManager)) {
+          viewModel.getCurrentLocation()
+        } else {
+          viewModel.setLocationPermissionError()
+        }
+      }
+      else -> {
+        viewModel.setLocationPermissionError()
+        viewModel.markLocationPermissionAsked()
+      }
+    }
+  }
+
+  private fun isLocationEnabled(lm: LocationManager): Boolean {
+    return lm.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
+        lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+  }
+}
+
+fun handleLocationPermissionCheck(
+    context: Context,
+    viewModel: MapViewModel,
+    permissionLauncher: ManagedActivityResultLauncher<Array<String>, Map<String, Boolean>>
+) {
+  val hasFineLocation =
+      ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) ==
+          PackageManager.PERMISSION_GRANTED
+
+  val hasCoarseLocation =
+      ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) ==
+          PackageManager.PERMISSION_GRANTED
+
+  if (hasFineLocation || hasCoarseLocation) {
+    if (isLocationEnabled(context)) {
+      viewModel.getCurrentLocation()
+    } else {
+      viewModel.setLocationPermissionError()
+    }
+  } else {
+    permissionLauncher.launch(
+        arrayOf(
+            Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+  }
+}
+
+internal fun isLocationEnabled(context: Context): Boolean {
+  val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+  return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
+      locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
 }

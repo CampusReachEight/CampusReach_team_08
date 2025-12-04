@@ -31,6 +31,7 @@ import com.android.sample.ui.authentication.SignInScreen
 import com.android.sample.ui.authentication.SignInViewModel
 import com.android.sample.ui.map.MapScreen
 import com.android.sample.ui.map.MapViewModel
+import com.android.sample.ui.map.MapViewModelFactory
 import com.android.sample.ui.overview.AcceptRequestScreen
 import com.android.sample.ui.overview.AcceptRequestViewModel
 import com.android.sample.ui.overview.AcceptRequestViewModelFactory
@@ -69,7 +70,6 @@ fun NavigationScreen(
   val user = FirebaseAuth.getInstance().currentUser
   var isSignedIn by rememberSaveable { mutableStateOf(user != null) }
   val startDestination = if (!isSignedIn) "login" else "requests"
-
   // repositories
   val requestRepository = RequestRepositoryFirestore(Firebase.firestore)
   val locationRepository = NominatimLocationRepository(client = OkHttpClient())
@@ -79,7 +79,13 @@ fun NavigationScreen(
   // ViewModels
   val signInViewModel: SignInViewModel = viewModel()
   val profileViewModel: ProfileViewModel = viewModel()
-  val mapViewModel: MapViewModel = viewModel()
+  val mapViewModel: MapViewModel =
+      viewModel(
+          factory =
+              MapViewModelFactory(
+                  requestRepository = requestRepository,
+                  profileRepository = userProfileRepository,
+                  locationProvider = fusedLocationProvider))
   val requestListViewModel: RequestListViewModel =
       viewModel(
           factory =
@@ -91,7 +97,6 @@ fun NavigationScreen(
                   requestRepository = requestRepository,
                   locationRepository = locationRepository,
                   locationProvider = fusedLocationProvider))
-
   val acceptRequestViewModel: AcceptRequestViewModel =
       viewModel(
           factory =

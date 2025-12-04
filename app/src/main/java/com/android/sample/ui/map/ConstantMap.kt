@@ -21,6 +21,16 @@ object ConstantMap {
   const val KUDOS = "Kudos"
   const val SECTION = "Section"
 
+  const val CURR_POS_NAME = "current location"
+  const val ZOOM_OUT = "Zoom Out"
+  const val ZOOM_IN = "Zoom In"
+  const val YOUR_LOCATION = "Your Location"
+  const val YOU_ARE_HERE = "You are here"
+
+  const val ERROR_MESSAGE_CURRENT_LOCATION = "Error : this zoom needs your location"
+
+  const val AUTO_ZOOM_SETTINGS = "Auto-Zoom Settings"
+
   // ======================
   // General / reusable
   // ======================
@@ -102,6 +112,7 @@ object ConstantMap {
   // ======================
   const val ZOOM_AFTER_CHOSEN = 17f
   const val LONG_DURATION_ANIMATION = 500
+  const val VERY_LONG_DURATION_ANIMATION = 1000
   const val MAX_ZOOM_ONE = 5
   const val MAX_ZOOM_TWO = 7
   const val MAX_ZOOM_THREE = 9
@@ -120,6 +131,16 @@ object ConstantMap {
   const val ZOOM_LEVEL_STREET_SMALL = 20.0
   const val ZOOM_DIVIDE = 5.0
   const val ZOOM_LEVEL_TWO = 2
+
+  const val CURR_ZOOM_LEVEL_WORLD = 100000.0
+  const val CURR_ZOOM_LEVEL_WL = 40000.0
+  const val CURR_ZOOM_LEVEL_LAND = 20000.0
+  const val CURR_ZOOM_LEVEL_REGION = 5000.0
+  const val CURR_ZOOM_LEVEL_CITY = 1000.0
+  const val CURR_ZOOM_LEVEL_MID = 200.0
+  const val CURR_ZOOM_LEVEL_STREET_BIG = 35.0
+  const val CURR_ZOOM_LEVEL_STREET_SMALL = 15.0
+  const val CURR_ZOOM_DIVIDE = 5.0
 
   // ======================
   // Cluster image
@@ -167,4 +188,38 @@ object ConstantMap {
 
   // Keys
   const val OWNERSHIP_KEY = "ownership"
+
+  // ======================
+  // Map settings
+  // ======================
+
+  const val DESCRIPTION_REQUEST = "Choose where to zoom when changing filters:"
+  const val ALPHA_DIVIDER_SETTINGS = 0.7f
+  const val DESCRIPTION_NEARBY_REQUEST = "Zoom to the closest request"
+  const val TITLE_NEARBY_REQUEST = "Nearest Request"
+  const val TITLE_CURR_LOCATION = "My Location"
+  const val DESCRIPTION_CURRENT_LOCATION = "Zoom to your current position"
+  const val TITLE_NO_ZOOM = "No Auto-Zoom"
+  const val DESCRIPTION_NO_ZOOM = "Keep current map position"
+  val ROUND_CORNER = 12.dp
+  const val ALPHA_DIVIDER_SETTINGS_LITTLE = 0.1f
+  const val ALPHA_DIVIDER_SETTINGS_MID = 0.2f
+  const val ALPHA_DIVIDER_SETTINGS_BIG = 0.6f
+  val TWO_DP = 2.dp
+  val ONE_DP = 1.dp
+  val SIXTEEN_DP = 16.dp
+  val TWELVE_DP = 12.dp
+  val TWENTY_FOUR_DP = 24.dp
+  val TWENTY_DP = 20.dp
+  const val SELECTED_ZOOM = "Selected"
+
+  // ======================
+  // Map view Model
+  // ======================
+  const val UNCHECKED_CAST = "UNCHECKED_CAST"
+  const val ERROR_VIEW_MODEL_CLASS = "Unknown ViewModel class:"
+  const val ERROR_MESSAGE_LOCATION_PERMISSION =
+      "You will not have access to all the feature of the map"
+  const val ERROR_FAILED_TO_GET_CURRENT_LOCATION = "Failed to get current location:"
+  const val ZOOM_SETTING = "Zoom Settings"
 }
