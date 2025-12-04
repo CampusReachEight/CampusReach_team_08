@@ -323,6 +323,8 @@ class ValidateRequestScreenTest {
     // When - click confirm
     composeTestRule.onNodeWithTag(ValidateRequestConstants.TAG_CONFIRM_BUTTON).performClick()
     composeTestRule.waitForIdle()
+    Thread.sleep(1000)
+    composeTestRule.waitForIdle()
 
     // Then - confirm callback called and repositories updated
     assertEquals(TestAssertions.SINGLE_INVOCATION, callbackTracker.confirmAndCloseCount)
@@ -347,6 +349,8 @@ class ValidateRequestScreenTest {
     // When
     composeTestRule.onNodeWithTag(ValidateRequestConstants.TAG_CONFIRM_BUTTON).performClick()
     composeTestRule.waitForIdle()
+    Thread.sleep(1000)
+    composeTestRule.waitForIdle()
 
     // Then - retry callback should be invoked and cannot confirm/close
     assertEquals(TestAssertions.SINGLE_INVOCATION, callbackTracker.retryCount)
@@ -365,6 +369,8 @@ class ValidateRequestScreenTest {
 
     // When
     composeTestRule.onNodeWithTag(ValidateRequestConstants.TAG_CONFIRM_BUTTON).performClick()
+    composeTestRule.waitForIdle()
+    Thread.sleep(1000)
     composeTestRule.waitForIdle()
 
     // Then - receiveHelp failure should surface as retry

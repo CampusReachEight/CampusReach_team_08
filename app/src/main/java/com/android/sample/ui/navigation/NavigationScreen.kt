@@ -42,6 +42,7 @@ import com.android.sample.ui.profile.publicProfile.PublicProfileViewModelFactory
 import com.android.sample.ui.request.RequestListScreen
 import com.android.sample.ui.request.RequestListViewModel
 import com.android.sample.ui.request.RequestListViewModelFactory
+import com.android.sample.ui.request.accepted.AcceptedRequestsScreen
 import com.android.sample.ui.request.edit.EditRequestScreen
 import com.android.sample.ui.request.edit.EditRequestViewModel
 import com.android.sample.ui.request.edit.EditRequestViewModelFactory
@@ -227,6 +228,9 @@ fun NavigationScreen(
               defaultProfileId = id,
               onBackClick = { navigationActions.goBack() })
         }
+      }
+      composable(Screen.AcceptedRequests.route) {
+        AcceptedRequestsScreen(navigationActions = navigationActions)
       }
     }
 

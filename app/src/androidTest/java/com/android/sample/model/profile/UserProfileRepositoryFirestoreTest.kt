@@ -33,7 +33,7 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
   private lateinit var repository: UserProfileRepositoryFirestore
 
   private companion object {
-    private const val FIRESTORE_WRITE_DELAY_MS: Long = 300L
+    private const val FIRESTORE_WRITE_DELAY_MS: Long = 1000L
   }
 
   fun generateProfile(
@@ -627,11 +627,14 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
     // Given - Use only the current authenticated user
     val profile = testProfile1.copy(id = currentUserId)
     repository.addUserProfile(profile)
-
+    advanceUntilIdle()
+    delay(FIRESTORE_WRITE_DELAY_MS)
     val awards = mapOf(profile.id to 100)
 
     // When
     repository.awardKudosBatch(awards)
+    advanceUntilIdle()
+    delay(FIRESTORE_WRITE_DELAY_MS)
 
     // Then
     assertEquals(100, repository.getUserProfile(profile.id).kudos)
@@ -642,11 +645,15 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
     // Given
     val profile = testProfile1.copy(id = currentUserId)
     repository.addUserProfile(profile)
+    advanceUntilIdle()
+    delay(FIRESTORE_WRITE_DELAY_MS)
 
     val awards = mapOf(profile.id to 60)
 
     // When
     repository.awardKudosBatch(awards)
+    advanceUntilIdle()
+    delay(FIRESTORE_WRITE_DELAY_MS)
 
     val publicDoc = db.collection(PUBLIC_PROFILES_PATH).document(profile.id).get().await()
     assertEquals(60, (publicDoc.get("kudos") as Number).toInt())
@@ -753,12 +760,18 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
     // Given
     val profile = testProfile1.copy(id = currentUserId)
     repository.addUserProfile(profile)
+    advanceUntilIdle()
+    delay(FIRESTORE_WRITE_DELAY_MS)
     repository.awardKudos(profile.id, 30)
+    advanceUntilIdle()
+    delay(FIRESTORE_WRITE_DELAY_MS)
 
     val awards = mapOf(profile.id to 70)
 
     // When
     repository.awardKudosBatch(awards)
+    advanceUntilIdle()
+    delay(FIRESTORE_WRITE_DELAY_MS)
 
     // Then
     assertEquals(100, repository.getUserProfile(profile.id).kudos)
