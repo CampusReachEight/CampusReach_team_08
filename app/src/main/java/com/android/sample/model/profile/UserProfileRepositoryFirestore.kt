@@ -1,5 +1,6 @@
 package com.android.sample.model.profile
 
+import android.util.Log
 import com.android.sample.ui.request_validation.HelpReceivedConstants
 import com.android.sample.ui.request_validation.HelpReceivedException
 import com.android.sample.ui.request_validation.KudosConstants
@@ -9,13 +10,28 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Source
 import com.google.firebase.ktx.Firebase
-import kotlin.text.get
 import kotlinx.coroutines.tasks.await
 
 const val PUBLIC_PROFILES_PATH = "public_profiles"
 const val PRIVATE_PROFILES_PATH = "private_profiles"
 
+const val KUDOS_FIELD = "kudos"
+
+const val HELP_RECEIVED_FIELD = "helpReceived"
+
 private const val ZERO = 0
+
+// Error / log message constants
+private const val MSG_NO_AUTHENTICATED_USER = "No authenticated user"
+private const val MSG_NOT_AUTHORIZED = "Can only modify the currently authenticated user's profile"
+private const val MSG_USER_NOT_FOUND = "UserProfile with ID %s not found"
+private const val MSG_USER_NOT_FOUND_AFTER_SYNC = "UserProfile with ID %s not found after sync"
+private const val LOG_TAG = "UserProfileRepository"
+private const val MSG_SYNC_KUDOS = "Error syncing kudos for user %s: %s"
+private const val KUDOS_BATCH_LOG_TAG = "KUDOS_BATCH"
+private const val KUDOS_BATCH_LOG_MSG = "awardKudosBatch: `public_profiles`/%s kudos-before=%s"
+private const val BATCH_OPERATION_ID = "batch_operation"
+private const val MSG_FAILED_RECORD_HELP = "Failed to record help for user: %s"
 
 /**
  * Repository interface for managing user profiles.
@@ -34,10 +50,9 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
   private val publicCollectionRef = db.collection(PUBLIC_PROFILES_PATH)
   private val privateCollectionRef = db.collection(PRIVATE_PROFILES_PATH)
 
-  private fun notAuthenticated(): Unit = throw IllegalStateException("No authenticated user")
+  private fun notAuthenticated(): Unit = throw IllegalStateException(MSG_NO_AUTHENTICATED_USER)
 
-  private fun notAuthorized(): Unit =
-      throw IllegalArgumentException("Can only modify the currently authenticated user's profile")
+  private fun notAuthorized(): Unit = throw IllegalArgumentException(MSG_NOT_AUTHORIZED)
 
   override fun getCurrentUserId(): String = Firebase.auth.currentUser?.uid ?: ""
 
@@ -61,14 +76,50 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
   // Retrieves a user profile by ID
   override suspend fun getUserProfile(userId: String): UserProfile {
     val currentUserId = Firebase.auth.currentUser?.uid
-    val collectionRef = if (userId == currentUserId) privateCollectionRef else publicCollectionRef
 
-    val snapshot = collectionRef.document(userId).get(Source.SERVER).await()
-    if (snapshot.metadata.isFromCache) {
-      throw IllegalStateException("Data retrieved from cache instead of server for user $userId")
+    // If request the current user's profile, fetch from private collection
+    if (userId == currentUserId) {
+      val privateDocRef = privateCollectionRef.document(userId)
+      val privateSnapshot = privateDocRef.get().await()
+      if (!privateSnapshot.exists()) {
+        throw NoSuchElementException(String.format(MSG_USER_NOT_FOUND, userId))
+      }
+
+      val publicSnapshot = publicCollectionRef.document(userId).get().await()
+      if (!privateSnapshot.exists()) {
+        throw NoSuchElementException(String.format(MSG_USER_NOT_FOUND, userId))
+      }
+      if (publicSnapshot.metadata.isFromCache) {
+        throw IllegalStateException("Data retrieved from cache instead of server for user $userId")
+      }
+
+      try {
+
+        if (publicSnapshot.exists()) {
+          val publicKudos = (publicSnapshot[KUDOS_FIELD] as? Number)?.toInt() ?: 0
+          val privateKudos = (privateSnapshot[KUDOS_FIELD] as? Number)?.toInt() ?: 0
+
+          if (publicKudos != privateKudos) {
+            // Sync private kudos to the public value
+            privateDocRef.update(KUDOS_FIELD, publicKudos).await()
+            // Re-fetch private snapshot to return the latest data
+            val updatedPrivateSnapshot = privateDocRef.get().await()
+            return updatedPrivateSnapshot.data?.let { UserProfile.fromMap(it) }
+                ?: throw NoSuchElementException(
+                    String.format(MSG_USER_NOT_FOUND_AFTER_SYNC, userId))
+          }
+        }
+      } catch (e: Exception) {
+        Log.e(LOG_TAG, String.format(MSG_SYNC_KUDOS, userId, e.message))
+      }
+      return privateSnapshot.data?.let { UserProfile.fromMap(it) }
+          ?: throw NoSuchElementException(String.format(MSG_USER_NOT_FOUND, userId))
     }
-    return snapshot.data?.let { UserProfile.fromMap(it) }
-        ?: throw NoSuchElementException("UserProfile with ID $userId not found")
+
+    // For other users, return the public profile
+    val publicDoc = publicCollectionRef.document(userId).get().await()
+    return publicDoc.data?.let { UserProfile.fromMap(it) }
+        ?: throw NoSuchElementException(String.format(MSG_USER_NOT_FOUND, userId))
   }
 
   // Blurs email (and potentially other fields) for public profiles, keep full details in private
@@ -103,12 +154,6 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
       notAuthorized()
     }
 
-    // Verify we're online by doing a quick server read
-    val testSnapshot = publicCollectionRef.limit(1).get(Source.SERVER).await()
-    if (testSnapshot.metadata.isFromCache) {
-      throw IllegalStateException("Cannot update user profile while offline")
-    }
-
     // Update private profile with full details
     privateCollectionRef.document(userId).set(updatedProfile.toMap()).await()
 
@@ -126,14 +171,10 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
       notAuthorized()
     }
 
-    // Verify we're online by doing a quick server read
-    val testSnapshot = publicCollectionRef.limit(1).get(Source.SERVER).await()
-    if (testSnapshot.metadata.isFromCache) {
-      throw IllegalStateException("Cannot delete user profile while offline")
-    }
+    val privateDocRef = privateCollectionRef.document(userId)
 
     // Delete from both collections
-    privateCollectionRef.document(userId).delete().await()
+    privateDocRef.delete().await()
     publicCollectionRef.document(userId).delete().await()
   }
 
@@ -194,7 +235,7 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
                 it.lastNameLowercase.contains(normalizedQuery)
           }
           .take(limit)
-    } catch (e: Exception) {
+    } catch (_: Exception) {
       // Graceful degradation: return empty list on any error
       emptyList()
     }
@@ -225,12 +266,12 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
       // Update both public and private profiles
       publicCollectionRef
           .document(userId)
-          .update("kudos", FieldValue.increment(amount.toLong()))
+          .update(KUDOS_FIELD, FieldValue.increment(amount.toLong()))
           .await()
 
       privateCollectionRef
           .document(userId)
-          .update("kudos", FieldValue.increment(amount.toLong()))
+          .update(KUDOS_FIELD, FieldValue.increment(amount.toLong()))
           .await()
     } catch (e: KudosException) {
       throw e
@@ -274,10 +315,11 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
 
       awards.forEach { (userId, amount) ->
         val publicDocRef = publicCollectionRef.document(userId)
-        val privateDocRef = privateCollectionRef.document(userId)
+        val publicSnapshot = publicDocRef.get(com.google.firebase.firestore.Source.SERVER).await()
+        val currentKudos = publicSnapshot.getLong(KUDOS_FIELD) ?: 0L
+        Log.d(KUDOS_BATCH_LOG_TAG, String.format(KUDOS_BATCH_LOG_MSG, userId, currentKudos))
 
-        batch.update(publicDocRef, "kudos", FieldValue.increment(amount.toLong()))
-        batch.update(privateDocRef, "kudos", FieldValue.increment(amount.toLong()))
+        batch.update(publicDocRef, KUDOS_FIELD, FieldValue.increment(amount.toLong()))
       }
 
       // Commit all updates atomically
@@ -288,7 +330,7 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
     } catch (e: KudosException) {
       throw e
     } catch (e: Exception) {
-      throw KudosException.TransactionFailed("batch_operation", e)
+      throw KudosException.TransactionFailed(BATCH_OPERATION_ID, e)
     }
   }
 
@@ -308,8 +350,6 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
    * @param amount The amount of help to record (must be positive and within safety limits).
    * @throws com.android.sample.ui.request_validation.HelpReceivedException.InvalidAmount when the
    *   provided amount is invalid (non-positive).
-   * @throws com.android.sample.ui.request_validation.HelpReceivedException.AmountExceedsLimit when
-   *   the provided amount exceeds the configured per-transaction maximum.
    * @throws com.android.sample.ui.request_validation.HelpReceivedException.UserNotFound when the
    *   user public/private profiles do not exist.
    * @throws com.android.sample.ui.request_validation.HelpReceivedException.TransactionFailed when
@@ -338,8 +378,10 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
             }
 
             // Atomically increment helpReceived in both documents
-            transaction.update(publicDocRef, "helpReceived", FieldValue.increment(amount.toLong()))
-            transaction.update(privateDocRef, "helpReceived", FieldValue.increment(amount.toLong()))
+            transaction.update(
+                publicDocRef, HELP_RECEIVED_FIELD, FieldValue.increment(amount.toLong()))
+            transaction.update(
+                privateDocRef, HELP_RECEIVED_FIELD, FieldValue.increment(amount.toLong()))
 
             // runTransaction requires a return value; use null for Unit
             null
@@ -350,7 +392,8 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
       throw e
     } catch (e: Exception) {
       // Wrap unexpected failures in a documented help-specific exception
-      throw HelpReceivedException.TransactionFailed("Failed to record help for user: $userId", e)
+      throw HelpReceivedException.TransactionFailed(
+          String.format(MSG_FAILED_RECORD_HELP, userId), e)
     }
   }
 }

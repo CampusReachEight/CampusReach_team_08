@@ -2,6 +2,7 @@ package com.android.sample.model.request
 
 import android.util.Log
 import com.android.sample.model.profile.UserProfileRepository
+import com.android.sample.ui.request_validation.HelpReceivedConstants
 import com.android.sample.ui.request_validation.KudosConstants
 import com.android.sample.ui.request_validation.KudosException
 
@@ -49,6 +50,21 @@ class CloseRequestUseCase(
         val creatorResult = awardKudosToCreator(request.creatorId)
         kudosResults.add(creatorResult)
       }*/
+
+      // Step 4: Record help receive for creator
+      if (selectedHelperIds.isNotEmpty()) {
+
+        val request = requestRepository.getRequest(requestId)
+        val creatorId = request.creatorId
+
+        try {
+          userProfileRepository.receiveHelp(creatorId, HelpReceivedConstants.HELP_RECEIVED_PER_HELP)
+          Log.d(TAG, "Recorded help received for request: $creatorId")
+        } catch (e: Exception) {
+          Log.e(TAG, "Failed to record help received for request $creatorId: ${e.message}", e)
+          return CloseRequestResult.Failure(e)
+        }
+      }
 
       // Determine overall result
       val allKudosSucceeded = kudosResults.all { it is KudosAwardResult.Success }
