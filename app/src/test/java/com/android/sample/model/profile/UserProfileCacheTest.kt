@@ -44,6 +44,7 @@ class UserProfileCacheTest {
             email = "john.doe@example.com",
             photo = Uri.parse("content://media/image/1"),
             kudos = 100,
+            helpReceived = 5,
             section = UserSections.COMPUTER_SCIENCE,
             arrivalDate = Date(1672531200000L))
 
@@ -73,13 +74,14 @@ class UserProfileCacheTest {
             email = "john.doe@example.com",
             photo = null,
             kudos = 50,
+            helpReceived = 2,
             section = UserSections.COMPUTER_SCIENCE,
             arrivalDate = Date(1672531200000L))
 
     userProfileCache.saveProfile(originalProfile)
 
     val updatedProfile =
-        originalProfile.copy(name = "Jane", kudos = 150, section = UserSections.MATHEMATICS)
+        originalProfile.copy(name = "Jane", kudos = 150, helpReceived = 10, section = UserSections.MATHEMATICS)
 
     userProfileCache.saveProfile(updatedProfile)
     val retrievedProfile = userProfileCache.getProfileById("user1")
@@ -87,6 +89,7 @@ class UserProfileCacheTest {
     assertEquals(updatedProfile, retrievedProfile)
     assertEquals("Jane", retrievedProfile.name)
     assertEquals(150, retrievedProfile.kudos)
+    assertEquals(10, retrievedProfile.helpReceived)
     assertEquals(UserSections.MATHEMATICS, retrievedProfile.section)
   }
 
@@ -100,6 +103,7 @@ class UserProfileCacheTest {
             email = "alice@example.com",
             photo = null,
             kudos = 50,
+            helpReceived = 3,
             section = UserSections.COMPUTER_SCIENCE,
             arrivalDate = Date(1672531200000L))
 
@@ -111,6 +115,7 @@ class UserProfileCacheTest {
             email = "bob@example.com",
             photo = Uri.parse("content://media/image/2"),
             kudos = 75,
+            helpReceived = 7,
             section = UserSections.PHYSICS,
             arrivalDate = Date(1672617600000L))
 
@@ -122,6 +127,7 @@ class UserProfileCacheTest {
             email = null,
             photo = null,
             kudos = 25,
+            helpReceived = 1,
             section = UserSections.NONE,
             arrivalDate = Date(1672704000000L))
 
@@ -144,6 +150,7 @@ class UserProfileCacheTest {
             email = "john.doe@example.com",
             photo = null,
             kudos = 100,
+            helpReceived = 8,
             section = UserSections.COMPUTER_SCIENCE,
             arrivalDate = Date())
 
@@ -179,6 +186,7 @@ class UserProfileCacheTest {
             email = "alice@example.com",
             photo = null,
             kudos = 50,
+            helpReceived = 4,
             section = UserSections.COMPUTER_SCIENCE,
             arrivalDate = Date())
 
@@ -190,6 +198,7 @@ class UserProfileCacheTest {
             email = "bob@example.com",
             photo = null,
             kudos = 75,
+            helpReceived = 6,
             section = UserSections.PHYSICS,
             arrivalDate = Date())
 
@@ -213,6 +222,7 @@ class UserProfileCacheTest {
             email = "john.doe@example.com",
             photo = null,
             kudos = 100,
+            helpReceived = 12,
             section = UserSections.COMPUTER_SCIENCE,
             arrivalDate = Date())
 
@@ -236,6 +246,7 @@ class UserProfileCacheTest {
             email = "alice@example.com",
             photo = null,
             kudos = 50,
+            helpReceived = 2,
             section = UserSections.COMPUTER_SCIENCE,
             arrivalDate = Date())
 
@@ -247,6 +258,7 @@ class UserProfileCacheTest {
             email = "bob@example.com",
             photo = null,
             kudos = 75,
+            helpReceived = 9,
             section = UserSections.PHYSICS,
             arrivalDate = Date())
 
@@ -272,6 +284,7 @@ class UserProfileCacheTest {
             email = "test+special.chars@example.com",
             photo = Uri.parse("content://media/external/images/media/123"),
             kudos = 9999,
+            helpReceived = 150,
             section = UserSections.ARCHITECTURE,
             arrivalDate = Date(1672531200000L))
 
@@ -291,6 +304,7 @@ class UserProfileCacheTest {
             email = null,
             photo = null,
             kudos = 0,
+            helpReceived = 0,
             section = UserSections.NONE,
             arrivalDate = Date(1672531200000L))
 
@@ -315,6 +329,7 @@ class UserProfileCacheTest {
               email = "test@example.com",
               photo = null,
               kudos = 50,
+              helpReceived = 3,
               section = section,
               arrivalDate = Date(1672531200000L))
 
@@ -353,6 +368,7 @@ class UserProfileCacheTest {
             email = "alice@example.com",
             photo = null,
             kudos = 50,
+            helpReceived = 5,
             section = UserSections.COMPUTER_SCIENCE,
             arrivalDate = Date(1672531200000L))
 
@@ -364,6 +380,7 @@ class UserProfileCacheTest {
             email = "bob@example.com",
             photo = null,
             kudos = 75,
+            helpReceived = 11,
             section = UserSections.PHYSICS,
             arrivalDate = Date(1672617600000L))
 
@@ -393,6 +410,7 @@ class UserProfileCacheTest {
             email = "john@example.com",
             photo = null,
             kudos = 100,
+            helpReceived = 20,
             section = UserSections.COMPUTER_SCIENCE,
             arrivalDate = Date())
 
@@ -402,3 +420,4 @@ class UserProfileCacheTest {
     assertEquals(profile, retrievedProfile)
   }
 }
+
