@@ -5,30 +5,23 @@ import com.android.sample.model.request.RequestStatus
 import com.android.sample.model.request.RequestType
 import com.android.sample.model.request.Tags
 import com.android.sample.model.request.displayString
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import com.android.sample.ui.utils.EnumFacet
+import com.android.sample.ui.utils.EnumFacetDefinitions
 
 /**
- * Single-source facet configuration. Add a new Request enum attribute by:
- * 1. Adding the enum field to Request.
- * 2. Adding a FacetDefinition entry below. Everything else (UI + ViewModel) updates automatically.
+ * Request-specific facet definitions using the generic EnumFacetDefinitions system.
+ *
+ * To add a new Request enum attribute:
+ * 1. Add the enum field to Request.
+ * 2. Add a FacetDefinition entry to `requests_all` below.
+ * 3. Everything else (UI + ViewModel) updates automatically.
  */
 object RequestFacetDefinitions {
-  data class FacetDefinition(
-      val id: String,
-      val title: String,
-      val values: List<Enum<*>>, // full set of enum values (List for structural equality)
-      val extract: (Request) -> List<Enum<*>>, // how to read facet values from a Request
-      val dropdownButtonTag: String,
-      val searchBarTag: String,
-      val rowTagOf: (Enum<*>) -> String,
-      val labelOf: (Enum<*>) -> String = { it.name },
-  )
 
-  // Edit only this list to add facets.
-  val all: List<FacetDefinition> =
+  /** All facet definitions for Request filtering. */
+  val requests_all: List<EnumFacetDefinitions.FacetDefinition<Request>> =
       listOf(
-          FacetDefinition(
+          EnumFacetDefinitions.FacetDefinition(
               id = "type",
               title = RequestType.toString(),
               values = RequestType.entries.toList(),
@@ -38,7 +31,7 @@ object RequestFacetDefinitions {
               rowTagOf = { v -> RequestListTestTags.getRequestTypeFilterTag(v as RequestType) },
               labelOf = { (it as RequestType).displayString() },
           ),
-          FacetDefinition(
+          EnumFacetDefinitions.FacetDefinition(
               id = "status",
               title = RequestStatus.toString(),
               values = listOf(RequestStatus.OPEN, RequestStatus.IN_PROGRESS),
@@ -50,7 +43,7 @@ object RequestFacetDefinitions {
               },
               labelOf = { (it as RequestStatus).displayString() },
           ),
-          FacetDefinition(
+          EnumFacetDefinitions.FacetDefinition(
               id = "tags",
               title = Tags.toString(),
               values = Tags.entries.toList(),
@@ -63,45 +56,15 @@ object RequestFacetDefinitions {
               labelOf = { (it as Tags).displayString() },
           ),
       )
+
+  /** Legacy accessor for backwards compatibility. Prefer using `requests_all` for new code. */
+  @Deprecated("Use requests_all instead", ReplaceWith("requests_all"))
+  val all: List<EnumFacetDefinitions.FacetDefinition<Request>>
+    get() = requests_all
 }
 
-class RequestFacet internal constructor(val def: RequestFacetDefinitions.FacetDefinition) {
-  val id: String
-    get() = def.id
-
-  val title: String
-    get() = def.title
-
-  val values: List<Enum<*>>
-    get() = def.values
-
-  val dropdownButtonTag: String
-    get() = def.dropdownButtonTag
-
-  val searchBarTag: String
-    get() = def.searchBarTag
-
-  val labelOf: (Enum<*>) -> String
-    get() = def.labelOf
-
-  val rowTagOf: (Enum<*>) -> String
-    get() = def.rowTagOf
-
-  val extract: (Request) -> List<Enum<*>>
-    get() = def.extract
-
-  internal val _selected = MutableStateFlow<Set<Enum<*>>>(emptySet())
-  val selected: StateFlow<Set<Enum<*>>>
-    get() = _selected
-
-  internal lateinit var counts: StateFlow<Map<Enum<*>, Int>>
-
-  fun toggle(value: Enum<*>) {
-    _selected.value =
-        if (value in _selected.value) _selected.value - value else _selected.value + value
-  }
-
-  fun clear() {
-    _selected.value = emptySet()
-  }
-}
+/**
+ * Type alias for Request-specific EnumFacet. Provides backwards compatibility while leveraging the
+ * generic EnumFacet implementation.
+ */
+typealias RequestFacet = EnumFacet<Request>

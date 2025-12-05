@@ -40,7 +40,7 @@ class RequestSearchFilterViewModel(
   private val _sortCriteria = MutableStateFlow(RequestSort.default())
   val sortCriteria: StateFlow<RequestSort> = _sortCriteria
 
-  val facets: List<RequestFacet> = RequestFacetDefinitions.all.map { RequestFacet(it) }
+  val facets: List<RequestFacet> = RequestFacetDefinitions.requests_all.map { RequestFacet(it) }
 
   @Volatile private var hasIndex: Boolean = false
 
