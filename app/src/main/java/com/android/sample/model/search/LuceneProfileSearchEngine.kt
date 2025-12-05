@@ -15,13 +15,14 @@ import org.apache.lucene.document.TextField
 import org.apache.lucene.index.DirectoryReader
 import org.apache.lucene.index.IndexWriter
 import org.apache.lucene.index.IndexWriterConfig
-import org.apache.lucene.queryparser.classic.MultiFieldQueryParser
-import org.apache.lucene.queryparser.classic.QueryParser
+import org.apache.lucene.index.Term
 import org.apache.lucene.queryparser.classic.QueryParserBase
 import org.apache.lucene.search.BooleanClause
 import org.apache.lucene.search.BooleanQuery
 import org.apache.lucene.search.IndexSearcher
+import org.apache.lucene.search.PrefixQuery
 import org.apache.lucene.search.ScoreDoc
+import org.apache.lucene.search.TermQuery
 import org.apache.lucene.search.TopDocs
 import org.apache.lucene.store.ByteBuffersDirectory
 import org.apache.lucene.store.Directory
@@ -77,34 +78,25 @@ class LuceneProfileSearchEngine(private val maxResults: Int = DEFAULT_MAX_SEARCH
             // Stored fields for retrieval
             doc.add(StoredField(FIELD_PROFILE_ID, profile.id))
 
-            // Text fields for searching
-            fun addText(name: String, value: String?) {
+            // Primary search field: combined first + last name from toSearchText()
+            // This is the main field we query against for name searches
+            val searchText = profile.toSearchText()
+            if (searchText.isNotBlank()) {
+              doc.add(TextField(FIELD_SEARCH_TEXT, searchText, Field.Store.NO))
+              // Also store lowercased version for prefix matching
+              doc.add(TextField(FIELD_SEARCH_TEXT_LOWER, searchText.lowercase(), Field.Store.NO))
+            }
+
+            // Individual name fields for exact/boosted matching
+            fun addText(fieldName: String, value: String?) {
               val v = value?.trim().orEmpty()
-              if (v.isNotEmpty()) doc.add(TextField(name, v, Field.Store.NO))
+              if (v.isNotEmpty()) doc.add(TextField(fieldName, v, Field.Store.NO))
             }
 
             addText(FIELD_NAME, profile.name)
             addText(FIELD_LAST_NAME, profile.lastName)
-            addText(FIELD_NAME_LOWERCASE, profile.nameLowercase)
-            addText(FIELD_LAST_NAME_LOWERCASE, profile.lastNameLowercase)
-
-            // Section with display variants (e.g., "COMPUTER_SCIENCE" and "Computer Science")
-            val sectionName = profile.section.name
-            val sectionLabel = profile.section.label
-            val sectionText =
-                buildString {
-                      append(sectionName)
-                      append(SPACE_CHAR)
-                      append(sectionName.replace(UNDERSCORE_CHAR, SPACE_CHAR))
-                      append(SPACE_CHAR)
-                      append(sectionLabel)
-                    }
-                    .trim()
-            addText(FIELD_SECTION, sectionText)
-
-            // Full name combined field for better phrase matching
-            val fullName = "${profile.name} ${profile.lastName}".trim()
-            addText(FIELD_FULL_NAME, fullName)
+            addText(FIELD_NAME_LOWER, profile.nameLowercase)
+            addText(FIELD_LAST_NAME_LOWER, profile.lastNameLowercase)
 
             // Numeric fields for potential range queries (stored for reference)
             doc.add(IntPoint(FIELD_KUDOS, profile.kudos))
@@ -131,10 +123,18 @@ class LuceneProfileSearchEngine(private val maxResults: Int = DEFAULT_MAX_SEARCH
   /**
    * Searches the indexed profiles for the given query string.
    *
-   * @param items Not used in this implementation - search is performed on indexed data from
-   *   [indexProfiles]. This parameter exists to satisfy the [SearchStrategy] interface.
-   * @param query The search query string (typically a name or part of a name)
-   * @return A list of [SearchResult] containing matching profiles and their relevance scores
+   * This implementation supports partial/prefix matching for user names. For example, typing "Jo"
+   * will match "John", "Johnny", "Johnson", etc. This is essential for a good UX when searching for
+   * people by name.
+   *
+   * Query behavior:
+   * - Single short term (< 3 chars): Prefix match only (e.g., "Jo" -> "John*")
+   * - Single longer term: Prefix + exact match combined
+   * - Multiple terms: Each term is prefix-matched, all should match ("John Sm" -> John* AND Sm*)
+   *
+   * @param items Not used - search uses indexed data from [indexProfiles]
+   * @param query The search query (typically a name or partial name)
+   * @return Matching profiles with relevance scores (0-100)
    */
   override suspend fun search(
       items: List<UserProfile>,
@@ -144,70 +144,16 @@ class LuceneProfileSearchEngine(private val maxResults: Int = DEFAULT_MAX_SEARCH
         if (query.isBlank()) return@withContext emptyList()
         val localSearcher = searcher ?: return@withContext emptyList()
 
-        val safeQuery = QueryParserBase.escape(query)
-
-        val fields =
-            arrayOf(
-                FIELD_NAME,
-                FIELD_LAST_NAME,
-                FIELD_NAME_LOWERCASE,
-                FIELD_LAST_NAME_LOWERCASE,
-                FIELD_FULL_NAME,
-                FIELD_SECTION,
-            )
-        val boosts =
-            mapOf(
-                FIELD_NAME to BOOST_NAME,
-                FIELD_LAST_NAME to BOOST_LAST_NAME,
-                FIELD_NAME_LOWERCASE to BOOST_NAME_LOWERCASE,
-                FIELD_LAST_NAME_LOWERCASE to BOOST_LAST_NAME_LOWERCASE,
-                FIELD_FULL_NAME to BOOST_FULL_NAME,
-                FIELD_SECTION to BOOST_SECTION,
-            )
-
-        val parser = MultiFieldQueryParser(fields, analyzer, boosts)
-        parser.defaultOperator = QueryParser.Operator.OR
-
-        val terms = safeQuery.split(WHITESPACE_REGEX).mapNotNull { t -> t.trim().ifEmpty { null } }
-
-        val luceneQuery =
-            if (terms.size <= SINGLE_TERM_SIZE_THRESHOLD) {
-              try {
-                parser.parse(safeQuery)
-              } catch (_: Exception) {
-                parser.parse(QUERY_MATCH_ALL)
-              }
-            } else {
-              val builder = BooleanQuery.Builder()
-              terms.forEach { term ->
-                try {
-                  val sub = parser.parse(term)
-                  builder.add(sub, BooleanClause.Occur.SHOULD)
-                } catch (_: Exception) {
-                  // Skip unparseable terms
-                }
-              }
-
-              val builtQuery = builder.build()
-              val tokenCount = builtQuery.clauses().size
-
-              if (tokenCount > MIN_TOKEN_COUNT) {
-                val msm =
-                    kotlin.math.max(
-                        MIN_SHOULD_MATCH_BASE,
-                        kotlin.math.ceil(tokenCount * MIN_SHOULD_MATCH_RATIO).toInt())
-                val finalBuilder = BooleanQuery.Builder()
-                builtQuery.clauses().forEach { finalBuilder.add(it) }
-                finalBuilder.setMinimumNumberShouldMatch(msm)
-                finalBuilder.build()
-              } else {
-                try {
-                  parser.parse(safeQuery)
-                } catch (_: Exception) {
-                  parser.parse(QUERY_MATCH_ALL)
-                }
-              }
+        val normalizedQuery = query.trim().lowercase()
+        val terms =
+            normalizedQuery.split(WHITESPACE_REGEX).mapNotNull { t ->
+              val cleaned = t.trim()
+              if (cleaned.isEmpty()) null else QueryParserBase.escape(cleaned)
             }
+
+        if (terms.isEmpty()) return@withContext emptyList()
+
+        val luceneQuery = buildNameQuery(terms)
 
         val top: TopDocs = localSearcher.search(luceneQuery, maxResults)
         val hits: Array<ScoreDoc> = top.scoreDocs
@@ -226,16 +172,57 @@ class LuceneProfileSearchEngine(private val maxResults: Int = DEFAULT_MAX_SEARCH
         }
       }
 
+  /**
+   * Builds a Lucene query optimized for name searching with prefix support.
+   *
+   * For a single term like "jo":
+   * - Creates prefix queries on name fields (jo*) to match John, Johnny, Johnson, etc.
+   *
+   * For multiple terms like "john sm":
+   * - Each term becomes a prefix query
+   * - All terms must match (AND logic) to ensure "john sm" matches "John Smith" but not just "John"
+   */
+  private fun buildNameQuery(terms: List<String>): BooleanQuery {
+    val mainBuilder = BooleanQuery.Builder()
+
+    terms.forEach { term ->
+      // For each term, create a sub-query that matches any name field
+      val termBuilder = BooleanQuery.Builder()
+
+      // Prefix queries for partial matching (e.g., "jo" matches "john")
+      termBuilder.add(PrefixQuery(Term(FIELD_NAME_LOWER, term)), BooleanClause.Occur.SHOULD)
+      termBuilder.add(PrefixQuery(Term(FIELD_LAST_NAME_LOWER, term)), BooleanClause.Occur.SHOULD)
+      termBuilder.add(PrefixQuery(Term(FIELD_SEARCH_TEXT_LOWER, term)), BooleanClause.Occur.SHOULD)
+
+      // Also add exact term queries for full word matches (higher relevance)
+      if (term.length >= MIN_EXACT_MATCH_LENGTH) {
+        termBuilder.add(TermQuery(Term(FIELD_NAME_LOWER, term)), BooleanClause.Occur.SHOULD)
+        termBuilder.add(TermQuery(Term(FIELD_LAST_NAME_LOWER, term)), BooleanClause.Occur.SHOULD)
+      }
+
+      val termQuery = termBuilder.build()
+      // Each term MUST match at least one field (AND between terms)
+      mainBuilder.add(termQuery, BooleanClause.Occur.MUST)
+    }
+
+    return mainBuilder.build()
+  }
+
   override fun close() {
+    // Null out searcher first so concurrent searches will return empty
+    searcher = null
     try {
       reader?.close()
     } catch (_: IOException) {}
+    reader = null
     try {
       writer?.close()
     } catch (_: IOException) {}
+    writer = null
     try {
       directory.close()
     } catch (_: IOException) {}
+    indexedById.clear()
   }
 
   private companion object {
@@ -243,39 +230,21 @@ class LuceneProfileSearchEngine(private val maxResults: Int = DEFAULT_MAX_SEARCH
     const val FIELD_PROFILE_ID = "profileId"
     const val FIELD_NAME = "name"
     const val FIELD_LAST_NAME = "lastName"
-    const val FIELD_NAME_LOWERCASE = "nameLowercase"
-    const val FIELD_LAST_NAME_LOWERCASE = "lastNameLowercase"
-    const val FIELD_FULL_NAME = "fullName"
-    const val FIELD_SECTION = "section"
+    const val FIELD_NAME_LOWER = "nameLower"
+    const val FIELD_LAST_NAME_LOWER = "lastNameLower"
+    const val FIELD_SEARCH_TEXT = "searchText"
+    const val FIELD_SEARCH_TEXT_LOWER = "searchTextLower"
     const val FIELD_KUDOS = "kudos"
     const val FIELD_HELP_RECEIVED = "helpReceived"
 
-    // Boost factors - prioritize exact name matches
-    const val BOOST_NAME = 3.0f
-    const val BOOST_LAST_NAME = 3.0f
-    const val BOOST_NAME_LOWERCASE = 2.5f
-    const val BOOST_LAST_NAME_LOWERCASE = 2.5f
-    const val BOOST_FULL_NAME = 2.0f
-    const val BOOST_SECTION = 1.0f
-
-    // Minimum should match ratio for multi-term queries
-    const val MIN_SHOULD_MATCH_RATIO = 0.6
-
     // Thresholds & scaling constants
-    const val SINGLE_TERM_SIZE_THRESHOLD = 1
-    const val MIN_TOKEN_COUNT = 0
-    const val MIN_SHOULD_MATCH_BASE = 1
+    const val MIN_EXACT_MATCH_LENGTH = 3 // Minimum term length for exact match queries
     const val MIN_TOP_SCORE = 0f
     const val FALLBACK_TOP_SCORE = 1f
     const val SCORE_PERCENT_SCALE = 100f
     const val SCORE_PERCENT_MIN = 0
 
-    // Query / parsing related constants
+    // Query parsing
     val WHITESPACE_REGEX = "\\s+".toRegex()
-    const val QUERY_MATCH_ALL = "*"
-
-    // String building helpers
-    const val SPACE_CHAR = ' '
-    const val UNDERSCORE_CHAR = '_'
   }
 }
