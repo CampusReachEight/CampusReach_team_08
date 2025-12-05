@@ -9,6 +9,7 @@ import com.android.sample.ui.map.calculateClusterCenter
 import com.android.sample.ui.map.calculateDistance
 import com.android.sample.ui.map.clusterRequestsByDistance
 import com.android.sample.ui.map.getClusterRadiusForZoom
+import com.android.sample.ui.map.getClusterRadiusForZoomForCurrentLocation
 import java.util.Date
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -378,6 +379,90 @@ class MapClusteringTest {
       val radius = getClusterRadiusForZoom(zoom.toFloat())
       assertTrue(radius > 0, "Radius should be positive for zoom level $zoom")
     }
+  }
+
+  @Test
+  fun test_getClusterRadiusForZoomForCurrentLocationMaxZoomOne() {
+    val zoom = ConstantMap.MAX_ZOOM_ONE - distanceDeltaLarge
+
+    val result = getClusterRadiusForZoomForCurrentLocation(zoom)
+
+    assertEquals(
+        ConstantMap.CURR_ZOOM_LEVEL_WORLD / (zoom / ConstantMap.CURR_ZOOM_DIVIDE),
+        result,
+        distanceDeltaSmall)
+  }
+
+  @Test
+  fun test_getClusterRadiusForZoomForCurrentLocationMaxZoomTwo() {
+    val zoom = ConstantMap.MAX_ZOOM_TWO - distanceDeltaLarge
+
+    val result = getClusterRadiusForZoomForCurrentLocation(zoom)
+
+    assertEquals(
+        ConstantMap.CURR_ZOOM_LEVEL_WL / (zoom / ConstantMap.CURR_ZOOM_DIVIDE),
+        result,
+        distanceDeltaSmall)
+  }
+
+  @Test
+  fun test_getClusterRadiusForZoomForCurrentLocationMaxZoomThree() {
+    val zoom = ConstantMap.MAX_ZOOM_THREE - distanceDeltaLarge
+
+    val result = getClusterRadiusForZoomForCurrentLocation(zoom)
+
+    assertEquals(
+        ConstantMap.CURR_ZOOM_LEVEL_LAND / (zoom / ConstantMap.CURR_ZOOM_DIVIDE),
+        result,
+        distanceDeltaSmall)
+  }
+
+  @Test
+  fun test_getClusterRadiusForZoomForCurrentLocationMaxZoomFour() {
+    val zoom = ConstantMap.MAX_ZOOM_FOUR - distanceDeltaLarge
+
+    val result = getClusterRadiusForZoomForCurrentLocation(zoom)
+
+    assertEquals(
+        ConstantMap.CURR_ZOOM_LEVEL_REGION / (zoom / ConstantMap.CURR_ZOOM_DIVIDE),
+        result,
+        distanceDeltaSmall)
+  }
+
+  @Test
+  fun test_getClusterRadiusForZoomForCurrentLocationMaxZoomFive() {
+    val zoom = ConstantMap.MAX_ZOOM_FIVE - distanceDeltaLarge
+
+    val result = getClusterRadiusForZoomForCurrentLocation(zoom)
+
+    assertEquals(
+        ConstantMap.CURR_ZOOM_LEVEL_CITY / (zoom / ConstantMap.CURR_ZOOM_DIVIDE),
+        result,
+        distanceDeltaSmall)
+  }
+
+  @Test
+  fun test_getClusterRadiusForZoomForCurrentLocationMaxZoomSix() {
+    val zoom = ConstantMap.MAX_ZOOM_SIX - distanceDeltaLarge
+
+    val result = getClusterRadiusForZoomForCurrentLocation(zoom)
+
+    assertEquals(
+        ConstantMap.CURR_ZOOM_LEVEL_MID / (zoom / ConstantMap.CURR_ZOOM_DIVIDE),
+        result,
+        distanceDeltaSmall)
+  }
+
+  @Test
+  fun test_getClusterRadiusForZoomForCurrentLocationMaxZoomSeven() {
+    val zoom = ConstantMap.MAX_ZOOM_SEVEN - distanceDeltaLarge
+
+    val result = getClusterRadiusForZoomForCurrentLocation(zoom)
+
+    assertEquals(
+        ConstantMap.CURR_ZOOM_LEVEL_STREET_BIG / (zoom / ConstantMap.CURR_ZOOM_DIVIDE),
+        result,
+        distanceDeltaSmall)
   }
 
   // ========== Helper Functions ==========

@@ -1,6 +1,10 @@
 package com.android.sample.ui.map
 
+import android.content.Context
+import android.location.LocationManager
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -9,6 +13,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,6 +22,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -48,6 +54,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -64,6 +71,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.android.sample.model.map.FusedLocationProvider
 import com.android.sample.model.profile.UserProfile
 import com.android.sample.model.request.Request
 import com.android.sample.model.request.RequestOwnership
@@ -72,13 +80,13 @@ import com.android.sample.ui.navigation.NavigationActions
 import com.android.sample.ui.navigation.NavigationTab
 import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.navigation.Screen
+import com.android.sample.ui.navigation.TopNavigationBar
 import com.android.sample.ui.overview.toDisplayString
 import com.android.sample.ui.profile.ProfilePicture
 import com.android.sample.ui.request.ConstantRequestList
 import com.android.sample.ui.request.RequestListItem
 import com.android.sample.ui.request.RequestSearchFilterViewModel
 import com.android.sample.ui.theme.AppPalette
-import com.android.sample.ui.theme.TopNavigationBar
 import com.android.sample.ui.theme.UiDimens
 import com.android.sample.ui.theme.appPalette
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -129,43 +137,48 @@ object MapTestTags {
   }
 }
 
+/**
+ * Main screen displaying a Google Map with request markers and filtering capabilities. Handles
+ * location permissions, request clustering, and displays detailed information about selected
+ * requests in a bottom sheet.
+ *
+ * @param viewModel ViewModel managing map state and operations
+ * @param navigationActions Navigation actions for screen transitions
+ * @param searchFilterViewModel ViewModel for filtering and searching requests
+ */
 @Composable
 fun MapScreen(
-    viewModel: MapViewModel = viewModel(),
+    viewModel: MapViewModel =
+        viewModel(
+            factory =
+                MapViewModelFactory(
+                    locationProvider = FusedLocationProvider(LocalContext.current))),
     navigationActions: NavigationActions? = null,
     searchFilterViewModel: RequestSearchFilterViewModel = viewModel()
 ) {
-  val uiState by viewModel.uiState.collectAsState()
-  val appPalette = appPalette()
-
-  val currentUserId = viewModel.getCurrentUserID()
-
-  val displayedRequests by searchFilterViewModel.displayedRequests.collectAsState()
-
-  val finalFilteredRequests =
-      remember(displayedRequests, uiState.requestOwnership, currentUserId) {
-        viewModel.filterWithOwnerShip(displayedRequests, currentUserId)
-      }
-
-  LaunchedEffect(uiState.request) { searchFilterViewModel.initializeWithRequests(uiState.request) }
-
-  LaunchedEffect(finalFilteredRequests) {
-    if (finalFilteredRequests.isNotEmpty()) {
-      viewModel.zoomOnRequest(finalFilteredRequests)
-    }
-  }
-
-  val errorMsg = uiState.errorMsg
-
   val context = LocalContext.current
-  val coroutineScope = rememberCoroutineScope()
+  val uiState: MapUIState by viewModel.uiState.collectAsState()
+  val currentUserId = viewModel.getCurrentUserID()
+  var showZoomDialog by remember { mutableStateOf(false) }
 
-  LaunchedEffect(errorMsg) {
-    if (errorMsg != null) {
-      Toast.makeText(context, errorMsg, Toast.LENGTH_SHORT).show()
-      viewModel.clearErrorMsg()
-    }
-  }
+  // Setup permissions
+  SetupLocationPermissions(context, viewModel, uiState)
+
+  // Setup filters and requests
+  val displayedRequests by searchFilterViewModel.displayedRequests.collectAsState()
+  val finalFilteredRequests =
+      setupRequestFiltering(
+          displayedRequests,
+          uiState.requestOwnership,
+          currentUserId,
+          viewModel,
+          searchFilterViewModel,
+          uiState.request)
+
+  // Handle errors
+  HandleErrorMessages(context, uiState.errorMsg, viewModel)
+
+  // Refresh UI on start
   LaunchedEffect(Unit) { viewModel.refreshUIState() }
 
   Scaffold(
@@ -177,383 +190,759 @@ fun MapScreen(
       topBar = {
         TopNavigationBar(
             selectedTab = NavigationTab.Map,
-            onProfileClick = { navigationActions?.navigateTo(Screen.Profile("TODO")) },
-        )
+            onProfileClick = {
+              navigationActions?.navigateTo(Screen.Profile("TODO"))
+              viewModel.goOnAnotherScreen()
+            },
+            onZoomSettingsClick = { showZoomDialog = true })
       },
       content = { pd ->
+        MapContent(
+            paddingValues = pd,
+            uiState = uiState,
+            viewModel = viewModel,
+            navigationActions = navigationActions,
+            finalFilteredRequests = finalFilteredRequests,
+            searchFilterViewModel = searchFilterViewModel)
+      })
+  if (showZoomDialog) {
+    ZoomSettingsDialog(
+        currentPreference = uiState.zoomPreference,
+        onPreferenceChange = { preference ->
+          viewModel.updateZoomPreference(preference)
+          showZoomDialog = false
+        },
+        onDismiss = { showZoomDialog = false })
+  }
+}
 
-        // initial position
-        val initialPosition =
-            CameraPositionState(
-                position =
-                    CameraPosition.fromLatLngZoom(
-                        uiState.target, calculateZoomLevel(uiState.request.size)))
-        val cameraPositionState = remember { initialPosition }
+/**
+ * Sets up location permission handling for the map screen. Checks if permissions have been
+ * requested and launches the permission dialog if needed.
+ *
+ * @param context Android context for accessing system services
+ * @param viewModel ViewModel to handle location updates
+ * @param uiState Current UI state containing permission status
+ */
+@Composable
+private fun SetupLocationPermissions(
+    context: Context,
+    viewModel: MapViewModel,
+    uiState: MapUIState
+) {
+  val locationManager = remember {
+    context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+  }
+  val permissionHandler =
+      remember(viewModel) { MapPermissionResultHandler(viewModel, locationManager) }
 
-        val zoomLevel by remember { derivedStateOf { cameraPositionState.position.zoom } }
+  val permissionLauncher =
+      rememberLauncherForActivityResult(
+          ActivityResultContracts.RequestMultiplePermissions(),
+          permissionHandler::handlePermissionResult)
 
-        val clusters =
-            remember(finalFilteredRequests, zoomLevel) {
-              clusterRequestsByDistance(
-                  requests = finalFilteredRequests,
-                  clusterRadiusMeters = getClusterRadiusForZoom(zoomLevel))
+  LaunchedEffect(Unit) {
+    if (!uiState.hasAskedLocationPermission) {
+      handleLocationPermissionCheck(context, viewModel, permissionLauncher)
+    }
+  }
+}
+
+/**
+ * Sets up request filtering based on ownership and search criteria. Automatically zooms to filtered
+ * requests when they change.
+ *
+ * @param displayedRequests List of requests after search filtering
+ * @param requestOwnership Current ownership filter (ALL, OWN, OTHER, etc.)
+ * @param currentUserId ID of the current user for ownership filtering
+ * @param viewModel ViewModel for map operations
+ * @param searchFilterViewModel ViewModel managing search and filter state
+ * @param allRequests Complete list of all requests
+ * @return List of requests after applying all filters
+ */
+@Composable
+private fun setupRequestFiltering(
+    displayedRequests: List<Request>,
+    requestOwnership: RequestOwnership,
+    currentUserId: String,
+    viewModel: MapViewModel,
+    searchFilterViewModel: RequestSearchFilterViewModel,
+    allRequests: List<Request>
+): List<Request> {
+  val finalFilteredRequests =
+      remember(displayedRequests, requestOwnership, currentUserId) {
+        viewModel.filterWithOwnerShip(displayedRequests, currentUserId)
+      }
+
+  LaunchedEffect(allRequests) { searchFilterViewModel.initializeWithRequests(allRequests) }
+
+  LaunchedEffect(finalFilteredRequests) {
+    if (finalFilteredRequests.isNotEmpty()) {
+      viewModel.zoomOnRequest(finalFilteredRequests)
+    }
+  }
+
+  return finalFilteredRequests
+}
+
+/**
+ * Displays error messages as Toast notifications and automatically clears them.
+ *
+ * @param context Android context for showing toasts
+ * @param errorMsg Current error message to display (null if no error)
+ * @param viewModel ViewModel to clear error after display
+ */
+@Composable
+private fun HandleErrorMessages(context: Context, errorMsg: String?, viewModel: MapViewModel) {
+  LaunchedEffect(errorMsg) {
+    if (errorMsg != null) {
+      Toast.makeText(context, errorMsg, Toast.LENGTH_SHORT).show()
+      viewModel.clearErrorMsg()
+    }
+  }
+}
+
+/**
+ * Main content container for the map screen. Manages camera position, clustering, and all UI
+ * overlays (bottom sheet, zoom controls, filters).
+ *
+ * @param paddingValues Padding from the Scaffold
+ * @param uiState Current UI state
+ * @param viewModel ViewModel for map operations
+ * @param navigationActions Navigation actions
+ * @param finalFilteredRequests List of requests after all filters applied
+ * @param searchFilterViewModel ViewModel for search/filter operations
+ */
+@Composable
+private fun MapContent(
+    paddingValues: PaddingValues,
+    uiState: MapUIState,
+    viewModel: MapViewModel,
+    navigationActions: NavigationActions?,
+    finalFilteredRequests: List<Request>,
+    searchFilterViewModel: RequestSearchFilterViewModel
+) {
+  val appPalette = appPalette()
+  val coroutineScope = rememberCoroutineScope()
+
+  // Camera setup
+  val initialPosition =
+      CameraPositionState(
+          position =
+              CameraPosition.fromLatLngZoom(
+                  uiState.target, calculateZoomLevel(uiState.request.size)))
+  val cameraPositionState = remember { initialPosition }
+  val zoomLevel by remember { derivedStateOf { cameraPositionState.position.zoom } }
+
+  // Clustering
+  val clusters =
+      remember(finalFilteredRequests, zoomLevel) {
+        clusterRequestsByDistance(
+            requests = finalFilteredRequests,
+            clusterRadiusMeters = getClusterRadiusForZoom(zoomLevel))
+      }
+
+  // Map UI settings
+  val uiSettings = remember { MapUiSettings(zoomControlsEnabled = false) }
+
+  Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+    // Google Map
+    MapWithMarkers(
+        cameraPositionState = cameraPositionState,
+        uiSettings = uiSettings,
+        clusters = clusters,
+        zoomLevel = zoomLevel,
+        viewModel = viewModel,
+        coroutineScope = coroutineScope,
+        currentLocation = uiState.currentLocation)
+
+    // Bottom Sheet for current request
+    CurrentRequestBottomSheet(
+        uiState = uiState,
+        viewModel = viewModel,
+        navigationActions = navigationActions,
+        appPalette = appPalette,
+        modifier = Modifier.align(Alignment.BottomCenter))
+
+    // List of requests overlay
+    ListOfRequest(
+        uiState,
+        viewModel,
+        appPalette,
+        Modifier.align(Alignment.BottomCenter),
+        coroutineScope,
+        cameraPositionState,
+        navigationActions)
+
+    // Zoom controls
+    ZoomControls(
+        uiState = uiState,
+        cameraPositionState = cameraPositionState,
+        coroutineScope = coroutineScope,
+        appPalette = appPalette,
+        modifier = Modifier.align(Alignment.BottomEnd))
+
+    // Zoom level test tag
+    ZoomLevelTestTag(cameraPositionState)
+
+    // Auto-zoom animation
+    AutoZoomEffect(uiState, cameraPositionState, viewModel)
+
+    // Filter UI
+    MapFilter(
+        searchFilterViewModel = searchFilterViewModel,
+        selectedOwnership = uiState.requestOwnership,
+        viewModel = viewModel,
+        modifier = Modifier.align(Alignment.TopCenter))
+  }
+}
+
+/**
+ * Renders the Google Map with clustered request markers and the user's current location.
+ *
+ * @param cameraPositionState State controlling the map's camera position and zoom
+ * @param uiSettings Map UI settings (zoom controls, compass, etc.)
+ * @param clusters List of request clusters to display as markers
+ * @param zoomLevel Current zoom level of the map
+ * @param viewModel ViewModel for handling marker clicks
+ * @param coroutineScope Coroutine scope for animations
+ * @param currentLocation User's current location to display (null if not available)
+ */
+@Composable
+private fun MapWithMarkers(
+    cameraPositionState: CameraPositionState,
+    uiSettings: MapUiSettings,
+    clusters: List<List<Request>>,
+    zoomLevel: Float,
+    viewModel: MapViewModel,
+    coroutineScope: CoroutineScope,
+    currentLocation: LatLng?
+) {
+  GoogleMap(
+      modifier = Modifier.fillMaxSize().testTag(MapTestTags.GOOGLE_MAP_SCREEN),
+      cameraPositionState = cameraPositionState,
+      uiSettings = uiSettings) {
+
+        // Process clusters and merge with current location if needed
+        val processedClusters =
+            remember(clusters, currentLocation, zoomLevel) {
+              if (currentLocation != null) {
+                mergeCurrentLocationWithClusters(
+                    clusters, currentLocation, getClusterRadiusForZoomForCurrentLocation(zoomLevel))
+              } else {
+                clusters.map { ClusterWithLocation(it, false) }
+              }
             }
 
-        // Configure UI settings to disable built-in zoom controls
-        val uiSettings = remember {
-          MapUiSettings(
-              zoomControlsEnabled = false,
-          )
+        // Request markers
+        processedClusters.forEach { clusterData ->
+          MapMarker(
+              cluster = clusterData.cluster,
+              zoomLevel = zoomLevel,
+              viewModel = viewModel,
+              cameraPositionState = cameraPositionState,
+              coroutineScope = coroutineScope,
+              isAtCurrentLocation = clusterData.isAtCurrentLocation)
         }
 
-        Box(modifier = Modifier.fillMaxSize().padding(pd)) {
+        // Current location marker (only if not merged with any cluster)
+        if (currentLocation != null &&
+            !isCurrentLocationNearAnyCluster(
+                clusters, currentLocation, getClusterRadiusForZoomForCurrentLocation(zoomLevel))) {
+          CurrentLocationMarker(location = currentLocation)
+        }
+      }
+}
 
-          // Carte
-          GoogleMap(
-              modifier = Modifier.fillMaxSize().testTag(MapTestTags.GOOGLE_MAP_SCREEN),
-              cameraPositionState = cameraPositionState,
-              uiSettings = uiSettings) {
-                clusters.forEach { cluster ->
-                  val isACluster = cluster.size == ConstantMap.ONE
-                  val position =
-                      if (isACluster) {
-                        LatLng(
-                            cluster.first().location.latitude, cluster.first().location.longitude)
-                      } else {
-                        calculateClusterCenter(cluster)
-                      }
-                  Marker(
-                      state = MarkerState(position = position),
-                      icon =
-                          if (isACluster) {
-                            BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)
-                          } else {
-                            createMarkerWithNumber(cluster.size)
-                          },
-                      onClick = {
-                        coroutineScope.launch {
-                          if (isACluster) {
-                            // Zoom on one individual marker
-                            cameraPositionState.animate(
-                                update =
-                                    CameraUpdateFactory.newLatLngZoom(
-                                        position, ConstantMap.ZOOM_AFTER_CHOSEN),
-                                durationMs = ConstantMap.LONG_DURATION_ANIMATION)
-                            viewModel.updateCurrentRequest(cluster.first())
-                            viewModel.updateCurrentProfile(cluster.first().creatorId)
-                          } else {
-                            // Zoom on cluster
-                            cameraPositionState.animate(
-                                update =
-                                    CameraUpdateFactory.newLatLngZoom(
-                                        position,
-                                        zoomLevel + ConstantMap.ZOOM_LEVEL_TWO // Zoom 2 level
-                                        ),
-                                durationMs = ConstantMap.LONG_DURATION_ANIMATION)
-                            viewModel.updateCurrentListRequest(cluster)
-                          }
-                        }
+/**
+ * Renders a single marker on the map representing either a single request or a cluster. Handles
+ * click events to either show request details or zoom into the cluster.
+ *
+ * @param cluster List of requests at this location (size 1 = single request, >1 = cluster)
+ * @param zoomLevel Current zoom level for calculating cluster zoom target
+ * @param viewModel ViewModel to update selected request/cluster
+ * @param cameraPositionState State for animating camera position
+ * @param coroutineScope Coroutine scope for animations
+ * @param isAtCurrentLocation boolean who say if it's at position of current location
+ */
+@Composable
+private fun MapMarker(
+    cluster: List<Request>,
+    zoomLevel: Float,
+    viewModel: MapViewModel,
+    cameraPositionState: CameraPositionState,
+    coroutineScope: CoroutineScope,
+    isAtCurrentLocation: Boolean = false
+) {
+  val isACluster = cluster.size == ConstantMap.ONE
+  val position =
+      if (isACluster) {
+        LatLng(cluster.first().location.latitude, cluster.first().location.longitude)
+      } else {
+        calculateClusterCenter(cluster)
+      }
 
-                        true
-                      })
-                }
+  Marker(
+      state = MarkerState(position = position),
+      icon =
+          if (isACluster) {
+            // Single request marker
+            if (isAtCurrentLocation) {
+              BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN)
+            } else {
+              BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)
+            }
+          } else {
+            // Cluster marker with number
+            createMarkerWithNumber(cluster.size, isAtCurrentLocation) // ← MODIFIER CETTE LIGNE
+          },
+      onClick = {
+        coroutineScope.launch {
+          if (isACluster) {
+            cameraPositionState.animate(
+                update = CameraUpdateFactory.newLatLngZoom(position, ConstantMap.ZOOM_AFTER_CHOSEN),
+                durationMs = ConstantMap.LONG_DURATION_ANIMATION)
+            viewModel.updateCurrentRequest(cluster.first())
+            viewModel.updateCurrentProfile(cluster.first().creatorId)
+          } else {
+            cameraPositionState.animate(
+                update =
+                    CameraUpdateFactory.newLatLngZoom(
+                        position, zoomLevel + ConstantMap.ZOOM_LEVEL_TWO),
+                durationMs = ConstantMap.LONG_DURATION_ANIMATION)
+            viewModel.updateCurrentListRequest(cluster)
+          }
+        }
+        true
+      })
+}
+
+/**
+ * Displays a special marker indicating the user's current location on the map. Uses a distinct cyan
+ * color and includes a small accuracy circle.
+ *
+ * @param location The user's current GPS coordinates
+ */
+@Composable
+private fun CurrentLocationMarker(location: LatLng) {
+
+  Marker(
+      state = MarkerState(position = location),
+      icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN),
+      title = ConstantMap.YOUR_LOCATION,
+      snippet = ConstantMap.YOU_ARE_HERE)
+}
+
+/**
+ * Displays an animated bottom sheet with detailed information about the selected request. Contains
+ * tabs for request details and profile information.
+ *
+ * @param uiState Current UI state containing the selected request
+ * @param viewModel ViewModel for map operations
+ * @param navigationActions Navigation actions for screen transitions
+ * @param appPalette Color palette for styling
+ * @param modifier Modifier for positioning the sheet
+ */
+@Composable
+private fun CurrentRequestBottomSheet(
+    uiState: MapUIState,
+    viewModel: MapViewModel,
+    navigationActions: NavigationActions?,
+    appPalette: AppPalette,
+    modifier: Modifier = Modifier
+) {
+  uiState.currentRequest?.let { req ->
+    var selectedTab by remember { mutableIntStateOf(0) }
+    val tabs = listOf(ConstantMap.DETAILS, ConstantMap.PROFILE)
+
+    AnimatedBottomSheet(viewModel = viewModel, appPalette = appPalette, modifier = modifier) {
+
+      // Tab Row
+      BottomSheetTabRow(
+          tabs = tabs,
+          selectedTab = selectedTab,
+          onTabSelected = { selectedTab = it },
+          appPalette = appPalette)
+
+      HorizontalDivider(
+          thickness = ConstantMap.DIVIDER_THICKNESS,
+          color = MaterialTheme.colorScheme.onSurface.copy(alpha = ConstantMap.ALPHA_DIVIDER))
+
+      // Tab Content
+      BottomSheetContent(
+          selectedTab = selectedTab,
+          request = req,
+          uiState = uiState,
+          navigationActions = navigationActions,
+          viewModel = viewModel,
+          appPalette = appPalette)
+    }
+  }
+}
+
+/**
+ * Displays a scrollable row of tabs for switching between different views in the bottom sheet.
+ *
+ * @param tabs List of tab titles (e.g., ["Details", "Profile"])
+ * @param selectedTab Index of the currently selected tab
+ * @param onTabSelected Callback when a tab is selected
+ * @param appPalette Color palette for styling
+ */
+@Composable
+private fun BottomSheetTabRow(
+    tabs: List<String>,
+    selectedTab: Int,
+    onTabSelected: (Int) -> Unit,
+    appPalette: AppPalette
+) {
+  ScrollableTabRow(
+      selectedTabIndex = selectedTab,
+      modifier = Modifier.fillMaxWidth(),
+      edgePadding = ConstantMap.TAB_ROW_EDGE_PADDING,
+      indicator = { tabPositions ->
+        TabRowDefaults.SecondaryIndicator(
+            Modifier.tabIndicatorOffset(tabPositions[selectedTab]), color = appPalette.accent)
+      },
+      divider = {}) {
+        tabs.forEachIndexed { index, title ->
+          Tab(
+              selected = selectedTab == index,
+              onClick = { onTabSelected(index) },
+              text = {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleSmall,
+                    color =
+                        if (selectedTab == index) appPalette.accent
+                        else
+                            MaterialTheme.colorScheme.onSurface.copy(
+                                alpha = ConstantMap.ALPHA_TEXT_UNSELECTED))
+              },
+              modifier = Modifier.testTag(MapTestTags.testTagForTab(title)))
+        }
+      }
+}
+
+/**
+ * Displays the content of the bottom sheet based on the selected tab.
+ *
+ * @param selectedTab The index of the currently selected tab (0 = Details, 1 = Profile)
+ * @param request The request being displayed
+ * @param uiState Current UI state containing ownership and profile info
+ * @param navigationActions Actions for navigating between screens
+ * @param viewModel ViewModel for map operations
+ * @param appPalette Color palette for styling
+ */
+@Composable
+private fun ColumnScope.BottomSheetContent(
+    selectedTab: Int,
+    request: Request,
+    uiState: MapUIState,
+    navigationActions: NavigationActions?,
+    viewModel: MapViewModel,
+    appPalette: AppPalette
+) {
+  Column(
+      modifier =
+          Modifier.fillMaxWidth()
+              .weight(ConstantMap.WEIGHT_FILL)
+              .verticalScroll(rememberScrollState())
+              .padding(
+                  horizontal = ConstantMap.PADDING_HORIZONTAL_STANDARD,
+                  vertical = ConstantMap.PADDING_STANDARD)) {
+        when (selectedTab) {
+          0 -> { // Details
+            RequestDetailsTab(
+                request = request,
+                uiState = uiState,
+                navigationActions = navigationActions,
+                viewModel = viewModel,
+                appPalette = appPalette)
+          }
+          1 -> { // Profile
+            CurrentProfileUI(
+                uiState.isOwner,
+                navigationActions,
+                uiState.currentProfile,
+                viewModel,
+                this,
+                request,
+                appPalette)
+          }
+        }
+      }
+}
+
+/**
+ * Displays detailed information about a request including title, description, dates, status,
+ * location, and action buttons.
+ *
+ * @param request The request to display
+ * @param uiState Current UI state containing ownership info
+ * @param navigationActions Navigation actions for screen transitions
+ * @param viewModel ViewModel for map operations
+ * @param appPalette Color palette for styling
+ */
+@Composable
+private fun RequestDetailsTab(
+    request: Request,
+    uiState: MapUIState,
+    navigationActions: NavigationActions?,
+    viewModel: MapViewModel,
+    appPalette: AppPalette
+) {
+  // Title
+  Surface(
+      color = appPalette.accent.copy(alpha = ConstantMap.ALPHA_PRIMARY_SURFACE),
+      shape = RoundedCornerShape(ConstantMap.CORNER_RADIUS_SMALL),
+      modifier = Modifier.padding(bottom = ConstantMap.SPACER_HEIGHT_LARGE)) {
+        Text(
+            text = request.title,
+            style = MaterialTheme.typography.titleMedium,
+            color = appPalette.accent,
+            modifier =
+                Modifier.padding(
+                        horizontal = ConstantMap.PADDING_STANDARD,
+                        vertical = ConstantMap.SPACER_HEIGHT_SMALL)
+                    .testTag(MapTestTags.REQUEST_TITLE))
+      }
+
+  // Description
+  Text(
+      text = request.description,
+      style = MaterialTheme.typography.bodyMedium,
+      color = MaterialTheme.colorScheme.onSurfaceVariant,
+      modifier =
+          Modifier.padding(bottom = ConstantMap.SPACER_HEIGHT_LARGE)
+              .testTag(MapTestTags.REQUEST_DESCRIPTION))
+
+  // Dates Row
+  RequestDatesRow(request)
+
+  Spacer(modifier = Modifier.height(ConstantMap.SPACER_HEIGHT_LARGE))
+
+  // Status
+  RequestStatusChip(request)
+
+  Spacer(modifier = Modifier.height(ConstantMap.SPACER_HEIGHT_MEDIUM))
+
+  // Location
+  RequestLocationChip(request, appPalette)
+
+  Spacer(modifier = Modifier.height(ConstantMap.SPACER_HEIGHT_MEDIUM))
+
+  // Action Buttons
+  ButtonDetails(uiState.isOwner, navigationActions, request, viewModel, appPalette)
+}
+
+/**
+ * Displays start and end dates of a request side-by-side in styled containers.
+ *
+ * @param request The request whose dates to display
+ */
+@Composable
+private fun RequestDatesRow(request: Request) {
+  Row(
+      modifier = Modifier.fillMaxWidth(),
+      horizontalArrangement = Arrangement.spacedBy(ConstantMap.SPACER_HEIGHT_MEDIUM)) {
+        // Start Date
+        Surface(
+            modifier = Modifier.weight(ConstantMap.WEIGHT_FILL),
+            shape = RoundedCornerShape(ConstantMap.CORNER_RADIUS_MEDIUM),
+            color = MaterialTheme.colorScheme.secondaryContainer) {
+              Column(modifier = Modifier.padding(ConstantMap.PADDING_STANDARD)) {
+                Text(
+                    text = ConstantMap.START_DATE,
+                    style = MaterialTheme.typography.labelSmall,
+                    color =
+                        MaterialTheme.colorScheme.onPrimaryContainer.copy(
+                            alpha = ConstantMap.ALPHA_ON_CONTAINER_MEDIUM))
+                Spacer(modifier = Modifier.height(ConstantMap.SPACER_HEIGHT_SMALL))
+                Text(
+                    text = request.startTimeStamp.toDisplayString(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.testTag(MapTestTags.START_DATE))
+              }
+            }
+
+        // End Date
+        Surface(
+            modifier = Modifier.weight(ConstantMap.WEIGHT_FILL),
+            shape = RoundedCornerShape(ConstantMap.CORNER_RADIUS_MEDIUM),
+            color = MaterialTheme.colorScheme.secondaryContainer) {
+              Column(modifier = Modifier.padding(ConstantMap.PADDING_STANDARD)) {
+                Text(
+                    text = ConstantMap.END_DATE,
+                    style = MaterialTheme.typography.labelSmall,
+                    color =
+                        MaterialTheme.colorScheme.onSecondaryContainer.copy(
+                            alpha = ConstantMap.ALPHA_ON_CONTAINER_MEDIUM))
+                Spacer(modifier = Modifier.height(ConstantMap.SPACER_HEIGHT_SMALL))
+                Text(
+                    text = request.expirationTime.toDisplayString(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    modifier = Modifier.testTag(MapTestTags.END_DATE))
+              }
+            }
+      }
+}
+
+/**
+ * Displays the status of a request (e.g., IN_PROGRESS, COMPLETED) as a styled chip.
+ *
+ * @param request The request whose status to display
+ */
+@Composable
+private fun RequestStatusChip(request: Request) {
+  Surface(
+      shape = RoundedCornerShape(ConstantMap.CORNER_RADIUS_LARGE),
+      color = MaterialTheme.colorScheme.tertiaryContainer,
+      modifier = Modifier.fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally)) {
+        Text(
+            text = request.status.name,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onTertiaryContainer,
+            modifier =
+                Modifier.padding(
+                        horizontal = ConstantMap.SPACER_HEIGHT_LARGE,
+                        vertical = ConstantMap.SPACER_HEIGHT_MID)
+                    .testTag(MapTestTags.REQUEST_STATUS))
+      }
+}
+
+/**
+ * Displays the location name of a request with a location icon in a styled chip.
+ *
+ * @param request The request whose location to display
+ * @param appPalette Color palette for styling the icon
+ */
+@Composable
+private fun RequestLocationChip(request: Request, appPalette: AppPalette) {
+  Surface(
+      shape = RoundedCornerShape(ConstantMap.CORNER_RADIUS_MEDIUM),
+      color = MaterialTheme.colorScheme.surfaceVariant,
+      modifier = Modifier.fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally)) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier =
+                Modifier.padding(
+                    horizontal = ConstantMap.PADDING_HORIZONTAL_STANDARD,
+                    vertical = ConstantMap.PADDING_STANDARD)) {
+              Icon(
+                  imageVector = Icons.Default.LocationOn,
+                  contentDescription = ConstantMap.LOCATION,
+                  tint = appPalette.primary,
+                  modifier = Modifier.size(ConstantMap.ICON_SIZE_LOCATION))
+              Spacer(modifier = Modifier.width(ConstantMap.SPACER_WIDTH_SMALL))
+              Text(
+                  text = request.locationName,
+                  style = MaterialTheme.typography.bodyMedium,
+                  fontWeight = FontWeight.Medium,
+                  color = MaterialTheme.colorScheme.onSurfaceVariant,
+                  modifier = Modifier.testTag(MapTestTags.REQUEST_LOCATION_NAME))
+            }
+      }
+}
+
+/**
+ * Displays floating action buttons for zooming in and out of the map. Only visible when no request
+ * or request list is selected.
+ *
+ * @param uiState Current UI state to check if controls should be visible
+ * @param cameraPositionState Camera state for zoom animations
+ * @param coroutineScope Coroutine scope for animations
+ * @param appPalette Color palette for button styling
+ * @param modifier Modifier for positioning the controls
+ */
+@Composable
+private fun ZoomControls(
+    uiState: MapUIState,
+    cameraPositionState: CameraPositionState,
+    coroutineScope: CoroutineScope,
+    appPalette: AppPalette,
+    modifier: Modifier = Modifier
+) {
+  if (uiState.currentRequest == null && uiState.currentListRequest == null) {
+    Column(
+        modifier = modifier.padding(UiDimens.SpacingMd),
+        horizontalAlignment = Alignment.CenterHorizontally) {
+          // Zoom In
+          FloatingActionButton(
+              onClick = {
+                coroutineScope.launch { cameraPositionState.animate(CameraUpdateFactory.zoomIn()) }
+              },
+              modifier =
+                  Modifier.testTag(MapTestTags.ZOOM_IN_BUTTON)
+                      .size(UiDimens.SpacingXxl)
+                      .padding(UiDimens.SpacingXs),
+              containerColor = appPalette.accent,
+              contentColor = appPalette.surface) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = ConstantMap.ZOOM_IN,
+                    tint = appPalette.surface)
               }
 
-          // Bottom Sheet Draggable
-          uiState.currentRequest?.let { req ->
-            var selectedTab by remember { mutableIntStateOf(0) }
-            val tabs = listOf(ConstantMap.DETAILS, ConstantMap.PROFILE)
-
-            AnimatedBottomSheet(
-                viewModel = viewModel,
-                appPalette = appPalette,
-                modifier = Modifier.align(Alignment.BottomCenter)) {
-
-                  // Tabs
-                  ScrollableTabRow(
-                      selectedTabIndex = selectedTab,
-                      modifier = Modifier.fillMaxWidth(),
-                      edgePadding = ConstantMap.TAB_ROW_EDGE_PADDING,
-                      indicator = { tabPositions ->
-                        TabRowDefaults.SecondaryIndicator(
-                            Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
-                            color = appPalette.accent)
-                      },
-                      divider = {}) {
-                        tabs.forEachIndexed { index, title ->
-                          Tab(
-                              selected = selectedTab == index,
-                              onClick = { selectedTab = index },
-                              text = {
-                                Text(
-                                    text = title,
-                                    style = MaterialTheme.typography.titleSmall,
-                                    color =
-                                        if (selectedTab == index) appPalette.accent
-                                        else
-                                            MaterialTheme.colorScheme.onSurface.copy(
-                                                alpha = ConstantMap.ALPHA_TEXT_UNSELECTED))
-                              },
-                              modifier = Modifier.testTag(MapTestTags.testTagForTab(title)))
-                        }
-                      }
-
-                  HorizontalDivider(
-                      thickness = ConstantMap.DIVIDER_THICKNESS,
-                      color =
-                          MaterialTheme.colorScheme.onSurface.copy(
-                              alpha = ConstantMap.ALPHA_DIVIDER))
-
-                  // show text in function of tab selected
-                  Column(
-                      modifier =
-                          Modifier.fillMaxWidth()
-                              .weight(ConstantMap.WEIGHT_FILL)
-                              .verticalScroll(rememberScrollState())
-                              .padding(
-                                  horizontal = ConstantMap.PADDING_HORIZONTAL_STANDARD,
-                                  vertical = ConstantMap.PADDING_STANDARD)) {
-                        when (selectedTab) {
-                          0 -> { // Information
-                            Surface(
-                                color =
-                                    appPalette.accent.copy(
-                                        alpha = ConstantMap.ALPHA_PRIMARY_SURFACE),
-                                shape = RoundedCornerShape(ConstantMap.CORNER_RADIUS_SMALL),
-                                modifier =
-                                    Modifier.padding(bottom = ConstantMap.SPACER_HEIGHT_LARGE)) {
-                                  Text(
-                                      text = req.title,
-                                      style = MaterialTheme.typography.titleMedium,
-                                      color = appPalette.accent,
-                                      modifier =
-                                          Modifier.padding(
-                                                  horizontal = ConstantMap.PADDING_STANDARD,
-                                                  vertical = ConstantMap.SPACER_HEIGHT_SMALL)
-                                              .testTag(MapTestTags.REQUEST_TITLE))
-                                }
-
-                            Text(
-                                text = req.description,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier =
-                                    Modifier.padding(bottom = ConstantMap.SPACER_HEIGHT_LARGE)
-                                        .testTag(MapTestTags.REQUEST_DESCRIPTION))
-
-                            // Dates
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement =
-                                    Arrangement.spacedBy(ConstantMap.SPACER_HEIGHT_MEDIUM)) {
-                                  // Start Date
-                                  Surface(
-                                      modifier = Modifier.weight(ConstantMap.WEIGHT_FILL),
-                                      shape = RoundedCornerShape(ConstantMap.CORNER_RADIUS_MEDIUM),
-                                      color = MaterialTheme.colorScheme.secondaryContainer) {
-                                        Column(
-                                            modifier =
-                                                Modifier.padding(ConstantMap.PADDING_STANDARD)) {
-                                              Text(
-                                                  text = ConstantMap.START_DATE,
-                                                  style = MaterialTheme.typography.labelSmall,
-                                                  color =
-                                                      MaterialTheme.colorScheme.onPrimaryContainer
-                                                          .copy(
-                                                              alpha =
-                                                                  ConstantMap
-                                                                      .ALPHA_ON_CONTAINER_MEDIUM))
-                                              Spacer(
-                                                  modifier =
-                                                      Modifier.height(
-                                                          ConstantMap.SPACER_HEIGHT_SMALL))
-                                              Text(
-                                                  text = req.startTimeStamp.toDisplayString(),
-                                                  style = MaterialTheme.typography.bodyMedium,
-                                                  fontWeight = FontWeight.SemiBold,
-                                                  color =
-                                                      MaterialTheme.colorScheme.onPrimaryContainer,
-                                                  modifier =
-                                                      Modifier.testTag(MapTestTags.START_DATE))
-                                            }
-                                      }
-
-                                  // End Date
-                                  Surface(
-                                      modifier = Modifier.weight(ConstantMap.WEIGHT_FILL),
-                                      shape = RoundedCornerShape(ConstantMap.CORNER_RADIUS_MEDIUM),
-                                      color = MaterialTheme.colorScheme.secondaryContainer) {
-                                        Column(
-                                            modifier =
-                                                Modifier.padding(ConstantMap.PADDING_STANDARD)) {
-                                              Text(
-                                                  text = ConstantMap.END_DATE,
-                                                  style = MaterialTheme.typography.labelSmall,
-                                                  color =
-                                                      MaterialTheme.colorScheme.onSecondaryContainer
-                                                          .copy(
-                                                              alpha =
-                                                                  ConstantMap
-                                                                      .ALPHA_ON_CONTAINER_MEDIUM))
-                                              Spacer(
-                                                  modifier =
-                                                      Modifier.height(
-                                                          ConstantMap.SPACER_HEIGHT_SMALL))
-                                              Text(
-                                                  text = req.expirationTime.toDisplayString(),
-                                                  style = MaterialTheme.typography.bodyMedium,
-                                                  fontWeight = FontWeight.SemiBold,
-                                                  color =
-                                                      MaterialTheme.colorScheme
-                                                          .onSecondaryContainer,
-                                                  modifier = Modifier.testTag(MapTestTags.END_DATE))
-                                            }
-                                      }
-                                }
-                            Spacer(modifier = Modifier.height(ConstantMap.SPACER_HEIGHT_LARGE))
-
-                            // Status
-                            Surface(
-                                shape = RoundedCornerShape(ConstantMap.CORNER_RADIUS_LARGE),
-                                color = MaterialTheme.colorScheme.tertiaryContainer,
-                                modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                                  Text(
-                                      text = req.status.name,
-                                      style = MaterialTheme.typography.labelMedium,
-                                      fontWeight = FontWeight.Medium,
-                                      color = MaterialTheme.colorScheme.onTertiaryContainer,
-                                      modifier =
-                                          Modifier.padding(
-                                                  horizontal = ConstantMap.SPACER_HEIGHT_LARGE,
-                                                  vertical = ConstantMap.SPACER_HEIGHT_MID)
-                                              .testTag(MapTestTags.REQUEST_STATUS))
-                                }
-
-                            Spacer(modifier = Modifier.height(ConstantMap.SPACER_HEIGHT_MEDIUM))
-
-                            // Location name
-                            Surface(
-                                shape = RoundedCornerShape(ConstantMap.CORNER_RADIUS_MEDIUM),
-                                color = MaterialTheme.colorScheme.surfaceVariant,
-                                modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                                  Row(
-                                      verticalAlignment = Alignment.CenterVertically,
-                                      modifier =
-                                          Modifier.padding(
-                                              horizontal = ConstantMap.PADDING_HORIZONTAL_STANDARD,
-                                              vertical = ConstantMap.PADDING_STANDARD)) {
-                                        Icon(
-                                            imageVector = Icons.Default.LocationOn,
-                                            contentDescription = ConstantMap.LOCATION,
-                                            tint = appPalette.primary,
-                                            modifier =
-                                                Modifier.size(ConstantMap.ICON_SIZE_LOCATION))
-                                        Spacer(
-                                            modifier =
-                                                Modifier.width(ConstantMap.SPACER_WIDTH_SMALL))
-                                        Text(
-                                            text = req.locationName,
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            fontWeight = FontWeight.Medium,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            modifier =
-                                                Modifier.testTag(MapTestTags.REQUEST_LOCATION_NAME))
-                                      }
-                                }
-                            Spacer(modifier = Modifier.height(ConstantMap.SPACER_HEIGHT_MEDIUM))
-
-                            ButtonDetails(
-                                uiState.isOwner, navigationActions, req, viewModel, appPalette)
-                          }
-                          1 -> { // Profile
-                            CurrentProfileUI(
-                                uiState.isOwner,
-                                navigationActions,
-                                uiState.currentProfile,
-                                viewModel,
-                                this,
-                                req,
-                                appPalette)
-                          }
-                        // if you want to add more tab, just put last number + 1 ->...
-                        }
-                      }
-                }
-          }
-
-          ListOfRequest(
-              uiState,
-              viewModel,
-              appPalette,
-              Modifier.align(Alignment.BottomCenter),
-              coroutineScope,
-              cameraPositionState)
-
-          // Zoom controls
-          if (uiState.currentRequest == null && uiState.currentListRequest == null) {
-            Column(
-                modifier = Modifier.align(Alignment.BottomEnd).padding(UiDimens.SpacingMd),
-                horizontalAlignment = Alignment.CenterHorizontally) {
-                  FloatingActionButton(
-                      onClick = {
-                        coroutineScope.launch {
-                          cameraPositionState.animate(CameraUpdateFactory.zoomIn())
-                        }
-                      },
-                      modifier =
-                          Modifier.testTag(MapTestTags.ZOOM_IN_BUTTON)
-                              .size(UiDimens.SpacingXxl)
-                              .padding(UiDimens.SpacingXs),
-                      containerColor = appPalette.accent,
-                      contentColor = appPalette.surface) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = "Zoom In",
-                            tint = appPalette.surface)
-                      }
-
-                  FloatingActionButton(
-                      onClick = {
-                        coroutineScope.launch {
-                          cameraPositionState.animate(CameraUpdateFactory.zoomOut())
-                        }
-                      },
-                      modifier =
-                          Modifier.testTag(MapTestTags.ZOOM_OUT_BUTTON)
-                              .size(UiDimens.SpacingXxl)
-                              .padding(UiDimens.SpacingXs),
-                      containerColor = appPalette.accent,
-                      contentColor = appPalette.surface) {
-                        Icon(imageVector = Icons.Default.Remove, contentDescription = "Zoom Out")
-                      }
-                }
-          }
-
-          // Invisible box to expose zoom level for testing
-          Box(
+          // Zoom Out
+          FloatingActionButton(
+              onClick = {
+                coroutineScope.launch { cameraPositionState.animate(CameraUpdateFactory.zoomOut()) }
+              },
               modifier =
-                  Modifier.size(0.dp).semantics {
-                    testTag = "${MapTestTags.ZOOM_LEVEL}:${cameraPositionState.position.zoom}"
-                  })
-
-          // if uiState.target change, do an animation to go to the location the new target
-          LaunchedEffect(uiState.needToZoom) {
-            if (uiState.needToZoom) {
-              cameraPositionState.animate(
-                  update =
-                      CameraUpdateFactory.newLatLngZoom(
-                          uiState.target, calculateZoomLevel(uiState.request.size)),
-                  durationMs = 1000)
-              viewModel.zoomCompleted()
-            }
-          }
-          MapFilter(
-              searchFilterViewModel = searchFilterViewModel,
-              selectedOwnership = uiState.requestOwnership,
-              viewModel = viewModel,
-              modifier = Modifier.align(Alignment.TopCenter))
+                  Modifier.testTag(MapTestTags.ZOOM_OUT_BUTTON)
+                      .size(UiDimens.SpacingXxl)
+                      .padding(UiDimens.SpacingXs),
+              containerColor = appPalette.accent,
+              contentColor = appPalette.surface) {
+                Icon(imageVector = Icons.Default.Remove, contentDescription = ConstantMap.ZOOM_OUT)
+              }
         }
-      })
+  }
+}
+
+/**
+ * Invisible box exposing the current zoom level via semantics for testing purposes.
+ *
+ * @param cameraPositionState Camera state containing the current zoom level
+ */
+@Composable
+private fun ZoomLevelTestTag(cameraPositionState: CameraPositionState) {
+  Box(
+      modifier =
+          Modifier.size(ConstantMap.ZERO.dp).semantics {
+            testTag = "${MapTestTags.ZOOM_LEVEL}:${cameraPositionState.position.zoom}"
+          })
+}
+
+/**
+ * Automatically animates the camera to zoom to a target location when needed. Triggers when
+ * uiState.needToZoom is true and marks zoom as completed afterward.
+ *
+ * @param uiState Current UI state containing zoom target and flag
+ * @param cameraPositionState Camera state for zoom animation
+ * @param viewModel ViewModel to mark zoom as completed
+ */
+@Composable
+private fun AutoZoomEffect(
+    uiState: MapUIState,
+    cameraPositionState: CameraPositionState,
+    viewModel: MapViewModel
+) {
+  LaunchedEffect(uiState.needToZoom) {
+    if (uiState.needToZoom) {
+      cameraPositionState.animate(
+          update =
+              CameraUpdateFactory.newLatLngZoom(
+                  uiState.target, calculateZoomLevel(uiState.request.size)),
+          durationMs = ConstantMap.VERY_LONG_DURATION_ANIMATION)
+      viewModel.zoomCompleted()
+    }
+  }
 }
 
 /**
@@ -578,7 +967,10 @@ fun ButtonDetails(
         // Always navigate to the view-only details (Accept) page; edit is accessible from there
         when (isOwner) {
           true,
-          false -> navigationActions?.navigateTo(Screen.RequestAccept(request.requestId))
+          false -> {
+            navigationActions?.navigateTo(Screen.RequestAccept(request.requestId))
+            mapViewModel.goOnAnotherScreen()
+          }
           else -> mapViewModel.isHisRequest(request)
         }
       },
@@ -749,7 +1141,10 @@ fun ButtonProfileDetails(
   val onClickAction: () -> Unit = {
     when {
       profile == null -> mapViewModel.updateCurrentProfile(request.creatorId)
-      isOwner == true -> navigationActions?.navigateTo(Screen.Profile(profile.id))
+      isOwner == true -> {
+        navigationActions?.navigateTo(Screen.Profile(profile.id))
+        mapViewModel.goOnAnotherScreen()
+      }
       else -> mapViewModel.isHisRequest(request)
     }
   }
@@ -868,7 +1263,8 @@ fun ListOfRequest(
     appPalette: AppPalette,
     modifier: Modifier = Modifier,
     coroutineScope: CoroutineScope,
-    cameraPositionState: CameraPositionState
+    cameraPositionState: CameraPositionState,
+    navigationActions: NavigationActions?
 ) {
   uiState.currentListRequest?.let { list ->
     AnimatedBottomSheet(viewModel, appPalette, modifier) {
@@ -893,7 +1289,8 @@ fun ListOfRequest(
                     }
                     viewModel.updateCurrentRequest(request)
                     viewModel.updateCurrentProfile(request.creatorId)
-                  })
+                  },
+                  navigationActions = navigationActions)
             }
           }
     }

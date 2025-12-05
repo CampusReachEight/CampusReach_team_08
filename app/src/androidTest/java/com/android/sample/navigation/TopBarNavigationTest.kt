@@ -9,6 +9,7 @@ import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.sample.ui.navigation.NavigationTab
 import com.android.sample.ui.navigation.NavigationTestTags
+import com.android.sample.ui.navigation.TopNavigationBar
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule

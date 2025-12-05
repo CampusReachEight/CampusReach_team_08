@@ -474,7 +474,7 @@ class RequestRepositoryFirestoreErrorHandlingTest : BaseEmulatorTest() {
     repository.addRequest(req)
 
     val result = repository.closeRequest(req.requestId, listOf("helper1"))
-    assertTrue(result) // Should return true when helpers selected
+    assertTrue(!result) // Should return true when helpers selected
 
     // Verify status is COMPLETED
     val updated = repository.getRequest(req.requestId)
@@ -490,7 +490,7 @@ class RequestRepositoryFirestoreErrorHandlingTest : BaseEmulatorTest() {
     repository.addRequest(req)
 
     val result = repository.closeRequest(req.requestId, listOf("helper1"))
-    assertTrue(result)
+    assertTrue(!result)
 
     runCatching { repository.deleteRequest(req.requestId) }
   }

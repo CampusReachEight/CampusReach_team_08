@@ -21,9 +21,12 @@ fun ProfileContent(
     modifier: Modifier = Modifier,
     onLogoutRequested: () -> Unit = {},
     onMyRequestAction: () -> Unit,
+    onAcceptedRequestsAction: () -> Unit = {},
     onEditRequested: () -> Unit = {}
 ) {
-  Column(modifier = modifier.verticalScroll(rememberScrollState())) {
+  val scrollState = rememberScrollState()
+
+  Column(modifier = modifier.verticalScroll(scrollState)) {
     state.errorMessage?.let {
       ErrorBanner(it)
       Spacer(modifier = Modifier.height(ProfileDimens.Vertical))
@@ -31,10 +34,16 @@ fun ProfileContent(
 
     ProfileHeader(state = state, onEditRequested = onEditRequested)
     Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
+
     ProfileStats(state = state)
     Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
+
     ProfileInformation(state = state)
     Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
-    ProfileActions(onLogoutClick = onLogoutRequested, onMyRequestClick = onMyRequestAction)
+
+    ProfileActions(
+        onLogoutClick = onLogoutRequested,
+        onMyRequestClick = onMyRequestAction,
+        onAcceptedRequestsClick = onAcceptedRequestsAction)
   }
 }

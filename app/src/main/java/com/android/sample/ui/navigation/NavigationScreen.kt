@@ -24,21 +24,28 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navigation
 import com.android.sample.model.map.FusedLocationProvider
 import com.android.sample.model.map.NominatimLocationRepository
+import com.android.sample.model.profile.UserProfileCache
 import com.android.sample.model.profile.UserProfileRepositoryFirestore
 import com.android.sample.model.request.RequestCache
 import com.android.sample.model.request.RequestRepositoryFirestore
 import com.android.sample.ui.authentication.SignInScreen
 import com.android.sample.ui.authentication.SignInViewModel
+import com.android.sample.ui.authentication.SignInViewModelFactory
 import com.android.sample.ui.map.MapScreen
 import com.android.sample.ui.map.MapViewModel
+import com.android.sample.ui.map.MapViewModelFactory
 import com.android.sample.ui.overview.AcceptRequestScreen
 import com.android.sample.ui.overview.AcceptRequestViewModel
 import com.android.sample.ui.overview.AcceptRequestViewModelFactory
 import com.android.sample.ui.profile.ProfileScreen
 import com.android.sample.ui.profile.ProfileViewModel
+import com.android.sample.ui.profile.publicProfile.PublicProfileScreen
+import com.android.sample.ui.profile.publicProfile.PublicProfileViewModel
+import com.android.sample.ui.profile.publicProfile.PublicProfileViewModelFactory
 import com.android.sample.ui.request.RequestListScreen
 import com.android.sample.ui.request.RequestListViewModel
 import com.android.sample.ui.request.RequestListViewModelFactory
+import com.android.sample.ui.request.accepted.AcceptedRequestsScreen
 import com.android.sample.ui.request.edit.EditRequestScreen
 import com.android.sample.ui.request.edit.EditRequestViewModel
 import com.android.sample.ui.request.edit.EditRequestViewModelFactory
@@ -46,7 +53,6 @@ import com.android.sample.ui.request_validation.ValidateRequestCallbacks
 import com.android.sample.ui.request_validation.ValidateRequestScreen
 import com.android.sample.ui.request_validation.ValidateRequestViewModel
 import com.android.sample.ui.request_validation.ValidateRequestViewModelFactory
-import com.android.sample.ui.theme.TopNavigationBar
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.firestore
@@ -60,8 +66,11 @@ fun NavigationScreen(
     navigationActions: NavigationActions = NavigationActions(navController),
     credentialManager: CredentialManager = CredentialManager.create(LocalContext.current)
 ) {
+  val context = LocalContext.current
+
   // caches
-  val requestCache = RequestCache(LocalContext.current)
+  val requestCache = RequestCache(context)
+  val profileCache = UserProfileCache(context)
 
   val user = FirebaseAuth.getInstance().currentUser
   var isSignedIn by rememberSaveable { mutableStateOf(user != null) }
@@ -74,9 +83,18 @@ fun NavigationScreen(
   val userProfileRepository = UserProfileRepositoryFirestore(Firebase.firestore)
 
   // ViewModels
-  val signInViewModel: SignInViewModel = viewModel()
-  val profileViewModel: ProfileViewModel = viewModel()
-  val mapViewModel: MapViewModel = viewModel()
+  val signInViewModel: SignInViewModel =
+      viewModel(
+          factory =
+              SignInViewModelFactory(
+                  profileRepository = userProfileRepository, profileCache = profileCache))
+  val mapViewModel: MapViewModel =
+      viewModel(
+          factory =
+              MapViewModelFactory(
+                  requestRepository = requestRepository,
+                  profileRepository = userProfileRepository,
+                  locationProvider = fusedLocationProvider))
   val requestListViewModel: RequestListViewModel =
       viewModel(
           factory =
@@ -199,10 +217,10 @@ fun NavigationScreen(
 
     navigation(startDestination = Screen.Profile.route, route = "profile") {
       composable(Screen.Profile.route) { navBackStackEntry ->
-        val userId = navBackStackEntry.arguments?.getString(Screen.Profile.ARG_USER_ID)
         ProfileScreen(
             viewModel =
                 ProfileViewModel(
+                    profileCache = profileCache,
                     onLogout = {
                       isSignedIn = false
                       navController.navigate(Screen.Login.route) {
@@ -214,6 +232,20 @@ fun NavigationScreen(
       }
       composable(Screen.MyRequest.route) {
         RequestListScreen(showOnlyMyRequests = true, navigationActions = navigationActions)
+      }
+      composable(Screen.PublicProfile.route) { navBackStackEntry ->
+        val userId = navBackStackEntry.arguments?.getString(Screen.PublicProfile.ARG_USER_ID)
+        userId?.let { id ->
+          val publicProfileViewModel: PublicProfileViewModel =
+              viewModel(factory = PublicProfileViewModelFactory(userProfileRepository))
+          PublicProfileScreen(
+              viewModel = publicProfileViewModel,
+              defaultProfileId = id,
+              onBackClick = { navigationActions.goBack() })
+        }
+      }
+      composable(Screen.AcceptedRequests.route) {
+        AcceptedRequestsScreen(navigationActions = navigationActions)
       }
     }
 
@@ -240,7 +272,7 @@ fun PlaceHolderScreen(
           TopNavigationBar(
               selectedTab = defaultTab,
               onProfileClick = { navigationActions?.navigateTo(Screen.Profile("TODO")) },
-          )
+              navigationActions = navigationActions)
         }
       },
       bottomBar = {

@@ -20,6 +20,7 @@ data class ProfileState(
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
     val isEditMode: Boolean = false, // If you plan to add edit functionality later
+    val offlineMode: Boolean = false,
 
     // Profile picture (optional, if you add it later)
     val profilePictureUrl: String? = null,

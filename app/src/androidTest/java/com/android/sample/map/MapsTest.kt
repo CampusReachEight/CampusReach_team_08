@@ -1,5 +1,6 @@
 package com.android.sample.map
 
+import android.Manifest
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.assertIsDisplayed
@@ -11,6 +12,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.test.rule.GrantPermissionRule
 import com.android.sample.model.map.Location
 import com.android.sample.model.profile.UserProfile
 import com.android.sample.model.profile.UserProfileRepository
@@ -29,6 +31,7 @@ import com.android.sample.ui.map.MapViewModel
 import com.android.sample.ui.map.toDisplayStringWithoutHours
 import com.android.sample.ui.overview.toDisplayString
 import com.android.sample.ui.profile.UserSections
+import com.android.sample.ui.request.FakeLocationProvider
 import com.android.sample.ui.request.RequestListTestTags
 import com.android.sample.utils.BaseEmulatorTest
 import com.android.sample.utils.UI_WAIT_TIMEOUT
@@ -44,8 +47,14 @@ import org.junit.Test
 class MapsTest : BaseEmulatorTest() {
   @get:Rule val composeTestRule = createComposeRule()
 
+  @get:Rule
+  val permissionRule: GrantPermissionRule =
+      GrantPermissionRule.grant(
+          Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
+
   private lateinit var repository: RequestRepository
   private lateinit var profileRepository: UserProfileRepository
+  private lateinit var fakeFusedLocationProvider: FakeLocationProvider
 
   private lateinit var viewModel: MapViewModel
   private lateinit var mapsUtil: MapsUtil
@@ -82,7 +91,8 @@ class MapsTest : BaseEmulatorTest() {
     repository = RequestRepositoryFirestore(db)
     profileRepository = UserProfileRepositoryFirestore(db)
     mapsUtil = MapsUtil(composeTestRule)
-    viewModel = MapViewModel(repository)
+    fakeFusedLocationProvider = FakeLocationProvider()
+    viewModel = MapViewModel(repository, profileRepository, fakeFusedLocationProvider)
 
     runTest {
       val calendar = Calendar.getInstance()
