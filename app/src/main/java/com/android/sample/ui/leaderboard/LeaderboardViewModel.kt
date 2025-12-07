@@ -29,7 +29,7 @@ import org.jetbrains.annotations.VisibleForTesting
  * This follows the same pattern as [RequestListViewModel] for consistency.
  */
 class LeaderboardViewModel(
-    private val profileRepository: UserProfileRepository =
+    val profileRepository: UserProfileRepository =
         UserProfileRepositoryFirestore(Firebase.firestore),
     private val profileCache: UserProfileCache? = null,
     private val verboseLogging: Boolean = false

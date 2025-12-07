@@ -11,7 +11,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -20,6 +22,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -38,6 +41,7 @@ object RangeFilterUIDimens {
   val FieldWidth = 80.dp
   val FieldSpacing = 8.dp
   val ButtonHeight = 40.dp
+  val SliderHeight = 32.dp
 }
 
 /** Test tags for range filter components. */
@@ -89,6 +93,7 @@ fun <T> RangeFilterButton(
  * @param rangeFacet The range facet to control
  * @param modifier Modifier for the panel
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun <T> RangeFilterPanel(rangeFacet: RangeFacet<T>, modifier: Modifier = Modifier) {
   val currentRange by rangeFacet.currentRange.collectAsState()
@@ -123,21 +128,26 @@ fun <T> RangeFilterPanel(rangeFacet: RangeFacet<T>, modifier: Modifier = Modifie
 
           Spacer(modifier = Modifier.height(RangeFilterUIDimens.PanelVerticalSpacing))
 
-          // Range slider
-          RangeSlider(
-              value = currentRange.first.toFloat()..currentRange.last.toFloat(),
-              onValueChange = { range ->
-                val newMin = range.start.toInt()
-                val newMax = range.endInclusive.toInt()
-                rangeFacet.setRange(newMin..newMax)
-                minText = newMin.toString()
-                maxText = newMax.toString()
-              },
-              valueRange = rangeFacet.minBound.toFloat()..rangeFacet.maxBound.toFloat(),
-              steps =
-                  ((rangeFacet.maxBound - rangeFacet.minBound) / rangeFacet.step - 1).coerceAtLeast(
-                      0),
-              modifier = Modifier.fillMaxWidth().testTag(rangeFacet.sliderTestTag))
+          // Range slider with compact thumb/track height
+          CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 12.dp) {
+            RangeSlider(
+                value = currentRange.first.toFloat()..currentRange.last.toFloat(),
+                onValueChange = { range ->
+                  val newMin = range.start.toInt()
+                  val newMax = range.endInclusive.toInt()
+                  rangeFacet.setRange(newMin..newMax)
+                  minText = newMin.toString()
+                  maxText = newMax.toString()
+                },
+                valueRange = rangeFacet.minBound.toFloat()..rangeFacet.maxBound.toFloat(),
+                steps =
+                    ((rangeFacet.maxBound - rangeFacet.minBound) / rangeFacet.step - 1)
+                        .coerceAtLeast(0),
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .height(RangeFilterUIDimens.SliderHeight)
+                        .testTag(rangeFacet.sliderTestTag))
+          }
 
           Spacer(modifier = Modifier.height(RangeFilterUIDimens.PanelVerticalSpacing))
 

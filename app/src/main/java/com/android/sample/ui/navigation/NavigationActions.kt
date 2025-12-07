@@ -18,13 +18,11 @@ sealed class Screen(
 
   object Requests : Screen(route = "requests/main", NavigationType.APP_ENTRY_POINT)
 
-  object Events : Screen(route = "events/main", NavigationType.TAB)
+  object Leaderboard : Screen(route = "leaderboard/main", NavigationType.TAB)
 
   object Map : Screen(route = "map/main", NavigationType.TAB)
 
   object AddRequest : Screen(route = "requests/add")
-
-  object AddEvent : Screen(route = "events/add")
 
   object MyRequest : Screen(route = "profile/myRequest", NavigationType.SUB_SCREEN)
 
@@ -41,13 +39,6 @@ sealed class Screen(
     companion object {
       const val ARG_REQUEST_ID = REQUEST_ID
       const val route = "requests/edit/{$ARG_REQUEST_ID}"
-    }
-  }
-
-  data class EventDetails(val eventId: String) : Screen(route = "events/details/${eventId}") {
-    companion object {
-      const val ARG_EVENT_ID = "eventId"
-      const val route = "events/details/{$ARG_EVENT_ID}"
     }
   }
 

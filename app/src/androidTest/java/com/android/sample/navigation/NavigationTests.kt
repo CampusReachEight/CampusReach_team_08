@@ -54,13 +54,13 @@ class NavigationTests : BaseEmulatorTest() {
   }
 
   @Test
-  fun canNavigateToEventsScreen() {
-    // Click on Events tab
-    composeTestRule.onNodeWithTag(NavigationTestTags.EVENT_TAB).performClick()
+  fun canNavigateToLeaderboardScreen() {
+    // Click on Leaderboard tab
+    composeTestRule.onNodeWithTag(NavigationTestTags.LEADERBOARD_TAB).performClick()
     composeTestRule.waitForIdle()
 
-    // Verify Events screen is displayed
-    composeTestRule.onNodeWithTag(NavigationTestTags.EVENTS_SCREEN).assertIsDisplayed()
+    // Verify Leaderboard screen is displayed
+    composeTestRule.onNodeWithTag(NavigationTestTags.LEADERBOARD_SCREEN).assertIsDisplayed()
   }
 
   @Test
@@ -74,11 +74,11 @@ class NavigationTests : BaseEmulatorTest() {
   }
 
   @Test
-  fun canNavigateToRequestsScreenFromEventsTab() {
-    // Navigate to Events
-    composeTestRule.onNodeWithTag(NavigationTestTags.EVENT_TAB).performClick()
+  fun canNavigateToRequestsScreenFromLeaderboardTab() {
+    // Navigate to Leaderboard
+    composeTestRule.onNodeWithTag(NavigationTestTags.LEADERBOARD_TAB).performClick()
     composeTestRule.waitForIdle()
-    composeTestRule.onNodeWithTag(NavigationTestTags.EVENTS_SCREEN).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(NavigationTestTags.LEADERBOARD_SCREEN).assertIsDisplayed()
 
     // Navigate back to Requests
     composeTestRule.onNodeWithTag(NavigationTestTags.REQUEST_TAB).performClick()
@@ -108,10 +108,10 @@ class NavigationTests : BaseEmulatorTest() {
     // Start at Requests
     composeTestRule.onNodeWithTag(NavigationTestTags.REQUESTS_SCREEN).assertIsDisplayed()
 
-    // Navigate to Events
-    composeTestRule.onNodeWithTag(NavigationTestTags.EVENT_TAB).performClick()
+    // Navigate to Leaderboard
+    composeTestRule.onNodeWithTag(NavigationTestTags.LEADERBOARD_TAB).performClick()
     composeTestRule.waitForIdle()
-    composeTestRule.onNodeWithTag(NavigationTestTags.EVENTS_SCREEN).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(NavigationTestTags.LEADERBOARD_SCREEN).assertIsDisplayed()
 
     // Navigate to Map
     composeTestRule.onNodeWithTag(NavigationTestTags.MAP_TAB).performClick()
@@ -123,10 +123,10 @@ class NavigationTests : BaseEmulatorTest() {
     composeTestRule.waitForIdle()
     composeTestRule.onNodeWithTag(NavigationTestTags.REQUESTS_SCREEN).assertIsDisplayed()
 
-    // Navigate to Events again
-    composeTestRule.onNodeWithTag(NavigationTestTags.EVENT_TAB).performClick()
+    // Navigate to Leaderboard again
+    composeTestRule.onNodeWithTag(NavigationTestTags.LEADERBOARD_TAB).performClick()
     composeTestRule.waitForIdle()
-    composeTestRule.onNodeWithTag(NavigationTestTags.EVENTS_SCREEN).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(NavigationTestTags.LEADERBOARD_SCREEN).assertIsDisplayed()
 
     // Navigate to Profile
     composeTestRule.onNodeWithTag(NavigationTestTags.PROFILE_BUTTON).performClick()
@@ -145,21 +145,6 @@ class NavigationTests : BaseEmulatorTest() {
 
     // Verify Add Request screen is displayed
     composeTestRule.onNodeWithTag(NavigationTestTags.ADD_REQUEST_SCREEN).assertIsDisplayed()
-  }
-
-  @Test
-  fun navigateToAddEventScreenFromEventsTab() {
-    // Navigate to Events tab
-    composeTestRule.onNodeWithTag(NavigationTestTags.EVENT_TAB).performClick()
-    composeTestRule.waitForIdle()
-    composeTestRule.onNodeWithTag(NavigationTestTags.EVENTS_SCREEN).assertIsDisplayed()
-
-    // Navigate to Add Event screen programmatically
-    composeTestRule.runOnUiThread { navigationActions.navigateTo(Screen.AddEvent) }
-    composeTestRule.waitForIdle()
-
-    // Verify Add Event screen is displayed
-    composeTestRule.onNodeWithTag(NavigationTestTags.ADD_EVENT_SCREEN).assertIsDisplayed()
   }
 
   @Test
@@ -199,23 +184,21 @@ class NavigationTests : BaseEmulatorTest() {
   }
 
   @Test
-  fun goBackFromAddEventScreenReturnsToEventsTab() {
-    // Navigate to Events tab
-    composeTestRule.onNodeWithTag(NavigationTestTags.EVENT_TAB).performClick()
+  fun leaderboardTabKeepsBackstackIsolated() {
+    // Navigate to Leaderboard tab
+    composeTestRule.onNodeWithTag(NavigationTestTags.LEADERBOARD_TAB).performClick()
     composeTestRule.waitForIdle()
-    composeTestRule.onNodeWithTag(NavigationTestTags.EVENTS_SCREEN).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(NavigationTestTags.LEADERBOARD_SCREEN).assertIsDisplayed()
 
-    // Navigate to Add Event screen
-    composeTestRule.runOnUiThread { navigationActions.navigateTo(Screen.AddEvent) }
+    // Navigate to Map
+    composeTestRule.onNodeWithTag(NavigationTestTags.MAP_TAB).performClick()
     composeTestRule.waitForIdle()
-    composeTestRule.onNodeWithTag(NavigationTestTags.ADD_EVENT_SCREEN).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(NavigationTestTags.MAP_SCREEN).assertIsDisplayed()
 
-    // Go back using navigation action
-    composeTestRule.runOnUiThread { navigationActions.goBack() }
+    // Navigate back to Leaderboard
+    composeTestRule.onNodeWithTag(NavigationTestTags.LEADERBOARD_TAB).performClick()
     composeTestRule.waitForIdle()
-
-    // Verify we're back at Events screen
-    composeTestRule.onNodeWithTag(NavigationTestTags.EVENTS_SCREEN).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(NavigationTestTags.LEADERBOARD_SCREEN).assertIsDisplayed()
   }
 
   @Test
@@ -256,20 +239,10 @@ class NavigationTests : BaseEmulatorTest() {
     composeTestRule.waitForIdle()
     composeTestRule.onNodeWithTag(NavigationTestTags.REQUESTS_SCREEN).assertIsDisplayed()
 
-    // Navigate to Events
-    composeTestRule.onNodeWithTag(NavigationTestTags.EVENT_TAB).performClick()
+    // Navigate to Leaderboard
+    composeTestRule.onNodeWithTag(NavigationTestTags.LEADERBOARD_TAB).performClick()
     composeTestRule.waitForIdle()
-    composeTestRule.onNodeWithTag(NavigationTestTags.EVENTS_SCREEN).assertIsDisplayed()
-
-    // Navigate to Add Event
-    composeTestRule.runOnUiThread { navigationActions.navigateTo(Screen.AddEvent) }
-    composeTestRule.waitForIdle()
-    composeTestRule.onNodeWithTag(NavigationTestTags.ADD_EVENT_SCREEN).assertIsDisplayed()
-
-    // Go back to Events
-    composeTestRule.runOnUiThread { navigationActions.goBack() }
-    composeTestRule.waitForIdle()
-    composeTestRule.onNodeWithTag(NavigationTestTags.EVENTS_SCREEN).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(NavigationTestTags.LEADERBOARD_SCREEN).assertIsDisplayed()
 
     // Go back to Requests (root)
     composeTestRule.runOnUiThread { navigationActions.goBack() }
@@ -283,10 +256,10 @@ class NavigationTests : BaseEmulatorTest() {
     composeTestRule.onNodeWithTag(NavigationTestTags.REQUESTS_SCREEN).assertIsDisplayed()
     composeTestRule.onNodeWithTag(NavigationTestTags.BOTTOM_NAVIGATION_MENU).assertIsDisplayed()
 
-    // Check Events screen has bottom bar
-    composeTestRule.onNodeWithTag(NavigationTestTags.EVENT_TAB).performClick()
+    // Check Leaderboard screen has bottom bar
+    composeTestRule.onNodeWithTag(NavigationTestTags.LEADERBOARD_TAB).performClick()
     composeTestRule.waitForIdle()
-    composeTestRule.onNodeWithTag(NavigationTestTags.EVENTS_SCREEN).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(NavigationTestTags.LEADERBOARD_SCREEN).assertIsDisplayed()
     composeTestRule.onNodeWithTag(NavigationTestTags.BOTTOM_NAVIGATION_MENU).assertIsDisplayed()
 
     // Check Map screen has bottom bar
@@ -310,7 +283,7 @@ class NavigationTests : BaseEmulatorTest() {
   fun rapidTabSwitchingWorksCorrectly() {
     // Rapidly switch between tabs
     repeat(3) {
-      composeTestRule.onNodeWithTag(NavigationTestTags.EVENT_TAB).performClick()
+      composeTestRule.onNodeWithTag(NavigationTestTags.LEADERBOARD_TAB).performClick()
       composeTestRule.waitForIdle()
       composeTestRule.onNodeWithTag(NavigationTestTags.MAP_TAB).performClick()
       composeTestRule.waitForIdle()
@@ -339,12 +312,12 @@ class NavigationTests : BaseEmulatorTest() {
   fun allTabButtonsAreClickableAndDisplayed() {
     // Verify all tab buttons are displayed and clickable
     composeTestRule.onNodeWithTag(NavigationTestTags.REQUEST_TAB).assertIsDisplayed()
-    composeTestRule.onNodeWithTag(NavigationTestTags.EVENT_TAB).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(NavigationTestTags.LEADERBOARD_TAB).assertIsDisplayed()
     composeTestRule.onNodeWithTag(NavigationTestTags.MAP_TAB).assertIsDisplayed()
     composeTestRule.onNodeWithTag(NavigationTestTags.PROFILE_BUTTON).assertIsDisplayed()
 
     // Try clicking each one
-    composeTestRule.onNodeWithTag(NavigationTestTags.EVENT_TAB).performClick()
+    composeTestRule.onNodeWithTag(NavigationTestTags.LEADERBOARD_TAB).performClick()
     composeTestRule.waitForIdle()
     composeTestRule.onNodeWithTag(NavigationTestTags.MAP_TAB).performClick()
     composeTestRule.waitForIdle()
@@ -362,20 +335,10 @@ class NavigationTests : BaseEmulatorTest() {
     composeTestRule.waitForIdle()
     composeTestRule.onNodeWithTag(NavigationTestTags.MAP_SCREEN).assertIsDisplayed()
 
-    // Go to Events
-    composeTestRule.onNodeWithTag(NavigationTestTags.EVENT_TAB).performClick()
+    // Go to Leaderboard
+    composeTestRule.onNodeWithTag(NavigationTestTags.LEADERBOARD_TAB).performClick()
     composeTestRule.waitForIdle()
-    composeTestRule.onNodeWithTag(NavigationTestTags.EVENTS_SCREEN).assertIsDisplayed()
-
-    // Navigate to Add Event
-    composeTestRule.runOnUiThread { navigationActions.navigateTo(Screen.AddEvent) }
-    composeTestRule.waitForIdle()
-    composeTestRule.onNodeWithTag(NavigationTestTags.ADD_EVENT_SCREEN).assertIsDisplayed()
-
-    // Go back to Events
-    composeTestRule.runOnUiThread { navigationActions.goBack() }
-    composeTestRule.waitForIdle()
-    composeTestRule.onNodeWithTag(NavigationTestTags.EVENTS_SCREEN).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(NavigationTestTags.LEADERBOARD_SCREEN).assertIsDisplayed()
 
     // Navigate to Requests via tab
     composeTestRule.onNodeWithTag(NavigationTestTags.REQUEST_TAB).performClick()
