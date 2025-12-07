@@ -28,6 +28,8 @@ import com.android.sample.model.profile.UserProfile
 import com.android.sample.model.profile.UserProfileRepository
 import com.android.sample.ui.profile.ProfilePicture
 import com.android.sample.ui.request_validation.ValidateRequestConstants.SCREEN_TITLE
+import com.android.sample.ui.theme.AppPalette
+import com.android.sample.ui.theme.appPalette
 
 /**
  * Main screen for validating and closing a request. Allows the request creator to select helpers
@@ -43,7 +45,8 @@ fun ValidateRequestScreen(
     state: ValidationState,
     userProfileRepository: UserProfileRepository,
     callbacks: ValidateRequestCallbacks,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    palette: AppPalette = appPalette()
 ) {
   // Handle success navigation
   LaunchedEffect(state) {
@@ -120,7 +123,8 @@ fun ValidateRequestScreen(
 private fun ValidateRequestTopBar(
     onNavigateBack: () -> Unit,
     canNavigateBack: Boolean,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    appPalette: AppPalette = appPalette()
 ) {
   TopAppBar(
       title = {
@@ -142,8 +146,7 @@ private fun ValidateRequestTopBar(
       },
       colors =
           TopAppBarDefaults.topAppBarColors(
-              containerColor = MaterialTheme.colorScheme.surface,
-              titleContentColor = MaterialTheme.colorScheme.onSurface),
+              containerColor = appPalette.surface, titleContentColor = appPalette.onSurface),
       modifier = modifier)
 }
 
@@ -153,17 +156,18 @@ private fun ValidateRequestTopBar(
  * @param modifier Modifier for styling
  */
 @Composable
-private fun LoadingContent(modifier: Modifier = Modifier) {
+private fun LoadingContent(modifier: Modifier = Modifier, palette: AppPalette = appPalette()) {
   Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(ValidateRequestConstants.SPACING_XLARGE_DP.dp)) {
           CircularProgressIndicator(
-              modifier = Modifier.testTag(ValidateRequestConstants.TAG_LOADING_INDICATOR))
+              modifier = Modifier.testTag(ValidateRequestConstants.TAG_LOADING_INDICATOR),
+              color = palette.accent)
           Text(
               text = ValidateRequestConstants.LOADING_REQUEST,
               style = MaterialTheme.typography.bodyLarge,
-              color = MaterialTheme.colorScheme.onSurfaceVariant)
+              color = MaterialTheme.colorScheme.onSurface)
         }
   }
 }
@@ -188,7 +192,8 @@ private fun ReadyContent(
     userProfileRepository: UserProfileRepository,
     onToggleHelper: (String) -> Unit,
     onValidate: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    palette: AppPalette = appPalette()
 ) {
   Column(modifier = modifier.fillMaxSize().padding(ValidateRequestConstants.PADDING_SCREEN_DP.dp)) {
     // Header section
@@ -244,8 +249,7 @@ private fun ReadyContent(
                   .testTag(ValidateRequestConstants.TAG_VALIDATE_BUTTON),
           // Styling
           shape = RoundedCornerShape(ValidateRequestConstants.CORNER_RADIUS_MEDIUM_DP.dp),
-          colors =
-              ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)) {
+          colors = ButtonDefaults.buttonColors(containerColor = palette.accent)) {
             // Button content
             Icon(
                 imageVector = Icons.Default.CheckCircle,
@@ -268,7 +272,11 @@ private fun ReadyContent(
  * @param modifier Modifier for styling
  */
 @Composable
-private fun EmptyHelpersContent(onValidate: () -> Unit, modifier: Modifier = Modifier) {
+private fun EmptyHelpersContent(
+    onValidate: () -> Unit,
+    modifier: Modifier = Modifier,
+    palette: AppPalette = appPalette()
+) {
   Column(
       // Center content
       modifier = modifier,
@@ -307,7 +315,8 @@ private fun EmptyHelpersContent(onValidate: () -> Unit, modifier: Modifier = Mod
                 Modifier.fillMaxWidth(ValidateRequestConstants.WIDTH_FRACTION_EMPTY_BUTTON)
                     .height(ValidateRequestConstants.BUTTON_HEIGHT_DP.dp)
                     .testTag(ValidateRequestConstants.TAG_VALIDATE_BUTTON),
-            shape = RoundedCornerShape(ValidateRequestConstants.CORNER_RADIUS_MEDIUM_DP.dp)) {
+            shape = RoundedCornerShape(ValidateRequestConstants.CORNER_RADIUS_MEDIUM_DP.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = palette.accent)) {
               Text(
                   text = ValidateRequestConstants.BUTTON_CLOSE,
                   style = MaterialTheme.typography.titleMedium)
@@ -330,15 +339,16 @@ private fun HelperCard(
     isSelected: Boolean,
     userProfileRepository: UserProfileRepository,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    palette: AppPalette = appPalette()
 ) {
   val borderColor by
       animateColorAsState(
           targetValue =
               if (isSelected) {
-                MaterialTheme.colorScheme.primary
+                palette.accent
               } else {
-                MaterialTheme.colorScheme.outlineVariant
+                palette.surface
               },
           animationSpec = tween(ValidateRequestConstants.COLOR_ANIMATION_DURATION_MS),
           label = "borderColor")
@@ -350,11 +360,10 @@ private fun HelperCard(
           targetValue =
               // Selected state uses primaryContainer with alpha, unselected uses surface
               if (isSelected) {
-                MaterialTheme.colorScheme.primaryContainer.copy(
-                    alpha = ValidateRequestConstants.ALPHA_SELECTED_BACKGROUND)
+                palette.accent.copy(alpha = ValidateRequestConstants.ALPHA_SELECTED_BACKGROUND)
                 // Unselected state
               } else {
-                MaterialTheme.colorScheme.surface
+                palette.surface
               },
           animationSpec = tween(ValidateRequestConstants.COLOR_ANIMATION_DURATION_MS),
           label = "backgroundColor")
@@ -437,7 +446,7 @@ private fun HelperCard(
                   Surface(
                       shape =
                           RoundedCornerShape(ValidateRequestConstants.CORNER_RADIUS_SMALL_DP.dp),
-                      color = MaterialTheme.colorScheme.primary,
+                      color = palette.accent,
                       // Padding for badge
                       modifier =
                           Modifier.padding(
@@ -465,7 +474,7 @@ private fun HelperCard(
                               Icon(
                                   imageVector = Icons.Default.Star,
                                   contentDescription = ValidateRequestConstants.CD_KUDOS,
-                                  tint = MaterialTheme.colorScheme.onPrimary,
+                                  tint = palette.onAccent,
                                   modifier =
                                       Modifier.size(ValidateRequestConstants.KUDOS_ICON_SIZE_DP.dp))
                             }
@@ -483,7 +492,11 @@ private fun HelperCard(
  * @param modifier Modifier for styling
  */
 @Composable
-private fun KudosSummary(selectedCount: Int, modifier: Modifier = Modifier) {
+private fun KudosSummary(
+    selectedCount: Int,
+    modifier: Modifier = Modifier,
+    palette: AppPalette = appPalette()
+) {
   val totalKudos = selectedCount * KudosConstants.KUDOS_PER_HELPER
 
   AnimatedVisibility(
@@ -494,9 +507,7 @@ private fun KudosSummary(selectedCount: Int, modifier: Modifier = Modifier) {
         // Summary card
         Card(
             shape = RoundedCornerShape(ValidateRequestConstants.CORNER_RADIUS_MEDIUM_DP.dp),
-            colors =
-                CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
+            colors = CardDefaults.cardColors(containerColor = palette.surface)) {
               Row(
                   // Summary content
                   modifier =
@@ -508,13 +519,13 @@ private fun KudosSummary(selectedCount: Int, modifier: Modifier = Modifier) {
                       Text(
                           text = ValidateRequestConstants.SUMMARY_TOTAL_LABEL,
                           style = MaterialTheme.typography.labelMedium,
-                          color = MaterialTheme.colorScheme.onSecondaryContainer)
+                          color = palette.onSurface)
                       // Helper count
                       Text(
                           text = ValidateRequestConstants.getSummaryHelperCount(selectedCount),
                           style = MaterialTheme.typography.bodySmall,
                           color =
-                              MaterialTheme.colorScheme.onSecondaryContainer.copy(
+                              palette.onSurface.copy(
                                   alpha = ValidateRequestConstants.ALPHA_SECONDARY_TEXT))
                     }
                     // Right side: Total kudos
@@ -526,11 +537,11 @@ private fun KudosSummary(selectedCount: Int, modifier: Modifier = Modifier) {
                               text = "$totalKudos",
                               style = MaterialTheme.typography.headlineMedium,
                               fontWeight = FontWeight.Bold,
-                              color = MaterialTheme.colorScheme.onSecondaryContainer)
+                              color = palette.onSurface)
                           Icon(
                               imageVector = Icons.Default.Star,
                               contentDescription = ValidateRequestConstants.CD_KUDOS,
-                              tint = MaterialTheme.colorScheme.primary,
+                              tint = palette.surface,
                               modifier =
                                   Modifier.size(
                                       ValidateRequestConstants.KUDOS_ICON_LARGE_SIZE_DP.dp))
@@ -555,7 +566,8 @@ private fun ConfirmationDialog(
     kudosToAward: Int,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    palette: AppPalette = appPalette()
 ) {
   // Alert dialog container
   AlertDialog(
@@ -570,7 +582,7 @@ private fun ConfirmationDialog(
                 Text(
                     text = ValidateRequestConstants.CONFIRM_NO_KUDOS,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.error)
+                    color = palette.error)
               } else { // Helpers selected case
                 Text(ValidateRequestConstants.CONFIRM_AWARD_TO)
                 // List of selected helpers
@@ -582,17 +594,18 @@ private fun ConfirmationDialog(
                         Icon(
                             imageVector = Icons.Default.CheckCircle,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
+                            tint = palette.accent,
                             modifier =
                                 Modifier.size(ValidateRequestConstants.DIALOG_ICON_SIZE_DP.dp))
                         Text(
                             text = "${helper.name} ${helper.lastName}",
-                            style = MaterialTheme.typography.bodyMedium)
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = palette.onAccent)
                         Text(
                             text =
                                 "(${ValidateRequestConstants.getKudosBadge(KudosConstants.KUDOS_PER_HELPER)})",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.primary,
+                            color = palette.onAccent,
                             fontWeight = FontWeight.Bold)
                       }
                 }
@@ -608,33 +621,40 @@ private fun ConfirmationDialog(
                       Text(
                           text = ValidateRequestConstants.CONFIRM_TOTAL_KUDOS,
                           style = MaterialTheme.typography.titleMedium,
-                          fontWeight = FontWeight.Bold)
+                          fontWeight = FontWeight.Bold,
+                          color = palette.onSurface)
                       Text(
                           text = "$kudosToAward",
                           style = MaterialTheme.typography.titleMedium,
                           fontWeight = FontWeight.Bold,
-                          color = MaterialTheme.colorScheme.primary)
+                          color = palette.onSurface)
                     }
               }
 
               Text(
                   text = ValidateRequestConstants.CONFIRM_CANNOT_UNDO,
                   style = MaterialTheme.typography.bodySmall,
-                  color = MaterialTheme.colorScheme.error,
+                  color = palette.error,
                   fontWeight = FontWeight.Medium)
             }
       },
       confirmButton = {
         Button(
             onClick = onConfirm,
-            modifier = Modifier.testTag(ValidateRequestConstants.TAG_CONFIRM_BUTTON)) {
+            modifier = Modifier.testTag(ValidateRequestConstants.TAG_CONFIRM_BUTTON),
+            colors =
+                ButtonDefaults.buttonColors(
+                    containerColor = palette.accent, contentColor = palette.onAccent)) {
               Text(ValidateRequestConstants.BUTTON_CONFIRM)
             }
       },
       dismissButton = {
         TextButton(
             onClick = onDismiss,
-            modifier = Modifier.testTag(ValidateRequestConstants.TAG_CANCEL_BUTTON)) {
+            modifier = Modifier.testTag(ValidateRequestConstants.TAG_CANCEL_BUTTON),
+            colors =
+                ButtonDefaults.textButtonColors(
+                    contentColor = palette.onAccent, containerColor = palette.accent)) {
               Text(ValidateRequestConstants.BUTTON_CANCEL)
             }
       },
@@ -647,24 +667,23 @@ private fun ConfirmationDialog(
  * @param modifier Modifier for styling
  */
 @Composable
-private fun ProcessingContent(modifier: Modifier = Modifier) {
+private fun ProcessingContent(modifier: Modifier = Modifier, palette: AppPalette = appPalette()) {
   Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(ValidateRequestConstants.SPACING_XLARGE_DP.dp)) {
           CircularProgressIndicator(
-              modifier = Modifier.testTag(ValidateRequestConstants.TAG_PROCESSING_INDICATOR))
+              modifier = Modifier.testTag(ValidateRequestConstants.TAG_PROCESSING_INDICATOR),
+              color = palette.accent)
           Text(
               text = ValidateRequestConstants.PROCESSING_REQUEST,
               style = MaterialTheme.typography.bodyLarge,
               textAlign = TextAlign.Center,
-              color = MaterialTheme.colorScheme.onSurfaceVariant)
+              color = palette.onAccent)
           Text(
               text = ValidateRequestConstants.PROCESSING_WAIT,
               style = MaterialTheme.typography.bodyMedium,
-              color =
-                  MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                      alpha = ValidateRequestConstants.ALPHA_SECONDARY_TEXT))
+              color = palette.onAccent.copy(alpha = ValidateRequestConstants.ALPHA_SECONDARY_TEXT))
         }
   }
 }
@@ -674,7 +693,7 @@ private fun ProcessingContent(modifier: Modifier = Modifier) {
  * @param modifier Modifier for styling
  */
 @Composable
-private fun SuccessContent(modifier: Modifier = Modifier) {
+private fun SuccessContent(modifier: Modifier = Modifier, palette: AppPalette = appPalette()) {
   Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -682,17 +701,18 @@ private fun SuccessContent(modifier: Modifier = Modifier) {
           Icon(
               imageVector = Icons.Default.CheckCircle,
               contentDescription = ValidateRequestConstants.CD_SUCCESS,
-              tint = MaterialTheme.colorScheme.primary,
+              tint = palette.primary,
               modifier = Modifier.size(ValidateRequestConstants.LARGE_ICON_SIZE_DP.dp))
           Text(
               text = ValidateRequestConstants.SUCCESS_TITLE,
               style = MaterialTheme.typography.titleLarge,
               fontWeight = FontWeight.Bold,
+              color = palette.onPrimary,
               textAlign = TextAlign.Center)
           Text(
               text = ValidateRequestConstants.SUCCESS_SUBTITLE,
               style = MaterialTheme.typography.bodyLarge,
-              color = MaterialTheme.colorScheme.onSurfaceVariant,
+              color = palette.onPrimary,
               textAlign = TextAlign.Center)
         }
   }
@@ -713,7 +733,8 @@ private fun ErrorContent(
     canRetry: Boolean,
     onRetry: () -> Unit,
     onBack: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    palette: AppPalette = appPalette()
 ) {
   // Error content container
   Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -724,20 +745,20 @@ private fun ErrorContent(
           Icon(
               imageVector = Icons.Default.Warning,
               contentDescription = ValidateRequestConstants.CD_ERROR,
-              tint = MaterialTheme.colorScheme.error,
+              tint = palette.surface,
               modifier = Modifier.size(ValidateRequestConstants.LARGE_ICON_SIZE_DP.dp))
 
           Text(
               text = ValidateRequestConstants.ERROR_TITLE,
               style = MaterialTheme.typography.titleLarge,
               fontWeight = FontWeight.Bold,
-              color = MaterialTheme.colorScheme.error)
+              color = palette.error)
 
           Text(
               text = message,
               style = MaterialTheme.typography.bodyLarge,
               textAlign = TextAlign.Center,
-              color = MaterialTheme.colorScheme.onSurfaceVariant)
+              color = palette.onSurface)
           // Action buttons row
           Row(
               horizontalArrangement =
