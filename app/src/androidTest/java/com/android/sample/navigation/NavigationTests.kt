@@ -2,6 +2,7 @@ package com.android.sample.navigation
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.navigation.compose.rememberNavController
@@ -12,7 +13,6 @@ import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.navigation.Screen
 import com.android.sample.ui.request.accepted.AcceptedRequestsTestTags
 import com.android.sample.utils.BaseEmulatorTest
-import com.android.sample.utils.FirebaseEmulator
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
@@ -30,17 +30,23 @@ class NavigationTests : BaseEmulatorTest() {
   @Before
   override fun setUp() = runTest {
     super.setUp()
-    // Sign in to bypass login screen
-    FirebaseEmulator.signInTestUser()
-
     composeTestRule.setContent {
       val navController = rememberNavController()
       navigationActions = NavigationActions(navController)
-      NavigationScreen(navController = navController, navigationActions = navigationActions)
+      NavigationScreen(
+          navController = navController,
+          navigationActions = navigationActions,
+          isSignedInOverride = true)
     }
 
-    // Wait for initial screen to load
     composeTestRule.waitForIdle()
+    waitForTab(NavigationTestTags.REQUEST_TAB)
+  }
+
+  private fun waitForTab(tag: String) {
+    composeTestRule.waitUntil(timeoutMillis = 5_000) {
+      composeTestRule.onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty()
+    }
   }
 
   @After

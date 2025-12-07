@@ -68,7 +68,8 @@ fun NavigationScreen(
     navController: NavHostController = rememberNavController(),
     navigationActions: NavigationActions = NavigationActions(navController),
     credentialManager: CredentialManager = CredentialManager.create(LocalContext.current),
-    dispatcher: CoroutineDispatcher = Dispatchers.IO
+    dispatcher: CoroutineDispatcher = Dispatchers.IO,
+    isSignedInOverride: Boolean? = null
 ) {
   val context = LocalContext.current
 
@@ -77,7 +78,7 @@ fun NavigationScreen(
   val profileCache = UserProfileCache(context)
 
   val user = FirebaseAuth.getInstance().currentUser
-  var isSignedIn by rememberSaveable { mutableStateOf(user != null) }
+  var isSignedIn by rememberSaveable { mutableStateOf(isSignedInOverride ?: (user != null)) }
   val startDestination = if (!isSignedIn) "login" else "requests"
 
   // repositories

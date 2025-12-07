@@ -48,10 +48,10 @@ object LeaderboardFacetDefinitions {
 object LeaderboardRangeFilters {
 
   /** Default maximum bound for kudos range filter. */
-  const val DEFAULT_MAX_KUDOS = 100
+  const val DEFAULT_MAX_KUDOS = 500
 
   /** Default maximum bound for help received range filter. */
-  const val DEFAULT_MAX_HELP = 100
+  const val DEFAULT_MAX_HELP = 500
 
   /** Step increment for range sliders. */
   const val RANGE_STEP = 1

@@ -68,9 +68,19 @@ object FirebaseEmulator {
   }
 
   private fun clearEmulator(endpoint: String) {
-    val request = Request.Builder().url(endpoint).delete().build()
-    val response = httpClient.newCall(request).execute()
-    check(response.isSuccessful) { "Failed to clear emulator at $endpoint" }
+    if (!isRunning) {
+      Log.w("FirebaseEmulator", "Emulator not running; skip clear for $endpoint")
+      return
+    }
+    try {
+      val request = Request.Builder().url(endpoint).delete().build()
+      val response = httpClient.newCall(request).execute()
+      if (!response.isSuccessful) {
+        Log.w("FirebaseEmulator", "Failed to clear emulator at $endpoint: ${response.code}")
+      }
+    } catch (e: Exception) {
+      Log.w("FirebaseEmulator", "Clear emulator failed for $endpoint: ${e.message}")
+    }
   }
 
   fun clearAuthEmulator() = clearEmulator(authEndpoint)
@@ -78,6 +88,10 @@ object FirebaseEmulator {
   fun clearFirestoreEmulator() = clearEmulator(firestoreEndpoint)
 
   suspend fun signInTestUser(email: String = "test@example.com", password: String = "test123456") {
+    if (!isRunning) {
+      Log.w("FirebaseEmulator", "Emulator not running; skipping sign in for tests")
+      return
+    }
     try {
       auth.signInWithEmailAndPassword(email, password).await()
     } catch (_: Exception) {

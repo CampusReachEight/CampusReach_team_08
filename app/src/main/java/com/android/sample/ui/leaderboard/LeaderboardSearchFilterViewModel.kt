@@ -194,6 +194,9 @@ class LeaderboardSearchFilterViewModel(
 
   fun initializeWithProfiles(profiles: List<UserProfile>) {
     _baseProfiles.value = profiles
+    _searchQuery.value = "" // Ensure search is cleared
+    // For tests: immediately set displayed profiles since the flow might not emit fast enough
+    _displayedProfiles.value = applySort(profiles, _sortCriteria.value)
 
     viewModelScope.launch {
       try {

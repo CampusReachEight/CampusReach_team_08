@@ -28,7 +28,6 @@ import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -64,6 +63,11 @@ import com.android.sample.ui.leaderboard.LeaderboardAddOns.crown
 import com.android.sample.ui.leaderboard.LeaderboardAddOns.cutiePatootie
 import com.android.sample.ui.leaderboard.LeaderboardBadgeThemes.CutieColor
 import com.android.sample.ui.leaderboard.LeaderboardBadgeThemes.forRank
+import com.android.sample.ui.navigation.BottomNavigationMenu
+import com.android.sample.ui.navigation.NavigationActions
+import com.android.sample.ui.navigation.NavigationTab
+import com.android.sample.ui.navigation.Screen
+import com.android.sample.ui.navigation.TopNavigationBar
 import com.android.sample.ui.profile.ProfilePicture
 import com.android.sample.ui.profile.UserSections
 import com.android.sample.ui.theme.appPalette
@@ -78,6 +82,7 @@ fun LeaderboardScreen(
     modifier: Modifier = Modifier,
     leaderboardViewModel: LeaderboardViewModel = viewModel(factory = LeaderboardViewModelFactory()),
     searchFilterViewModel: LeaderboardSearchFilterViewModel = viewModel(),
+    navigationActions: NavigationActions? = null,
 ) {
   val state by leaderboardViewModel.state.collectAsState()
 
@@ -94,7 +99,17 @@ fun LeaderboardScreen(
 
   Scaffold(
       modifier = modifier.fillMaxSize().testTag(LeaderboardTestTags.LEADERBOARD_SCREEN),
-      topBar = { CenterAlignedTopAppBar(title = { Text("Leaderboard") }) }) { innerPadding ->
+      topBar = {
+        TopNavigationBar(
+            selectedTab = NavigationTab.Leaderboard,
+            onProfileClick = { navigationActions?.navigateTo(Screen.Profile("TODO")) },
+            navigationActions = navigationActions)
+      },
+      bottomBar = {
+        BottomNavigationMenu(
+            selectedNavigationTab = NavigationTab.Leaderboard,
+            navigationActions = navigationActions)
+      }) { innerPadding ->
         state.errorMessage?.let { msg ->
           ErrorDialog(message = msg, onDismiss = { leaderboardViewModel.clearError() })
         }
