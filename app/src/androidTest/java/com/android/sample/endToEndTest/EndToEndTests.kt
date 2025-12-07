@@ -40,11 +40,11 @@ import com.android.sample.utils.FakeJwtGenerator
 import com.android.sample.utils.FirebaseEmulator
 import com.android.sample.utils.UI_WAIT_TIMEOUT
 import java.util.Date
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 
@@ -128,7 +128,9 @@ class EndToEndTests : BaseEmulatorTest() {
     val fakeCredentialManager = FakeCredentialManager.create(fakeGoogleIdToken)
     composeTestRule.waitForIdle()
 
-    composeTestRule.setContent { AppNavigation(credentialManager = fakeCredentialManager) }
+    composeTestRule.setContent {
+      AppNavigation(credentialManager = fakeCredentialManager, dispatcher = Dispatchers.Main)
+    }
 
     composeTestRule.waitForIdle()
     Thread.sleep(1000)
@@ -467,7 +469,6 @@ class EndToEndTests : BaseEmulatorTest() {
 
   // can add a request, and then edit it
   @Test
-  @Ignore("Flaky test on the CI")
   fun addRequestAndCanEdit() {
 
     initialize(firstName, firstEmail)
@@ -564,7 +565,6 @@ class EndToEndTests : BaseEmulatorTest() {
 
   // check if you can log in, and then go to profile and disconnect
   @Test
-  @Ignore("Flaky test on the CI")
   fun canLogInAndThenDisconnect() {
 
     initialize(thirdName, thirdEmail)
@@ -576,7 +576,6 @@ class EndToEndTests : BaseEmulatorTest() {
 
   // check if you can accept a request and cancel it
   @Test
-  @Ignore("Flaky test on the CI")
   fun canAcceptRequest() {
     hadARequestWithOtherAccount()
     initialize(fourthName, fourthEmail)
@@ -648,7 +647,6 @@ class EndToEndTests : BaseEmulatorTest() {
    *
    * // Logout logOut() }
    */
-  @Ignore("this is flaky on the CI")
   @Test
   fun canCreateRequestGoToProfileViewMyRequestsEditAndLogout() {
     // 1. Sign in
@@ -800,7 +798,6 @@ class EndToEndTests : BaseEmulatorTest() {
   }
 
   @Test
-  @Ignore("this is flaky on the CI")
   fun canLoginGoToProfileEditProfileAndLogout() {
 
     // 1. Sign in
