@@ -4,8 +4,8 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.android.sample.model.leaderboard.LeaderboardCache
 import com.android.sample.model.profile.UserProfile
-import com.android.sample.model.profile.UserProfileCache
 import com.android.sample.model.profile.UserProfileRepository
 import com.android.sample.model.profile.UserProfileRepositoryFirestore
 import com.google.firebase.firestore.ktx.firestore
@@ -31,7 +31,7 @@ import org.jetbrains.annotations.VisibleForTesting
 class LeaderboardViewModel(
     val profileRepository: UserProfileRepository =
         UserProfileRepositoryFirestore(Firebase.firestore),
-    private val profileCache: UserProfileCache? = null,
+    private val leaderboardCache: LeaderboardCache? = null,
     private val verboseLogging: Boolean = false
 ) : ViewModel() {
 
@@ -52,7 +52,7 @@ class LeaderboardViewModel(
         }
 
         // Save profiles to cache if available
-        profileCache?.let { cache -> profiles.forEach { profile -> cache.saveProfile(profile) } }
+        leaderboardCache?.saveLeaderboard(profiles)
       } catch (e: Exception) {
         if (verboseLogging) Log.e(LOG_TAG, "Failed to load profiles", e)
 
@@ -80,14 +80,10 @@ class LeaderboardViewModel(
   /**
    * Attempts to load profiles from cache.
    *
-   * Note: UserProfileCache currently stores individual profiles by ID. For full cache support, we'd
-   * need a method to retrieve all cached profiles. For now, this returns an empty list unless the
-   * cache is extended.
+   * Uses a dedicated leaderboard cache to retrieve the last saved leaderboard snapshot.
    */
   private fun loadFromCache(): List<UserProfile> {
-    // TODO: Extend UserProfileCache to support getAllCachedProfiles()
-    // For now, cache fallback is limited to when we have profile IDs to query
-    return emptyList()
+    return leaderboardCache?.loadLeaderboard() ?: emptyList()
   }
 
   /** Clears the current error message, if any. */
@@ -121,17 +117,18 @@ class LeaderboardViewModel(
  * @param profileCache Optional cache for offline support
  */
 class LeaderboardViewModelFactory(
-    private val profileCache: UserProfileCache? = null,
+    private val leaderboardCache: LeaderboardCache? = null,
     private val profileRepository: UserProfileRepository? = null
 ) : ViewModelProvider.Factory {
   override fun <T : ViewModel> create(modelClass: Class<T>): T {
     if (modelClass.isAssignableFrom(LeaderboardViewModel::class.java)) {
       @Suppress("UNCHECKED_CAST")
       return if (profileRepository != null) {
-        LeaderboardViewModel(profileRepository = profileRepository, profileCache = profileCache)
+        LeaderboardViewModel(
+            profileRepository = profileRepository, leaderboardCache = leaderboardCache)
             as T
       } else {
-        LeaderboardViewModel(profileCache = profileCache) as T
+        LeaderboardViewModel(leaderboardCache = leaderboardCache) as T
       }
     }
     throw IllegalArgumentException("Unknown ViewModel class")

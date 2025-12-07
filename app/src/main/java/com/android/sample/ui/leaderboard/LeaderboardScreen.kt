@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -41,23 +42,28 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.android.sample.model.leaderboard.LeaderboardCache
 import com.android.sample.model.profile.UserProfile
 import com.android.sample.ui.leaderboard.LeaderboardAddOns.crown
 import com.android.sample.ui.leaderboard.LeaderboardAddOns.cutiePatootie
@@ -80,11 +86,23 @@ import com.android.sample.ui.utils.RangeFilterPanel
 @Composable
 fun LeaderboardScreen(
     modifier: Modifier = Modifier,
-    leaderboardViewModel: LeaderboardViewModel = viewModel(factory = LeaderboardViewModelFactory()),
+    leaderboardViewModel: LeaderboardViewModel? = null,
     searchFilterViewModel: LeaderboardSearchFilterViewModel = viewModel(),
     navigationActions: NavigationActions? = null,
 ) {
+  val context = LocalContext.current
+  val leaderboardViewModel =
+      leaderboardViewModel
+          ?: viewModel(
+              factory =
+                  remember(context) {
+                    LeaderboardViewModelFactory(leaderboardCache = LeaderboardCache(context))
+                  })
+
   val state by leaderboardViewModel.state.collectAsState()
+
+  // Updated to Material 3 PullToRefresh state
+  val refreshState = rememberPullToRefreshState()
 
   LaunchedEffect(Unit) { leaderboardViewModel.loadProfiles() }
 
@@ -114,50 +132,59 @@ fun LeaderboardScreen(
           ErrorDialog(message = msg, onDismiss = { leaderboardViewModel.clearError() })
         }
 
-        Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
-          LeaderboardFilters(
-              searchFilterViewModel = searchFilterViewModel,
-              query = query,
-              isSearching = isSearching,
-              onQueryChange = { searchFilterViewModel.updateSearchQuery(it) },
-              onClearQuery = { searchFilterViewModel.clearSearch() })
+        // Updated: Using Material 3 PullToRefreshBox
+        PullToRefreshBox(
+            isRefreshing = state.isLoading,
+            onRefresh = { leaderboardViewModel.refresh() },
+            state = refreshState,
+            modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+              Column(modifier = Modifier.fillMaxSize()) {
+                LeaderboardFilters(
+                    searchFilterViewModel = searchFilterViewModel,
+                    query = query,
+                    isSearching = isSearching,
+                    onQueryChange = { searchFilterViewModel.updateSearchQuery(it) },
+                    onClearQuery = { searchFilterViewModel.clearSearch() })
 
-          Spacer(modifier = Modifier.height(ConstantLeaderboard.PaddingMedium))
+                Spacer(modifier = Modifier.height(ConstantLeaderboard.PaddingMedium))
 
-          if (state.offlineMode) {
-            Text(
-                text = "You are in offline mode. Displaying cached profiles.",
-                color = appPalette().error,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier =
-                    Modifier.fillMaxWidth().padding(horizontal = ConstantLeaderboard.PaddingLarge))
-            Spacer(modifier = Modifier.height(ConstantLeaderboard.PaddingSmall))
-          }
+                if (state.offlineMode) {
+                  Text(
+                      text = "You are in offline mode. Displaying cached profiles.",
+                      color = appPalette().error,
+                      style = MaterialTheme.typography.bodyMedium,
+                      modifier =
+                          Modifier.fillMaxWidth()
+                              .padding(horizontal = ConstantLeaderboard.PaddingLarge))
+                  Spacer(modifier = Modifier.height(ConstantLeaderboard.PaddingSmall))
+                }
 
-          when {
-            state.isLoading -> {
-              Box(
-                  modifier = Modifier.fillMaxSize().testTag(LeaderboardTestTags.LOADING_INDICATOR),
-                  contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
+                when {
+                  state.isLoading -> {
+                    Box(
+                        modifier =
+                            Modifier.fillMaxSize().testTag(LeaderboardTestTags.LOADING_INDICATOR),
+                        contentAlignment = Alignment.Center) {
+                          CircularProgressIndicator()
+                        }
                   }
+                  displayedProfiles.isEmpty() -> {
+                    Text(
+                        text = "No profiles found.",
+                        modifier =
+                            Modifier.fillMaxSize()
+                                .padding(ConstantLeaderboard.PaddingLarge)
+                                .testTag(LeaderboardTestTags.EMPTY_LIST_MESSAGE),
+                        textAlign = TextAlign.Center)
+                  }
+                  else -> {
+                    LeaderboardList(
+                        profiles = displayedProfiles,
+                        profileRepository = leaderboardViewModel.profileRepository)
+                  }
+                }
+              }
             }
-            displayedProfiles.isEmpty() -> {
-              Text(
-                  text = "No profiles found.",
-                  modifier =
-                      Modifier.fillMaxSize()
-                          .padding(ConstantLeaderboard.PaddingLarge)
-                          .testTag(LeaderboardTestTags.EMPTY_LIST_MESSAGE),
-                  textAlign = TextAlign.Center)
-            }
-            else -> {
-              LeaderboardList(
-                  profiles = displayedProfiles,
-                  profileRepository = leaderboardViewModel.profileRepository)
-            }
-          }
-        }
       }
 }
 
@@ -374,8 +401,7 @@ private fun EnumFilterPanel(
                                         .testTag(facet.rowTagOf(v)),
                                 horizontalArrangement = Arrangement.Start,
                                 verticalAlignment = Alignment.CenterVertically) {
-                                  androidx.compose.material3.Checkbox(
-                                      checked = isChecked, onCheckedChange = null)
+                                  Checkbox(checked = isChecked, onCheckedChange = null)
                                   Spacer(modifier = Modifier.width(ConstantLeaderboard.RowSpacing))
                                   Text(text = facet.labelOf(v))
                                   Spacer(modifier = Modifier.weight(ConstantLeaderboard.WeightFill))
