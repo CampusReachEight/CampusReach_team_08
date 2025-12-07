@@ -3,6 +3,7 @@ package com.android.sample.model.search
 import com.android.sample.model.profile.UserProfile
 import java.io.Closeable
 import java.io.IOException
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.apache.lucene.analysis.Analyzer
@@ -47,10 +48,11 @@ import org.apache.lucene.store.Directory
  *
  * @param maxResults Maximum number of search results to return
  */
-class LuceneProfileSearchEngine(private val maxResults: Int = DEFAULT_MAX_SEARCH_RESULTS) :
-    SearchStrategy<UserProfile>, Closeable {
+class LuceneProfileSearchEngine(
+    private val maxResults: Int = DEFAULT_MAX_SEARCH_RESULTS,
+    private val dispatcher: CoroutineDispatcher = Dispatchers.IO
+) : SearchStrategy<UserProfile>, Closeable {
 
-  private val dispatcher = Dispatchers.IO
   private val directory: Directory = ByteBuffersDirectory()
   private val analyzer: Analyzer = StandardAnalyzer()
   private var writer: IndexWriter? = null
@@ -109,10 +111,13 @@ class LuceneProfileSearchEngine(private val maxResults: Int = DEFAULT_MAX_SEARCH
           }
 
           writer?.commit()
+          println("Lucene Indexing Committed. Docs: ${writer?.docStats?.numDocs}")
           reader?.close()
           reader = DirectoryReader.open(writer)
           searcher = IndexSearcher(reader)
         } catch (e: Exception) {
+          println("Lucene Indexing Error: ${e.message}")
+          e.printStackTrace()
           try {
             writer?.rollback()
           } catch (_: Exception) {}
@@ -141,6 +146,7 @@ class LuceneProfileSearchEngine(private val maxResults: Int = DEFAULT_MAX_SEARCH
       query: String
   ): List<SearchResult<UserProfile>> =
       withContext(dispatcher) {
+        println("Lucene Search: $query")
         if (query.isBlank()) return@withContext emptyList()
         val localSearcher = searcher ?: return@withContext emptyList()
 
@@ -156,6 +162,7 @@ class LuceneProfileSearchEngine(private val maxResults: Int = DEFAULT_MAX_SEARCH
         val luceneQuery = buildNameQuery(terms)
 
         val top: TopDocs = localSearcher.search(luceneQuery, maxResults)
+        println("Lucene Hits: ${top.totalHits}")
         val hits: Array<ScoreDoc> = top.scoreDocs
         if (hits.isEmpty()) return@withContext emptyList()
 
