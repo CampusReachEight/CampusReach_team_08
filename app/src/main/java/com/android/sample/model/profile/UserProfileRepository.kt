@@ -87,4 +87,89 @@ interface UserProfileRepository {
    * @throws NoSuchElementException if the user profile is not found.
    */
   suspend fun receiveHelp(userId: String, amount: Int)
+
+  /**
+   * Follows a target user. Creates a follower/following relationship between two users. Updates
+   * both users' follower/following counts atomically.
+   *
+   * This operation:
+   * - Adds currentUserId to targetUser's followers subcollection
+   * - Adds targetUserId to currentUser's following subcollection
+   * - Increments targetUser's followerCount
+   * - Increments currentUser's followingCount
+   *
+   * @param currentUserId The ID of the user who wants to follow
+   * @param targetUserId The ID of the user to be followed
+   * @throws IllegalArgumentException if currentUserId == targetUserId (cannot follow yourself)
+   * @throws IllegalStateException if already following the target user
+   * @throws NoSuchElementException if either user profile is not found
+   */
+  suspend fun followUser(currentUserId: String, targetUserId: String)
+
+  /**
+   * Unfollows a target user. Removes the follower/following relationship between two users. Updates
+   * both users' follower/following counts atomically.
+   *
+   * This operation:
+   * - Removes currentUserId from targetUser's followers subcollection
+   * - Removes targetUserId from currentUser's following subcollection
+   * - Decrements targetUser's followerCount
+   * - Decrements currentUser's followingCount
+   *
+   * @param currentUserId The ID of the user who wants to unfollow
+   * @param targetUserId The ID of the user to be unfollowed
+   * @throws IllegalArgumentException if currentUserId == targetUserId (cannot unfollow yourself)
+   * @throws IllegalStateException if not currently following the target user
+   * @throws NoSuchElementException if either user profile is not found
+   */
+  suspend fun unfollowUser(currentUserId: String, targetUserId: String)
+
+  /**
+   * Checks if a user is following another user.
+   *
+   * @param currentUserId The ID of the potential follower
+   * @param targetUserId The ID of the potential followee
+   * @return true if currentUserId follows targetUserId, false otherwise
+   */
+  suspend fun isFollowing(currentUserId: String, targetUserId: String): Boolean
+
+  /**
+   * Retrieves the number of followers for a specific user.
+   *
+   * @param userId The unique identifier of the user
+   * @return The number of followers
+   * @throws NoSuchElementException if the user profile is not found
+   */
+  suspend fun getFollowerCount(userId: String): Int
+
+  /**
+   * Retrieves the number of users that a specific user is following.
+   *
+   * @param userId The unique identifier of the user
+   * @return The number of users being followed
+   * @throws NoSuchElementException if the user profile is not found
+   */
+  suspend fun getFollowingCount(userId: String): Int
+
+  /**
+   * Retrieves a list of user profiles who are following the specified user. Returns full
+   * UserProfile objects for easy display in UI.
+   *
+   * @param userId The unique identifier of the user whose followers to retrieve
+   * @param limit Maximum number of followers to retrieve (default 20)
+   * @return List of UserProfile objects representing followers
+   * @throws NoSuchElementException if the user profile is not found
+   */
+  suspend fun getFollowers(userId: String, limit: Int = 20): List<UserProfile>
+
+  /**
+   * Retrieves a list of user profiles that the specified user is following. Returns full
+   * UserProfile objects for easy display in UI.
+   *
+   * @param userId The unique identifier of the user whose following list to retrieve
+   * @param limit Maximum number of following to retrieve (default 20)
+   * @return List of UserProfile objects representing users being followed
+   * @throws NoSuchElementException if the user profile is not found
+   */
+  suspend fun getFollowing(userId: String, limit: Int = 20): List<UserProfile>
 }
