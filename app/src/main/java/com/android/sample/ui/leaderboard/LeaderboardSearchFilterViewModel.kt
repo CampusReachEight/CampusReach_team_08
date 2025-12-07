@@ -47,7 +47,7 @@ class LeaderboardSearchFilterViewModel(
   // Debounced, trimmed query for searching
   private val debouncedQuery: StateFlow<String> =
       _searchQuery
-          .debounce(300)
+          .debounce(SEARCH_DEBOUNCE_MS)
           .map { it.trim() }
           .distinctUntilChanged()
           .stateIn(viewModelScope, SharingStarted.Lazily, "")
@@ -73,7 +73,9 @@ class LeaderboardSearchFilterViewModel(
                       val text = profile.toSearchText().lowercase()
                       val matchCount = lowerTokens.count { text.contains(it) }
                       if (matchCount >= minShould) {
-                        val score = ((matchCount.toFloat() / lowerTokens.size) * 100).toInt()
+                        val score =
+                            ((matchCount.toFloat() / lowerTokens.size) * SCORE_PERCENT_SCALE)
+                                .toInt()
                         SearchResult(item = profile, score = score, matchedFields = emptyList())
                       } else null
                     }
@@ -110,10 +112,12 @@ class LeaderboardSearchFilterViewModel(
 
       val countsFlow: StateFlow<Map<Enum<*>, Int>> =
           combine(flows) { arr ->
-                val base = arr[0] as List<UserProfile>
+                val base = arr[BASE_INDEX] as List<UserProfile>
                 val otherSelected =
-                    otherSelections.mapIndexed { idx, _ -> arr[idx + 1] as Set<Enum<*>> }
-                val rangesOffset = 1 + otherSelections.size
+                    otherSelections.mapIndexed { idx, _ ->
+                      arr[idx + NEXT_INDEX_OFFSET] as Set<Enum<*>>
+                    }
+                val rangesOffset = NEXT_INDEX_OFFSET + otherSelections.size
                 val ranges =
                     rangeFacets.mapIndexed { idx, rf ->
                       rf.copyRange(arr[rangesOffset + idx] as IntRange)
@@ -130,9 +134,11 @@ class LeaderboardSearchFilterViewModel(
 
                 val filtered = base.filter(include)
                 val counts =
-                    mutableMapOf<Enum<*>, Int>().apply { facet.values.forEach { this[it] = 0 } }
+                    mutableMapOf<Enum<*>, Int>().apply {
+                      facet.values.forEach { this[it] = ZERO_COUNT }
+                    }
                 filtered.forEach { p ->
-                  facet.extract(p).forEach { v -> counts[v] = (counts[v] ?: 0) + 1 }
+                  facet.extract(p).forEach { v -> counts[v] = (counts[v] ?: ZERO_COUNT) + 1 }
                 }
                 counts.toMap()
               }
@@ -210,10 +216,17 @@ class LeaderboardSearchFilterViewModel(
 
   // Tokenization utilities for fallback search
   private fun tokenize(query: String): List<String> =
-      REGEX_TOKEN.findAll(query.lowercase()).map { it.value }.filter { it.length >= 2 }.toList()
+      REGEX_TOKEN.findAll(query.lowercase())
+          .map { it.value }
+          .filter { it.length >= MIN_TOKEN_LENGTH }
+          .toList()
 
-  private fun minShouldMatch(tokenCount: Int, ratio: Double = 0.6, floor: Int = 1): Int =
-      if (tokenCount <= 0) 0 else max(floor, ceil(tokenCount * ratio).toInt())
+  private fun minShouldMatch(
+      tokenCount: Int,
+      ratio: Double = MIN_SHOULD_RATIO,
+      floor: Int = MIN_SHOULD_FLOOR
+  ): Int =
+      if (tokenCount <= ZERO_COUNT) ZERO_COUNT else max(floor, ceil(tokenCount * ratio).toInt())
 
   override fun onCleared() {
     try {
@@ -231,6 +244,14 @@ class LeaderboardSearchFilterViewModel(
 
   private companion object {
     // Regex pattern for tokenizing search queries (words, underscores, hyphens)
+    const val SEARCH_DEBOUNCE_MS = 300L
+    const val SCORE_PERCENT_SCALE = 100
+    const val BASE_INDEX = 0
+    const val NEXT_INDEX_OFFSET = 1
+    const val ZERO_COUNT = 0
+    const val MIN_TOKEN_LENGTH = 2
+    const val MIN_SHOULD_FLOOR = 1
+    const val MIN_SHOULD_RATIO = 0.6
     val REGEX_TOKEN = Regex("[a-z0-9_-]+")
   }
 }

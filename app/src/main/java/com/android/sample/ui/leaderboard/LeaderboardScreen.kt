@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -54,7 +55,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.model.profile.UserProfile
 import com.android.sample.ui.leaderboard.LeaderboardBadgeThemes.forRank
@@ -169,7 +169,9 @@ private fun LeaderboardFilters(
         when {
           query.isNotEmpty() -> TextButton(onClick = onClearQuery) { Text("Clear") }
           isSearching ->
-              CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+              CircularProgressIndicator(
+                  modifier = Modifier.size(ConstantLeaderboard.SmallIndicatorSize),
+                  strokeWidth = ConstantLeaderboard.SmallIndicatorStroke)
         }
       })
 
@@ -246,9 +248,11 @@ private fun SortButton(
         onClick = { expanded = true },
         modifier = Modifier.testTag(LeaderboardTestTags.SORT_BUTTON),
         contentPadding =
-            androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 6.dp)) {
+            androidx.compose.foundation.layout.PaddingValues(
+                horizontal = ConstantLeaderboard.SortButtonPaddingHorizontal,
+                vertical = ConstantLeaderboard.SortButtonPaddingVertical)) {
           Text(current.displayLabel())
-          Spacer(Modifier.width(4.dp))
+          Spacer(Modifier.width(ConstantLeaderboard.FilterRowSpacingSmall))
           Icon(Icons.Filled.ArrowDropDown, contentDescription = null)
         }
 
@@ -284,7 +288,10 @@ private fun EnumFilterButton(
     Row(
         horizontalArrangement = Arrangement.spacedBy(ConstantLeaderboard.RowSpacing),
         verticalAlignment = Alignment.CenterVertically) {
-          val label = if (selectedCount > 0) "${facet.title} (${selectedCount})" else facet.title
+          val label =
+              if (selectedCount > ConstantLeaderboard.ZeroCountFallback)
+                  "${facet.title} (${selectedCount})"
+              else facet.title
           Text(label)
           Icon(Icons.Filled.ArrowDropDown, contentDescription = null)
         }
@@ -305,8 +312,8 @@ private fun EnumFilterPanel(
               .padding(top = ConstantLeaderboard.PaddingSmall)) {
         Surface(
             shape = RoundedCornerShape(ConstantLeaderboard.MenuCornerRadius),
-            tonalElevation = 2.dp,
-            shadowElevation = 2.dp,
+            tonalElevation = ConstantLeaderboard.SurfaceTonalElevation,
+            shadowElevation = ConstantLeaderboard.SurfaceShadowElevation,
             modifier = Modifier.fillMaxWidth()) {
               Column(
                   modifier = Modifier.fillMaxWidth().padding(ConstantLeaderboard.PaddingMedium)) {
@@ -324,7 +331,9 @@ private fun EnumFilterPanel(
                     val filtered =
                         facet.values
                             .filter { facet.labelOf(it).contains(localQuery, ignoreCase = true) }
-                            .sortedByDescending { counts[it] ?: 0 }
+                            .sortedByDescending {
+                              counts[it] ?: ConstantLeaderboard.ZeroCountFallback
+                            }
 
                     Column(
                         modifier =
@@ -332,7 +341,7 @@ private fun EnumFilterPanel(
                                 .heightIn(max = ConstantLeaderboard.DropdownMaxHeight)) {
                           filtered.forEach { v ->
                             val isChecked = selected.contains(v)
-                            val count = counts[v] ?: 0
+                            val count = counts[v] ?: ConstantLeaderboard.ZeroCountFallback
                             Row(
                                 modifier =
                                     Modifier.fillMaxWidth()
@@ -348,7 +357,7 @@ private fun EnumFilterPanel(
                                       checked = isChecked, onCheckedChange = null)
                                   Spacer(modifier = Modifier.width(ConstantLeaderboard.RowSpacing))
                                   Text(text = facet.labelOf(v))
-                                  Spacer(modifier = Modifier.weight(1f))
+                                  Spacer(modifier = Modifier.weight(ConstantLeaderboard.WeightFill))
                                   Text(text = count.toString())
                                 }
                           }
@@ -372,7 +381,9 @@ private fun LeaderboardList(
         itemsIndexed(items = profiles, key = { _, item -> item.id }) { index, profile ->
           Box(modifier = Modifier.testTag(LeaderboardTestTags.LEADERBOARD_CARD)) {
             LeaderboardCard(
-                position = index + 1, profile = profile, profileRepository = profileRepository)
+                position = index + ConstantLeaderboard.ListIndexOffset,
+                profile = profile,
+                profileRepository = profileRepository)
           }
         }
       }
@@ -387,7 +398,8 @@ private fun LeaderboardCard(
   val badgeTheme = forRank(position)
   val cardBorder =
       badgeTheme?.let { BorderStroke(it.cardBorderWidth, it.borderColor) }
-          ?: BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+          ?: BorderStroke(
+              ConstantLeaderboard.CardBorderWidth, MaterialTheme.colorScheme.outlineVariant)
   Card(
       shape = RoundedCornerShape(ConstantLeaderboard.CardCornerRadius),
       border = cardBorder,
@@ -413,18 +425,19 @@ private fun LeaderboardCard(
 
               Spacer(modifier = Modifier.width(ConstantLeaderboard.RowSpacing))
 
-              Column(modifier = Modifier.weight(1f)) {
+              Column(modifier = Modifier.weight(ConstantLeaderboard.WeightFill)) {
+                // Main identity block stretches to take available horizontal space
                 Text(
                     text = "${profile.name} ${profile.lastName}",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
-                    maxLines = 1,
+                    maxLines = ConstantLeaderboard.SingleLineMax,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.testTag(LeaderboardTestTags.CARD_NAME))
                 Text(
                     text = sectionLabel(profile.section),
                     style = MaterialTheme.typography.bodySmall,
-                    color = appPalette().text.copy(alpha = 0.7f),
+                    color = appPalette().text.copy(alpha = ConstantLeaderboard.SecondaryTextAlpha),
                     modifier = Modifier.testTag(LeaderboardTestTags.CARD_SECTION))
               }
 
@@ -451,9 +464,7 @@ private fun Medal(position: Int, theme: BadgeTheme?) {
   }
 
   val base =
-      Modifier.size(ConstantLeaderboard.MedalIconSize)
-          .clip(RoundedCornerShape(50))
-          .background(theme.haloColor)
+      Modifier.size(ConstantLeaderboard.MedalIconSize).clip(CircleShape).background(theme.haloColor)
   val tagged = theme.testTag?.let { base.testTag(it) } ?: base
 
   Box(modifier = tagged, contentAlignment = Alignment.Center) {
@@ -470,7 +481,7 @@ private fun StatsColumn(label: String, value: Int, testTag: String) {
         Text(
             text = label,
             style = MaterialTheme.typography.bodySmall,
-            color = appPalette().text.copy(alpha = 0.7f))
+            color = appPalette().text.copy(alpha = ConstantLeaderboard.SecondaryTextAlpha))
         Text(
             text = value.toString(),
             style = MaterialTheme.typography.titleMedium,

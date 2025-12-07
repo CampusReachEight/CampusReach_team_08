@@ -56,12 +56,15 @@ object LeaderboardRangeFilters {
   /** Step increment for range sliders. */
   const val RANGE_STEP = 1
 
+  /** Minimum bound shared by leaderboard numeric filters. */
+  const val RANGE_MIN_BOUND = 0
+
   /** Kudos range filter definition. */
   val kudosFilter =
       RangeFilterDefinitions.RangeFilterDefinition<UserProfile>(
           id = "kudos",
           title = "Kudos",
-          minBound = 0,
+          minBound = RANGE_MIN_BOUND,
           maxBound = DEFAULT_MAX_KUDOS,
           step = RANGE_STEP,
           extract = { it.kudos },
@@ -77,7 +80,7 @@ object LeaderboardRangeFilters {
       RangeFilterDefinitions.RangeFilterDefinition<UserProfile>(
           id = "helpReceived",
           title = "Help Received",
-          minBound = 0,
+          minBound = RANGE_MIN_BOUND,
           maxBound = DEFAULT_MAX_HELP,
           step = RANGE_STEP,
           extract = { it.helpReceived },

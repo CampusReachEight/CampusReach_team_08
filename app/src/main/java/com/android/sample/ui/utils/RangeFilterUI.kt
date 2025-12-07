@@ -42,6 +42,11 @@ object RangeFilterUIDimens {
   val FieldSpacing = 8.dp
   val ButtonHeight = 40.dp
   val SliderHeight = 32.dp
+  val MinimalInteractiveSize = 12.dp
+  val SurfaceTonalElevation = 2.dp
+  val SurfaceShadowElevation = 2.dp
+  val SliderStepOffset = 1
+  val SliderMinSteps = 0
 }
 
 /** Test tags for range filter components. */
@@ -104,8 +109,8 @@ fun <T> RangeFilterPanel(rangeFacet: RangeFacet<T>, modifier: Modifier = Modifie
 
   Surface(
       shape = MaterialTheme.shapes.medium,
-      tonalElevation = 2.dp,
-      shadowElevation = 2.dp,
+      tonalElevation = RangeFilterUIDimens.SurfaceTonalElevation,
+      shadowElevation = RangeFilterUIDimens.SurfaceShadowElevation,
       modifier = modifier.testTag(rangeFacet.panelTestTag)) {
         Column(modifier = Modifier.fillMaxWidth().padding(RangeFilterUIDimens.PanelPadding)) {
           // Title row with reset button
@@ -129,25 +134,28 @@ fun <T> RangeFilterPanel(rangeFacet: RangeFacet<T>, modifier: Modifier = Modifie
           Spacer(modifier = Modifier.height(RangeFilterUIDimens.PanelVerticalSpacing))
 
           // Range slider with compact thumb/track height
-          CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 12.dp) {
-            RangeSlider(
-                value = currentRange.first.toFloat()..currentRange.last.toFloat(),
-                onValueChange = { range ->
-                  val newMin = range.start.toInt()
-                  val newMax = range.endInclusive.toInt()
-                  rangeFacet.setRange(newMin..newMax)
-                  minText = newMin.toString()
-                  maxText = newMax.toString()
-                },
-                valueRange = rangeFacet.minBound.toFloat()..rangeFacet.maxBound.toFloat(),
-                steps =
-                    ((rangeFacet.maxBound - rangeFacet.minBound) / rangeFacet.step - 1)
-                        .coerceAtLeast(0),
-                modifier =
-                    Modifier.fillMaxWidth()
-                        .height(RangeFilterUIDimens.SliderHeight)
-                        .testTag(rangeFacet.sliderTestTag))
-          }
+          CompositionLocalProvider(
+              LocalMinimumInteractiveComponentSize provides
+                  RangeFilterUIDimens.MinimalInteractiveSize) {
+                RangeSlider(
+                    value = currentRange.first.toFloat()..currentRange.last.toFloat(),
+                    onValueChange = { range ->
+                      val newMin = range.start.toInt()
+                      val newMax = range.endInclusive.toInt()
+                      rangeFacet.setRange(newMin..newMax)
+                      minText = newMin.toString()
+                      maxText = newMax.toString()
+                    },
+                    valueRange = rangeFacet.minBound.toFloat()..rangeFacet.maxBound.toFloat(),
+                    steps =
+                        ((rangeFacet.maxBound - rangeFacet.minBound) / rangeFacet.step -
+                                RangeFilterUIDimens.SliderStepOffset)
+                            .coerceAtLeast(RangeFilterUIDimens.SliderMinSteps),
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .height(RangeFilterUIDimens.SliderHeight)
+                            .testTag(rangeFacet.sliderTestTag))
+              }
 
           Spacer(modifier = Modifier.height(RangeFilterUIDimens.PanelVerticalSpacing))
 
