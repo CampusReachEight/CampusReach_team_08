@@ -199,7 +199,9 @@ fun NavigationScreen(
     }
 
     navigation(startDestination = Screen.Leaderboard.route, route = "leaderboard") {
-      composable(Screen.Leaderboard.route) { LeaderboardScreen() }
+      composable(Screen.Leaderboard.route) {
+        LeaderboardScreen(navigationActions = navigationActions)
+      }
     }
 
     navigation(startDestination = Screen.Profile.route, route = "profile") {
