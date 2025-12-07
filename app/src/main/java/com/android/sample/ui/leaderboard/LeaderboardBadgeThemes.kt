@@ -25,6 +25,7 @@ object LeaderboardBadgeThemes {
   private val GoldColor = Color(0xFFF4C542)
   private val SilverColor = Color(0xFFC0C0C0)
   private val BronzeColor = Color(0xFFCD7F32)
+  val CutieColor = Color(0xFFEA4C89)
 
   val Gold =
       BadgeTheme(

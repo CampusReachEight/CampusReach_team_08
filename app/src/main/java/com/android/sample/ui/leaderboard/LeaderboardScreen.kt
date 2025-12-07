@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -51,12 +52,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.model.profile.UserProfile
+import com.android.sample.ui.leaderboard.LeaderboardAddOns.crown
+import com.android.sample.ui.leaderboard.LeaderboardAddOns.cutiePatootie
+import com.android.sample.ui.leaderboard.LeaderboardBadgeThemes.CutieColor
 import com.android.sample.ui.leaderboard.LeaderboardBadgeThemes.forRank
 import com.android.sample.ui.profile.ProfilePicture
 import com.android.sample.ui.profile.UserSections
@@ -396,10 +402,8 @@ private fun LeaderboardCard(
     profileRepository: com.android.sample.model.profile.UserProfileRepository,
 ) {
   val badgeTheme = forRank(position)
-  val cardBorder =
-      badgeTheme?.let { BorderStroke(it.cardBorderWidth, it.borderColor) }
-          ?: BorderStroke(
-              ConstantLeaderboard.CardBorderWidth, MaterialTheme.colorScheme.outlineVariant)
+  val addon = resolveAddon(position, profile.id)
+  val cardBorder = resolveCardBorder(badgeTheme, addon)
   Card(
       shape = RoundedCornerShape(ConstantLeaderboard.CardCornerRadius),
       border = cardBorder,
@@ -415,13 +419,12 @@ private fun LeaderboardCard(
 
               Spacer(modifier = Modifier.width(ConstantLeaderboard.RowSpacing))
 
-              ProfilePicture(
-                  profileRepository = profileRepository,
-                  profileId = profile.id,
-                  modifier =
-                      Modifier.size(ConstantLeaderboard.ProfilePictureSize)
-                          .clip(RoundedCornerShape(ConstantLeaderboard.CardCornerRadius))
-                          .testTag(LeaderboardTestTags.CARD_PROFILE_PICTURE))
+              ProfilePictureWithAddon(
+                  position = position,
+                  profile = profile,
+                  badgeTheme = badgeTheme,
+                  addon = addon,
+                  profileRepository = profileRepository)
 
               Spacer(modifier = Modifier.width(ConstantLeaderboard.RowSpacing))
 
@@ -505,6 +508,77 @@ private fun ErrorDialog(message: String, onDismiss: () -> Unit) {
               Text("OK")
             }
       })
+}
+
+@Composable
+private fun ProfilePictureWithAddon(
+    position: Int,
+    profile: UserProfile,
+    badgeTheme: BadgeTheme?,
+    addon: ProfileAddon?,
+    profileRepository: com.android.sample.model.profile.UserProfileRepository,
+) {
+  val crownTint = badgeTheme?.primaryColor ?: MaterialTheme.colorScheme.primary
+
+  Box(modifier = Modifier.size(ConstantLeaderboard.ProfilePictureSize)) {
+    ProfilePicture(
+        profileRepository = profileRepository,
+        profileId = profile.id,
+        modifier =
+            Modifier.matchParentSize()
+                .clip(RoundedCornerShape(ConstantLeaderboard.CardCornerRadius))
+                .testTag(LeaderboardTestTags.CARD_PROFILE_PICTURE))
+
+    when (addon) {
+      null -> Unit
+      LeaderboardAddOns.crown -> {
+        Icon(
+            imageVector = addon.image,
+            contentDescription = "Top crown",
+            tint = crownTint,
+            modifier = Modifier.align(Alignment.TopCenter).offset(y = (-6).dp).size(addon.size))
+      }
+      LeaderboardAddOns.cutiePatootie -> {
+        Icon(
+            imageVector = addon.image,
+            contentDescription = "Cutie Patootie filter",
+            tint = Color.Unspecified,
+            modifier =
+                Modifier.matchParentSize()
+                    .align(Alignment.Center)
+                    .clip(RoundedCornerShape(ConstantLeaderboard.CardCornerRadius))
+                    .testTag("cutie_patootie_filter"))
+      }
+      else -> {
+        Icon(
+            imageVector = addon.image,
+            contentDescription = "Profile add-on",
+            tint = Color.Unspecified,
+            modifier =
+                Modifier.matchParentSize()
+                    .align(Alignment.Center)
+                    .clip(RoundedCornerShape(ConstantLeaderboard.CardCornerRadius)))
+      }
+    }
+  }
+}
+
+private fun resolveAddon(position: Int, profileId: String): ProfileAddon? {
+  return when {
+    position == 1 -> crown
+    AddonEligibility.cutiePatootieHashes.contains(hashIdSha256(profileId)) -> cutiePatootie
+    else -> null
+  }
+}
+
+@Composable
+private fun resolveCardBorder(badgeTheme: BadgeTheme?, addon: ProfileAddon?): BorderStroke {
+  return when {
+    badgeTheme != null -> BorderStroke(badgeTheme.cardBorderWidth, badgeTheme.borderColor)
+    addon == cutiePatootie -> BorderStroke(BadgeThemeDefaults.CardBorderWidth, CutieColor)
+    else ->
+        BorderStroke(ConstantLeaderboard.CardBorderWidth, MaterialTheme.colorScheme.outlineVariant)
+  }
 }
 
 private fun sectionLabel(section: UserSections): String = section.label
