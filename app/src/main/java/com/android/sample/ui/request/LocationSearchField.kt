@@ -16,6 +16,7 @@ import com.android.sample.model.map.EMPTY_LOCATION
 import com.android.sample.model.map.Location
 import com.android.sample.model.map.isValid
 import com.android.sample.ui.theme.LocationSearchFieldDimensions
+import com.android.sample.ui.theme.appPalette
 
 object LocationSearchFieldTestTags {
   const val InputLocationName = "input_location_name"
@@ -171,7 +172,8 @@ fun LocationSearchField(
       Spacer(modifier = Modifier.height(LocationSearchFieldDimensions.CardSpacing))
       SelectedLocationCard(
           location = location,
-          modifier = Modifier.testTag(LocationSearchFieldTestTags.SelectedLocationCard))
+          modifier = Modifier.testTag(LocationSearchFieldTestTags.SelectedLocationCard),
+      )
     }
   }
 }
@@ -190,7 +192,11 @@ private fun SelectedLocationCard(location: Location, modifier: Modifier = Modifi
   Card(
       modifier = modifier.fillMaxWidth(),
       colors =
-          CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
+          CardDefaults.cardColors(
+              containerColor = appPalette().secondary,
+              contentColor = appPalette().accent
+      )
+  ) {
         // Row for icon and location info
         Row(
             modifier = Modifier.padding(LocationSearchFieldDimensions.CardPadding),
@@ -199,7 +205,7 @@ private fun SelectedLocationCard(location: Location, modifier: Modifier = Modifi
               Icon(
                   imageVector = Icons.Default.LocationOn,
                   contentDescription = stringResource(R.string.location_field_name_simple),
-                  tint = MaterialTheme.colorScheme.primary,
+                  tint = appPalette().accent,
                   modifier = Modifier.size(LocationSearchFieldDimensions.LocationIconSize))
               Spacer(modifier = Modifier.width(LocationSearchFieldDimensions.CardSpacing))
 
@@ -209,12 +215,12 @@ private fun SelectedLocationCard(location: Location, modifier: Modifier = Modifi
                 Text(
                     text = stringResource(R.string.location_selected_title),
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer)
+                    color = appPalette().accent)
                 // Location name
                 Text(
                     text = location.name,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    color = appPalette().accent,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis)
                 // Latitude and longitude
@@ -223,7 +229,7 @@ private fun SelectedLocationCard(location: Location, modifier: Modifier = Modifi
                         "Lat: ${String.format("%.4f", location.latitude)}, " +
                             "Lng: ${String.format("%.4f", location.longitude)}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer)
+                    color = appPalette().accent)
               }
             }
       }
