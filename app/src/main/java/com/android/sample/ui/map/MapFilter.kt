@@ -27,9 +27,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.testTag
 import com.android.sample.model.request.RequestOwnership
-import com.android.sample.ui.request.FilterMenuButton
-import com.android.sample.ui.request.FilterMenuPanel
 import com.android.sample.ui.request.RequestSearchFilterViewModel
+import com.android.sample.ui.utils.EnumFilterButtonSimple
+import com.android.sample.ui.utils.EnumFilterPanelSimple
 
 @Composable
 fun MapFilter(
@@ -57,7 +57,7 @@ fun MapFilter(
                       .testTag(MapTestTags.MAP_LIST_FILTER),
               horizontalArrangement = Arrangement.spacedBy(ConstantMap.BUTTON_SPACING)) {
                 item(key = ConstantMap.OWNERSHIP_KEY) {
-                  FilterMenuButton(
+                  EnumFilterButtonSimple(
                       title = selectedOwnership.displayString(),
                       selectedCount = 0,
                       testTag = MapTestTags.MAP_FILTER_OWNER,
@@ -75,7 +75,7 @@ fun MapFilter(
                 facets.forEachIndexed { index, facet ->
                   val selectedCount = selectedSets[index].value.size
                   item(key = facet.id) {
-                    FilterMenuButton(
+                    EnumFilterButtonSimple(
                         title = facet.title,
                         selectedCount = selectedCount,
                         testTag = facet.dropdownButtonTag,
@@ -99,14 +99,14 @@ fun MapFilter(
         .find { it.id == openFacetId }
         ?.let { openFacet ->
           val countsState = openFacet.counts.collectAsState()
-          FilterMenuPanel(
+          EnumFilterPanelSimple(
               values = openFacet.values,
               selected = openFacet.selected.collectAsState().value,
               counts = countsState.value,
-              labelOf = { openFacet.labelOf(it) },
-              onToggle = { openFacet.toggle(it) },
+              labelOf = { v -> openFacet.labelOf(v) },
+              onToggle = { v -> openFacet.toggle(v) },
               dropdownSearchBarTestTag = openFacet.searchBarTag,
-              rowTestTagOf = { openFacet.rowTagOf(it) })
+              rowTestTagOf = { v -> openFacet.rowTagOf(v) })
         }
   }
 }

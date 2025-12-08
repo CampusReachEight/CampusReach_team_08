@@ -1,20 +1,17 @@
 package com.android.sample.ui.request
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
+import com.android.sample.ui.utils.EnumFilterButtonSimple
+import com.android.sample.ui.utils.EnumFilterPanelSimple
 
 /** Centralized filter UI consuming dynamic facets from ViewModel. */
 @Composable
@@ -56,7 +53,7 @@ internal fun FiltersSection(
         facets.forEachIndexed { index, facet ->
           val selectedCount = selectedSets[index].value.size
           item(key = facet.id) {
-            FilterMenuButton(
+            EnumFilterButtonSimple(
                 title = facet.title,
                 selectedCount = selectedCount,
                 testTag = facet.dropdownButtonTag,
@@ -70,124 +67,17 @@ internal fun FiltersSection(
       .find { it.id == openFacetId }
       ?.let { openFacet ->
         val countsState = openFacet.counts.collectAsState()
-        FilterMenuPanel(
+        EnumFilterPanelSimple(
             values = openFacet.values,
             selected = openFacet.selected.collectAsState().value,
             counts = countsState.value,
             labelOf = { openFacet.labelOf(it) },
             onToggle = { openFacet.toggle(it) },
             dropdownSearchBarTestTag = openFacet.searchBarTag,
-            rowTestTagOf = { openFacet.rowTagOf(it) })
+            rowTestTagOf = { openFacet.rowTagOf(it) },
+            horizontalPadding = ConstantRequestList.PaddingLarge,
+            maxHeight = ConstantRequestList.DropdownMaxHeight)
       }
-}
-
-@Composable
-fun FilterMenuButton(
-    title: String,
-    selectedCount: Int,
-    testTag: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-  OutlinedButton(onClick = onClick, modifier = modifier.testTag(testTag)) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically) {
-          val label = if (selectedCount > 0) "$title ($selectedCount)" else title
-          Text(label)
-          Icon(imageVector = Icons.Filled.ArrowDropDown, contentDescription = null)
-        }
-  }
-}
-
-@Composable
-fun FilterMenuPanel(
-    values: List<Enum<*>>,
-    selected: Set<Enum<*>>,
-    counts: Map<Enum<*>, Int>,
-    labelOf: (Enum<*>) -> String,
-    onToggle: (Enum<*>) -> Unit,
-    dropdownSearchBarTestTag: String,
-    rowTestTagOf: (Enum<*>) -> String
-) {
-  Column(
-      modifier = Modifier.fillMaxWidth().padding(horizontal = ConstantRequestList.PaddingLarge)) {
-        Spacer(modifier = Modifier.height(ConstantRequestList.PaddingSmall))
-        Surface(
-            shape = MaterialTheme.shapes.medium, tonalElevation = 2.dp, shadowElevation = 2.dp) {
-              Column(
-                  modifier = Modifier.fillMaxWidth().padding(ConstantRequestList.PaddingMedium)) {
-                    var localQuery by rememberSaveable { mutableStateOf("") }
-                    FilterMenuSearchBar(
-                        query = localQuery,
-                        onQueryChange = { localQuery = it },
-                        dropdownSearchBarTestTag = dropdownSearchBarTestTag)
-                    Spacer(modifier = Modifier.height(ConstantRequestList.PaddingSmall))
-                    FilterMenuValuesList(
-                        values = values,
-                        selected = selected,
-                        counts = counts,
-                        labelOf = labelOf,
-                        onToggle = onToggle,
-                        localQuery = localQuery,
-                        rowTestTagOf = rowTestTagOf)
-                  }
-            }
-      }
-}
-
-@Composable
-private fun FilterMenuSearchBar(
-    query: String,
-    onQueryChange: (String) -> Unit,
-    dropdownSearchBarTestTag: String
-) {
-  OutlinedTextField(
-      value = query,
-      onValueChange = onQueryChange,
-      modifier = Modifier.fillMaxWidth().testTag(dropdownSearchBarTestTag),
-      singleLine = true,
-      placeholder = { Text("Search options") })
-}
-
-@Composable
-private fun FilterMenuValuesList(
-    values: List<Enum<*>>,
-    selected: Set<Enum<*>>,
-    counts: Map<Enum<*>, Int>,
-    labelOf: (Enum<*>) -> String,
-    onToggle: (Enum<*>) -> Unit,
-    localQuery: String,
-    rowTestTagOf: (Enum<*>) -> String
-) {
-  val filteredValues =
-      remember(localQuery, values, counts) {
-        values
-            .filter { labelOf(it).contains(localQuery, ignoreCase = true) }
-            .sortedByDescending { counts[it] ?: 0 }
-      }
-  Box(modifier = Modifier.heightIn(max = ConstantRequestList.DropdownMaxHeight)) {
-    Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
-      filteredValues.forEach { v ->
-        val isChecked = selected.contains(v)
-        val count = counts[v] ?: 0
-        Row(
-            modifier =
-                Modifier.fillMaxWidth()
-                    .clickable { onToggle(v) }
-                    .padding(horizontal = ConstantRequestList.FilterRowHorizontalPadding)
-                    .testTag(rowTestTagOf(v))
-                    .height(ConstantRequestList.FilterRowHeight),
-            horizontalArrangement = Arrangement.Start) {
-              Checkbox(checked = isChecked, onCheckedChange = null)
-              Spacer(modifier = Modifier.width(ConstantRequestList.RowSpacing))
-              Text(text = labelOf(v))
-              Spacer(modifier = Modifier.weight(1f))
-              Text(text = count.toString())
-            }
-      }
-    }
-  }
 }
 
 /** Global search bar bound to SearchFilterViewModel's state. */
