@@ -14,6 +14,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -221,7 +222,12 @@ fun EditRequestContent(
             modifier =
                 Modifier.fillMaxWidth()
                     .testTag(EditRequestScreenTestTags.USE_CURRENT_LOCATION_BUTTON),
-            enabled = !uiState.isLoading && !uiState.isSearchingLocation) {
+            enabled = !uiState.isLoading && !uiState.isSearchingLocation,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = appPalette().accent,
+                contentColor = appPalette().onAccent
+            )
+        ) {
               if (uiState.isSearchingLocation) {
                 CircularProgressIndicator(
                     modifier =
@@ -543,7 +549,12 @@ private fun SaveButton(isEditMode: Boolean, isLoading: Boolean, onSave: () -> Un
   Button(
       onClick = onSave,
       modifier = Modifier.fillMaxWidth().testTag(EditRequestScreenTestTags.SAVE_BUTTON),
-      enabled = !isLoading) {
+      enabled = !isLoading,
+      colors = ButtonDefaults.buttonColors(
+          containerColor = appPalette().accent,
+          contentColor = appPalette().onAccent
+  )
+  ) {
         if (isLoading) {
           CircularProgressIndicator(
               modifier = Modifier.size(SAVE_BUTTON_PADDING),
