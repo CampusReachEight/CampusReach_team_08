@@ -2,7 +2,6 @@ package com.android.sample.ui.leaderboard
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,7 +11,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -28,7 +26,6 @@ import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -36,10 +33,8 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -77,7 +72,8 @@ import com.android.sample.ui.navigation.TopNavigationBar
 import com.android.sample.ui.profile.ProfilePicture
 import com.android.sample.ui.profile.UserSections
 import com.android.sample.ui.theme.appPalette
-import com.android.sample.ui.utils.EnumFacet
+import com.android.sample.ui.utils.EnumFilterButton
+import com.android.sample.ui.utils.EnumFilterPanel
 import com.android.sample.ui.utils.RangeFilterButton
 import com.android.sample.ui.utils.RangeFilterPanel
 
@@ -323,95 +319,6 @@ private fun SortButton(
           }
         }
   }
-}
-
-@Composable
-private fun EnumFilterButton(
-    facet: EnumFacet<UserProfile>,
-    selectedCount: Int,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-  OutlinedButton(onClick = onClick, modifier = modifier.testTag(facet.dropdownButtonTag)) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(ConstantLeaderboard.RowSpacing),
-        verticalAlignment = Alignment.CenterVertically) {
-          val label =
-              if (selectedCount > ConstantLeaderboard.ZeroCountFallback)
-                  "${facet.title} (${selectedCount})"
-              else facet.title
-          Text(label)
-          Icon(Icons.Filled.ArrowDropDown, contentDescription = null)
-        }
-  }
-}
-
-@Composable
-private fun EnumFilterPanel(
-    facet: EnumFacet<UserProfile>,
-    selected: Set<Enum<*>>,
-    counts: Map<Enum<*>, Int>,
-    onToggle: (Enum<*>) -> Unit,
-) {
-  Column(
-      modifier =
-          Modifier.fillMaxWidth()
-              .padding(horizontal = ConstantLeaderboard.PaddingLarge)
-              .padding(top = ConstantLeaderboard.PaddingSmall)) {
-        Surface(
-            shape = RoundedCornerShape(ConstantLeaderboard.MenuCornerRadius),
-            tonalElevation = ConstantLeaderboard.SurfaceTonalElevation,
-            shadowElevation = ConstantLeaderboard.SurfaceShadowElevation,
-            modifier = Modifier.fillMaxWidth()) {
-              Column(
-                  modifier = Modifier.fillMaxWidth().padding(ConstantLeaderboard.PaddingMedium)) {
-                    var localQuery by rememberSaveable { mutableStateOf("") }
-
-                    OutlinedTextField(
-                        value = localQuery,
-                        onValueChange = { localQuery = it },
-                        modifier = Modifier.fillMaxWidth().testTag(facet.searchBarTag),
-                        singleLine = true,
-                        placeholder = { Text("Search options") })
-
-                    Spacer(modifier = Modifier.height(ConstantLeaderboard.PaddingSmall))
-
-                    val filtered =
-                        facet.values
-                            .filter { facet.labelOf(it).contains(localQuery, ignoreCase = true) }
-                            .sortedByDescending {
-                              counts[it] ?: ConstantLeaderboard.ZeroCountFallback
-                            }
-
-                    Column(
-                        modifier =
-                            Modifier.fillMaxWidth()
-                                .heightIn(max = ConstantLeaderboard.DropdownMaxHeight)) {
-                          filtered.forEach { v ->
-                            val isChecked = selected.contains(v)
-                            val count = counts[v] ?: ConstantLeaderboard.ZeroCountFallback
-                            Row(
-                                modifier =
-                                    Modifier.fillMaxWidth()
-                                        .clickable { onToggle(v) }
-                                        .padding(
-                                            horizontal =
-                                                ConstantLeaderboard.FilterRowHorizontalPadding)
-                                        .height(ConstantLeaderboard.FilterRowHeight)
-                                        .testTag(facet.rowTagOf(v)),
-                                horizontalArrangement = Arrangement.Start,
-                                verticalAlignment = Alignment.CenterVertically) {
-                                  Checkbox(checked = isChecked, onCheckedChange = null)
-                                  Spacer(modifier = Modifier.width(ConstantLeaderboard.RowSpacing))
-                                  Text(text = facet.labelOf(v))
-                                  Spacer(modifier = Modifier.weight(ConstantLeaderboard.WeightFill))
-                                  Text(text = count.toString())
-                                }
-                          }
-                        }
-                  }
-            }
-      }
 }
 
 @Composable
