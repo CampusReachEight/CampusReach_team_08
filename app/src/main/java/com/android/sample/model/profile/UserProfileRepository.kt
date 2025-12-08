@@ -1,5 +1,7 @@
 package com.android.sample.model.profile
 
+private const val LIMIT = 20
+
 interface UserProfileRepository {
   /** Generates and returns a new unique identifier for a user profile. */
   fun getNewUid(): String
@@ -55,7 +57,7 @@ interface UserProfileRepository {
    * @param limit Maximum number of results (default 20)
    * @return List of matching user profiles (without loading photos to save bandwidth)
    */
-  suspend fun searchUserProfiles(query: String, limit: Int = 20): List<UserProfile>
+  suspend fun searchUserProfiles(query: String, limit: Int = LIMIT): List<UserProfile>
 
   /**
    * Awards kudos to a user by incrementing their kudos count.
@@ -156,20 +158,18 @@ interface UserProfileRepository {
    * UserProfile objects for easy display in UI.
    *
    * @param userId The unique identifier of the user whose followers to retrieve
-   * @param limit Maximum number of followers to retrieve (default 20)
    * @return List of UserProfile objects representing followers
    * @throws NoSuchElementException if the user profile is not found
    */
-  suspend fun getFollowers(userId: String, limit: Int = 20): List<UserProfile>
+  suspend fun getFollowerIds(userId: String): List<String>
 
   /**
    * Retrieves a list of user profiles that the specified user is following. Returns full
    * UserProfile objects for easy display in UI.
    *
    * @param userId The unique identifier of the user whose following list to retrieve
-   * @param limit Maximum number of following to retrieve (default 20)
    * @return List of UserProfile objects representing users being followed
    * @throws NoSuchElementException if the user profile is not found
    */
-  suspend fun getFollowing(userId: String, limit: Int = 20): List<UserProfile>
+  suspend fun getFollowingIds(userId: String): List<String>
 }

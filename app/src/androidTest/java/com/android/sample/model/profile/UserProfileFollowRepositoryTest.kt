@@ -604,30 +604,28 @@ class UserProfileFollowRepositoryTest : BaseEmulatorTest() {
   // ==================== GET FOLLOWERS LIST TESTS ====================
 
   @Test
-  fun getFollowers_returnsEmptyListWhenNoFollowers() = runTest {
+  fun getFollowerIds_returnsEmptyListWhenNoFollowers() = runTest {
     val userBId = setupUserWithProfile(USER_B_EMAIL, USER_B_PASSWORD, USER_B_NAME, USER_B_LASTNAME)
 
-    val followers = repository.getFollowers(userBId)
-    assertTrue("Followers list should be empty initially", followers.isEmpty())
+    val followerIds = repository.getFollowerIds(userBId)
+    assertTrue("Follower IDs list should be empty initially", followerIds.isEmpty())
   }
 
   @Test
-  fun getFollowers_returnsCorrectFollowerProfile() = runTest {
+  fun getFollowerIds_returnsCorrectFollowerId() = runTest {
     val (userAId, userBId) = setupTwoUsers()
 
     repository.followUser(userAId, userBId)
     delay(FIRESTORE_WRITE_DELAY_MS)
 
-    val followers = repository.getFollowers(userBId)
+    val followerIds = repository.getFollowerIds(userBId)
 
-    assertEquals("Should have exactly one follower", ONE_FOLLOWER, followers.size)
-    assertEquals("Follower ID should match UserA", userAId, followers.first().id)
-    assertEquals("Follower name should match", USER_A_NAME, followers.first().name)
-    assertEquals("Follower lastName should match", USER_A_LASTNAME, followers.first().lastName)
+    assertEquals("Should have exactly one follower", ONE_FOLLOWER, followerIds.size)
+    assertEquals("Follower ID should match UserA", userAId, followerIds.first())
   }
 
   @Test
-  fun getFollowers_returnsMultipleFollowers() = runTest {
+  fun getFollowerIds_returnsMultipleFollowers() = runTest {
     val (userAId, userBId, userCId) = setupThreeUsers()
 
     // UserA follows UserB
@@ -640,77 +638,47 @@ class UserProfileFollowRepositoryTest : BaseEmulatorTest() {
     repository.followUser(userCId, userBId)
     delay(FIRESTORE_WRITE_DELAY_MS)
 
-    val followers = repository.getFollowers(userBId)
+    val followerIds = repository.getFollowerIds(userBId)
 
-    assertEquals("Should have exactly two followers", TWO_FOLLOWERS, followers.size)
-
-    val followerIds = followers.map { it.id }
+    assertEquals("Should have exactly two followers", TWO_FOLLOWERS, followerIds.size)
     assertTrue("Should contain UserA as follower", followerIds.contains(userAId))
     assertTrue("Should contain UserC as follower", followerIds.contains(userCId))
   }
 
   @Test
-  fun getFollowers_respectsLimitParameter() = runTest {
-    val userAId = setupUserWithProfile(USER_A_EMAIL, USER_A_PASSWORD, USER_A_NAME, USER_A_LASTNAME)
-    val userBId = setupUserWithProfile(USER_B_EMAIL, USER_B_PASSWORD, USER_B_NAME, USER_B_LASTNAME)
-    val userCId = setupUserWithProfile(USER_C_EMAIL, USER_C_PASSWORD, USER_C_NAME, USER_C_LASTNAME)
-    val userDId = setupUserWithProfile(USER_D_EMAIL, USER_D_PASSWORD, USER_D_NAME, USER_D_LASTNAME)
-
-    // All three users follow UserD
-    signInUser(USER_A_EMAIL, USER_A_PASSWORD)
-    repository.followUser(userAId, userDId)
-    delay(FIRESTORE_WRITE_DELAY_MS)
-
-    signInUser(USER_B_EMAIL, USER_B_PASSWORD)
-    repository.followUser(userBId, userDId)
-    delay(FIRESTORE_WRITE_DELAY_MS)
-
-    signInUser(USER_C_EMAIL, USER_C_PASSWORD)
-    repository.followUser(userCId, userDId)
-    delay(FIRESTORE_WRITE_DELAY_MS)
-
-    // Request only 2 followers
-    val followers = repository.getFollowers(userDId, limit = 2)
-
-    assertEquals("Should respect limit of 2", 2, followers.size)
-  }
-
-  @Test
-  fun getFollowers_throwsExceptionForNonExistentUser() = runTest {
+  fun getFollowerIds_throwsExceptionForNonExistentUser() = runTest {
     val nonExistentUserId = "non-existent-user-id-12345"
 
     assertThrows(NoSuchElementException::class.java) {
-      runBlocking { repository.getFollowers(nonExistentUserId) }
+      runBlocking { repository.getFollowerIds(nonExistentUserId) }
     }
   }
 
   // ==================== GET FOLLOWING LIST TESTS ====================
 
   @Test
-  fun getFollowing_returnsEmptyListWhenNotFollowingAnyone() = runTest {
+  fun getFollowingIds_returnsEmptyListWhenNotFollowingAnyone() = runTest {
     val userAId = setupUserWithProfile(USER_A_EMAIL, USER_A_PASSWORD, USER_A_NAME, USER_A_LASTNAME)
 
-    val following = repository.getFollowing(userAId)
-    assertTrue("Following list should be empty initially", following.isEmpty())
+    val followingIds = repository.getFollowingIds(userAId)
+    assertTrue("Following IDs list should be empty initially", followingIds.isEmpty())
   }
 
   @Test
-  fun getFollowing_returnsCorrectFollowingProfile() = runTest {
+  fun getFollowingIds_returnsCorrectFollowingId() = runTest {
     val (userAId, userBId) = setupTwoUsers()
 
     repository.followUser(userAId, userBId)
     delay(FIRESTORE_WRITE_DELAY_MS)
 
-    val following = repository.getFollowing(userAId)
+    val followingIds = repository.getFollowingIds(userAId)
 
-    assertEquals("Should be following exactly one user", ONE_FOLLOWER, following.size)
-    assertEquals("Following ID should match UserB", userBId, following.first().id)
-    assertEquals("Following name should match", USER_B_NAME, following.first().name)
-    assertEquals("Following lastName should match", USER_B_LASTNAME, following.first().lastName)
+    assertEquals("Should be following exactly one user", ONE_FOLLOWER, followingIds.size)
+    assertEquals("Following ID should match UserB", userBId, followingIds.first())
   }
 
   @Test
-  fun getFollowing_returnsMultipleFollowing() = runTest {
+  fun getFollowingIds_returnsMultipleFollowing() = runTest {
     val (userAId, userBId, userCId) = setupThreeUsers()
 
     // UserA follows UserB
@@ -721,45 +689,19 @@ class UserProfileFollowRepositoryTest : BaseEmulatorTest() {
     repository.followUser(userAId, userCId)
     delay(FIRESTORE_WRITE_DELAY_MS)
 
-    val following = repository.getFollowing(userAId)
+    val followingIds = repository.getFollowingIds(userAId)
 
-    assertEquals("Should be following exactly two users", TWO_FOLLOWERS, following.size)
-
-    val followingIds = following.map { it.id }
+    assertEquals("Should be following exactly two users", TWO_FOLLOWERS, followingIds.size)
     assertTrue("Should be following UserB", followingIds.contains(userBId))
     assertTrue("Should be following UserC", followingIds.contains(userCId))
   }
 
   @Test
-  fun getFollowing_respectsLimitParameter() = runTest {
-    val userAId = setupUserWithProfile(USER_A_EMAIL, USER_A_PASSWORD, USER_A_NAME, USER_A_LASTNAME)
-    val userBId = setupUserWithProfile(USER_B_EMAIL, USER_B_PASSWORD, USER_B_NAME, USER_B_LASTNAME)
-    val userCId = setupUserWithProfile(USER_C_EMAIL, USER_C_PASSWORD, USER_C_NAME, USER_C_LASTNAME)
-    val userDId = setupUserWithProfile(USER_D_EMAIL, USER_D_PASSWORD, USER_D_NAME, USER_D_LASTNAME)
-
-    // UserA follows all three users
-    signInUser(USER_A_EMAIL, USER_A_PASSWORD)
-    repository.followUser(userAId, userBId)
-    delay(FIRESTORE_WRITE_DELAY_MS)
-
-    repository.followUser(userAId, userCId)
-    delay(FIRESTORE_WRITE_DELAY_MS)
-
-    repository.followUser(userAId, userDId)
-    delay(FIRESTORE_WRITE_DELAY_MS)
-
-    // Request only 2 following
-    val following = repository.getFollowing(userAId, limit = 2)
-
-    assertEquals("Should respect limit of 2", 2, following.size)
-  }
-
-  @Test
-  fun getFollowing_throwsExceptionForNonExistentUser() = runTest {
+  fun getFollowingIds_throwsExceptionForNonExistentUser() = runTest {
     val nonExistentUserId = "non-existent-user-id-12345"
 
     assertThrows(NoSuchElementException::class.java) {
-      runBlocking { repository.getFollowing(nonExistentUserId) }
+      runBlocking { repository.getFollowingIds(nonExistentUserId) }
     }
   }
 
@@ -840,11 +782,11 @@ class UserProfileFollowRepositoryTest : BaseEmulatorTest() {
     delay(FIRESTORE_WRITE_DELAY_MS)
 
     // Verify UserC has no followers
-    val userCFollowers = repository.getFollowers(userCId)
-    assertTrue("UserC should have no followers", userCFollowers.isEmpty())
+    val userCFollowerIds = repository.getFollowerIds(userCId)
+    assertTrue("UserC should have no followers", userCFollowerIds.isEmpty())
 
     // Verify UserB has one follower
-    val userBFollowers = repository.getFollowers(userBId)
-    assertEquals("UserB should have one follower", ONE_FOLLOWER, userBFollowers.size)
+    val userBFollowerIds = repository.getFollowerIds(userBId)
+    assertEquals("UserB should have one follower", ONE_FOLLOWER, userBFollowerIds.size)
   }
 }

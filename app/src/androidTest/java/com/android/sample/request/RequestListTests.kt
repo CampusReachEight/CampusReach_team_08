@@ -208,11 +208,11 @@ class RequestListTests : BaseEmulatorTest() {
       return 0
     }
 
-    override suspend fun getFollowers(userId: String, limit: Int): List<UserProfile> {
+    override suspend fun getFollowerIds(userId: String): List<String> {
       return emptyList()
     }
 
-    override suspend fun getFollowing(userId: String, limit: Int): List<UserProfile> {
+    override suspend fun getFollowingIds(userId: String): List<String> {
       return emptyList()
     }
   }

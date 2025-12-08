@@ -46,6 +46,12 @@ private const val KUDOS_BATCH_LOG_MSG = "awardKudosBatch: `public_profiles`/%s k
 private const val BATCH_OPERATION_ID = "batch_operation"
 private const val MSG_FAILED_RECORD_HELP = "Failed to record help for user: %s"
 
+private const val RETRIEVE_FROM_CACHE = "Following data retrieved from cache instead of server"
+
+private const val ONE_OR_BOTH_PROFILE = "One or both user profiles not found"
+
+private const val DATA_RETRIEVED_FROM_CACHE = "Data retrieved from cache instead of server for user"
+
 /**
  * Repository interface for managing user profiles.
  *
@@ -148,9 +154,7 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
         throw NoSuchElementException(String.format(MSG_USER_NOT_FOUND, userId))
       }
 
-      check(!publicSnapshot.metadata.isFromCache) {
-        "Data retrieved from cache instead of server for user $userId"
-      }
+      check(!publicSnapshot.metadata.isFromCache) { "$DATA_RETRIEVED_FROM_CACHE $userId" }
 
       try {
         val syncedProfile =
@@ -457,7 +461,7 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
       val targetUserDoc = publicCollectionRef.document(targetUserId).get(Source.SERVER).await()
 
       if (!currentUserDoc.exists() || !targetUserDoc.exists()) {
-        throw NoSuchElementException("One or both user profiles not found")
+        throw NoSuchElementException(ONE_OR_BOTH_PROFILE)
       }
 
       val batch = db.batch()
@@ -505,9 +509,7 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
       val currentUserDoc = publicCollectionRef.document(currentUserId).get(Source.SERVER).await()
       val targetUserDoc = publicCollectionRef.document(targetUserId).get(Source.SERVER).await()
 
-      require(currentUserDoc.exists() && targetUserDoc.exists()) {
-        "One or both user profiles not found"
-      }
+      require(currentUserDoc.exists() && targetUserDoc.exists()) { ONE_OR_BOTH_PROFILE }
 
       val batch = db.batch()
 
@@ -577,7 +579,7 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
     return (userDoc[FOLLOWING_COUNT_FIELD] as? Number)?.toInt() ?: 0
   }
 
-  override suspend fun getFollowers(userId: String, limit: Int): List<UserProfile> {
+  override suspend fun getFollowerIds(userId: String): List<String> {
     val userDoc = publicCollectionRef.document(userId).get(Source.SERVER).await()
     if (!userDoc.exists()) {
       throw NoSuchElementException(String.format(MSG_USER_NOT_FOUND, userId))
@@ -587,7 +589,6 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
         publicCollectionRef
             .document(userId)
             .collection(FOLLOWERS_SUBCOLLECTION)
-            .limit(limit.toLong())
             .get(Source.SERVER)
             .await()
 
@@ -595,21 +596,10 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
       "Followers data retrieved from cache instead of server"
     }
 
-    val followerIds: List<String> = followersSnapshot.documents.map { it.id }
-    val profiles: MutableList<UserProfile> = mutableListOf()
-
-    for (followerId in followerIds) {
-      try {
-        val followerDoc = publicCollectionRef.document(followerId).get(Source.SERVER).await()
-        followerDoc.data?.let { profiles.add(UserProfile.fromMap(it)) }
-      } catch (e: Exception) {
-        // Skip if user not found
-      }
-    }
-    return profiles
+    return followersSnapshot.documents.map { it.id }
   }
 
-  override suspend fun getFollowing(userId: String, limit: Int): List<UserProfile> {
+  override suspend fun getFollowingIds(userId: String): List<String> {
     val userDoc = publicCollectionRef.document(userId).get(Source.SERVER).await()
     if (!userDoc.exists()) {
       throw NoSuchElementException(String.format(MSG_USER_NOT_FOUND, userId))
@@ -619,7 +609,6 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
         publicCollectionRef
             .document(userId)
             .collection(FOLLOWING_SUBCOLLECTION)
-            .limit(limit.toLong())
             .get(Source.SERVER)
             .await()
 
@@ -627,17 +616,6 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
       "Following data retrieved from cache instead of server"
     }
 
-    val followingIds: List<String> = followingSnapshot.documents.map { it.id }
-    val profiles: MutableList<UserProfile> = mutableListOf()
-
-    for (followingId in followingIds) {
-      try {
-        val followingDoc = publicCollectionRef.document(followingId).get(Source.SERVER).await()
-        followingDoc.data?.let { profiles.add(UserProfile.fromMap(it)) }
-      } catch (e: Exception) {
-        // Skip if user not found
-      }
-    }
-    return profiles
+    return followingSnapshot.documents.map { it.id }
   }
 }
