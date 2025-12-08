@@ -6,7 +6,7 @@ import androidx.compose.runtime.Composable
 import com.android.sample.ui.theme.AppPalette
 import com.android.sample.ui.theme.appPalette
 
-object UiUtils {
+class UiUtils {
 
     /**
      * Truncates a given text to fit within a specified maximum length, optionally preserving a suffix
