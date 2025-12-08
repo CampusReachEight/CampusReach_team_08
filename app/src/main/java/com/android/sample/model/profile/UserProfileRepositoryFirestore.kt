@@ -6,6 +6,8 @@ import com.android.sample.ui.request_validation.HelpReceivedException
 import com.android.sample.ui.request_validation.KudosConstants
 import com.android.sample.ui.request_validation.KudosException
 import com.google.firebase.auth.ktx.auth
+import com.google.firebase.firestore.DocumentReference
+import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Source
@@ -84,67 +86,77 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
     return snapshot.documents.mapNotNull { doc -> doc.data?.let { UserProfile.fromMap(it) } }
   }
 
-  // Retrieves a user profile by ID
+  private suspend fun syncFieldIfNeeded(
+      publicSnapshot: DocumentSnapshot,
+      privateSnapshot: DocumentSnapshot,
+      fieldName: String,
+      updates: MutableMap<String, Any>
+  ): Boolean {
+    val publicValue = (publicSnapshot[fieldName] as? Number)?.toInt() ?: 0
+    val privateValue = (privateSnapshot[fieldName] as? Number)?.toInt() ?: 0
+
+    return if (publicValue != privateValue) {
+      updates[fieldName] = publicValue
+      true
+    } else {
+      false
+    }
+  }
+
+  private suspend fun syncPrivateProfile(
+      privateDocRef: DocumentReference,
+      publicSnapshot: DocumentSnapshot,
+      privateSnapshot: DocumentSnapshot,
+      userId: String
+  ): UserProfile? {
+    val updates = mutableMapOf<String, Any>()
+    var needsUpdate = false
+
+    needsUpdate =
+        syncFieldIfNeeded(publicSnapshot, privateSnapshot, KUDOS_FIELD, updates) || needsUpdate
+    needsUpdate =
+        syncFieldIfNeeded(publicSnapshot, privateSnapshot, FOLLOWER_COUNT_FIELD, updates) ||
+            needsUpdate
+    needsUpdate =
+        syncFieldIfNeeded(publicSnapshot, privateSnapshot, FOLLOWING_COUNT_FIELD, updates) ||
+            needsUpdate
+
+    return if (needsUpdate) {
+      privateDocRef.update(updates).await()
+      val updatedPrivateSnapshot = privateDocRef.get().await()
+      updatedPrivateSnapshot.data?.let { UserProfile.fromMap(it) }
+          ?: throw NoSuchElementException(String.format(MSG_USER_NOT_FOUND_AFTER_SYNC, userId))
+    } else {
+      null
+    }
+  }
+
   override suspend fun getUserProfile(userId: String): UserProfile {
     val currentUserId = Firebase.auth.currentUser?.uid
 
-    // If request the current user's profile, fetch from private collection
     if (userId == currentUserId) {
       val privateDocRef = privateCollectionRef.document(userId)
       val privateSnapshot = privateDocRef.get().await()
+
       if (!privateSnapshot.exists()) {
         throw NoSuchElementException(String.format(MSG_USER_NOT_FOUND, userId))
       }
 
       val publicSnapshot = publicCollectionRef.document(userId).get().await()
+
       if (!publicSnapshot.exists()) {
         throw NoSuchElementException(String.format(MSG_USER_NOT_FOUND, userId))
       }
-      if (publicSnapshot.metadata.isFromCache) {
-        throw IllegalStateException("Data retrieved from cache instead of server for user $userId")
+
+      check(!publicSnapshot.metadata.isFromCache) {
+        "Data retrieved from cache instead of server for user $userId"
       }
 
       try {
-        if (publicSnapshot.exists()) {
-          var needsUpdate = false
-          val updates = mutableMapOf<String, Any>()
-
-          // Sync kudos
-          val publicKudos = (publicSnapshot[KUDOS_FIELD] as? Number)?.toInt() ?: 0
-          val privateKudos = (privateSnapshot[KUDOS_FIELD] as? Number)?.toInt() ?: 0
-          if (publicKudos != privateKudos) {
-            updates[KUDOS_FIELD] = publicKudos
-            needsUpdate = true
-          }
-
-          // Sync followerCount
-          val publicFollowerCount = (publicSnapshot[FOLLOWER_COUNT_FIELD] as? Number)?.toInt() ?: 0
-          val privateFollowerCount =
-              (privateSnapshot[FOLLOWER_COUNT_FIELD] as? Number)?.toInt() ?: 0
-          if (publicFollowerCount != privateFollowerCount) {
-            updates[FOLLOWER_COUNT_FIELD] = publicFollowerCount
-            needsUpdate = true
-          }
-
-          // Sync followingCount
-          val publicFollowingCount =
-              (publicSnapshot[FOLLOWING_COUNT_FIELD] as? Number)?.toInt() ?: 0
-          val privateFollowingCount =
-              (privateSnapshot[FOLLOWING_COUNT_FIELD] as? Number)?.toInt() ?: 0
-          if (publicFollowingCount != privateFollowingCount) {
-            updates[FOLLOWING_COUNT_FIELD] = publicFollowingCount
-            needsUpdate = true
-          }
-
-          // Apply all updates at once if needed
-          if (needsUpdate) {
-            privateDocRef.update(updates).await()
-            // Re-fetch private snapshot to return the latest data
-            val updatedPrivateSnapshot = privateDocRef.get().await()
-            return updatedPrivateSnapshot.data?.let { UserProfile.fromMap(it) }
-                ?: throw NoSuchElementException(
-                    String.format(MSG_USER_NOT_FOUND_AFTER_SYNC, userId))
-          }
+        val syncedProfile =
+            syncPrivateProfile(privateDocRef, publicSnapshot, privateSnapshot, userId)
+        if (syncedProfile != null) {
+          return syncedProfile
         }
       } catch (e: Exception) {
         Log.e(LOG_TAG, String.format(MSG_SYNC_KUDOS, userId, e.message))
@@ -154,7 +166,6 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
           ?: throw NoSuchElementException(String.format(MSG_USER_NOT_FOUND, userId))
     }
 
-    // For other users, return the public profile
     val publicDoc = publicCollectionRef.document(userId).get().await()
     return publicDoc.data?.let { UserProfile.fromMap(it) }
         ?: throw NoSuchElementException(String.format(MSG_USER_NOT_FOUND, userId))
@@ -436,19 +447,12 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
   }
 
   override suspend fun followUser(currentUserId: String, targetUserId: String) {
-    // Validation
-    if (currentUserId == targetUserId) {
-      throw IllegalArgumentException(MSG_CANNOT_FOLLOW_SELF)
-    }
+    require(currentUserId != targetUserId) { MSG_CANNOT_FOLLOW_SELF }
 
     try {
-      // Check if already following
       val alreadyFollowing = isFollowing(currentUserId, targetUserId)
-      if (alreadyFollowing) {
-        throw IllegalStateException(String.format(MSG_ALREADY_FOLLOWING, targetUserId))
-      }
+      check(!alreadyFollowing) { String.format(MSG_ALREADY_FOLLOWING, targetUserId) }
 
-      // Verify both users exist
       val currentUserDoc = publicCollectionRef.document(currentUserId).get(Source.SERVER).await()
       val targetUserDoc = publicCollectionRef.document(targetUserId).get(Source.SERVER).await()
 
@@ -456,10 +460,8 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
         throw NoSuchElementException("One or both user profiles not found")
       }
 
-      // Use a batch write for atomicity
       val batch = db.batch()
 
-      // 1. Add to target user's followers subcollection
       val followerDocRef =
           publicCollectionRef
               .document(targetUserId)
@@ -467,7 +469,6 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
               .document(currentUserId)
       batch.set(followerDocRef, mapOf("timestamp" to FieldValue.serverTimestamp()))
 
-      // 2. Add to current user's following subcollection
       val followingDocRef =
           publicCollectionRef
               .document(currentUserId)
@@ -475,17 +476,13 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
               .document(targetUserId)
       batch.set(followingDocRef, mapOf("timestamp" to FieldValue.serverTimestamp()))
 
-      // 3. Increment target user's follower count (PUBLIC ONLY)
       batch.update(
           publicCollectionRef.document(targetUserId), FOLLOWER_COUNT_FIELD, FieldValue.increment(1))
-
-      // 4. Increment current user's following count (PUBLIC ONLY)
       batch.update(
           publicCollectionRef.document(currentUserId),
           FOLLOWING_COUNT_FIELD,
           FieldValue.increment(1))
 
-      // Commit all changes atomically
       batch.commit().await()
     } catch (e: IllegalArgumentException) {
       throw e
@@ -499,30 +496,21 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
   }
 
   override suspend fun unfollowUser(currentUserId: String, targetUserId: String) {
-    // Validation
-    if (currentUserId == targetUserId) {
-      throw IllegalArgumentException(MSG_CANNOT_FOLLOW_SELF)
-    }
+    require(currentUserId != targetUserId) { MSG_CANNOT_FOLLOW_SELF }
 
     try {
-      // Check if currently following
       val currentlyFollowing = isFollowing(currentUserId, targetUserId)
-      if (!currentlyFollowing) {
-        throw IllegalStateException(String.format(MSG_NOT_FOLLOWING, targetUserId))
-      }
+      check(currentlyFollowing) { String.format(MSG_NOT_FOLLOWING, targetUserId) }
 
-      // Verify both users exist
       val currentUserDoc = publicCollectionRef.document(currentUserId).get(Source.SERVER).await()
       val targetUserDoc = publicCollectionRef.document(targetUserId).get(Source.SERVER).await()
 
-      if (!currentUserDoc.exists() || !targetUserDoc.exists()) {
-        throw NoSuchElementException("One or both user profiles not found")
+      require(currentUserDoc.exists() && targetUserDoc.exists()) {
+        "One or both user profiles not found"
       }
 
-      // Use a batch write for atomicity
       val batch = db.batch()
 
-      // 1. Remove from target user's followers subcollection
       val followerDocRef =
           publicCollectionRef
               .document(targetUserId)
@@ -530,7 +518,6 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
               .document(currentUserId)
       batch.delete(followerDocRef)
 
-      // 2. Remove from current user's following subcollection
       val followingDocRef =
           publicCollectionRef
               .document(currentUserId)
@@ -538,19 +525,15 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
               .document(targetUserId)
       batch.delete(followingDocRef)
 
-      // 3. Decrement target user's follower count (PUBLIC ONLY)
       batch.update(
           publicCollectionRef.document(targetUserId),
           FOLLOWER_COUNT_FIELD,
           FieldValue.increment(-1))
-
-      // 4. Decrement current user's following count (PUBLIC ONLY)
       batch.update(
           publicCollectionRef.document(currentUserId),
           FOLLOWING_COUNT_FIELD,
           FieldValue.increment(-1))
 
-      // Commit all changes atomically
       batch.commit().await()
     } catch (e: IllegalArgumentException) {
       throw e
@@ -595,92 +578,66 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
   }
 
   override suspend fun getFollowers(userId: String, limit: Int): List<UserProfile> {
-    try {
-      // Verify user exists
-      val userDoc = publicCollectionRef.document(userId).get(Source.SERVER).await()
-      if (!userDoc.exists()) {
-        throw NoSuchElementException(String.format(MSG_USER_NOT_FOUND, userId))
-      }
-
-      // Get follower IDs from subcollection
-      val followersSnapshot =
-          publicCollectionRef
-              .document(userId)
-              .collection(FOLLOWERS_SUBCOLLECTION)
-              .limit(limit.toLong())
-              .get(Source.SERVER)
-              .await()
-
-      if (followersSnapshot.metadata.isFromCache) {
-        throw IllegalStateException("Followers data retrieved from cache instead of server")
-      }
-
-      // Get the follower user IDs
-      val followerIds: List<String> = followersSnapshot.documents.map { it.id }
-
-      // Fetch full UserProfile for each follower
-      val profiles: MutableList<UserProfile> = mutableListOf()
-      for (followerId in followerIds) {
-        try {
-          val followerDoc = publicCollectionRef.document(followerId).get(Source.SERVER).await()
-          val data = followerDoc.data
-          if (data != null) {
-            profiles.add(UserProfile.fromMap(data))
-          }
-        } catch (e: Exception) {
-          // Skip if user not found
-        }
-      }
-      return profiles
-    } catch (e: NoSuchElementException) {
-      throw e
-    } catch (e: Exception) {
-      return emptyList()
+    val userDoc = publicCollectionRef.document(userId).get(Source.SERVER).await()
+    if (!userDoc.exists()) {
+      throw NoSuchElementException(String.format(MSG_USER_NOT_FOUND, userId))
     }
+
+    val followersSnapshot =
+        publicCollectionRef
+            .document(userId)
+            .collection(FOLLOWERS_SUBCOLLECTION)
+            .limit(limit.toLong())
+            .get(Source.SERVER)
+            .await()
+
+    check(!followersSnapshot.metadata.isFromCache) {
+      "Followers data retrieved from cache instead of server"
+    }
+
+    val followerIds: List<String> = followersSnapshot.documents.map { it.id }
+    val profiles: MutableList<UserProfile> = mutableListOf()
+
+    for (followerId in followerIds) {
+      try {
+        val followerDoc = publicCollectionRef.document(followerId).get(Source.SERVER).await()
+        followerDoc.data?.let { profiles.add(UserProfile.fromMap(it)) }
+      } catch (e: Exception) {
+        // Skip if user not found
+      }
+    }
+    return profiles
   }
 
   override suspend fun getFollowing(userId: String, limit: Int): List<UserProfile> {
-    try {
-      // Verify user exists
-      val userDoc = publicCollectionRef.document(userId).get(Source.SERVER).await()
-      if (!userDoc.exists()) {
-        throw NoSuchElementException(String.format(MSG_USER_NOT_FOUND, userId))
-      }
-
-      // Get following IDs from subcollection
-      val followingSnapshot =
-          publicCollectionRef
-              .document(userId)
-              .collection(FOLLOWING_SUBCOLLECTION)
-              .limit(limit.toLong())
-              .get(Source.SERVER)
-              .await()
-
-      if (followingSnapshot.metadata.isFromCache) {
-        throw IllegalStateException("Following data retrieved from cache instead of server")
-      }
-
-      // Get the following user IDs
-      val followingIds: List<String> = followingSnapshot.documents.map { it.id }
-
-      // Fetch full UserProfile for each following
-      val profiles: MutableList<UserProfile> = mutableListOf()
-      for (followingId in followingIds) {
-        try {
-          val followingDoc = publicCollectionRef.document(followingId).get(Source.SERVER).await()
-          val data = followingDoc.data
-          if (data != null) {
-            profiles.add(UserProfile.fromMap(data))
-          }
-        } catch (e: Exception) {
-          // Skip if user not found
-        }
-      }
-      return profiles
-    } catch (e: NoSuchElementException) {
-      throw e
-    } catch (e: Exception) {
-      return emptyList()
+    val userDoc = publicCollectionRef.document(userId).get(Source.SERVER).await()
+    if (!userDoc.exists()) {
+      throw NoSuchElementException(String.format(MSG_USER_NOT_FOUND, userId))
     }
+
+    val followingSnapshot =
+        publicCollectionRef
+            .document(userId)
+            .collection(FOLLOWING_SUBCOLLECTION)
+            .limit(limit.toLong())
+            .get(Source.SERVER)
+            .await()
+
+    check(!followingSnapshot.metadata.isFromCache) {
+      "Following data retrieved from cache instead of server"
+    }
+
+    val followingIds: List<String> = followingSnapshot.documents.map { it.id }
+    val profiles: MutableList<UserProfile> = mutableListOf()
+
+    for (followingId in followingIds) {
+      try {
+        val followingDoc = publicCollectionRef.document(followingId).get(Source.SERVER).await()
+        followingDoc.data?.let { profiles.add(UserProfile.fromMap(it)) }
+      } catch (e: Exception) {
+        // Skip if user not found
+      }
+    }
+    return profiles
   }
 }
