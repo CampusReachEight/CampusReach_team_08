@@ -49,7 +49,7 @@ fun getTextFieldColors(palette: AppPalette = appPalette()): TextFieldColors {
         unfocusedTextColor = palette.text,
         cursorColor = palette.accent,
         focusedBorderColor = palette.accent,
-        unfocusedBorderColor = palette.primary.copy(alpha = 0.6f),
+        unfocusedBorderColor = palette.primary,
         focusedContainerColor = palette.surface,
         unfocusedContainerColor = palette.surface
     )
