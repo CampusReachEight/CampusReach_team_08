@@ -65,15 +65,12 @@ fun <T> EnumFilterButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-  OutlinedButton(onClick = onClick, modifier = modifier.testTag(facet.dropdownButtonTag)) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(EnumFilterUIDimens.RowSpacing),
-        verticalAlignment = Alignment.CenterVertically) {
-          val label = if (selectedCount > 0) "${facet.title} ($selectedCount)" else facet.title
-          Text(label)
-          Icon(Icons.Filled.ArrowDropDown, contentDescription = null)
-        }
-  }
+  EnumFilterButtonSimple(
+      title = facet.title,
+      selectedCount = selectedCount,
+      testTag = facet.dropdownButtonTag,
+      onClick = onClick,
+      modifier = modifier)
 }
 
 /**
@@ -99,63 +96,17 @@ fun <T> EnumFilterPanel(
     horizontalPadding: Dp = EnumFilterUIDimens.PaddingLarge,
     maxHeight: Dp = EnumFilterUIDimens.DropdownMaxHeight
 ) {
-  Column(
-      modifier =
-          modifier
-              .fillMaxWidth()
-              .padding(horizontal = horizontalPadding)
-              .padding(top = EnumFilterUIDimens.PaddingSmall)) {
-        Surface(
-            shape = MaterialTheme.shapes.medium,
-            tonalElevation = EnumFilterUIDimens.SurfaceTonalElevation,
-            shadowElevation = EnumFilterUIDimens.SurfaceShadowElevation,
-            modifier = Modifier.fillMaxWidth()) {
-              Column(modifier = Modifier.fillMaxWidth().padding(EnumFilterUIDimens.PaddingMedium)) {
-                var localQuery by rememberSaveable { mutableStateOf("") }
-
-                OutlinedTextField(
-                    value = localQuery,
-                    onValueChange = { localQuery = it },
-                    modifier = Modifier.fillMaxWidth().testTag(facet.searchBarTag),
-                    singleLine = true,
-                    placeholder = { Text("Search options") })
-
-                Spacer(modifier = Modifier.height(EnumFilterUIDimens.PaddingSmall))
-
-                val filtered =
-                    remember(localQuery, facet.values, counts) {
-                      facet.values
-                          .filter { facet.labelOf(it).contains(localQuery, ignoreCase = true) }
-                          .sortedByDescending { counts[it] ?: 0 }
-                    }
-
-                Box(modifier = Modifier.heightIn(max = maxHeight)) {
-                  Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
-                    filtered.forEach { v ->
-                      val isChecked = selected.contains(v)
-                      val count = counts[v] ?: 0
-                      Row(
-                          modifier =
-                              Modifier.fillMaxWidth()
-                                  .clickable { onToggle(v) }
-                                  .padding(
-                                      horizontal = EnumFilterUIDimens.FilterRowHorizontalPadding)
-                                  .height(EnumFilterUIDimens.FilterRowHeight)
-                                  .testTag(facet.rowTagOf(v)),
-                          horizontalArrangement = Arrangement.Start,
-                          verticalAlignment = Alignment.CenterVertically) {
-                            Checkbox(checked = isChecked, onCheckedChange = null)
-                            Spacer(modifier = Modifier.width(EnumFilterUIDimens.RowSpacing))
-                            Text(text = facet.labelOf(v))
-                            Spacer(modifier = Modifier.weight(1f))
-                            Text(text = count.toString())
-                          }
-                    }
-                  }
-                }
-              }
-            }
-      }
+  EnumFilterPanelSimple(
+      values = facet.values,
+      selected = selected,
+      counts = counts,
+      labelOf = { facet.labelOf(it) },
+      onToggle = onToggle,
+      dropdownSearchBarTestTag = facet.searchBarTag,
+      rowTestTagOf = { facet.rowTagOf(it) },
+      modifier = modifier,
+      horizontalPadding = horizontalPadding,
+      maxHeight = maxHeight)
 }
 
 /**

@@ -56,7 +56,7 @@ class LeaderboardViewModelTest {
                   listOf(profile("1", "Alice"))
             }
 
-        val vm = LeaderboardViewModel(profileRepository = repo, profileCache = null)
+        val vm = LeaderboardViewModel(profileRepository = repo, leaderboardCache = null)
 
         vm.loadProfiles()
         advanceUntilIdle()
@@ -79,7 +79,7 @@ class LeaderboardViewModelTest {
               }
             }
 
-        val vm = LeaderboardViewModel(profileRepository = repo, profileCache = null)
+        val vm = LeaderboardViewModel(profileRepository = repo, leaderboardCache = null)
 
         vm.loadProfiles()
         advanceUntilIdle()
@@ -101,7 +101,7 @@ class LeaderboardViewModelTest {
               }
             }
 
-        val vm = LeaderboardViewModel(profileRepository = repo, profileCache = null)
+        val vm = LeaderboardViewModel(profileRepository = repo, leaderboardCache = null)
 
         vm.loadProfiles()
         advanceUntilIdle()

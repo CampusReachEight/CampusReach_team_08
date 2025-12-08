@@ -467,7 +467,7 @@ class EndToEndTests : BaseEmulatorTest() {
 
   // can add a request, and then edit it
   @Test
-  @Ignore("Flaky test on CI")
+  @Ignore("Flaky test on the CI")
   fun addRequestAndCanEdit() {
 
     initialize(firstName, firstEmail)
@@ -564,7 +564,7 @@ class EndToEndTests : BaseEmulatorTest() {
 
   // check if you can log in, and then go to profile and disconnect
   @Test
-  @Ignore("Flaky test on CI")
+  @Ignore("Flaky test on the CI")
   fun canLogInAndThenDisconnect() {
 
     initialize(thirdName, thirdEmail)
@@ -647,8 +647,8 @@ class EndToEndTests : BaseEmulatorTest() {
    *
    * // Logout logOut() }
    */
-  @Test
   @Ignore("this is flaky on the CI")
+  @Test
   fun canCreateRequestGoToProfileViewMyRequestsEditAndLogout() {
     // 1. Sign in
     val testName = "78901"
