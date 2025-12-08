@@ -231,7 +231,6 @@ private fun ReadyContent(
     onToggleHelper: (String) -> Unit,
     onValidate: () -> Unit,
     modifier: Modifier = Modifier,
-    palette: AppPalette = appPalette()
 ) {
   Column(modifier = modifier.fillMaxSize().padding(ValidateRequestConstants.PADDING_SCREEN_DP.dp)) {
     // Header section
@@ -287,7 +286,7 @@ private fun ReadyContent(
                   .testTag(ValidateRequestConstants.TAG_VALIDATE_BUTTON),
           // Styling
           shape = RoundedCornerShape(ValidateRequestConstants.CORNER_RADIUS_MEDIUM_DP.dp),
-          colors = ButtonDefaults.buttonColors(containerColor = palette.accent)) {
+          colors = ButtonDefaults.buttonColors(containerColor = appPalette().accent)) {
             // Button content
             Icon(
                 imageVector = Icons.Default.CheckCircle,
