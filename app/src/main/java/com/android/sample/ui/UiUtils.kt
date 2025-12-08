@@ -45,12 +45,14 @@ class UiUtils {
 @Composable
 fun getTextFieldColors(palette: AppPalette = appPalette()): TextFieldColors {
     return OutlinedTextFieldDefaults.colors(
-        focusedTextColor = palette.text,
-        unfocusedTextColor = palette.text,
+        focusedTextColor = palette.onSurface,
+        unfocusedTextColor = palette.onSurface,
         cursorColor = palette.accent,
         focusedBorderColor = palette.accent,
-        unfocusedBorderColor = palette.primary,
+        unfocusedBorderColor = palette.onSurface,
         focusedContainerColor = palette.surface,
-        unfocusedContainerColor = palette.surface
+        unfocusedContainerColor = palette.surface,
+        unfocusedLabelColor = palette.onSurface,
+        focusedLabelColor = palette.accent
     )
 }
