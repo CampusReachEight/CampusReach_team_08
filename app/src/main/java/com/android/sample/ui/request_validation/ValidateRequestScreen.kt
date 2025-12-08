@@ -323,7 +323,7 @@ private fun EmptyHelpersContent(
             imageVector = Icons.Default.Info,
             contentDescription = null,
             modifier = Modifier.size(ValidateRequestConstants.LARGE_ICON_SIZE_DP.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            tint = palette.secondary)
 
         Spacer(modifier = Modifier.height(ValidateRequestConstants.SPACING_XLARGE_DP.dp))
 
@@ -353,7 +353,7 @@ private fun EmptyHelpersContent(
                     .height(ValidateRequestConstants.BUTTON_HEIGHT_DP.dp)
                     .testTag(ValidateRequestConstants.TAG_VALIDATE_BUTTON),
             shape = RoundedCornerShape(ValidateRequestConstants.CORNER_RADIUS_MEDIUM_DP.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = palette.accent)) {
+            colors = ButtonDefaults.buttonColors(containerColor = palette.secondary)) {
               Text(
                   text = ValidateRequestConstants.BUTTON_CLOSE,
                   style = MaterialTheme.typography.titleMedium)
@@ -383,7 +383,7 @@ private fun HelperCard(
       animateColorAsState(
           targetValue =
               if (isSelected) {
-                palette.accent
+                palette.secondary
               } else {
                 palette.surface
               },
@@ -397,7 +397,7 @@ private fun HelperCard(
           targetValue =
               // Selected state uses primaryContainer with alpha, unselected uses surface
               if (isSelected) {
-                palette.accent.copy(alpha = ValidateRequestConstants.ALPHA_SELECTED_BACKGROUND)
+                palette.secondary.copy(alpha = ValidateRequestConstants.ALPHA_SELECTED_BACKGROUND)
                 // Unselected state
               } else {
                 palette.surface
@@ -637,12 +637,12 @@ private fun ConfirmationDialog(
                         Text(
                             text = "${helper.name} ${helper.lastName}",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = palette.onAccent)
+                            color = palette.onSurface)
                         Text(
                             text =
                                 "(${ValidateRequestConstants.getKudosBadge(KudosConstants.KUDOS_PER_HELPER)})",
                             style = MaterialTheme.typography.bodySmall,
-                            color = palette.onAccent,
+                            color = palette.onSurface,
                             fontWeight = FontWeight.Bold)
                       }
                 }
@@ -675,6 +675,7 @@ private fun ConfirmationDialog(
                   fontWeight = FontWeight.Medium)
             }
       },
+      containerColor = palette.surface,
       confirmButton = {
         Button(
             onClick = onConfirm,
@@ -691,7 +692,7 @@ private fun ConfirmationDialog(
             modifier = Modifier.testTag(ValidateRequestConstants.TAG_CANCEL_BUTTON),
             colors =
                 ButtonDefaults.textButtonColors(
-                    contentColor = palette.onAccent, containerColor = palette.accent)) {
+                    contentColor = palette.accent, containerColor = palette.secondary)) {
               Text(ValidateRequestConstants.BUTTON_CANCEL)
             }
       },
