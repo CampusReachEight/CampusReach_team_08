@@ -28,9 +28,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.model.profile.UserProfile
+import com.android.sample.ui.profile.PROFILE_OFFLINE_TEXT
 import com.android.sample.ui.profile.ProfileDimens
 import com.android.sample.ui.profile.ProfilePicture
 import com.android.sample.ui.profile.ProfileState
@@ -95,12 +97,20 @@ fun PublicProfileScreen(
                     ErrorBanner(it)
                     Spacer(modifier = Modifier.height(ProfileDimens.Vertical))
                   }
+                  if (shownState.offlineMode) {
+                    Text(
+                        PROFILE_OFFLINE_TEXT,
+                        color = appPalette().error,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth())
+                  }
 
                   PublicProfileHeader(
                       profile = shownState.profile,
                       isFollowing = isFollowing,
                       onFollowToggle = { isFollowing = !isFollowing },
-                      modifier = Modifier.testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER))
+                      modifier = Modifier.testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER),
+                      uiState = shownState)
                   Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
                   ProfileStats(state = profileState)
                   Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
@@ -119,7 +129,8 @@ fun PublicProfileHeader(
     isFollowing: Boolean,
     onFollowToggle: () -> Unit,
     modifier: Modifier = Modifier,
-    palette: AppPalette = appPalette()
+    palette: AppPalette = appPalette(),
+    uiState: PublicProfileUiState
 ) {
   val accent = palette.accent
   val textColor = AppColors.WhiteColor
@@ -179,7 +190,9 @@ fun PublicProfileHeader(
                   modifier = Modifier.testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_EMAIL))
             }
             Spacer(modifier = Modifier.weight(1f))
-            FollowButton(isFollowing = isFollowing, onToggle = onFollowToggle)
+            if (!uiState.offlineMode) {
+              FollowButton(isFollowing = isFollowing, onToggle = onFollowToggle)
+            }
           }
         }
       }

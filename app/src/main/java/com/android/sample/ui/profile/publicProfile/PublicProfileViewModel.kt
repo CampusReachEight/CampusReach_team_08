@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.android.sample.model.profile.UserProfile
+import com.android.sample.model.profile.UserProfileCache
 import com.android.sample.model.profile.UserProfileRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -13,11 +14,14 @@ import kotlinx.coroutines.launch
 data class PublicProfileUiState(
     val isLoading: Boolean = false,
     val profile: UserProfile? = null,
-    val error: String? = null
+    val error: String? = null,
+    val offlineMode: Boolean = false
 )
 
-class PublicProfileViewModel(private val userProfileRepository: UserProfileRepository) :
-    ViewModel() {
+class PublicProfileViewModel(
+    private val userProfileRepository: UserProfileRepository,
+    val profileCache: UserProfileCache? = null
+) : ViewModel() {
 
   private val _uiState = MutableStateFlow(PublicProfileUiState())
   val uiState: StateFlow<PublicProfileUiState> = _uiState.asStateFlow()
@@ -35,11 +39,20 @@ class PublicProfileViewModel(private val userProfileRepository: UserProfileRepos
 
       try {
         val userProfile = userProfileRepository.getUserProfile(profileId)
-        _uiState.value = _uiState.value.copy(isLoading = false, profile = userProfile, error = null)
-      } catch (e: Exception) {
         _uiState.value =
             _uiState.value.copy(
-                isLoading = false, profile = null, error = "Failed to load profile: ${e.message}")
+                isLoading = false, profile = userProfile, error = null, offlineMode = false)
+      } catch (e: Exception) {
+        try {
+          val userProfile = profileCache!!.getProfileById(profileId)
+          _uiState.value =
+              _uiState.value.copy(
+                  isLoading = false, profile = userProfile, error = null, offlineMode = true)
+        } catch (_: Exception) {
+          _uiState.value =
+              _uiState.value.copy(
+                  isLoading = false, profile = null, error = "Failed to load profile: ${e.message}")
+        }
       }
     }
   }
@@ -57,12 +70,14 @@ class PublicProfileViewModel(private val userProfileRepository: UserProfileRepos
   }
 }
 
-class PublicProfileViewModelFactory(private val userProfileRepository: UserProfileRepository) :
-    ViewModelProvider.Factory {
+class PublicProfileViewModelFactory(
+    private val userProfileRepository: UserProfileRepository,
+    val profileCache: UserProfileCache? = null
+) : ViewModelProvider.Factory {
   @Suppress("UNCHECKED_CAST")
   override fun <T : ViewModel> create(modelClass: Class<T>): T {
     if (modelClass.isAssignableFrom(PublicProfileViewModel::class.java)) {
-      return PublicProfileViewModel(userProfileRepository) as T
+      return PublicProfileViewModel(userProfileRepository, profileCache = profileCache) as T
     }
     throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
   }
