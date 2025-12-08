@@ -10,6 +10,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -119,6 +121,8 @@ fun RequestListScreen(
 
   val state by requestListViewModel.state.collectAsState()
 
+  val pullToRefreshState = rememberPullToRefreshState()
+
   // Keep Lucene index in sync with loaded requests
   LaunchedEffect(state.requests) {
     if (state.requests.isNotEmpty()) {
@@ -169,50 +173,58 @@ fun RequestListScreen(
           ErrorDialog(message = msg, onDismiss = { requestListViewModel.clearError() })
         }
 
-        Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
-          // 1) Filters block (moved to RequestSearchFilter.kt)
-          FiltersSection(
-              searchFilterViewModel = searchFilterViewModel,
-              query = searchQuery,
-              isSearching = isSearching,
-              onQueryChange = { searchFilterViewModel.updateSearchQuery(it) },
-              onClearQuery = { searchFilterViewModel.clearSearch() })
+        PullToRefreshBox(
+            modifier = Modifier.fillMaxSize().padding(innerPadding),
+            isRefreshing = state.isLoading,
+            onRefresh = { requestListViewModel.refresh() },
+            state = pullToRefreshState) {
+              Column(modifier = Modifier.fillMaxSize()) {
+                // 1) Filters block (moved to RequestSearchFilter.kt)
+                FiltersSection(
+                    searchFilterViewModel = searchFilterViewModel,
+                    query = searchQuery,
+                    isSearching = isSearching,
+                    onQueryChange = { searchFilterViewModel.updateSearchQuery(it) },
+                    onClearQuery = { searchFilterViewModel.clearSearch() })
 
-          Spacer(modifier = Modifier.height(ConstantRequestList.PaddingLarge))
+                Spacer(modifier = Modifier.height(ConstantRequestList.PaddingLarge))
 
-          // Always show the sorted/filtered list from the filter ViewModel
-          val toShow =
-              displayed.filter {
-                it.status == com.android.sample.model.request.RequestStatus.OPEN ||
-                    it.status == com.android.sample.model.request.RequestStatus.IN_PROGRESS
-              }
+                // Always show the sorted/filtered list from the filter ViewModel
+                val toShow =
+                    displayed.filter {
+                      it.status == com.android.sample.model.request.RequestStatus.OPEN ||
+                          it.status == com.android.sample.model.request.RequestStatus.IN_PROGRESS
+                    }
 
-          if (state.isLoading) {
-            Box(
-                modifier = Modifier.fillMaxSize().testTag(RequestListTestTags.LOADING_INDICATOR),
-                contentAlignment = Alignment.Center) {
-                  CircularProgressIndicator()
+                if (state.isLoading) {
+                  Box(
+                      modifier =
+                          Modifier.fillMaxSize().testTag(RequestListTestTags.LOADING_INDICATOR),
+                      contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                      }
+                } else if (toShow.isEmpty()) {
+                  Text(
+                      text = if (showOnlyMyRequests) NO_REQUEST_YET else NO_REQUEST_NOW,
+                      modifier =
+                          Modifier.fillMaxSize()
+                              .wrapContentSize()
+                              .testTag(RequestListTestTags.EMPTY_LIST_MESSAGE),
+                      textAlign = TextAlign.Center)
+                } else {
+                  RequestList(
+                      viewModel = requestListViewModel,
+                      state = state.copy(requests = toShow),
+                      onRequestClick = {
+                        // Always go to view-only accept screen; owner-specific edit is inside
+                        // details
+                        navigationActions?.navigateTo(Screen.RequestAccept(it.requestId))
+                      },
+                      navigationActions = navigationActions,
+                      modifier = Modifier.fillMaxSize())
                 }
-          } else if (toShow.isEmpty()) {
-            Text(
-                text = if (showOnlyMyRequests) NO_REQUEST_YET else NO_REQUEST_NOW,
-                modifier =
-                    Modifier.fillMaxSize()
-                        .wrapContentSize()
-                        .testTag(RequestListTestTags.EMPTY_LIST_MESSAGE),
-                textAlign = TextAlign.Center)
-          } else {
-            RequestList(
-                viewModel = requestListViewModel,
-                state = state.copy(requests = toShow),
-                onRequestClick = {
-                  // Always go to view-only accept screen; owner-specific edit is inside details
-                  navigationActions?.navigateTo(Screen.RequestAccept(it.requestId))
-                },
-                navigationActions = navigationActions,
-                modifier = Modifier.fillMaxSize())
-          }
-        }
+              }
+            }
       }
 }
 

@@ -16,15 +16,13 @@ sealed class Screen(
 ) {
   object Login : Screen(route = "login/main", NavigationType.APP_ENTRY_POINT)
 
-  object Requests : Screen(route = "requests/main", NavigationType.APP_ENTRY_POINT)
+  object Requests : Screen(route = "requests/main", NavigationType.TAB)
 
-  object Events : Screen(route = "events/main", NavigationType.TAB)
+  object Leaderboard : Screen(route = "leaderboard/main", NavigationType.TAB)
 
   object Map : Screen(route = "map/main", NavigationType.TAB)
 
   object AddRequest : Screen(route = "requests/add")
-
-  object AddEvent : Screen(route = "events/add")
 
   object MyRequest : Screen(route = "profile/myRequest", NavigationType.SUB_SCREEN)
 
@@ -41,13 +39,6 @@ sealed class Screen(
     companion object {
       const val ARG_REQUEST_ID = REQUEST_ID
       const val route = "requests/edit/{$ARG_REQUEST_ID}"
-    }
-  }
-
-  data class EventDetails(val eventId: String) : Screen(route = "events/details/${eventId}") {
-    companion object {
-      const val ARG_EVENT_ID = "eventId"
-      const val route = "events/details/{$ARG_EVENT_ID}"
     }
   }
 
@@ -103,17 +94,20 @@ open class NavigationActions(private val navController: NavHostController) {
 
     when (screen.navigationType) {
       NavigationType.TAB -> {
-        // Clear stack and set Requests as the root
-        navController.navigate(Screen.Requests.route) {
-          popUpTo(0) { inclusive = true }
-          restoreState = false
-          launchSingleTop = true
-        }
-
-        // Navigate to the tab
-        navController.navigate(screen.route) {
-          launchSingleTop = true
-          restoreState = false
+        // Navigate to the tab (clearing back to Requests if not going to Requests)
+        if (screen.route != Screen.Requests.route) {
+          navController.navigate(screen.route) {
+            popUpTo(Screen.Requests.route) { inclusive = false }
+            launchSingleTop = true
+            restoreState = false
+          }
+        } else {
+          // Going to Requests tab - just clear everything
+          navController.navigate(Screen.Requests.route) {
+            popUpTo(0) { inclusive = true }
+            launchSingleTop = true
+            restoreState = false
+          }
         }
       }
       NavigationType.APP_ENTRY_POINT -> {

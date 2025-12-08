@@ -801,11 +801,6 @@ class FakeUserProfileRepository(initialProfiles: List<UserProfile> = emptyList()
 
   override suspend fun deleteUserProfile(userId: String) {}
 
-  override suspend fun searchUserProfiles(query: String, limit: Int): List<UserProfile> =
-      getAllUserProfiles()
-          .filter { it.name.contains(query, true) || it.lastName.contains(query, true) }
-          .take(limit)
-
   override suspend fun awardKudos(userId: String, amount: Int) {
     // Validation
     if (amount <= 0) throw KudosException.InvalidAmount(amount)

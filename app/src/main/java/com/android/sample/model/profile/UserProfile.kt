@@ -59,6 +59,21 @@ data class UserProfile(
   val nameLowercase = name.lowercase()
   val lastNameLowercase = lastName.lowercase()
 
+  /**
+   * Build a searchable text representation of this profile.
+   *
+   * Unlike [Request.toSearchText], this focuses only on the user's name since that's what users
+   * typically search for in a leaderboard context. Section filtering is handled via facets, not
+   * full-text search.
+   *
+   * @return A string containing both first and last name, suitable for full-text indexing
+   */
+  fun toSearchText(): String = buildString {
+    append(name.trim())
+    append(' ')
+    append(lastName.trim())
+  }
+
   companion object {
     // Allows for deserialization from Firestore document data
     fun fromMap(data: Map<String, Any?>): UserProfile {

@@ -42,7 +42,10 @@ class ValidateRequestNavigationTest : BaseEmulatorTest() {
     composeTestRule.setContent {
       navController = rememberNavController()
       navigationActions = NavigationActions(navController)
-      NavigationScreen(navController = navController, navigationActions = navigationActions)
+      NavigationScreen(
+          navController = navController,
+          navigationActions = navigationActions,
+          isSignedInOverride = true)
     }
 
     composeTestRule.waitForIdle()

@@ -47,15 +47,37 @@ interface UserProfileRepository {
    */
   suspend fun deleteUserProfile(userId: String)
 
-  /**
-   * Searches public user profiles by name (first/last). Uses Firestore queries to minimize data
-   * transfer.
-   *
-   * @param query Search query (minimum 2 characters)
-   * @param limit Maximum number of results (default 20)
-   * @return List of matching user profiles (without loading photos to save bandwidth)
-   */
-  suspend fun searchUserProfiles(query: String, limit: Int = 20): List<UserProfile>
+  // ============================================================================================
+  // DEPRECATED: searchUserProfiles
+  // ============================================================================================
+  // This method is commented out in favor of local Lucene-based search via
+  // LuceneProfileSearchEngine.
+  //
+  // Rationale:
+  // 1. Server-side Firestore prefix queries (nameLowercase >= query, < query+\uf8ff) cannot be
+  //    combined with client-side range/facet filters without the "limit mismatch" problem:
+  //    - If we request 20 profiles from server, then apply kudos range [100, 500] + section filter,
+  //      we may end up with only 2 results — incomplete data for the user.
+  //    - Over-fetching (requesting 200 to filter to 20) wastes bandwidth and is unpredictable.
+  //
+  // 2. Local Lucene approach (same as LuceneRequestSearchEngine for Requests):
+  //    - Load all profiles once via getAllUserProfiles()
+  //    - Index locally with Lucene on name, lastName, section
+  //    - All filtering (search + section facet + kudos/help range) happens client-side in one pass
+  //    - Provides instant search latency and full offline support
+  //
+  // See: LuceneProfileSearchEngine.kt for the replacement implementation.
+  // ============================================================================================
+  //
+  // /**
+  //  * Searches public user profiles by name (first/last). Uses Firestore queries to minimize data
+  //  * transfer.
+  //  *
+  //  * @param query Search query (minimum 2 characters)
+  //  * @param limit Maximum number of results (default 20)
+  //  * @return List of matching user profiles (without loading photos to save bandwidth)
+  //  */
+  // suspend fun searchUserProfiles(query: String, limit: Int = 20): List<UserProfile>
 
   /**
    * Awards kudos to a user by incrementing their kudos count.

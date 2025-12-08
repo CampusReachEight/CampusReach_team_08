@@ -31,6 +31,7 @@ import com.android.sample.model.request.RequestRepositoryFirestore
 import com.android.sample.ui.authentication.SignInScreen
 import com.android.sample.ui.authentication.SignInViewModel
 import com.android.sample.ui.authentication.SignInViewModelFactory
+import com.android.sample.ui.leaderboard.LeaderboardScreen
 import com.android.sample.ui.map.MapScreen
 import com.android.sample.ui.map.MapViewModel
 import com.android.sample.ui.map.MapViewModelFactory
@@ -56,6 +57,8 @@ import com.android.sample.ui.request_validation.ValidateRequestViewModelFactory
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.firestore
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import okhttp3.OkHttpClient
 
 @SuppressLint("ViewModelConstructorInComposable")
@@ -64,7 +67,9 @@ fun NavigationScreen(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
     navigationActions: NavigationActions = NavigationActions(navController),
-    credentialManager: CredentialManager = CredentialManager.create(LocalContext.current)
+    credentialManager: CredentialManager = CredentialManager.create(LocalContext.current),
+    dispatcher: CoroutineDispatcher = Dispatchers.IO,
+    isSignedInOverride: Boolean? = null
 ) {
   val context = LocalContext.current
 
@@ -73,12 +78,13 @@ fun NavigationScreen(
   val profileCache = UserProfileCache(context)
 
   val user = FirebaseAuth.getInstance().currentUser
-  var isSignedIn by rememberSaveable { mutableStateOf(user != null) }
+  var isSignedIn by rememberSaveable { mutableStateOf(isSignedInOverride ?: (user != null)) }
   val startDestination = if (!isSignedIn) "login" else "requests"
 
   // repositories
   val requestRepository = RequestRepositoryFirestore(Firebase.firestore)
-  val locationRepository = NominatimLocationRepository(client = OkHttpClient())
+  val locationRepository =
+      NominatimLocationRepository(client = OkHttpClient(), dispatcher = dispatcher)
   val fusedLocationProvider = FusedLocationProvider(LocalContext.current)
   val userProfileRepository = UserProfileRepositoryFirestore(Firebase.firestore)
 
@@ -98,7 +104,8 @@ fun NavigationScreen(
   val requestListViewModel: RequestListViewModel =
       viewModel(
           factory =
-              RequestListViewModelFactory(showOnlyMyRequests = false, requestCache = requestCache))
+              RequestListViewModelFactory(
+                  showOnlyMyRequests = false, requestCache = requestCache, dispatcher = dispatcher))
   val editRequestViewModel: EditRequestViewModel =
       viewModel(
           factory =
@@ -191,27 +198,9 @@ fun NavigationScreen(
       }
     }
 
-    navigation(startDestination = Screen.Events.route, route = "events") {
-      composable(Screen.Events.route) {
-        PlaceHolderScreen(
-            text = "Events Screen",
-            modifier = Modifier.testTag(NavigationTestTags.EVENTS_SCREEN),
-            withBottomBar = true,
-            navigationActions = navigationActions,
-            defaultTab = NavigationTab.Events)
-      }
-      composable(Screen.AddEvent.route) {
-        PlaceHolderScreen(
-            text = "Add Event Screen",
-            modifier = Modifier.testTag(NavigationTestTags.ADD_EVENT_SCREEN),
-            withBottomBar = false)
-      }
-      composable(Screen.EventDetails.route) { navBackStackEntry ->
-        val eventId = navBackStackEntry.arguments?.getString(Screen.EventDetails.ARG_EVENT_ID)
-        PlaceHolderScreen(
-            text = "Edit Event Screen : $eventId",
-            modifier = Modifier.testTag(NavigationTestTags.EDIT_EVENT_SCREEN),
-            withBottomBar = false)
+    navigation(startDestination = Screen.Leaderboard.route, route = "leaderboard") {
+      composable(Screen.Leaderboard.route) {
+        LeaderboardScreen(navigationActions = navigationActions)
       }
     }
 
