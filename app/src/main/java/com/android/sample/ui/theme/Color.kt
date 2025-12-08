@@ -14,6 +14,9 @@ object AppColors {
   val BackgroundColor = PrimaryColor
   val SurfaceColor = WhiteColor
   val ErrorColor = Color(0xFFB22222)
+  val ErrorContainer = Color(0xFFFFDAD6)
+  val OnErrorContainer = ErrorColor
+
 
   // Dark theme palette
   val PrimaryDark = Color(0xFF2B3650)
@@ -22,6 +25,8 @@ object AppColors {
   val BackgroundDark = Color(0xFF121216)
   val SurfaceDark = Color(0xFF1E1B1E)
   val ErrorDark = Color(0xFFFF6B6B)
+  val ErrorContainerDark = Color(0xFFFF8B8B)
+  val ErrorOnContainerDark = ErrorDark
 }
 
 // Legacy/compatibility aliases

@@ -34,12 +34,13 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.android.sample.ui.getTextFieldColors
 import com.android.sample.ui.profile.ProfileTestTags
 import com.android.sample.ui.profile.UserSections
 import com.android.sample.ui.theme.AppPalette
 import com.android.sample.ui.theme.UiDimens
 import com.android.sample.ui.theme.appPalette
-import kotlin.times
+
 
 @Composable
 fun LogoutDialog(visible: Boolean, onConfirm: () -> Unit, onDismiss: () -> Unit) {
@@ -155,15 +156,8 @@ fun ProfileOutlinedTextField(
       label = { Text(label, color = palette.text) },
       singleLine = singleLine,
       modifier = modifier,
-      colors =
-          OutlinedTextFieldDefaults.colors(
-              focusedTextColor = palette.text,
-              unfocusedTextColor = palette.text,
-              cursorColor = palette.accent,
-              focusedBorderColor = palette.accent,
-              unfocusedBorderColor = palette.primary.copy(alpha = 0.6f),
-              focusedContainerColor = palette.surface,
-              unfocusedContainerColor = palette.surface))
+      colors = getTextFieldColors(palette)
+  )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

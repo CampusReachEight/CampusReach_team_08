@@ -27,8 +27,11 @@ import com.android.sample.model.map.FusedLocationProvider
 import com.android.sample.model.map.NominatimLocationRepository
 import com.android.sample.model.request.RequestType
 import com.android.sample.model.request.Tags
+import com.android.sample.ui.getTextFieldColors
 import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.request.LocationSearchField
+import com.android.sample.ui.theme.AppPalette
+import com.android.sample.ui.theme.appPalette
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import java.text.SimpleDateFormat
@@ -294,17 +297,21 @@ fun EditRequestContent(
 }
 
 @Composable
-private fun ErrorMessageCard(errorMessage: String?, onClearError: () -> Unit) {
+private fun ErrorMessageCard(
+    errorMessage: String?,
+    onClearError: () -> Unit,
+    palette: AppPalette = appPalette()
+) {
   errorMessage?.let { error ->
     Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+        colors = CardDefaults.cardColors(containerColor = palette.errorContainer),
         modifier = Modifier.fillMaxWidth()) {
           Row(
               modifier = Modifier.fillMaxWidth().padding(CARD_CONTENT_PADDING),
               horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(
                     text = error,
-                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    color = palette.onErrorContainer,
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.weight(1f))
                 TextButton(onClick = onClearError) { Text(stringResource(R.string.dismiss_button)) }
@@ -314,11 +321,16 @@ private fun ErrorMessageCard(errorMessage: String?, onClearError: () -> Unit) {
 }
 
 @Composable
-private fun SuccessMessageCard(showSuccess: Boolean, isEditMode: Boolean, onDismiss: () -> Unit) {
+private fun SuccessMessageCard(
+    showSuccess: Boolean,
+    isEditMode: Boolean,
+    onDismiss: () -> Unit,
+    palette: AppPalette = appPalette()
+) {
   if (showSuccess) {
     Card(
         colors =
-            CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+            CardDefaults.cardColors(containerColor = palette.primary),
         modifier = Modifier.fillMaxWidth()) {
           Row(
               modifier = Modifier.fillMaxWidth().padding(CARD_CONTENT_PADDING),
@@ -328,7 +340,7 @@ private fun SuccessMessageCard(showSuccess: Boolean, isEditMode: Boolean, onDism
                         stringResource(
                             if (isEditMode) R.string.success_message_edit
                             else R.string.success_message_create),
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    color = palette.onPrimary,
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.weight(1f))
                 TextButton(onClick = onDismiss) { Text(stringResource(R.string.dismiss_button)) }
@@ -342,7 +354,8 @@ private fun TitleField(
     title: String,
     showError: Boolean,
     isLoading: Boolean,
-    onTitleChange: (String) -> Unit
+    onTitleChange: (String) -> Unit,
+    palette: AppPalette = appPalette()
 ) {
   OutlinedTextField(
       value = title,
@@ -354,12 +367,14 @@ private fun TitleField(
         if (showError) {
           Text(
               text = stringResource(R.string.title_error_empty),
-              color = MaterialTheme.colorScheme.error,
+              color = appPalette().error,
               modifier = Modifier.testTag(EditRequestScreenTestTags.ERROR_MESSAGE))
         }
       },
       modifier = Modifier.fillMaxWidth().testTag(EditRequestScreenTestTags.INPUT_TITLE),
-      enabled = !isLoading)
+      enabled = !isLoading,
+      colors = getTextFieldColors()
+  )
 }
 
 @Composable
@@ -379,13 +394,15 @@ private fun DescriptionField(
         if (showError) {
           Text(
               text = stringResource(R.string.description_error_empty),
-              color = MaterialTheme.colorScheme.error,
+              color = appPalette().error,
               modifier = Modifier.testTag(EditRequestScreenTestTags.ERROR_MESSAGE))
         }
       },
       minLines = 3,
       modifier = Modifier.fillMaxWidth().testTag(EditRequestScreenTestTags.INPUT_DESCRIPTION),
-      enabled = !isLoading)
+      enabled = !isLoading,
+      colors = getTextFieldColors()
+  )
 }
 
 @Composable
@@ -401,7 +418,7 @@ private fun RequestTypeSection(
   if (showError) {
     Text(
         text = stringResource(R.string.request_types_error_empty),
-        color = MaterialTheme.colorScheme.error,
+        color = appPalette().error,
         style = MaterialTheme.typography.bodySmall,
         modifier = Modifier.testTag(EditRequestScreenTestTags.ERROR_MESSAGE))
   }
@@ -467,7 +484,9 @@ private fun StartDateField(dateString: String, isLoading: Boolean, onClick: () -
         placeholder = { Text(DateFormats.DATE_TIME_FORMAT) },
         readOnly = true,
         modifier = Modifier.fillMaxWidth().testTag(EditRequestScreenTestTags.INPUT_START_DATE),
-        enabled = !isLoading)
+        enabled = !isLoading,
+        colors = getTextFieldColors()
+    )
 
     Box(modifier = Modifier.matchParentSize().clickable(enabled = !isLoading) { onClick() })
   }
@@ -500,12 +519,14 @@ private fun ExpirationDateField(
           if (showDateOrderError) {
             Text(
                 text = stringResource(R.string.date_order_error),
-                color = MaterialTheme.colorScheme.error,
+                color = appPalette().error,
                 modifier = Modifier.testTag(EditRequestScreenTestTags.ERROR_MESSAGE))
           }
         },
         modifier = Modifier.fillMaxWidth().testTag(EditRequestScreenTestTags.INPUT_EXPIRATION_DATE),
-        enabled = !isLoading)
+        enabled = !isLoading,
+        colors = getTextFieldColors()
+    )
 
     Box(modifier = Modifier.matchParentSize().clickable(enabled = !isLoading) { onClick() })
   }
@@ -526,7 +547,7 @@ private fun SaveButton(isEditMode: Boolean, isLoading: Boolean, onSave: () -> Un
         if (isLoading) {
           CircularProgressIndicator(
               modifier = Modifier.size(SAVE_BUTTON_PADDING),
-              color = MaterialTheme.colorScheme.onPrimary)
+              color = appPalette().accent)
         } else {
           Text(
               stringResource(

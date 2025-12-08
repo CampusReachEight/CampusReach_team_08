@@ -15,6 +15,8 @@ interface AppPalette {
   val background: Color
   val surface: Color
   val error: Color
+  val errorContainer: Color
+  val onErrorContainer: Color
 
   val onPrimary: Color
   val onBackground: Color
@@ -36,6 +38,8 @@ object LightPalette : AppPalette {
   override val background: Color = AppColors.BackgroundColor
   override val surface: Color = AppColors.SurfaceColor
   override val error: Color = AppColors.ErrorColor
+  override val errorContainer: Color = AppColors.ErrorContainer
+  override val onErrorContainer: Color = AppColors.OnErrorContainer
 
   override val onPrimary: Color = AppColors.BlackColor
   override val onBackground: Color = AppColors.BlackColor
@@ -79,6 +83,8 @@ object DarkPalette : AppPalette {
   override val background: Color = AppColors.BackgroundDark
   override val surface: Color = AppColors.SurfaceDark
   override val error: Color = AppColors.ErrorDark
+  override val errorContainer: Color = AppColors.ErrorContainerDark
+  override val onErrorContainer: Color = AppColors.ErrorOnContainerDark
 
   override val onPrimary: Color = AppColors.WhiteColor
   override val onBackground: Color = AppColors.WhiteColor
