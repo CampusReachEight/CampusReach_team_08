@@ -32,6 +32,8 @@ const val KUDOS_FIELD = "kudos"
 
 const val HELP_RECEIVED_FIELD = "helpReceived"
 
+private const val i = 0
+
 private const val ZERO = 0
 
 // Error / log message constants
@@ -46,11 +48,21 @@ private const val KUDOS_BATCH_LOG_MSG = "awardKudosBatch: `public_profiles`/%s k
 private const val BATCH_OPERATION_ID = "batch_operation"
 private const val MSG_FAILED_RECORD_HELP = "Failed to record help for user: %s"
 
-private const val RETRIEVE_FROM_CACHE = "Following data retrieved from cache instead of server"
+private const val FOLLOWING_DATA_RETRIEVED_FROM_CACHE_INSTEAD_OF_SERVER =
+    "Following data retrieved from cache instead of server"
+
+private const val RETRIEVE_FROM_CACHE = FOLLOWING_DATA_RETRIEVED_FROM_CACHE_INSTEAD_OF_SERVER
 
 private const val ONE_OR_BOTH_PROFILE = "One or both user profiles not found"
 
 private const val DATA_RETRIEVED_FROM_CACHE = "Data retrieved from cache instead of server for user"
+
+private const val FOLLOWERS_DATA_RETRIEVED_FROM_CACHE =
+    "Followers data retrieved from cache instead of server"
+
+private const val ONE = 1L
+
+private const val TIMESTAMP = "timestamp"
 
 /**
  * Repository interface for managing user profiles.
@@ -185,7 +197,7 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
     }
 
     // Verify we're online by doing a quick server read
-    val testSnapshot = publicCollectionRef.limit(1).get(Source.SERVER).await()
+    val testSnapshot = publicCollectionRef.limit(ONE).get(Source.SERVER).await()
     if (testSnapshot.metadata.isFromCache) {
       throw IllegalStateException("Cannot add user profile while offline")
     }
@@ -471,21 +483,23 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
               .document(targetUserId)
               .collection(FOLLOWERS_SUBCOLLECTION)
               .document(currentUserId)
-      batch.set(followerDocRef, mapOf("timestamp" to FieldValue.serverTimestamp()))
+      batch.set(followerDocRef, mapOf(TIMESTAMP to FieldValue.serverTimestamp()))
 
       val followingDocRef =
           publicCollectionRef
               .document(currentUserId)
               .collection(FOLLOWING_SUBCOLLECTION)
               .document(targetUserId)
-      batch.set(followingDocRef, mapOf("timestamp" to FieldValue.serverTimestamp()))
+      batch.set(followingDocRef, mapOf(TIMESTAMP to FieldValue.serverTimestamp()))
 
       batch.update(
-          publicCollectionRef.document(targetUserId), FOLLOWER_COUNT_FIELD, FieldValue.increment(1))
+          publicCollectionRef.document(targetUserId),
+          FOLLOWER_COUNT_FIELD,
+          FieldValue.increment(ONE))
       batch.update(
           publicCollectionRef.document(currentUserId),
           FOLLOWING_COUNT_FIELD,
-          FieldValue.increment(1))
+          FieldValue.increment(ONE))
 
       batch.commit().await()
     } catch (e: IllegalArgumentException) {
@@ -530,11 +544,11 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
       batch.update(
           publicCollectionRef.document(targetUserId),
           FOLLOWER_COUNT_FIELD,
-          FieldValue.increment(-1))
+          FieldValue.increment(-ONE))
       batch.update(
           publicCollectionRef.document(currentUserId),
           FOLLOWING_COUNT_FIELD,
-          FieldValue.increment(-1))
+          FieldValue.increment(-ONE))
 
       batch.commit().await()
     } catch (e: IllegalArgumentException) {
@@ -568,7 +582,7 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
     if (!userDoc.exists()) {
       throw NoSuchElementException(String.format(MSG_USER_NOT_FOUND, userId))
     }
-    return (userDoc[FOLLOWER_COUNT_FIELD] as? Number)?.toInt() ?: 0
+    return (userDoc[FOLLOWER_COUNT_FIELD] as? Number)?.toInt() ?: ZERO
   }
 
   override suspend fun getFollowingCount(userId: String): Int {
@@ -576,7 +590,7 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
     if (!userDoc.exists()) {
       throw NoSuchElementException(String.format(MSG_USER_NOT_FOUND, userId))
     }
-    return (userDoc[FOLLOWING_COUNT_FIELD] as? Number)?.toInt() ?: 0
+    return (userDoc[FOLLOWING_COUNT_FIELD] as? Number)?.toInt() ?: ZERO
   }
 
   override suspend fun getFollowerIds(userId: String): List<String> {
@@ -592,9 +606,7 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
             .get(Source.SERVER)
             .await()
 
-    check(!followersSnapshot.metadata.isFromCache) {
-      "Followers data retrieved from cache instead of server"
-    }
+    check(!followersSnapshot.metadata.isFromCache) { FOLLOWERS_DATA_RETRIEVED_FROM_CACHE }
 
     return followersSnapshot.documents.map { it.id }
   }
@@ -613,7 +625,7 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
             .await()
 
     check(!followingSnapshot.metadata.isFromCache) {
-      "Following data retrieved from cache instead of server"
+      FOLLOWING_DATA_RETRIEVED_FROM_CACHE_INSTEAD_OF_SERVER
     }
 
     return followingSnapshot.documents.map { it.id }
