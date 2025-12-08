@@ -1,6 +1,7 @@
 package com.android.sample.ui.leaderboard
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -10,12 +11,14 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -47,6 +50,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -56,12 +60,17 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.model.leaderboard.LeaderboardCache
 import com.android.sample.model.profile.UserProfile
+import com.android.sample.ui.leaderboard.LeaderboardAddOns.crown
+import com.android.sample.ui.leaderboard.LeaderboardAddOns.cutiePatootie
+import com.android.sample.ui.leaderboard.LeaderboardBadgeThemes.CutieColor
+import com.android.sample.ui.leaderboard.LeaderboardBadgeThemes.forRank
 import com.android.sample.ui.navigation.BottomNavigationMenu
 import com.android.sample.ui.navigation.NavigationActions
 import com.android.sample.ui.navigation.NavigationTab
 import com.android.sample.ui.navigation.Screen
 import com.android.sample.ui.navigation.TopNavigationBar
 import com.android.sample.ui.profile.ProfilePicture
+import com.android.sample.ui.profile.UserSections
 import com.android.sample.ui.theme.appPalette
 import com.android.sample.ui.utils.EnumFilterButton
 import com.android.sample.ui.utils.EnumFilterPanel
@@ -78,7 +87,7 @@ fun LeaderboardScreen(
     navigationActions: NavigationActions? = null,
 ) {
   val context = LocalContext.current
-  val vm =
+  val leaderboardViewModel =
       leaderboardViewModel
           ?: viewModel(
               factory =
@@ -86,11 +95,14 @@ fun LeaderboardScreen(
                     LeaderboardViewModelFactory(leaderboardCache = LeaderboardCache(context))
                   })
 
-  val state by vm.state.collectAsState()
+  val state by leaderboardViewModel.state.collectAsState()
+
+  // Updated to Material 3 PullToRefresh state
   val refreshState = rememberPullToRefreshState()
 
-  LaunchedEffect(Unit) { vm.loadProfiles() }
+  LaunchedEffect(Unit) { leaderboardViewModel.loadProfiles() }
 
+  // Keep Lucene index in sync with loaded profiles
   LaunchedEffect(state.profiles) {
     if (state.profiles.isNotEmpty()) searchFilterViewModel.initializeWithProfiles(state.profiles)
   }
@@ -113,12 +125,13 @@ fun LeaderboardScreen(
             navigationActions = navigationActions)
       }) { innerPadding ->
         state.errorMessage?.let { msg ->
-          ErrorDialog(message = msg, onDismiss = { vm.clearError() })
+          ErrorDialog(message = msg, onDismiss = { leaderboardViewModel.clearError() })
         }
 
+        // Updated: Using Material 3 PullToRefreshBox
         PullToRefreshBox(
             isRefreshing = state.isLoading,
-            onRefresh = { vm.refresh() },
+            onRefresh = { leaderboardViewModel.refresh() },
             state = refreshState,
             modifier = Modifier.fillMaxSize().padding(innerPadding)) {
               Column(modifier = Modifier.fillMaxSize()) {
@@ -162,7 +175,8 @@ fun LeaderboardScreen(
                   }
                   else -> {
                     LeaderboardList(
-                        profiles = displayedProfiles, profileRepository = vm.profileRepository)
+                        profiles = displayedProfiles,
+                        profileRepository = leaderboardViewModel.profileRepository)
                   }
                 }
               }
@@ -319,10 +333,12 @@ private fun LeaderboardList(
               .testTag(LeaderboardTestTags.LEADERBOARD_LIST),
       verticalArrangement = Arrangement.spacedBy(ConstantLeaderboard.ListItemSpacing)) {
         itemsIndexed(items = profiles, key = { _, item -> item.id }) { index, profile ->
-          LeaderboardCard(
-              position = index + ConstantLeaderboard.ListIndexOffset,
-              profile = profile,
-              profileRepository = profileRepository)
+          Box(modifier = Modifier.testTag(LeaderboardTestTags.LEADERBOARD_CARD)) {
+            LeaderboardCard(
+                position = index + ConstantLeaderboard.ListIndexOffset,
+                profile = profile,
+                profileRepository = profileRepository)
+          }
         }
       }
 }
@@ -333,11 +349,12 @@ private fun LeaderboardCard(
     profile: UserProfile,
     profileRepository: com.android.sample.model.profile.UserProfileRepository,
 ) {
+  val badgeTheme = forRank(position)
+  val addon = resolveAddon(position, profile.id)
+  val cardBorder = resolveCardBorder(badgeTheme, addon)
   Card(
       shape = RoundedCornerShape(ConstantLeaderboard.CardCornerRadius),
-      border =
-          BorderStroke(
-              ConstantLeaderboard.CardBorderWidth, MaterialTheme.colorScheme.outlineVariant),
+      border = cardBorder,
       colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
       modifier =
           Modifier.fillMaxWidth()
@@ -346,28 +363,21 @@ private fun LeaderboardCard(
         Row(
             modifier = Modifier.fillMaxSize().padding(ConstantLeaderboard.CardInnerPadding),
             verticalAlignment = Alignment.CenterVertically) {
-              // Rank number
-              Text(
-                  text = "#$position",
-                  style = MaterialTheme.typography.titleMedium,
-                  fontWeight = FontWeight.Bold,
-                  modifier = Modifier.width(40.dp))
+              Medal(position, badgeTheme)
 
               Spacer(modifier = Modifier.width(ConstantLeaderboard.RowSpacing))
 
-              // Profile picture
-              ProfilePicture(
-                  profileRepository = profileRepository,
-                  profileId = profile.id,
-                  modifier =
-                      Modifier.size(ConstantLeaderboard.ProfilePictureSize)
-                          .clip(RoundedCornerShape(ConstantLeaderboard.CardCornerRadius))
-                          .testTag(LeaderboardTestTags.CARD_PROFILE_PICTURE))
+              ProfilePictureWithAddon(
+                  position = position,
+                  profile = profile,
+                  badgeTheme = badgeTheme,
+                  addon = addon,
+                  profileRepository = profileRepository)
 
               Spacer(modifier = Modifier.width(ConstantLeaderboard.RowSpacing))
 
-              // Name and section
               Column(modifier = Modifier.weight(ConstantLeaderboard.WeightFill)) {
+                // Main identity block stretches to take available horizontal space
                 Text(
                     text = "${profile.name} ${profile.lastName}",
                     style = MaterialTheme.typography.titleMedium,
@@ -376,7 +386,7 @@ private fun LeaderboardCard(
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.testTag(LeaderboardTestTags.CARD_NAME))
                 Text(
-                    text = profile.section.label,
+                    text = sectionLabel(profile.section),
                     style = MaterialTheme.typography.bodySmall,
                     color = appPalette().text.copy(alpha = ConstantLeaderboard.SecondaryTextAlpha),
                     modifier = Modifier.testTag(LeaderboardTestTags.CARD_SECTION))
@@ -384,7 +394,6 @@ private fun LeaderboardCard(
 
               Spacer(modifier = Modifier.width(ConstantLeaderboard.RowSpacing))
 
-              // Stats
               StatsColumn(
                   label = "Kudos",
                   value = profile.kudos,
@@ -396,6 +405,23 @@ private fun LeaderboardCard(
                   testTag = LeaderboardTestTags.CARD_HELP_VALUE)
             }
       }
+}
+
+@Composable
+private fun Medal(position: Int, theme: BadgeTheme?) {
+  if (theme == null) {
+    Spacer(modifier = Modifier.width(ConstantLeaderboard.MedalIconSize))
+    return
+  }
+
+  val base =
+      Modifier.size(ConstantLeaderboard.MedalIconSize).clip(CircleShape).background(theme.haloColor)
+  val tagged = theme.testTag?.let { base.testTag(it) } ?: base
+
+  Box(modifier = tagged, contentAlignment = Alignment.Center) {
+    Icon(
+        imageVector = theme.icon, contentDescription = "Medal $position", tint = theme.primaryColor)
+  }
 }
 
 @Composable
@@ -431,3 +457,76 @@ private fun ErrorDialog(message: String, onDismiss: () -> Unit) {
             }
       })
 }
+
+@Composable
+private fun ProfilePictureWithAddon(
+    position: Int,
+    profile: UserProfile,
+    badgeTheme: BadgeTheme?,
+    addon: ProfileAddon?,
+    profileRepository: com.android.sample.model.profile.UserProfileRepository,
+) {
+  val crownTint = badgeTheme?.primaryColor ?: MaterialTheme.colorScheme.primary
+
+  Box(modifier = Modifier.size(ConstantLeaderboard.ProfilePictureSize)) {
+    ProfilePicture(
+        profileRepository = profileRepository,
+        profileId = profile.id,
+        modifier =
+            Modifier.matchParentSize()
+                .clip(RoundedCornerShape(ConstantLeaderboard.CardCornerRadius))
+                .testTag(LeaderboardTestTags.CARD_PROFILE_PICTURE))
+
+    when (addon) {
+      null -> Unit
+      LeaderboardAddOns.crown -> {
+        Icon(
+            imageVector = addon.image,
+            contentDescription = "Top crown",
+            tint = crownTint,
+            modifier = Modifier.align(Alignment.TopCenter).offset(y = (-6).dp).size(addon.size))
+      }
+      LeaderboardAddOns.cutiePatootie -> {
+        Icon(
+            imageVector = addon.image,
+            contentDescription = "Cutie Patootie filter",
+            tint = Color.Unspecified,
+            modifier =
+                Modifier.matchParentSize()
+                    .align(Alignment.Center)
+                    .clip(RoundedCornerShape(ConstantLeaderboard.CardCornerRadius))
+                    .testTag("cutie_patootie_filter"))
+      }
+      else -> {
+        Icon(
+            imageVector = addon.image,
+            contentDescription = "Profile add-on",
+            tint = Color.Unspecified,
+            modifier =
+                Modifier.matchParentSize()
+                    .align(Alignment.Center)
+                    .clip(RoundedCornerShape(ConstantLeaderboard.CardCornerRadius)))
+      }
+    }
+  }
+}
+
+private fun resolveAddon(position: Int, profileId: String): ProfileAddon? {
+  return when {
+    position == 1 -> crown
+    AddonEligibility.cutiePatootieHashes.contains(hashIdSha256(profileId)) -> cutiePatootie
+    else -> null
+  }
+}
+
+@Composable
+private fun resolveCardBorder(badgeTheme: BadgeTheme?, addon: ProfileAddon?): BorderStroke {
+  return when {
+    badgeTheme != null -> BorderStroke(badgeTheme.cardBorderWidth, badgeTheme.borderColor)
+    addon == cutiePatootie -> BorderStroke(BadgeThemeDefaults.CardBorderWidth, CutieColor)
+    else ->
+        BorderStroke(ConstantLeaderboard.CardBorderWidth, MaterialTheme.colorScheme.outlineVariant)
+  }
+}
+
+private fun sectionLabel(section: UserSections): String = section.label
