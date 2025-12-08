@@ -41,7 +41,6 @@ import com.android.sample.ui.theme.AppPalette
 import com.android.sample.ui.theme.UiDimens
 import com.android.sample.ui.theme.appPalette
 
-
 @Composable
 fun LogoutDialog(visible: Boolean, onConfirm: () -> Unit, onDismiss: () -> Unit) {
   if (!visible) return
@@ -156,8 +155,7 @@ fun ProfileOutlinedTextField(
       label = { Text(label, color = palette.text) },
       singleLine = singleLine,
       modifier = modifier,
-      colors = getTextFieldColors(palette)
-  )
+      colors = getTextFieldColors(palette))
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

@@ -17,7 +17,6 @@ object AppColors {
   val ErrorContainer = Color(0xFFFFDAD6)
   val OnErrorContainer = ErrorColor
 
-
   // Dark theme palette
   val PrimaryDark = Color(0xFF2B3650)
   val SecondaryDark = Color(0xFF4B4F58)

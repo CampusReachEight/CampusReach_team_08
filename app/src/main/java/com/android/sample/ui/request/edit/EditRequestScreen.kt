@@ -223,11 +223,9 @@ fun EditRequestContent(
                 Modifier.fillMaxWidth()
                     .testTag(EditRequestScreenTestTags.USE_CURRENT_LOCATION_BUTTON),
             enabled = !uiState.isLoading && !uiState.isSearchingLocation,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = appPalette().accent,
-                contentColor = appPalette().onAccent
-            )
-        ) {
+            colors =
+                ButtonDefaults.buttonColors(
+                    containerColor = appPalette().accent, contentColor = appPalette().onAccent)) {
               if (uiState.isSearchingLocation) {
                 CircularProgressIndicator(
                     modifier =
@@ -335,8 +333,7 @@ private fun SuccessMessageCard(
 ) {
   if (showSuccess) {
     Card(
-        colors =
-            CardDefaults.cardColors(containerColor = palette.primary),
+        colors = CardDefaults.cardColors(containerColor = palette.primary),
         modifier = Modifier.fillMaxWidth()) {
           Row(
               modifier = Modifier.fillMaxWidth().padding(CARD_CONTENT_PADDING),
@@ -379,8 +376,7 @@ private fun TitleField(
       },
       modifier = Modifier.fillMaxWidth().testTag(EditRequestScreenTestTags.INPUT_TITLE),
       enabled = !isLoading,
-      colors = getTextFieldColors()
-  )
+      colors = getTextFieldColors())
 }
 
 @Composable
@@ -407,8 +403,7 @@ private fun DescriptionField(
       minLines = 3,
       modifier = Modifier.fillMaxWidth().testTag(EditRequestScreenTestTags.INPUT_DESCRIPTION),
       enabled = !isLoading,
-      colors = getTextFieldColors()
-  )
+      colors = getTextFieldColors())
 }
 
 @Composable
@@ -491,8 +486,7 @@ private fun StartDateField(dateString: String, isLoading: Boolean, onClick: () -
         readOnly = true,
         modifier = Modifier.fillMaxWidth().testTag(EditRequestScreenTestTags.INPUT_START_DATE),
         enabled = !isLoading,
-        colors = getTextFieldColors()
-    )
+        colors = getTextFieldColors())
 
     Box(modifier = Modifier.matchParentSize().clickable(enabled = !isLoading) { onClick() })
   }
@@ -531,8 +525,7 @@ private fun ExpirationDateField(
         },
         modifier = Modifier.fillMaxWidth().testTag(EditRequestScreenTestTags.INPUT_EXPIRATION_DATE),
         enabled = !isLoading,
-        colors = getTextFieldColors()
-    )
+        colors = getTextFieldColors())
 
     Box(modifier = Modifier.matchParentSize().clickable(enabled = !isLoading) { onClick() })
   }
@@ -550,15 +543,12 @@ private fun SaveButton(isEditMode: Boolean, isLoading: Boolean, onSave: () -> Un
       onClick = onSave,
       modifier = Modifier.fillMaxWidth().testTag(EditRequestScreenTestTags.SAVE_BUTTON),
       enabled = !isLoading,
-      colors = ButtonDefaults.buttonColors(
-          containerColor = appPalette().accent,
-          contentColor = appPalette().onAccent
-  )
-  ) {
+      colors =
+          ButtonDefaults.buttonColors(
+              containerColor = appPalette().accent, contentColor = appPalette().onAccent)) {
         if (isLoading) {
           CircularProgressIndicator(
-              modifier = Modifier.size(SAVE_BUTTON_PADDING),
-              color = appPalette().accent)
+              modifier = Modifier.size(SAVE_BUTTON_PADDING), color = appPalette().accent)
         } else {
           Text(
               stringResource(

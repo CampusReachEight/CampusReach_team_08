@@ -38,17 +38,19 @@ const val DELETE_CANCEL_BUTTON_TEST_TAG = "delete_cancel_button"
  * @param onDeleteClick callback invoked when the button is clicked.
  */
 @Composable
-fun DeleteButton(isDeleting: Boolean, onDeleteClick: () -> Unit, palette: AppPalette = appPalette()) {
+fun DeleteButton(
+    isDeleting: Boolean,
+    onDeleteClick: () -> Unit,
+    palette: AppPalette = appPalette()
+) {
   // Button uses the error color to indicate destructive action.
   Button(
       onClick = onDeleteClick,
       modifier = fullWidthModifier.testTag(DELETE_BUTTON_TEST_TAG),
       enabled = !isDeleting,
-      colors = ButtonDefaults.buttonColors(
-        containerColor = palette.errorContainer,
-        contentColor = palette.onErrorContainer
-      )
-  ) {
+      colors =
+          ButtonDefaults.buttonColors(
+              containerColor = palette.errorContainer, contentColor = palette.onErrorContainer)) {
         if (isDeleting) {
           // Show a small progress indicator inside the button while deleting.
           CircularProgressIndicator(

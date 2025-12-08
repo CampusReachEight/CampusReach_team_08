@@ -193,10 +193,7 @@ private fun SelectedLocationCard(location: Location, modifier: Modifier = Modifi
       modifier = modifier.fillMaxWidth(),
       colors =
           CardDefaults.cardColors(
-              containerColor = appPalette().secondary,
-              contentColor = appPalette().accent
-      )
-  ) {
+              containerColor = appPalette().secondary, contentColor = appPalette().accent)) {
         // Row for icon and location info
         Row(
             modifier = Modifier.padding(LocationSearchFieldDimensions.CardPadding),
