@@ -1,3 +1,5 @@
+import org.gradle.kotlin.dsl.debug
+import org.gradle.kotlin.dsl.release
 import java.io.FileInputStream
 import java.util.Properties
 plugins {

@@ -93,7 +93,7 @@ class MapOtherViewModelTest {
 
   @Test
   fun updateFilterOwnerShipWorks() {
-    runTest(testDispatcher) {
+    runTest {
       viewModel.updateFilterOwnerShip(RequestOwnership.ALL)
       assertEquals(RequestOwnership.ALL, viewModel.uiState.value.requestOwnership)
 
@@ -116,7 +116,7 @@ class MapOtherViewModelTest {
 
   @Test
   fun allRequestAreDisplayed() {
-    runTest(testDispatcher) {
+    runTest {
       viewModel.updateFilterOwnerShip(RequestOwnership.ALL)
       val result = viewModel.filterWithOwnerShip(list, creatorId1)
       assertTrue(twoSameList(result, list))
@@ -125,7 +125,7 @@ class MapOtherViewModelTest {
 
   @Test
   fun myRequestsAreDisplayed() {
-    runTest(testDispatcher) {
+    runTest {
       viewModel.updateFilterOwnerShip(RequestOwnership.OWN)
       val result = viewModel.filterWithOwnerShip(list, creatorId1)
       assertTrue(twoSameList(result, listWithout3))
@@ -137,7 +137,7 @@ class MapOtherViewModelTest {
 
   @Test
   fun notMyRequestsAreDisplayed() {
-    runTest(testDispatcher) {
+    runTest {
       viewModel.updateFilterOwnerShip(RequestOwnership.OTHER)
       val result = viewModel.filterWithOwnerShip(list, creatorId1)
       assertTrue(twoSameList(result, listWithout12))
@@ -149,7 +149,7 @@ class MapOtherViewModelTest {
 
   @Test
   fun acceptedByMeRequestAreDisplayed() {
-    runTest(testDispatcher) {
+    runTest {
       viewModel.updateFilterOwnerShip(RequestOwnership.ACCEPTED)
       val result = viewModel.filterWithOwnerShip(list, creatorId1)
       assertTrue(twoSameList(result, listWithout12))
@@ -161,7 +161,7 @@ class MapOtherViewModelTest {
 
   @Test
   fun notAcceptedByMeRequestAreDisplayed() {
-    runTest(testDispatcher) {
+    runTest {
       viewModel.updateFilterOwnerShip(RequestOwnership.NOT_ACCEPTED_BY_ME)
       val result = viewModel.filterWithOwnerShip(list, creatorId1)
       assertTrue(twoSameList(result, listWithout3))
@@ -173,7 +173,7 @@ class MapOtherViewModelTest {
 
   @Test
   fun notAcceptedRequestAreDisplayed() {
-    runTest(testDispatcher) {
+    runTest {
       viewModel.updateFilterOwnerShip(RequestOwnership.NOT_ACCEPTED)
       val result = viewModel.filterWithOwnerShip(list, creatorId1)
       assertTrue(twoSameList(result, listWithout13))
@@ -182,7 +182,7 @@ class MapOtherViewModelTest {
 
   @Test
   fun zoomOnFirstRequestThenCancel() {
-    runTest(testDispatcher) {
+    runTest {
       viewModel.zoomOnRequest(list)
       assertTrue(viewModel.uiState.value.needToZoom)
       val loc = LatLng(list.first().location.latitude, list.first().location.longitude)

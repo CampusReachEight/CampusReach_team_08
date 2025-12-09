@@ -93,7 +93,7 @@ fun ProfilePicture(
     onClick: (String) -> Unit = {},
     navigationActions: NavigationActions? = null,
     modifier: Modifier = Modifier,
-    withName: Boolean = false
+    withName: Boolean = false,
 ) {
   var loading: Boolean by remember { mutableStateOf(true) }
   var bitmap: Bitmap? by remember { mutableStateOf(null) }

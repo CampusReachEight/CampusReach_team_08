@@ -38,10 +38,6 @@ abstract class BaseEmulatorTest {
       email: String = DEFAULT_USER_EMAIL,
       password: String = DEFAULT_USER_PASSWORD
   ) {
-    if (!FirebaseEmulator.isRunning) {
-      currentUserId = "test-user"
-      return
-    }
     FirebaseEmulator.signOut()
     FirebaseEmulator.signInTestUser(email, password)
     currentUserId = auth.currentUser?.uid ?: error("Failed to sign in user $email")
