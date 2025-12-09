@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
+import com.android.sample.ui.getTextFieldColors
 import com.android.sample.ui.theme.appPalette
 
 /** Centralized filter UI consuming dynamic facets from ViewModel. */
@@ -206,6 +207,7 @@ private fun RequestSearchBar(
       onValueChange = onQueryChange,
       modifier = modifier,
       singleLine = true,
+      colors = getTextFieldColors(),
       placeholder = { Text("Search") },
       trailingIcon = {
         if (query.isNotEmpty()) {
