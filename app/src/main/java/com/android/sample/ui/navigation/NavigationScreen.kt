@@ -57,8 +57,6 @@ import com.android.sample.ui.request_validation.ValidateRequestViewModelFactory
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.firestore
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
 import okhttp3.OkHttpClient
 
 @SuppressLint("ViewModelConstructorInComposable")
@@ -68,7 +66,6 @@ fun NavigationScreen(
     navController: NavHostController = rememberNavController(),
     navigationActions: NavigationActions = NavigationActions(navController),
     credentialManager: CredentialManager = CredentialManager.create(LocalContext.current),
-    dispatcher: CoroutineDispatcher = Dispatchers.IO,
     isSignedInOverride: Boolean? = null
 ) {
   val context = LocalContext.current
@@ -83,8 +80,7 @@ fun NavigationScreen(
 
   // repositories
   val requestRepository = RequestRepositoryFirestore(Firebase.firestore)
-  val locationRepository =
-      NominatimLocationRepository(client = OkHttpClient(), dispatcher = dispatcher)
+  val locationRepository = NominatimLocationRepository(client = OkHttpClient())
   val fusedLocationProvider = FusedLocationProvider(LocalContext.current)
   val userProfileRepository = UserProfileRepositoryFirestore(Firebase.firestore)
 
@@ -104,8 +100,7 @@ fun NavigationScreen(
   val requestListViewModel: RequestListViewModel =
       viewModel(
           factory =
-              RequestListViewModelFactory(
-                  showOnlyMyRequests = false, requestCache = requestCache, dispatcher = dispatcher))
+              RequestListViewModelFactory(showOnlyMyRequests = false, requestCache = requestCache))
   val editRequestViewModel: EditRequestViewModel =
       viewModel(
           factory =

@@ -23,8 +23,6 @@ import com.android.sample.ui.theme.SampleAppTheme
 import com.google.firebase.firestore.FirebaseFirestoreSettings
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
 
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -46,8 +44,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun AppNavigation(
-    credentialManager: CredentialManager = CredentialManager.create(LocalContext.current),
-    dispatcher: CoroutineDispatcher = Dispatchers.IO
+    credentialManager: CredentialManager = CredentialManager.create(LocalContext.current)
 ) {
   val navController = rememberNavController()
   val navigationActions = NavigationActions(navController = navController)
@@ -55,8 +52,7 @@ fun AppNavigation(
       navigationActions = navigationActions,
       navController = navController,
       modifier = Modifier.fillMaxSize(),
-      credentialManager = credentialManager,
-      dispatcher = dispatcher)
+      credentialManager = credentialManager)
 }
 
 @Composable

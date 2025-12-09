@@ -44,7 +44,6 @@ import com.android.sample.ui.theme.appPalette
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
 import java.net.URL
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -94,8 +93,7 @@ fun ProfilePicture(
     onClick: (String) -> Unit = {},
     navigationActions: NavigationActions? = null,
     modifier: Modifier = Modifier,
-    withName: Boolean = false,
-    dispatcher: CoroutineDispatcher = Dispatchers.IO
+    withName: Boolean = false
 ) {
   var loading: Boolean by remember { mutableStateOf(true) }
   var bitmap: Bitmap? by remember { mutableStateOf(null) }
@@ -142,7 +140,7 @@ fun ProfilePicture(
       } else {
         val loadedBitmap =
             try {
-              loadBitmapFromUri(uri, dispatcher)
+              loadBitmapFromUri(uri)
             } catch (_: Exception) {
               null
             }
@@ -228,8 +226,8 @@ fun ProfilePicture(
       }
 }
 
-private suspend fun loadBitmapFromUri(uri: Uri, dispatcher: CoroutineDispatcher): Bitmap? =
-    withContext(dispatcher) {
+private suspend fun loadBitmapFromUri(uri: Uri): Bitmap? =
+    withContext(Dispatchers.IO) {
       try {
         when (uri.scheme?.lowercase()) {
           "http",

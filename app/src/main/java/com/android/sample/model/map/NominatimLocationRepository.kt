@@ -3,7 +3,6 @@ package com.android.sample.model.map
 import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
 import java.io.IOException
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -20,8 +19,7 @@ const val MAX_LIMIT = 40 // Nominatim allows up to 40 results per request in ver
 class NominatimLocationRepository(
     private val client: OkHttpClient,
     private val deviceId: String = FirebaseAuth.getInstance().currentUser?.uid ?: "anonymous",
-    private val verbose: Boolean = false, // Enable detailed logging for debugging
-    private val dispatcher: CoroutineDispatcher = Dispatchers.IO
+    private val verbose: Boolean = false // Enable detailed logging for debugging
 ) : LocationRepository {
 
   private val userAgent = "$USER_AGENT_BASE device:$deviceId"
@@ -54,7 +52,7 @@ class NominatimLocationRepository(
   }
 
   override suspend fun search(query: String, limit: Int): List<Location> =
-      withContext(dispatcher) {
+      withContext(Dispatchers.IO) {
         // Validate parameters
         require(!(query.isBlank())) { "Query must not be blank" }
         require(limit > 0 || limit <= MAX_LIMIT) { "Limit must be between 1 and $MAX_LIMIT" }

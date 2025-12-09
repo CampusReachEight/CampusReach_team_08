@@ -4,7 +4,6 @@ import com.android.sample.model.request.Request
 import com.google.firebase.Timestamp
 import java.io.Closeable
 import java.io.IOException
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.apache.lucene.analysis.Analyzer
@@ -39,11 +38,10 @@ const val DEFAULT_MAX_SEARCH_RESULTS = 100
  * - Additional dependency on Lucene library
  * - Increased app size due to Lucene binaries
  */
-class LuceneRequestSearchEngine(
-    private val maxResults: Int = DEFAULT_MAX_SEARCH_RESULTS,
-    private val dispatcher: CoroutineDispatcher = Dispatchers.IO
-) : SearchStrategy<Request>, Closeable {
+class LuceneRequestSearchEngine(private val maxResults: Int = DEFAULT_MAX_SEARCH_RESULTS) :
+    SearchStrategy<Request>, Closeable {
 
+  private val dispatcher = Dispatchers.IO
   private val directory: Directory = ByteBuffersDirectory()
   private val analyzer: Analyzer = StandardAnalyzer()
   private var writer: IndexWriter? = null

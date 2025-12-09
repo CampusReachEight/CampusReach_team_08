@@ -16,7 +16,6 @@ import com.android.sample.model.request.RequestRepositoryFirestore
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import java.net.URL
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -37,8 +36,7 @@ class RequestListViewModel(
         UserProfileRepositoryFirestore(Firebase.firestore),
     val requestCache: RequestCache? = null,
     val showOnlyMyRequests: Boolean = false,
-    val verboseLogging: Boolean = false,
-    private val dispatcher: CoroutineDispatcher = Dispatchers.IO
+    val verboseLogging: Boolean = false
 ) : ViewModel() {
   private val _state = MutableStateFlow(RequestListState())
   val state: StateFlow<RequestListState> = _state
@@ -109,7 +107,7 @@ class RequestListViewModel(
   }
 
   private suspend fun loadBitmapFromUri(uri: Uri): Bitmap? =
-      withContext(dispatcher) {
+      withContext(Dispatchers.IO) {
         try {
           when (uri.scheme?.lowercase()) {
             "http",
@@ -140,16 +138,13 @@ class RequestListViewModel(
 
 class RequestListViewModelFactory(
     private val showOnlyMyRequests: Boolean = false,
-    private val requestCache: RequestCache? = null,
-    private val dispatcher: CoroutineDispatcher = Dispatchers.IO
+    private val requestCache: RequestCache? = null
 ) : ViewModelProvider.Factory {
   override fun <T : ViewModel> create(modelClass: Class<T>): T {
     if (modelClass.isAssignableFrom(RequestListViewModel::class.java)) {
       @Suppress("UNCHECKED_CAST")
       return RequestListViewModel(
-          showOnlyMyRequests = showOnlyMyRequests,
-          requestCache = requestCache,
-          dispatcher = dispatcher)
+          showOnlyMyRequests = showOnlyMyRequests, requestCache = requestCache)
           as T
     }
     throw IllegalArgumentException("Unknown ViewModel class")
