@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.window.PopupProperties
 import com.android.sample.R
 import com.android.sample.model.map.EMPTY_LOCATION
 import com.android.sample.model.map.Location
@@ -125,6 +126,7 @@ fun LocationSearchField(
 
       // Dropdown menu for search results
       DropdownMenu(
+          properties = PopupProperties(focusable = false),
           expanded = showDropdown && searchResults.isNotEmpty(),
           onDismissRequest = { showDropdown = false },
           modifier =
