@@ -10,7 +10,7 @@ import com.android.sample.ui.navigation.NavigationActions
 import com.android.sample.ui.navigation.NavigationScreen
 import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.navigation.Screen
-import junit.framework.TestCase
+import com.android.sample.utils.BaseEmulatorTest
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Ignore
@@ -19,13 +19,13 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-class NavigationNoUITests : TestCase() {
+class NavigationNoUITests : BaseEmulatorTest() {
   @get:Rule val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
   lateinit var navigationActions: NavigationActions
 
   @Before
-  public override fun setUp() {
+  override fun setUp() {
     super.setUp()
     composeTestRule.setContent {
       val navController = rememberNavController()
