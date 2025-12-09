@@ -40,6 +40,7 @@ import com.android.sample.ui.request.ConstantRequestList.TypeChipTextPadding
 import com.android.sample.ui.request.ConstantRequestList.TypeChipTextSize
 import com.android.sample.ui.request.ConstantRequestList.TypeChipTextSizeFactor
 import com.android.sample.ui.theme.appPalette
+import kotlin.contracts.contract
 
 // removed local magic number vals; use ConstantRequestList instead
 
@@ -138,6 +139,7 @@ fun RequestListScreen(
 
   Scaffold(
       modifier = modifier.fillMaxSize().testTag(NavigationTestTags.REQUESTS_SCREEN),
+      containerColor = appPalette().background,
       topBar = {
         if (showOnlyMyRequests) {
           // Simple back button for My Requests
@@ -274,6 +276,10 @@ fun RequestListItem(
               .height(ConstantRequestList.RequestItemHeight)
               .clickable(onClick = { onClick(request) })
               .testTag(RequestListTestTags.REQUEST_ITEM),
+      colors = CardDefaults.cardColors(
+          containerColor = appPalette().surface,
+          contentColor = appPalette().onSurface
+      )
   ) {
     Row(modifier = Modifier.fillMaxSize().padding(ConstantRequestList.RequestItemInnerPadding)) {
       ProfilePicture(

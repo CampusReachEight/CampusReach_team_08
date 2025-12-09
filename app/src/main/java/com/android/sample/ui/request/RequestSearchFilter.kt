@@ -1,5 +1,6 @@
 package com.android.sample.ui.request
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -15,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
+import com.android.sample.ui.theme.appPalette
 
 /** Centralized filter UI consuming dynamic facets from ViewModel. */
 @Composable
@@ -239,6 +241,15 @@ internal fun SortCriteriaButton(
     FilledTonalButton(
         onClick = { expanded = true },
         modifier = Modifier.testTag(RequestSearchFilterTestTags.SORT_BUTTON),
+        colors = ButtonDefaults.filledTonalButtonColors(
+            containerColor =
+                if (expanded) appPalette().accent
+                else appPalette().background,
+            contentColor =
+                if (expanded) appPalette().onAccent
+                else appPalette().onSurface
+        ),
+        border = BorderStroke(1.dp, appPalette().accent),
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)) {
           Text(labelOf(current))
           Spacer(Modifier.width(4.dp))
@@ -249,6 +260,7 @@ internal fun SortCriteriaButton(
         expanded = expanded,
         onDismissRequest = { expanded = false },
         properties = PopupProperties(focusable = false),
+        containerColor = appPalette().surface,
         modifier = Modifier.testTag(RequestSearchFilterTestTags.SORT_MENU)) {
           RequestSort.entries.forEach { option ->
             DropdownMenuItem(
