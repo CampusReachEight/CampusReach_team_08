@@ -22,6 +22,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.*
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -157,10 +158,7 @@ fun AcceptRequestScreen(
       },
       content = { pd ->
         if (requestState.isLoadingDetails) {
-          Box(
-              modifier = Modifier.fillMaxWidth().padding(pd),
-              contentAlignment = Alignment.Center,
-          ) {
+          Box(modifier = Modifier.fillMaxWidth().padding(pd), contentAlignment = Alignment.Center) {
             CircularProgressIndicator(
                 modifier = Modifier.size(AcceptRequestScreenConstants.CIRCULAR_PROGRESS_SIZE))
           }
@@ -195,7 +193,11 @@ fun AcceptRequestScreen(
                       elevation =
                           CardDefaults.cardElevation(
                               defaultElevation = AcceptRequestScreenConstants.CARD_ELEVATION),
-                      shape = RoundedCornerShape(AcceptRequestScreenConstants.CARD_CORNER_RADIUS)) {
+                      shape = RoundedCornerShape(AcceptRequestScreenConstants.CARD_CORNER_RADIUS),
+                      colors =
+                          CardDefaults.cardColors(
+                              containerColor = appPalette().secondary,
+                              contentColor = appPalette().onSurface)) {
                         Column(
                             modifier =
                                 Modifier.fillMaxWidth()
@@ -276,13 +278,17 @@ fun AcceptRequestScreen(
                       modifier =
                           Modifier.fillMaxWidth()
                               .height(AcceptRequestScreenConstants.BUTTON_HEIGHT)
-                              .testTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)) {
+                              .testTag(AcceptRequestScreenTestTags.REQUEST_BUTTON),
+                      colors =
+                          ButtonDefaults.buttonColors(
+                              containerColor = appPalette().accent,
+                              contentColor = appPalette().onAccent)) {
                         if (requestState.isLoading) {
                           CircularProgressIndicator(
                               modifier =
                                   Modifier.size(
                                       AcceptRequestScreenConstants.CIRCULAR_PROGRESS_SIZE),
-                              color = MaterialTheme.colorScheme.onSecondaryContainer)
+                              color = appPalette().accent)
                         } else {
                           Text(
                               text =
@@ -302,7 +308,11 @@ fun AcceptRequestScreen(
                         modifier =
                             Modifier.fillMaxWidth()
                                 .height(AcceptRequestScreenConstants.BUTTON_HEIGHT)
-                                .testTag(AcceptRequestScreenTestTags.VALIDATE_REQUEST_BUTTON)) {
+                                .testTag(AcceptRequestScreenTestTags.VALIDATE_REQUEST_BUTTON),
+                        colors =
+                            ButtonDefaults.buttonColors(
+                                containerColor = appPalette().accent,
+                                contentColor = appPalette().onAccent)) {
                           Text(
                               text = AcceptRequestScreenLabels.VALIDATE_REQUEST,
                               style = MaterialTheme.typography.labelLarge)
@@ -318,7 +328,7 @@ fun AcceptRequestScreen(
                                 .clip(
                                     RoundedCornerShape(
                                         AcceptRequestScreenConstants.CARD_CORNER_RADIUS))
-                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                                .background(appPalette().secondary)
                                 .padding(AcceptRequestScreenConstants.CREATOR_SECTION_PADDING)) {
                           Row(
                               modifier =
@@ -327,31 +337,31 @@ fun AcceptRequestScreen(
                                       .semantics(mergeDescendants = true) {}
                                       .testTag(
                                           AcceptRequestScreenTestTags.VOLUNTEERS_SECTION_HEADER),
-                              verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Group,
-                                    contentDescription = AcceptRequestScreenLabels.VOLUNTEERS,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Spacer(
-                                    modifier =
-                                        Modifier.width(
-                                            AcceptRequestScreenConstants.ICON_TEXT_SPACING))
-                                Text(
-                                    text = AcceptRequestScreenLabels.VOLUNTEERS,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier =
-                                        Modifier.weight(
-                                            AcceptRequestScreenConstants.TEXT_COLUMN_WEIGHT))
-                                Icon(
-                                    imageVector =
-                                        if (volunteersExpanded) Icons.Outlined.KeyboardArrowUp
-                                        else Icons.Outlined.KeyboardArrowDown,
-                                    contentDescription =
-                                        if (volunteersExpanded) AcceptRequestScreenLabels.COLLAPSE
-                                        else AcceptRequestScreenLabels.EXPAND,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                              }
+                              verticalAlignment = Alignment.CenterVertically,
+                          ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Group,
+                                contentDescription = AcceptRequestScreenLabels.VOLUNTEERS,
+                                tint = appPalette().onSurface)
+                            Spacer(
+                                modifier =
+                                    Modifier.width(AcceptRequestScreenConstants.ICON_TEXT_SPACING))
+                            Text(
+                                text = AcceptRequestScreenLabels.VOLUNTEERS,
+                                style = MaterialTheme.typography.titleMedium,
+                                color = appPalette().onSurface,
+                                modifier =
+                                    Modifier.weight(
+                                        AcceptRequestScreenConstants.TEXT_COLUMN_WEIGHT))
+                            Icon(
+                                imageVector =
+                                    if (volunteersExpanded) Icons.Outlined.KeyboardArrowUp
+                                    else Icons.Outlined.KeyboardArrowDown,
+                                contentDescription =
+                                    if (volunteersExpanded) AcceptRequestScreenLabels.COLLAPSE
+                                    else AcceptRequestScreenLabels.EXPAND,
+                                tint = appPalette().onSurface)
+                          }
 
                           if (volunteersExpanded) {
                             Spacer(
@@ -364,7 +374,7 @@ fun AcceptRequestScreen(
                               Text(
                                   text = AcceptRequestScreenLabels.NO_VOLUNTEERS_YET,
                                   style = MaterialTheme.typography.bodyMedium,
-                                  color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                  color = appPalette().onSurface)
                             } else {
                               LazyRow(
                                   horizontalArrangement =
@@ -387,7 +397,7 @@ fun AcceptRequestScreen(
                     ?: Text(
                         text = AcceptRequestScreenLabels.GENERIC_ERROR,
                         fontSize = AcceptRequestScreenConstants.ERROR_TEXT_FONT_SIZE,
-                        color = MaterialTheme.colorScheme.error,
+                        color = appPalette().error,
                         textAlign = TextAlign.Center,
                         modifier =
                             Modifier.fillMaxWidth()

@@ -28,6 +28,8 @@ const val MAX_PHOTO_SIZE_BYTES = 100 * 1024 // 100KB
  * - kudos: Integer representing user's kudos points.
  * - section: Enum representing user's section/department.
  * - arrivalDate: Date when the user joined/arrived.
+ * - followerCount: Number of followers the user has.
+ * - followingCount: Number of users the user is following.
  *
  * The class includes methods for serialization to/from Firestore document format, handling Bitmap
  * to Blob conversion with size constraints, and ensuring data integrity.
@@ -53,6 +55,8 @@ data class UserProfile(
     val helpReceived: Int,
     val section: UserSections,
     @Serializable(with = DateSerializer::class) val arrivalDate: Date,
+    val followerCount: Int = 0,
+    val followingCount: Int = 0
 ) {
 
   // Lowercase versions for case-insensitive search
@@ -108,7 +112,9 @@ data class UserProfile(
           kudos = (data["kudos"] as Number).toInt(),
           helpReceived = (data["helpReceived"] as? Number)?.toInt() ?: 0,
           section = section,
-          arrivalDate = arrival)
+          arrivalDate = arrival,
+          followerCount = (data["followerCount"] as? Number)?.toInt() ?: 0,
+          followingCount = (data["followingCount"] as? Number)?.toInt() ?: 0)
     }
 
     // Converts Firestore Blob to Bitmap, ensuring size constraints
@@ -167,5 +173,6 @@ data class UserProfile(
           // Used exclusively for search queries
           "nameLowercase" to nameLowercase,
           "lastNameLowercase" to lastNameLowercase,
-      )
+          "followerCount" to followerCount,
+          "followingCount" to followingCount)
 }
