@@ -15,10 +15,13 @@ interface AppPalette {
   val background: Color
   val surface: Color
   val error: Color
+  val errorContainer: Color
+  val onErrorContainer: Color
 
   val onPrimary: Color
   val onBackground: Color
   val onSurface: Color
+  val onAccent: Color
 
   fun getRequestTypeColor(type: RequestType): Color
 
@@ -35,10 +38,13 @@ object LightPalette : AppPalette {
   override val background: Color = AppColors.BackgroundColor
   override val surface: Color = AppColors.SurfaceColor
   override val error: Color = AppColors.ErrorColor
+  override val errorContainer: Color = AppColors.ErrorContainer
+  override val onErrorContainer: Color = AppColors.OnErrorContainer
 
   override val onPrimary: Color = AppColors.BlackColor
   override val onBackground: Color = AppColors.BlackColor
   override val onSurface: Color = AppColors.BlackColor
+  override val onAccent: Color = AppColors.WhiteColor
 
   override fun getRequestTypeColor(type: RequestType): Color {
     return when (type) {
@@ -77,10 +83,13 @@ object DarkPalette : AppPalette {
   override val background: Color = AppColors.BackgroundDark
   override val surface: Color = AppColors.SurfaceDark
   override val error: Color = AppColors.ErrorDark
+  override val errorContainer: Color = AppColors.ErrorContainerDark
+  override val onErrorContainer: Color = AppColors.ErrorOnContainerDark
 
   override val onPrimary: Color = AppColors.WhiteColor
   override val onBackground: Color = AppColors.WhiteColor
   override val onSurface: Color = AppColors.WhiteColor
+  override val onAccent: Color = AppColors.WhiteColor
 
   override fun getRequestTypeColor(type: RequestType): Color {
     return when (type) {

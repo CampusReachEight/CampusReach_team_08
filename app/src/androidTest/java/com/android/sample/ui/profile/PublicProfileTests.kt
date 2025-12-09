@@ -455,6 +455,34 @@ class PublicProfileTests {
           override suspend fun awardKudosBatch(awards: Map<String, Int>) {}
 
           override suspend fun receiveHelp(userId: String, amount: Int) {}
+
+          override suspend fun followUser(currentUserId: String, targetUserId: String) {
+            return Unit
+          }
+
+          override suspend fun unfollowUser(currentUserId: String, targetUserId: String) {
+            return Unit
+          }
+
+          override suspend fun isFollowing(currentUserId: String, targetUserId: String): Boolean {
+            return false
+          }
+
+          override suspend fun getFollowerCount(userId: String): Int {
+            return 0
+          }
+
+          override suspend fun getFollowingCount(userId: String): Int {
+            return 0
+          }
+
+          override suspend fun getFollowerIds(userId: String): List<String> {
+            return emptyList()
+          }
+
+          override suspend fun getFollowingIds(userId: String): List<String> {
+            return emptyList()
+          }
         }
 
     val viewModel = PublicProfileViewModel(mockRepo)
@@ -503,5 +531,33 @@ class PublicProfileTests {
     override suspend fun awardKudosBatch(awards: Map<String, Int>) {}
 
     override suspend fun receiveHelp(userId: String, amount: Int) {}
+
+    override suspend fun followUser(currentUserId: String, targetUserId: String) {
+      return Unit
+    }
+
+    override suspend fun unfollowUser(currentUserId: String, targetUserId: String) {
+      return Unit
+    }
+
+    override suspend fun isFollowing(currentUserId: String, targetUserId: String): Boolean {
+      return false
+    }
+
+    override suspend fun getFollowerCount(userId: String): Int {
+      return 0
+    }
+
+    override suspend fun getFollowingCount(userId: String): Int {
+      return 0
+    }
+
+    override suspend fun getFollowerIds(userId: String): List<String> {
+      return emptyList()
+    }
+
+    override suspend fun getFollowingIds(userId: String): List<String> {
+      return emptyList()
+    }
   }
 }

@@ -185,6 +185,34 @@ class RequestListTests : BaseEmulatorTest() {
     override suspend fun receiveHelp(userId: String, amount: Int) {
       return
     }
+
+    override suspend fun followUser(currentUserId: String, targetUserId: String) {
+      return Unit
+    }
+
+    override suspend fun unfollowUser(currentUserId: String, targetUserId: String) {
+      return Unit
+    }
+
+    override suspend fun isFollowing(currentUserId: String, targetUserId: String): Boolean {
+      return false
+    }
+
+    override suspend fun getFollowerCount(userId: String): Int {
+      return 0
+    }
+
+    override suspend fun getFollowingCount(userId: String): Int {
+      return 0
+    }
+
+    override suspend fun getFollowerIds(userId: String): List<String> {
+      return emptyList()
+    }
+
+    override suspend fun getFollowingIds(userId: String): List<String> {
+      return emptyList()
+    }
   }
 
   private fun getFakeVmWithDelay(requests: List<Request>, delayMs: Long) =
