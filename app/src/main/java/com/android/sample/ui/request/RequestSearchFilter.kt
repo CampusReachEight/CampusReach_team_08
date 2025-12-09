@@ -96,20 +96,18 @@ fun FilterMenuButton(
   OutlinedButton(
       onClick = onClick,
       modifier = modifier.testTag(testTag),
-      colors = ButtonDefaults.outlinedButtonColors(
-          containerColor = appPalette().accent,
-          contentColor = appPalette().onAccent
-      ),
-      border = BorderStroke(1.dp, appPalette().accent)
-      ) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically) {
-          val label = if (selectedCount > 0) "$title ($selectedCount)" else title
-          Text(label)
-          Icon(imageVector = Icons.Filled.ArrowDropDown, contentDescription = null)
-        }
-  }
+      colors =
+          ButtonDefaults.outlinedButtonColors(
+              containerColor = appPalette().accent, contentColor = appPalette().onAccent),
+      border = BorderStroke(1.dp, appPalette().accent)) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically) {
+              val label = if (selectedCount > 0) "$title ($selectedCount)" else title
+              Text(label)
+              Icon(imageVector = Icons.Filled.ArrowDropDown, contentDescription = null)
+            }
+      }
 }
 
 @Composable
@@ -123,10 +121,16 @@ fun FilterMenuPanel(
     rowTestTagOf: (Enum<*>) -> String
 ) {
   Column(
-      modifier = Modifier.fillMaxWidth().padding(horizontal = ConstantRequestList.PaddingLarge)) {
+      modifier =
+          Modifier.fillMaxWidth()
+              .padding(horizontal = ConstantRequestList.PaddingLarge)
+              .background(color = appPalette().surface)) {
         Spacer(modifier = Modifier.height(ConstantRequestList.PaddingSmall))
         Surface(
-            shape = MaterialTheme.shapes.medium, tonalElevation = 2.dp, shadowElevation = 2.dp) {
+            shape = MaterialTheme.shapes.medium,
+            tonalElevation = 2.dp,
+            shadowElevation = 2.dp,
+            color = appPalette().surface) {
               Column(
                   modifier = Modifier.fillMaxWidth().padding(ConstantRequestList.PaddingMedium)) {
                     var localQuery by rememberSaveable { mutableStateOf("") }
@@ -159,7 +163,8 @@ private fun FilterMenuSearchBar(
       onValueChange = onQueryChange,
       modifier = Modifier.fillMaxWidth().testTag(dropdownSearchBarTestTag),
       singleLine = true,
-      placeholder = { Text("Search options") })
+      placeholder = { Text("Search options") },
+      colors = getTextFieldColors())
 }
 
 @Composable
@@ -178,33 +183,42 @@ private fun FilterMenuValuesList(
             .filter { labelOf(it).contains(localQuery, ignoreCase = true) }
             .sortedByDescending { counts[it] ?: 0 }
       }
-  Box(modifier = Modifier
-      .heightIn(max = ConstantRequestList.DropdownMaxHeight)
-      .background(color = appPalette().surface)) {
-    Column(modifier = Modifier
-        .fillMaxWidth()
-        .verticalScroll(rememberScrollState())
-        .background(color = appPalette().surface)) {
-      filteredValues.forEach { v ->
-        val isChecked = selected.contains(v)
-        val count = counts[v] ?: 0
-        Row(
+  Box(
+      modifier =
+          Modifier.heightIn(max = ConstantRequestList.DropdownMaxHeight)
+              .background(color = appPalette().surface)) {
+        Column(
             modifier =
                 Modifier.fillMaxWidth()
-                    .clickable { onToggle(v) }
-                    .padding(horizontal = ConstantRequestList.FilterRowHorizontalPadding)
-                    .testTag(rowTestTagOf(v))
-                    .height(ConstantRequestList.FilterRowHeight),
-            horizontalArrangement = Arrangement.Start) {
-              Checkbox(checked = isChecked, onCheckedChange = null)
-              Spacer(modifier = Modifier.width(ConstantRequestList.RowSpacing))
-              Text(text = labelOf(v))
-              Spacer(modifier = Modifier.weight(1f))
-              Text(text = count.toString())
+                    .verticalScroll(rememberScrollState())
+                    .background(color = appPalette().surface)) {
+              filteredValues.forEach { v ->
+                val isChecked = selected.contains(v)
+                val count = counts[v] ?: 0
+                Row(
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .clickable { onToggle(v) }
+                            .padding(horizontal = ConstantRequestList.FilterRowHorizontalPadding)
+                            .testTag(rowTestTagOf(v))
+                            .height(ConstantRequestList.FilterRowHeight),
+                    horizontalArrangement = Arrangement.Start) {
+                      Checkbox(
+                          checked = isChecked,
+                          onCheckedChange = null,
+                          colors =
+                              CheckboxDefaults.colors(
+                                  checkedColor = appPalette().accent,
+                                  uncheckedColor = appPalette().secondary,
+                                  checkmarkColor = appPalette().onAccent))
+                      Spacer(modifier = Modifier.width(ConstantRequestList.RowSpacing))
+                      Text(text = labelOf(v))
+                      Spacer(modifier = Modifier.weight(1f))
+                      Text(text = count.toString())
+                    }
+              }
             }
       }
-    }
-  }
 }
 
 /** Global search bar bound to SearchFilterViewModel's state. */
@@ -257,10 +271,9 @@ internal fun SortCriteriaButton(
     FilledTonalButton(
         onClick = { expanded = true },
         modifier = Modifier.testTag(RequestSearchFilterTestTags.SORT_BUTTON),
-        colors = ButtonDefaults.filledTonalButtonColors(
-            containerColor = appPalette().accent,
-            contentColor = appPalette().onAccent
-        ),
+        colors =
+            ButtonDefaults.filledTonalButtonColors(
+                containerColor = appPalette().accent, contentColor = appPalette().onAccent),
         border = BorderStroke(1.dp, appPalette().accent),
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)) {
           Text(labelOf(current))
