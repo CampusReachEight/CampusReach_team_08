@@ -31,10 +31,7 @@ class NavigationNoUITests : TestCase() {
       val navController = rememberNavController()
       navigationActions = NavigationActions(navController)
 
-      NavigationScreen(
-          navController = navController,
-          navigationActions = navigationActions,
-          isSignedInOverride = true)
+      NavigationScreen(navController = navController, navigationActions = navigationActions)
     }
   }
 

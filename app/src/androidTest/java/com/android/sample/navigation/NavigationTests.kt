@@ -34,10 +34,7 @@ class NavigationTests : BaseEmulatorTest() {
     composeTestRule.setContent {
       val navController = rememberNavController()
       navigationActions = NavigationActions(navController)
-      NavigationScreen(
-          navController = navController,
-          navigationActions = navigationActions,
-          isSignedInOverride = true)
+      NavigationScreen(navController = navController, navigationActions = navigationActions)
     }
 
     composeTestRule.waitForIdle()
