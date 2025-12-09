@@ -132,5 +132,22 @@ class LeaderboardViewModelTest {
     override suspend fun awardKudosBatch(awards: Map<String, Int>): Unit = error("Not implemented")
 
     override suspend fun receiveHelp(userId: String, amount: Int): Unit = error("Not implemented")
+
+    override suspend fun followUser(currentUserId: String, targetUserId: String): Unit =
+        error("Not implemented")
+
+    override suspend fun unfollowUser(currentUserId: String, targetUserId: String): Unit =
+        error("Not implemented")
+
+    override suspend fun isFollowing(currentUserId: String, targetUserId: String): Boolean =
+        error("Not implemented")
+
+    override suspend fun getFollowerCount(userId: String): Int = error("Not implemented")
+
+    override suspend fun getFollowingCount(userId: String): Int = error("Not implemented")
+
+    override suspend fun getFollowerIds(userId: String): List<String> = error("Not implemented")
+
+    override suspend fun getFollowingIds(userId: String): List<String> = error("Not implemented")
   }
 }
