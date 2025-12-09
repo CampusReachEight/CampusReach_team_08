@@ -1,6 +1,7 @@
 package com.android.sample.ui.request
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -92,7 +93,15 @@ fun FilterMenuButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-  OutlinedButton(onClick = onClick, modifier = modifier.testTag(testTag)) {
+  OutlinedButton(
+      onClick = onClick,
+      modifier = modifier.testTag(testTag),
+      colors = ButtonDefaults.outlinedButtonColors(
+          containerColor = appPalette().accent,
+          contentColor = appPalette().onAccent
+      ),
+      border = BorderStroke(1.dp, appPalette().accent)
+      ) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically) {
@@ -169,8 +178,13 @@ private fun FilterMenuValuesList(
             .filter { labelOf(it).contains(localQuery, ignoreCase = true) }
             .sortedByDescending { counts[it] ?: 0 }
       }
-  Box(modifier = Modifier.heightIn(max = ConstantRequestList.DropdownMaxHeight)) {
-    Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+  Box(modifier = Modifier
+      .heightIn(max = ConstantRequestList.DropdownMaxHeight)
+      .background(color = appPalette().surface)) {
+    Column(modifier = Modifier
+        .fillMaxWidth()
+        .verticalScroll(rememberScrollState())
+        .background(color = appPalette().surface)) {
       filteredValues.forEach { v ->
         val isChecked = selected.contains(v)
         val count = counts[v] ?: 0
@@ -244,12 +258,8 @@ internal fun SortCriteriaButton(
         onClick = { expanded = true },
         modifier = Modifier.testTag(RequestSearchFilterTestTags.SORT_BUTTON),
         colors = ButtonDefaults.filledTonalButtonColors(
-            containerColor =
-                if (expanded) appPalette().accent
-                else appPalette().background,
-            contentColor =
-                if (expanded) appPalette().onAccent
-                else appPalette().onSurface
+            containerColor = appPalette().accent,
+            contentColor = appPalette().onAccent
         ),
         border = BorderStroke(1.dp, appPalette().accent),
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)) {
