@@ -66,7 +66,7 @@ class RequestListViewModel(
         saveProfilesToCache(requests)
 
         requests.forEach { loadProfileImage(it.creatorId) }
-          loadFollowRelationships()
+        loadFollowRelationships()
       } catch (e: Exception) {
         if (verboseLogging) Log.e("RequestListViewModel", "Failed to load requests", e)
 
@@ -82,7 +82,7 @@ class RequestListViewModel(
                 errorMessage = null)
           }
           cachedRequests.forEach { loadProfileImage(it.creatorId) }
-            loadFollowRelationships()
+          loadFollowRelationships()
           if (verboseLogging)
               Log.i("RequestListViewModel", "Loaded ${cachedRequests.size} requests from cache")
         } else {
@@ -152,22 +152,22 @@ class RequestListViewModel(
     }
   }
 
-    /** Loads the current user's followers and following lists for request highlighting. */
-    private fun loadFollowRelationships() {
-        viewModelScope.launch {
-            try {
-                val currentUserId = profileRepository.getCurrentUserId()
-                if (currentUserId.isEmpty()) return@launch
+  /** Loads the current user's followers and following lists for request highlighting. */
+  private fun loadFollowRelationships() {
+    viewModelScope.launch {
+      try {
+        val currentUserId = profileRepository.getCurrentUserId()
+        if (currentUserId.isEmpty()) return@launch
 
-                val following = profileRepository.getFollowingIds(currentUserId).toSet()
-                val followers = profileRepository.getFollowerIds(currentUserId).toSet()
+        val following = profileRepository.getFollowingIds(currentUserId).toSet()
+        val followers = profileRepository.getFollowerIds(currentUserId).toSet()
 
-                _state.update { it.copy(followingIds = following, followerIds = followers) }
-            } catch (e: Exception) {
-                if (verboseLogging) Log.e("RequestListViewModel", "Failed to load follow relationships", e)
-            }
-        }
+        _state.update { it.copy(followingIds = following, followerIds = followers) }
+      } catch (e: Exception) {
+        if (verboseLogging) Log.e("RequestListViewModel", "Failed to load follow relationships", e)
+      }
     }
+  }
 }
 
 class RequestListViewModelFactory(

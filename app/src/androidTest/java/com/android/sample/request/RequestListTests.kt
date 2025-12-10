@@ -38,7 +38,9 @@ import com.android.sample.ui.navigation.NavigationActions
 import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.profile.ProfilePictureTestTags
 import com.android.sample.ui.profile.UserSections
+import com.android.sample.ui.request.RequestListItem
 import com.android.sample.ui.request.RequestListScreen
+import com.android.sample.ui.request.RequestListState
 import com.android.sample.ui.request.RequestListTestTags
 import com.android.sample.ui.request.RequestListViewModel
 import com.android.sample.ui.request.RequestSearchFilterTestTags
@@ -131,7 +133,7 @@ class RequestListTests : BaseEmulatorTest() {
   }
 
   // Fake UserProfileRepository avec comptage
-  private class FakeUserProfileRepository(
+  private open class FakeUserProfileRepository(
       private val withImage: Set<String> = emptySet(),
       private val failing: Set<String> = emptySet()
   ) : UserProfileRepository {
@@ -1460,5 +1462,180 @@ class RequestListTests : BaseEmulatorTest() {
     composeTestRule
         .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM_TITLE, useUnmergedTree = true)
         .assertCountEquals(requests.size)
+  }
+
+  @Test
+  fun loadRequests_loadsFollowRelationships() = runBlocking {
+    val followingIds = listOf("user1", "user2")
+    val followerIds = listOf("user3", "user4")
+
+    val profileRepo =
+        object : FakeUserProfileRepository() {
+          override fun getCurrentUserId(): String = DEFAULT_USER_ID
+
+          override suspend fun getFollowingIds(userId: String): List<String> {
+            return followingIds
+          }
+
+          override suspend fun getFollowerIds(userId: String): List<String> {
+            return followerIds
+          }
+        }
+
+    val requests = sampleRequests(listOf("user1", "user3", "user5"))
+    val vm = RequestListViewModel(FakeRequestRepository(requests), profileRepo)
+
+    vm.loadRequests()
+    Thread.sleep(500) // Wait for async operations
+
+    val state = vm.state.value
+    assert(state.followingIds.containsAll(followingIds)) { "Following IDs not loaded" }
+    assert(state.followerIds.containsAll(followerIds)) { "Follower IDs not loaded" }
+    assert(state.requests.size == requests.size) { "Requests not loaded" }
+  }
+
+  @Test
+  fun loadRequests_handlesFollowRelationshipErrorsSilently() = runBlocking {
+    val profileRepo =
+        object : FakeUserProfileRepository() {
+          override fun getCurrentUserId(): String = DEFAULT_USER_ID
+
+          override suspend fun getFollowingIds(userId: String): List<String> {
+            throw IllegalStateException("Failed to load following")
+          }
+
+          override suspend fun getFollowerIds(userId: String): List<String> {
+            throw IllegalStateException("Failed to load followers")
+          }
+        }
+
+    val requests = sampleRequests(listOf("user1", "user2"))
+    val vm =
+        RequestListViewModel(FakeRequestRepository(requests), profileRepo, verboseLogging = true)
+
+    vm.loadRequests()
+    Thread.sleep(500)
+
+    val state = vm.state.value
+    assert(state.requests.size == requests.size) { "Requests should still load" }
+    assert(state.errorMessage == null) { "Should not show error for follow relationships" }
+    assert(state.followingIds.isEmpty()) { "Following IDs should be empty on failure" }
+    assert(state.followerIds.isEmpty()) { "Follower IDs should be empty on failure" }
+  }
+
+  @Test
+  fun requestListItem_displaysWithFollowingRelationship() {
+    val request = sampleRequests(listOf("following_user")).first()
+    val state =
+        RequestListState(
+            requests = listOf(request),
+            followingIds = setOf("following_user"),
+            followerIds = emptySet())
+
+    val vm = getFakeVm(listOf(request))
+
+    composeTestRule.setContent {
+      RequestListItem(
+          viewModel = vm, request = request, onClick = {}, navigationActions = null, state = state)
+    }
+
+    composeTestRule.onNodeWithTag(RequestListTestTags.REQUEST_ITEM).assertExists()
+    composeTestRule.onNodeWithTag(RequestListTestTags.REQUEST_ITEM).assertIsDisplayed()
+    composeTestRule.onNodeWithText(request.title).assertExists()
+  }
+
+  @Test
+  fun requestListItem_displaysWithFollowerRelationship() {
+    val request = sampleRequests(listOf("follower_user")).first()
+    val state =
+        RequestListState(
+            requests = listOf(request),
+            followingIds = emptySet(),
+            followerIds = setOf("follower_user"))
+
+    val vm = getFakeVm(listOf(request))
+
+    composeTestRule.setContent {
+      RequestListItem(
+          viewModel = vm, request = request, onClick = {}, navigationActions = null, state = state)
+    }
+
+    composeTestRule.onNodeWithTag(RequestListTestTags.REQUEST_ITEM).assertExists()
+    composeTestRule.onNodeWithTag(RequestListTestTags.REQUEST_ITEM).assertIsDisplayed()
+    composeTestRule.onNodeWithText(request.title).assertExists()
+  }
+
+  @Test
+  fun requestListItem_displaysWithoutRelationship() {
+    val request = sampleRequests(listOf("stranger_user")).first()
+    val state =
+        RequestListState(
+            requests = listOf(request), followingIds = emptySet(), followerIds = emptySet())
+
+    val vm = getFakeVm(listOf(request))
+
+    composeTestRule.setContent {
+      RequestListItem(
+          viewModel = vm, request = request, onClick = {}, navigationActions = null, state = state)
+    }
+
+    composeTestRule.onNodeWithTag(RequestListTestTags.REQUEST_ITEM).assertExists()
+    composeTestRule.onNodeWithTag(RequestListTestTags.REQUEST_ITEM).assertIsDisplayed()
+  }
+
+  @Test
+  fun requestListScreen_displaysRequestsWithFollowRelationships() {
+    val requests = sampleRequests(listOf("user1", "user2", "user3"))
+    val followingIds = listOf("user1")
+    val followerIds = listOf("user2")
+
+    val profileRepo =
+        object : FakeUserProfileRepository() {
+          override fun getCurrentUserId(): String = DEFAULT_USER_ID
+
+          override suspend fun getFollowingIds(userId: String): List<String> {
+            return followingIds
+          }
+
+          override suspend fun getFollowerIds(userId: String): List<String> {
+            return followerIds
+          }
+        }
+
+    val vm = RequestListViewModel(FakeRequestRepository(requests), profileRepo)
+
+    composeTestRule.setContent {
+      RequestListScreen(requestListViewModel = vm, navigationActions = null)
+    }
+
+    composeTestRule.waitUntil(WAIT_TIMEOUT_MS) { vm.state.value.requests.size == requests.size }
+
+    // Verify all request items are displayed
+    composeTestRule
+        .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM, useUnmergedTree = true)
+        .assertCountEquals(COUNT_THREE)
+
+    // Verify follow relationships were loaded
+    val state = vm.state.value
+    assert(state.followingIds.contains("user1")) { "Following relationship not loaded" }
+    assert(state.followerIds.contains("user2")) { "Follower relationship not loaded" }
+  }
+
+  @Test
+  fun requestListState_initializesWithEmptyFollowRelationships() {
+    val state = RequestListState()
+    assert(state.followingIds.isEmpty()) { "Following IDs should be empty by default" }
+    assert(state.followerIds.isEmpty()) { "Follower IDs should be empty by default" }
+  }
+
+  @Test
+  fun requestListState_storesFollowRelationships() {
+    val followingIds = setOf("user1", "user2")
+    val followerIds = setOf("user3", "user4")
+
+    val state = RequestListState(followingIds = followingIds, followerIds = followerIds)
+
+    assert(state.followingIds == followingIds) { "Following IDs not stored correctly" }
+    assert(state.followerIds == followerIds) { "Follower IDs not stored correctly" }
   }
 }

@@ -2,6 +2,7 @@ package com.android.sample.ui.request
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -13,7 +14,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
@@ -267,7 +267,6 @@ private const val THREE = 3
 
 private const val ZERO = 0
 
-
 @Composable
 fun RequestListItem(
     viewModel: RequestListViewModel,
@@ -276,59 +275,66 @@ fun RequestListItem(
     navigationActions: NavigationActions?,
     state: RequestListState,
     modifier: Modifier = Modifier
-){
-    val borderColor = when {
+) {
+  val accentColor =
+      when {
         request.creatorId in state.followingIds -> appPalette().accent
         request.creatorId in state.followerIds -> appPalette().secondary
-        else -> Color.Transparent
-    }
+        else -> null
+      }
 
-    val borderWidth = if (borderColor != Color.Transparent) THREE.dp else ZERO.dp
-    Card(
-        modifier =
-            modifier
-                .padding(bottom = ConstantRequestList.ListItemSpacing)
-                .fillMaxWidth()
-                .height(ConstantRequestList.RequestItemHeight)
-                .clickable(onClick = { onClick(request) })
-                .testTag(RequestListTestTags.REQUEST_ITEM),
-        colors =
-            CardDefaults.cardColors(
-                containerColor = appPalette().surface, contentColor = appPalette().onSurface),
-        border = BorderStroke(borderWidth, borderColor)
-    ) {
-        Row(
-            modifier =
-                Modifier.fillMaxSize().padding(ConstantRequestList.RequestItemInnerPadding)) {
-              ProfilePicture(
-                  profileRepository = viewModel.profileRepository,
-                  profileId = request.creatorId,
-                  navigationActions = navigationActions,
-                  modifier =
-                      Modifier.width(ConstantRequestList.RequestItemCreatorSectionSize)
-                          .fillMaxHeight()
-                          .align(Alignment.CenterVertically)
-                          .padding(vertical = ConstantRequestList.RequestItemProfileHeightPadding),
-                  withName = true,
-              )
+  Card(
+      modifier =
+          modifier
+              .padding(bottom = ConstantRequestList.ListItemSpacing)
+              .fillMaxWidth()
+              .height(ConstantRequestList.RequestItemHeight)
+              .clickable(onClick = { onClick(request) })
+              .testTag(RequestListTestTags.REQUEST_ITEM),
+      colors =
+          CardDefaults.cardColors(
+              containerColor = appPalette().surface, contentColor = appPalette().onSurface)) {
+        Row(modifier = Modifier.fillMaxSize()) {
+          // Left edge accent indicator
+          if (accentColor != null) {
+            Box(modifier = Modifier.width(4.dp).fillMaxHeight().background(accentColor))
+          }
 
-              Spacer(Modifier.width(ConstantRequestList.RowSpacing))
+          // Original card content
+          Row(
+              modifier =
+                  Modifier.fillMaxSize().padding(ConstantRequestList.RequestItemInnerPadding)) {
+                ProfilePicture(
+                    profileRepository = viewModel.profileRepository,
+                    profileId = request.creatorId,
+                    navigationActions = navigationActions,
+                    modifier =
+                        Modifier.width(ConstantRequestList.RequestItemCreatorSectionSize)
+                            .fillMaxHeight()
+                            .align(Alignment.CenterVertically)
+                            .padding(
+                                vertical = ConstantRequestList.RequestItemProfileHeightPadding),
+                    withName = true,
+                )
 
-              TitleAndDescription(request, modifier = Modifier.weight(WEIGHT_1f))
+                Spacer(Modifier.width(ConstantRequestList.RowSpacing))
 
-              Spacer(Modifier.width(ConstantRequestList.RowSpacing))
-              LazyColumn(
-                  modifier = Modifier.weight(ChipsDescriptionRatio),
-                  verticalArrangement = Arrangement.spacedBy(TypeChipColumnSpacing)) {
-                    val sortedRequestTypes = request.requestType.sortedBy { it.ordinal }
-                    items(sortedRequestTypes.size) { index ->
-                      val requestType = sortedRequestTypes[index]
-                      TypeChip(
-                          requestType = requestType,
-                      )
+                TitleAndDescription(request, modifier = Modifier.weight(1f))
+
+                Spacer(Modifier.width(ConstantRequestList.RowSpacing))
+                LazyColumn(
+                    modifier = Modifier.weight(ChipsDescriptionRatio),
+                    verticalArrangement = Arrangement.spacedBy(TypeChipColumnSpacing)) {
+                      val sortedRequestTypes = request.requestType.sortedBy { it.ordinal }
+                      items(sortedRequestTypes.size) { index ->
+                        val requestType = sortedRequestTypes[index]
+                        TypeChip(
+                            requestType = requestType,
+                        )
+                      }
                     }
-                  }
-            }
+              }
+        }
       }
 }
 
