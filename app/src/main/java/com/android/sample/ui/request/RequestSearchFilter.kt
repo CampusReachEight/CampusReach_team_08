@@ -1,5 +1,7 @@
 package com.android.sample.ui.request
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -15,6 +17,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
+import com.android.sample.ui.getTextFieldColors
+import com.android.sample.ui.theme.appPalette
 
 /** Centralized filter UI consuming dynamic facets from ViewModel. */
 @Composable
@@ -89,15 +93,21 @@ fun FilterMenuButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-  OutlinedButton(onClick = onClick, modifier = modifier.testTag(testTag)) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically) {
-          val label = if (selectedCount > 0) "$title ($selectedCount)" else title
-          Text(label)
-          Icon(imageVector = Icons.Filled.ArrowDropDown, contentDescription = null)
-        }
-  }
+  OutlinedButton(
+      onClick = onClick,
+      modifier = modifier.testTag(testTag),
+      colors =
+          ButtonDefaults.outlinedButtonColors(
+              containerColor = appPalette().accent, contentColor = appPalette().onAccent),
+      border = BorderStroke(1.dp, appPalette().accent)) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically) {
+              val label = if (selectedCount > 0) "$title ($selectedCount)" else title
+              Text(label)
+              Icon(imageVector = Icons.Filled.ArrowDropDown, contentDescription = null)
+            }
+      }
 }
 
 @Composable
@@ -111,10 +121,16 @@ fun FilterMenuPanel(
     rowTestTagOf: (Enum<*>) -> String
 ) {
   Column(
-      modifier = Modifier.fillMaxWidth().padding(horizontal = ConstantRequestList.PaddingLarge)) {
+      modifier =
+          Modifier.fillMaxWidth()
+              .padding(horizontal = ConstantRequestList.PaddingLarge)
+              .background(color = appPalette().surface)) {
         Spacer(modifier = Modifier.height(ConstantRequestList.PaddingSmall))
         Surface(
-            shape = MaterialTheme.shapes.medium, tonalElevation = 2.dp, shadowElevation = 2.dp) {
+            shape = MaterialTheme.shapes.medium,
+            tonalElevation = 2.dp,
+            shadowElevation = 2.dp,
+            color = appPalette().surface) {
               Column(
                   modifier = Modifier.fillMaxWidth().padding(ConstantRequestList.PaddingMedium)) {
                     var localQuery by rememberSaveable { mutableStateOf("") }
@@ -147,7 +163,8 @@ private fun FilterMenuSearchBar(
       onValueChange = onQueryChange,
       modifier = Modifier.fillMaxWidth().testTag(dropdownSearchBarTestTag),
       singleLine = true,
-      placeholder = { Text("Search options") })
+      placeholder = { Text("Search options") },
+      colors = getTextFieldColors())
 }
 
 @Composable
@@ -166,28 +183,42 @@ private fun FilterMenuValuesList(
             .filter { labelOf(it).contains(localQuery, ignoreCase = true) }
             .sortedByDescending { counts[it] ?: 0 }
       }
-  Box(modifier = Modifier.heightIn(max = ConstantRequestList.DropdownMaxHeight)) {
-    Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
-      filteredValues.forEach { v ->
-        val isChecked = selected.contains(v)
-        val count = counts[v] ?: 0
-        Row(
+  Box(
+      modifier =
+          Modifier.heightIn(max = ConstantRequestList.DropdownMaxHeight)
+              .background(color = appPalette().surface)) {
+        Column(
             modifier =
                 Modifier.fillMaxWidth()
-                    .clickable { onToggle(v) }
-                    .padding(horizontal = ConstantRequestList.FilterRowHorizontalPadding)
-                    .testTag(rowTestTagOf(v))
-                    .height(ConstantRequestList.FilterRowHeight),
-            horizontalArrangement = Arrangement.Start) {
-              Checkbox(checked = isChecked, onCheckedChange = null)
-              Spacer(modifier = Modifier.width(ConstantRequestList.RowSpacing))
-              Text(text = labelOf(v))
-              Spacer(modifier = Modifier.weight(1f))
-              Text(text = count.toString())
+                    .verticalScroll(rememberScrollState())
+                    .background(color = appPalette().surface)) {
+              filteredValues.forEach { v ->
+                val isChecked = selected.contains(v)
+                val count = counts[v] ?: 0
+                Row(
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .clickable { onToggle(v) }
+                            .padding(horizontal = ConstantRequestList.FilterRowHorizontalPadding)
+                            .testTag(rowTestTagOf(v))
+                            .height(ConstantRequestList.FilterRowHeight),
+                    horizontalArrangement = Arrangement.Start) {
+                      Checkbox(
+                          checked = isChecked,
+                          onCheckedChange = null,
+                          colors =
+                              CheckboxDefaults.colors(
+                                  checkedColor = appPalette().accent,
+                                  uncheckedColor = appPalette().secondary,
+                                  checkmarkColor = appPalette().onAccent))
+                      Spacer(modifier = Modifier.width(ConstantRequestList.RowSpacing))
+                      Text(text = labelOf(v))
+                      Spacer(modifier = Modifier.weight(1f))
+                      Text(text = count.toString())
+                    }
+              }
             }
       }
-    }
-  }
 }
 
 /** Global search bar bound to SearchFilterViewModel's state. */
@@ -204,6 +235,7 @@ private fun RequestSearchBar(
       onValueChange = onQueryChange,
       modifier = modifier,
       singleLine = true,
+      colors = getTextFieldColors(),
       placeholder = { Text("Search") },
       trailingIcon = {
         if (query.isNotEmpty()) {
@@ -239,6 +271,10 @@ internal fun SortCriteriaButton(
     FilledTonalButton(
         onClick = { expanded = true },
         modifier = Modifier.testTag(RequestSearchFilterTestTags.SORT_BUTTON),
+        colors =
+            ButtonDefaults.filledTonalButtonColors(
+                containerColor = appPalette().accent, contentColor = appPalette().onAccent),
+        border = BorderStroke(1.dp, appPalette().accent),
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)) {
           Text(labelOf(current))
           Spacer(Modifier.width(4.dp))
@@ -249,6 +285,7 @@ internal fun SortCriteriaButton(
         expanded = expanded,
         onDismissRequest = { expanded = false },
         properties = PopupProperties(focusable = false),
+        containerColor = appPalette().surface,
         modifier = Modifier.testTag(RequestSearchFilterTestTags.SORT_MENU)) {
           RequestSort.entries.forEach { option ->
             DropdownMenuItem(

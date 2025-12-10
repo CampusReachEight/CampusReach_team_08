@@ -138,6 +138,7 @@ fun RequestListScreen(
 
   Scaffold(
       modifier = modifier.fillMaxSize().testTag(NavigationTestTags.REQUESTS_SCREEN),
+      containerColor = appPalette().background,
       topBar = {
         if (showOnlyMyRequests) {
           // Simple back button for My Requests
@@ -274,38 +275,42 @@ fun RequestListItem(
               .height(ConstantRequestList.RequestItemHeight)
               .clickable(onClick = { onClick(request) })
               .testTag(RequestListTestTags.REQUEST_ITEM),
-  ) {
-    Row(modifier = Modifier.fillMaxSize().padding(ConstantRequestList.RequestItemInnerPadding)) {
-      ProfilePicture(
-          profileRepository = viewModel.profileRepository,
-          profileId = request.creatorId,
-          navigationActions = navigationActions,
-          modifier =
-              Modifier.width(ConstantRequestList.RequestItemCreatorSectionSize)
-                  .fillMaxHeight()
-                  .align(Alignment.CenterVertically)
-                  .padding(vertical = ConstantRequestList.RequestItemProfileHeightPadding),
-          withName = true,
-      )
-
-      Spacer(Modifier.width(ConstantRequestList.RowSpacing))
-
-      TitleAndDescription(request, modifier = Modifier.weight(1f))
-
-      Spacer(Modifier.width(ConstantRequestList.RowSpacing))
-      LazyColumn(
-          modifier = Modifier.weight(ChipsDescriptionRatio),
-          verticalArrangement = Arrangement.spacedBy(TypeChipColumnSpacing)) {
-            val sortedRequestTypes = request.requestType.sortedBy { it.ordinal }
-            items(sortedRequestTypes.size) { index ->
-              val requestType = sortedRequestTypes[index]
-              TypeChip(
-                  requestType = requestType,
+      colors =
+          CardDefaults.cardColors(
+              containerColor = appPalette().surface, contentColor = appPalette().onSurface)) {
+        Row(
+            modifier =
+                Modifier.fillMaxSize().padding(ConstantRequestList.RequestItemInnerPadding)) {
+              ProfilePicture(
+                  profileRepository = viewModel.profileRepository,
+                  profileId = request.creatorId,
+                  navigationActions = navigationActions,
+                  modifier =
+                      Modifier.width(ConstantRequestList.RequestItemCreatorSectionSize)
+                          .fillMaxHeight()
+                          .align(Alignment.CenterVertically)
+                          .padding(vertical = ConstantRequestList.RequestItemProfileHeightPadding),
+                  withName = true,
               )
+
+              Spacer(Modifier.width(ConstantRequestList.RowSpacing))
+
+              TitleAndDescription(request, modifier = Modifier.weight(1f))
+
+              Spacer(Modifier.width(ConstantRequestList.RowSpacing))
+              LazyColumn(
+                  modifier = Modifier.weight(ChipsDescriptionRatio),
+                  verticalArrangement = Arrangement.spacedBy(TypeChipColumnSpacing)) {
+                    val sortedRequestTypes = request.requestType.sortedBy { it.ordinal }
+                    items(sortedRequestTypes.size) { index ->
+                      val requestType = sortedRequestTypes[index]
+                      TypeChip(
+                          requestType = requestType,
+                      )
+                    }
+                  }
             }
-          }
-    }
-  }
+      }
 }
 
 @Composable
