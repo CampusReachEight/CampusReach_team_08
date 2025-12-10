@@ -163,7 +163,8 @@ fun RequestListScreen(
               selectedNavigationTab = NavigationTab.Requests, navigationActions = navigationActions)
         }
       },
-      floatingActionButton = { AddButton(navigationActions) }) { innerPadding ->
+      floatingActionButton = { if (!state.offlineMode) AddButton(navigationActions) }) {
+          innerPadding ->
 
         // Error dialog when present
         state.errorMessage?.let { msg ->
