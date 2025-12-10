@@ -44,7 +44,7 @@ data class MapUIState(
     val currentLocation: LatLng? = null,
     val zoomPreference: MapZoomPreference = MapZoomPreference.NEAREST_REQUEST,
     val wasOnAnotherScreen: Boolean = true,
-    val canOtherZoom: Boolean = true
+    val canOtherZoom: Boolean = true,
 )
 
 /** A class for the preference of the user for automatic zoom */
@@ -180,8 +180,8 @@ class MapViewModel(
    *   request
    */
   private fun setLocToCurrentRequest(): Boolean {
-    if (_uiState.value.wasOnAnotherScreen && _uiState.value.currentRequest != null) {
-      if (_uiState.value.canOtherZoom) {
+    if (_uiState.value.wasOnAnotherScreen) {
+      if (_uiState.value.canOtherZoom && _uiState.value.currentRequest != null) {
         val loc =
             LatLng(
                 _uiState.value.currentRequest!!.location.latitude,

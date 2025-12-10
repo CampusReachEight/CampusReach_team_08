@@ -2,7 +2,6 @@ package com.android.sample.ui.map
 
 import android.content.Context
 import android.location.LocationManager
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -166,6 +165,7 @@ fun MapScreen(
   var showZoomDialog by remember { mutableStateOf(false) }
 
   var isMapReady by remember { mutableStateOf(false) }
+  var isFirstTime by remember { mutableStateOf(requestId != null) }
 
   // Refresh UI on start
   LaunchedEffect(Unit) { viewModel.refreshUIState(requestId) }
@@ -185,7 +185,9 @@ fun MapScreen(
           currentUserId,
           viewModel,
           searchFilterViewModel,
-          uiState.request)
+          uiState.request,
+          isFirstTime = isFirstTime,
+          notFirstTime = { isFirstTime = false })
 
   // Setup permissions
   SetupLocationPermissions(context, viewModel, uiState)
@@ -277,7 +279,9 @@ private fun setupRequestFiltering(
     currentUserId: String,
     viewModel: MapViewModel,
     searchFilterViewModel: RequestSearchFilterViewModel,
-    allRequests: List<Request>
+    allRequests: List<Request>,
+    isFirstTime: Boolean,
+    notFirstTime: () -> Unit
 ): List<Request> {
   val finalFilteredRequests =
       remember(displayedRequests, requestOwnership, currentUserId) {
@@ -286,7 +290,13 @@ private fun setupRequestFiltering(
 
   LaunchedEffect(allRequests) { searchFilterViewModel.initializeWithRequests(allRequests) }
 
-  LaunchedEffect(finalFilteredRequests) { viewModel.zoomOnRequest(finalFilteredRequests) }
+  LaunchedEffect(finalFilteredRequests) {
+    if (isFirstTime) {
+      notFirstTime()
+      return@LaunchedEffect
+    }
+    viewModel.zoomOnRequest(finalFilteredRequests)
+  }
 
   return finalFilteredRequests
 }
@@ -968,9 +978,6 @@ private fun AutoZoomEffect(
     viewModel: MapViewModel
 ) {
   LaunchedEffect(uiState.needToZoom) {
-    Log.d("AUTOZOOM", "${uiState.needToZoom}")
-    Log.d("AUTOZOOM", "${uiState.needToZoom}")
-    Log.d("AUTOZOOM", "${uiState.needToZoom}")
     if (uiState.needToZoom) {
       cameraPositionState.animate(
           update =
