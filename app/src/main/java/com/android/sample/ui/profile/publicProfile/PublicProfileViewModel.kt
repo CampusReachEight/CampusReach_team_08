@@ -17,6 +17,10 @@ data class PublicProfileUiState(
     val isFollowing: Boolean = false
 )
 
+private const val ONE = 1
+
+private const val LOGGED_IN_ERROR = "You must be logged in to follow users"
+
 class PublicProfileViewModel(val userProfileRepository: UserProfileRepository) : ViewModel() {
 
   private val _uiState = MutableStateFlow(PublicProfileUiState())
@@ -56,15 +60,13 @@ class PublicProfileViewModel(val userProfileRepository: UserProfileRepository) :
     _uiState.value = PublicProfileUiState()
   }
 
-  // Add after the clear() function:
-
   fun toggleFollow(targetUserId: String) {
     viewModelScope.launch {
       try {
         val currentUserId = userProfileRepository.getCurrentUserId()
 
         if (currentUserId.isBlank()) {
-          _uiState.value = _uiState.value.copy(error = "You must be logged in to follow users")
+          _uiState.value = _uiState.value.copy(error = LOGGED_IN_ERROR)
           return@launch
         }
 
@@ -77,14 +79,16 @@ class PublicProfileViewModel(val userProfileRepository: UserProfileRepository) :
           _uiState.value =
               _uiState.value.copy(
                   isFollowing = false,
-                  profile = currentProfile?.copy(followerCount = currentProfile.followerCount - 1))
+                  profile =
+                      currentProfile?.copy(followerCount = currentProfile.followerCount - ONE))
         } else {
           userProfileRepository.followUser(currentUserId, targetUserId)
           // Update state immediately without reloading
           _uiState.value =
               _uiState.value.copy(
                   isFollowing = true,
-                  profile = currentProfile?.copy(followerCount = currentProfile.followerCount + 1))
+                  profile =
+                      currentProfile?.copy(followerCount = currentProfile.followerCount + ONE))
         }
       } catch (e: IllegalArgumentException) {
         _uiState.value = _uiState.value.copy(error = e.message)
@@ -96,14 +100,16 @@ class PublicProfileViewModel(val userProfileRepository: UserProfileRepository) :
     }
   }
 
-  suspend fun checkFollowingStatus(currentUserId: String, targetUserId: String) {
+  fun checkFollowingStatus(currentUserId: String, targetUserId: String) {
     if (currentUserId.isBlank() || targetUserId.isBlank()) return
 
-    try {
-      val isFollowing = userProfileRepository.isFollowing(currentUserId, targetUserId)
-      _uiState.value = _uiState.value.copy(isFollowing = isFollowing)
-    } catch (e: Exception) {
-      // Silently fail - following status is not critical
+    viewModelScope.launch {
+      try {
+        val isFollowing = userProfileRepository.isFollowing(currentUserId, targetUserId)
+        _uiState.value = _uiState.value.copy(isFollowing = isFollowing)
+      } catch (e: Exception) {
+        // Silently fail - following status is not critical
+      }
     }
   }
 }
