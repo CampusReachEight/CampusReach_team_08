@@ -1,11 +1,13 @@
 package com.android.sample.navigation
 
+import android.Manifest
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.navigation.compose.rememberNavController
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.rule.GrantPermissionRule
 import com.android.sample.ui.navigation.NavigationActions
 import com.android.sample.ui.navigation.NavigationScreen
 import com.android.sample.ui.navigation.NavigationTestTags
@@ -24,6 +26,11 @@ import org.junit.runner.RunWith
 class NavigationTests : BaseEmulatorTest() {
 
   @get:Rule val composeTestRule = createComposeRule()
+
+  @get:Rule
+  val permissionRule: GrantPermissionRule =
+      GrantPermissionRule.grant(
+          Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
 
   private lateinit var navigationActions: NavigationActions
 

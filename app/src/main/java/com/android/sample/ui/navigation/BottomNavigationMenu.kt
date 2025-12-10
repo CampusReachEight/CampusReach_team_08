@@ -29,7 +29,7 @@ sealed class NavigationTab(val name: String, val icon: ImageVector, val destinat
 
   object Events : NavigationTab("Events", Icons.Outlined.Alarm, Screen.Events)
 
-  object Map : NavigationTab("Map", Icons.Outlined.Place, Screen.Map)
+  object Map : NavigationTab("Map", Icons.Outlined.Place, Screen.Map())
 }
 
 private val navigationTabs = listOf(NavigationTab.Requests, NavigationTab.Events, NavigationTab.Map)
@@ -64,7 +64,7 @@ fun BottomNavigationMenu(
                     navigationActions?.navigateTo(Screen.Events)
                   }
                   NavigationTab.Map -> {
-                    navigationActions?.navigateTo(Screen.Map)
+                    navigationActions?.navigateTo(Screen.Map())
                   }
                 }
               },

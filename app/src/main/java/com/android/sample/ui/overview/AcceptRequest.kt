@@ -39,6 +39,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -79,6 +80,7 @@ object AcceptRequestScreenTestTags {
   const val REQUEST_DETAILS_CARD = "requestDetailsCard"
   const val VOLUNTEERS_SECTION_HEADER = "volunteersHeader"
   const val VOLUNTEERS_SECTION_CONTAINER = "volunteersContainer"
+  const val NAVIGATE_TO_MAP = "navigateToMap"
 }
 
 // Centralized user-visible strings for AcceptRequest screen
@@ -109,6 +111,7 @@ object AcceptRequestScreenLabels {
   const val INITIALS_PLACEHOLDER = "?"
 
   const val DATE_TIME_FORMAT = "dd/MM/yyyy HH:mm"
+  const val SEE_REQUEST_ON_MAP = "See request on map"
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -118,7 +121,8 @@ fun AcceptRequestScreen(
     acceptRequestViewModel: AcceptRequestViewModel = viewModel(),
     onGoBack: () -> Unit = {},
     onEditClick: (String) -> Unit = {},
-    onValidateClick: (String) -> Unit = {}
+    onValidateClick: (String) -> Unit = {},
+    onMapClick: (String) -> Unit = {}
 ) {
   LaunchedEffect(requestId) { acceptRequestViewModel.loadRequest(requestId) }
 
@@ -136,6 +140,8 @@ fun AcceptRequestScreen(
 
   // UI local state
   var volunteersExpanded by rememberSaveable { mutableStateOf(false) }
+
+  var isLoading by remember { mutableStateOf(false) }
 
   Scaffold(
       modifier = Modifier.testTag(NavigationTestTags.ACCEPT_REQUEST_SCREEN),
@@ -296,6 +302,32 @@ fun AcceptRequestScreen(
                                   else if (requestState.accepted)
                                       AcceptRequestScreenLabels.CANCEL_ACCEPTANCE
                                   else AcceptRequestScreenLabels.ACCEPT_REQUEST,
+                              style = MaterialTheme.typography.labelLarge)
+                        }
+                      }
+                  FilledTonalButton(
+                      onClick = {
+                        isLoading = true
+                        onMapClick(requestId)
+                      },
+                      enabled = !isLoading,
+                      modifier =
+                          Modifier.fillMaxWidth()
+                              .height(AcceptRequestScreenConstants.BUTTON_HEIGHT)
+                              .testTag(AcceptRequestScreenTestTags.NAVIGATE_TO_MAP),
+                      colors =
+                          ButtonDefaults.buttonColors(
+                              containerColor = appPalette().accent,
+                              contentColor = appPalette().onAccent)) {
+                        if (isLoading) {
+                          CircularProgressIndicator(
+                              modifier =
+                                  Modifier.size(
+                                      AcceptRequestScreenConstants.CIRCULAR_PROGRESS_SIZE),
+                              color = appPalette().onAccent)
+                        } else {
+                          Text(
+                              text = AcceptRequestScreenLabels.SEE_REQUEST_ON_MAP,
                               style = MaterialTheme.typography.labelLarge)
                         }
                       }
