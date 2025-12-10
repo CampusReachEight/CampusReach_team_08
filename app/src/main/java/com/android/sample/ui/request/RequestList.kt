@@ -13,6 +13,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
@@ -248,16 +249,24 @@ fun RequestList(
                 viewModel = viewModel,
                 request = request,
                 onClick = onRequestClick,
-                navigationActions = navigationActions)
+                navigationActions = navigationActions,
+                state = state)
           }
         }
   }
 }
 
-private const val WEIGHT = 1f
+private const val WEIGHT_1f = 1f
+
+private const val WEIGHT = WEIGHT_1f
 
 private const val MAX_PARAM = 2
 private const val ChipsDescriptionRatio = 0.4f
+
+private const val THREE = 3
+
+private const val ZERO = 0
+
 
 @Composable
 fun RequestListItem(
@@ -265,20 +274,29 @@ fun RequestListItem(
     request: Request,
     onClick: (Request) -> Unit,
     navigationActions: NavigationActions?,
+    state: RequestListState,
     modifier: Modifier = Modifier
-) {
+){
+    val borderColor = when {
+        request.creatorId in state.followingIds -> appPalette().accent
+        request.creatorId in state.followerIds -> appPalette().secondary
+        else -> Color.Transparent
+    }
 
-  Card(
-      modifier =
-          modifier
-              .padding(bottom = ConstantRequestList.ListItemSpacing)
-              .fillMaxWidth()
-              .height(ConstantRequestList.RequestItemHeight)
-              .clickable(onClick = { onClick(request) })
-              .testTag(RequestListTestTags.REQUEST_ITEM),
-      colors =
-          CardDefaults.cardColors(
-              containerColor = appPalette().surface, contentColor = appPalette().onSurface)) {
+    val borderWidth = if (borderColor != Color.Transparent) THREE.dp else ZERO.dp
+    Card(
+        modifier =
+            modifier
+                .padding(bottom = ConstantRequestList.ListItemSpacing)
+                .fillMaxWidth()
+                .height(ConstantRequestList.RequestItemHeight)
+                .clickable(onClick = { onClick(request) })
+                .testTag(RequestListTestTags.REQUEST_ITEM),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = appPalette().surface, contentColor = appPalette().onSurface),
+        border = BorderStroke(borderWidth, borderColor)
+    ) {
         Row(
             modifier =
                 Modifier.fillMaxSize().padding(ConstantRequestList.RequestItemInnerPadding)) {
@@ -296,7 +314,7 @@ fun RequestListItem(
 
               Spacer(Modifier.width(ConstantRequestList.RowSpacing))
 
-              TitleAndDescription(request, modifier = Modifier.weight(1f))
+              TitleAndDescription(request, modifier = Modifier.weight(WEIGHT_1f))
 
               Spacer(Modifier.width(ConstantRequestList.RowSpacing))
               LazyColumn(
@@ -360,7 +378,7 @@ fun TypeChip(
               val baseFontSizePx = with(density) { baseFontSize.toPx() }
 
               val estimatedTextWidth = textLength * baseFontSizePx * TypeChipTextSizeFactor
-              val scaleFactor = (availableWidthPx / estimatedTextWidth).coerceAtMost(1.0f)
+              val scaleFactor = (availableWidthPx / estimatedTextWidth).coerceAtMost(WEIGHT_1f)
 
               Text(
                   text = requestType.displayString(),
