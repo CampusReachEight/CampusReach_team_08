@@ -297,7 +297,8 @@ fun RequestListItem(
         Row(modifier = Modifier.fillMaxSize()) {
           // Left edge accent indicator
           if (accentColor != null) {
-            Box(modifier = Modifier.width(4.dp).fillMaxHeight().background(accentColor))
+            val width = 4.dp
+            Box(modifier = Modifier.width(width).fillMaxHeight().background(accentColor))
           }
 
           // Original card content
