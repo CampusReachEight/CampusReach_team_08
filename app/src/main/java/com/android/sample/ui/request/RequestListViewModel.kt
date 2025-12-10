@@ -7,6 +7,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.android.sample.model.profile.UserProfileCache
 import com.android.sample.model.profile.UserProfileRepository
 import com.android.sample.model.profile.UserProfileRepositoryFirestore
 import com.android.sample.model.request.Request
@@ -36,7 +37,8 @@ class RequestListViewModel(
         UserProfileRepositoryFirestore(Firebase.firestore),
     val requestCache: RequestCache? = null,
     val showOnlyMyRequests: Boolean = false,
-    val verboseLogging: Boolean = false
+    val verboseLogging: Boolean = false,
+    val profileCache: UserProfileCache? = null
 ) : ViewModel() {
   private val _state = MutableStateFlow(RequestListState())
   val state: StateFlow<RequestListState> = _state
@@ -61,6 +63,7 @@ class RequestListViewModel(
 
         // Save requests to cache if available
         requestCache?.saveRequests(requests)
+        saveProfilesToCache(requests)
 
         requests.forEach { loadProfileImage(it.creatorId) }
       } catch (e: Exception) {
@@ -129,17 +132,37 @@ class RequestListViewModel(
   internal fun setOfflineMode(offline: Boolean) {
     _state.update { it.copy(offlineMode = offline) }
   }
+
+  private fun saveProfilesToCache(requests: List<Request>) {
+    viewModelScope.launch {
+      requests.forEach { request ->
+        val userId = request.creatorId
+        if (profileCache != null) {
+          try {
+            val profile = profileRepository.getUserProfile(userId)
+            profileCache.saveProfile(profile)
+          } catch (e: Exception) {
+            if (verboseLogging)
+                Log.e("RequestListViewModel", "Failed to cache profile for $userId", e)
+          }
+        }
+      }
+    }
+  }
 }
 
 class RequestListViewModelFactory(
     private val showOnlyMyRequests: Boolean = false,
-    private val requestCache: RequestCache? = null
+    private val requestCache: RequestCache? = null,
+    private val profileCache: UserProfileCache? = null
 ) : ViewModelProvider.Factory {
   override fun <T : ViewModel> create(modelClass: Class<T>): T {
     if (modelClass.isAssignableFrom(RequestListViewModel::class.java)) {
       @Suppress("UNCHECKED_CAST")
       return RequestListViewModel(
-          showOnlyMyRequests = showOnlyMyRequests, requestCache = requestCache)
+          showOnlyMyRequests = showOnlyMyRequests,
+          requestCache = requestCache,
+          profileCache = profileCache)
           as T
     }
     throw IllegalArgumentException("Unknown ViewModel class")
