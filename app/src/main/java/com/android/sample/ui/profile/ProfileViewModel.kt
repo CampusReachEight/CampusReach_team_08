@@ -112,6 +112,8 @@ class ProfileViewModel(
           profileId = profile.id,
           kudosReceived = profile.kudos,
           helpReceived = profile.helpReceived,
+          followers = profile.followerCount,
+          following = profile.followingCount,
           offlineMode = _state.value.offlineMode,
           arrivalDate = formatDate(profile.arrivalDate),
           userSection = sectionLabel,
