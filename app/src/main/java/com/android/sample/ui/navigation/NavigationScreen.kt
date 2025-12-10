@@ -112,7 +112,8 @@ fun NavigationScreen(
       viewModel(
           key = "myRequestsViewModel",
           factory =
-              RequestListViewModelFactory(showOnlyMyRequests = true, requestCache = requestCache))
+              RequestListViewModelFactory(showOnlyMyRequests = true, requestCache = requestCache, profileCache = profileCache))
+
   val editRequestViewModel: EditRequestViewModel =
       viewModel(
           factory =
