@@ -297,4 +297,195 @@ class RequestCacheTest {
     val loaded = requestCache.loadRequests()
     assertTrue(loaded.isEmpty())
   }
+
+  @Test
+  fun `loadRequests with filter should return only matching requests`() {
+    val requests =
+        listOf(
+            Request(
+                requestId = "1",
+                title = "Study Session",
+                description = "Looking for a study partner for finals.",
+                requestType = listOf(RequestType.STUDYING),
+                location = Location(46.7, -71.2, "Library"),
+                locationName = "Library",
+                status = RequestStatus.OPEN,
+                startTimeStamp = Date(1672531200000L),
+                expirationTime = Date(1672617600000L),
+                people = listOf("user1"),
+                tags = listOf(Tags.SOLO_WORK),
+                creatorId = "user2"),
+            Request(
+                requestId = "2",
+                title = "Soccer Game",
+                description = "Need one more player.",
+                requestType = listOf(RequestType.SPORT),
+                location = Location(46.8, -71.3, "Field"),
+                locationName = "Field",
+                status = RequestStatus.OPEN,
+                startTimeStamp = Date(1672704000000L),
+                expirationTime = Date(1672790400000L),
+                people = listOf("user3", "user4"),
+                tags = listOf(Tags.OUTDOOR, Tags.GROUP_WORK),
+                creatorId = "user5"),
+            Request(
+                requestId = "3",
+                title = "Study Group",
+                description = "Join our study group.",
+                requestType = listOf(RequestType.STUDYING),
+                location = Location(46.9, -71.4, "Cafe"),
+                locationName = "Cafe",
+                status = RequestStatus.IN_PROGRESS,
+                startTimeStamp = Date(1672704000000L),
+                expirationTime = Date(1672790400000L),
+                people = listOf("user6"),
+                tags = listOf(Tags.GROUP_WORK),
+                creatorId = "user7"))
+
+    requestCache.saveRequests(requests)
+
+    // Filter only STUDYING requests
+    val studyingRequests =
+        requestCache.loadRequests { it.requestType.contains(RequestType.STUDYING) }
+    assertEquals(2, studyingRequests.size)
+    assertTrue(studyingRequests.all { it.requestType.contains(RequestType.STUDYING) })
+
+    // Filter only SPORT requests
+    val sportRequests = requestCache.loadRequests { it.requestType.contains(RequestType.SPORT) }
+    assertEquals(1, sportRequests.size)
+    assertEquals("Soccer Game", sportRequests.first().title)
+
+    // Filter by status
+    val openRequests = requestCache.loadRequests { it.status == RequestStatus.OPEN }
+    assertEquals(2, openRequests.size)
+
+    // Filter by creator
+    val user2Requests = requestCache.loadRequests { it.creatorId == "user2" }
+    assertEquals(1, user2Requests.size)
+    assertEquals("Study Session", user2Requests.first().title)
+  }
+
+  @Test
+  fun `loadRequests without filter should return all requests`() {
+    val requests =
+        listOf(
+            Request(
+                requestId = "1",
+                title = "Request 1",
+                description = "Description 1",
+                requestType = listOf(RequestType.STUDYING),
+                location = Location(0.0, 0.0, "Place 1"),
+                locationName = "Place 1",
+                status = RequestStatus.OPEN,
+                startTimeStamp = Date(),
+                expirationTime = Date(),
+                people = emptyList(),
+                tags = emptyList(),
+                creatorId = "user1"),
+            Request(
+                requestId = "2",
+                title = "Request 2",
+                description = "Description 2",
+                requestType = listOf(RequestType.SPORT),
+                location = Location(0.0, 0.0, "Place 2"),
+                locationName = "Place 2",
+                status = RequestStatus.OPEN,
+                startTimeStamp = Date(),
+                expirationTime = Date(),
+                people = emptyList(),
+                tags = emptyList(),
+                creatorId = "user2"))
+
+    requestCache.saveRequests(requests)
+
+    // Load without filter (default behavior)
+    val allRequests = requestCache.loadRequests()
+    assertEquals(2, allRequests.size)
+  }
+
+  @Test
+  fun `loadRequests with filter that matches nothing should return empty list`() {
+    val requests =
+        listOf(
+            Request(
+                requestId = "1",
+                title = "Study Session",
+                description = "Looking for a study partner.",
+                requestType = listOf(RequestType.STUDYING),
+                location = Location(0.0, 0.0, "Library"),
+                locationName = "Library",
+                status = RequestStatus.OPEN,
+                startTimeStamp = Date(),
+                expirationTime = Date(),
+                people = emptyList(),
+                tags = emptyList(),
+                creatorId = "user1"))
+
+    requestCache.saveRequests(requests)
+
+    // Filter that matches nothing
+    val filteredRequests = requestCache.loadRequests { it.requestType.contains(RequestType.SPORT) }
+    assertTrue(filteredRequests.isEmpty())
+  }
+
+  @Test
+  fun `loadRequests with complex filter combining multiple conditions`() {
+    val requests =
+        listOf(
+            Request(
+                requestId = "1",
+                title = "Study Session",
+                description = "Looking for a study partner.",
+                requestType = listOf(RequestType.STUDYING),
+                location = Location(0.0, 0.0, "Library"),
+                locationName = "Library",
+                status = RequestStatus.OPEN,
+                startTimeStamp = Date(),
+                expirationTime = Date(),
+                people = listOf("user1", "user2"),
+                tags = listOf(Tags.SOLO_WORK),
+                creatorId = "user3"),
+            Request(
+                requestId = "2",
+                title = "Soccer Game",
+                description = "Need players.",
+                requestType = listOf(RequestType.SPORT),
+                location = Location(0.0, 0.0, "Field"),
+                locationName = "Field",
+                status = RequestStatus.OPEN,
+                startTimeStamp = Date(),
+                expirationTime = Date(),
+                people = listOf("user4"),
+                tags = listOf(Tags.OUTDOOR),
+                creatorId = "user5"),
+            Request(
+                requestId = "3",
+                title = "Basketball",
+                description = "Looking for players.",
+                requestType = listOf(RequestType.SPORT),
+                location = Location(0.0, 0.0, "Court"),
+                locationName = "Court",
+                status = RequestStatus.IN_PROGRESS,
+                startTimeStamp = Date(),
+                expirationTime = Date(),
+                people = listOf("user6", "user7", "user8"),
+                tags = listOf(Tags.OUTDOOR),
+                creatorId = "user9"))
+
+    requestCache.saveRequests(requests)
+
+    // Complex filter: SPORT requests with OPEN status and more than 1 person
+    val filteredRequests =
+        requestCache.loadRequests {
+          it.requestType.contains(RequestType.SPORT) &&
+              it.status == RequestStatus.OPEN &&
+              it.people.size > 1
+        }
+
+    assertEquals(0, filteredRequests.size) // Soccer has only 1 person, Basketball is IN_PROGRESS
+
+    // Another complex filter: Any request with more than 1 person
+    val multiPersonRequests = requestCache.loadRequests { it.people.size > 1 }
+    assertEquals(2, multiPersonRequests.size)
+  }
 }

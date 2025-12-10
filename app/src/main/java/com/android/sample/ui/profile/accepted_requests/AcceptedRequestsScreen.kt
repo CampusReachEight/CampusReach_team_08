@@ -98,6 +98,8 @@ fun AcceptedRequestsScreen(
         viewModel(factory = AcceptedRequestsViewModelFactory()),
     requestListViewModel: RequestListViewModel = viewModel()
 ) {
+  LaunchedEffect(Unit) { acceptedRequestsViewModel.loadAcceptedRequests() }
+
   val uiState by acceptedRequestsViewModel.uiState.collectAsState()
   var selectedRequest by remember { mutableStateOf<RequestWithKudosStatus?>(null) }
 

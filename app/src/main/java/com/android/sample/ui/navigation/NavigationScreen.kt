@@ -39,6 +39,8 @@ import com.android.sample.ui.overview.AcceptRequestViewModel
 import com.android.sample.ui.overview.AcceptRequestViewModelFactory
 import com.android.sample.ui.profile.ProfileScreen
 import com.android.sample.ui.profile.ProfileViewModel
+import com.android.sample.ui.profile.accepted_requests.AcceptedRequestsViewModel
+import com.android.sample.ui.profile.accepted_requests.AcceptedRequestsViewModelFactory
 import com.android.sample.ui.profile.publicProfile.PublicProfileScreen
 import com.android.sample.ui.profile.publicProfile.PublicProfileViewModel
 import com.android.sample.ui.profile.publicProfile.PublicProfileViewModelFactory
@@ -88,6 +90,7 @@ fun NavigationScreen(
           factory =
               SignInViewModelFactory(
                   profileRepository = userProfileRepository, profileCache = profileCache))
+
   val mapViewModel: MapViewModel =
       viewModel(
           factory =
@@ -95,13 +98,25 @@ fun NavigationScreen(
                   requestRepository = requestRepository,
                   profileRepository = userProfileRepository,
                   locationProvider = fusedLocationProvider))
+
   val requestListViewModel: RequestListViewModel =
       viewModel(
+          key = "allRequestsViewModel",
           factory =
               RequestListViewModelFactory(
                   showOnlyMyRequests = false,
                   requestCache = requestCache,
                   profileCache = profileCache))
+
+  val myRequestListViewModel: RequestListViewModel =
+      viewModel(
+          key = "myRequestsViewModel",
+          factory =
+              RequestListViewModelFactory(
+                  showOnlyMyRequests = true,
+                  requestCache = requestCache,
+                  profileCache = profileCache))
+
   val editRequestViewModel: EditRequestViewModel =
       viewModel(
           factory =
@@ -117,6 +132,12 @@ fun NavigationScreen(
                   requestRepository = requestRepository,
                   userProfileRepository = UserProfileRepositoryFirestore(Firebase.firestore),
                   requestCache = requestCache))
+
+  val acceptedRequestsViewModel: AcceptedRequestsViewModel =
+      viewModel(
+          factory =
+              AcceptedRequestsViewModelFactory(
+                  requestRepository = requestRepository, requestCache = requestCache))
 
   NavHost(
       navController = navController,
@@ -234,7 +255,8 @@ fun NavigationScreen(
             navigationActions = navigationActions)
       }
       composable(Screen.MyRequest.route) {
-        RequestListScreen(showOnlyMyRequests = true, navigationActions = navigationActions)
+        RequestListScreen(
+            requestListViewModel = myRequestListViewModel, navigationActions = navigationActions)
       }
       composable(Screen.PublicProfile.route) { navBackStackEntry ->
         val userId = navBackStackEntry.arguments?.getString(Screen.PublicProfile.ARG_USER_ID)
@@ -249,7 +271,9 @@ fun NavigationScreen(
         }
       }
       composable(Screen.AcceptedRequests.route) {
-        AcceptedRequestsScreen(navigationActions = navigationActions)
+        AcceptedRequestsScreen(
+            navigationActions = navigationActions,
+            acceptedRequestsViewModel = acceptedRequestsViewModel)
       }
     }
 

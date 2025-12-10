@@ -87,7 +87,7 @@ class RequestListViewModelTest {
     val cachedRequests = listOf(createSampleRequest("cached1"), createSampleRequest("cached2"))
 
     `when`(mockRequestRepo.getAllRequests()).thenThrow(RuntimeException("Network error"))
-    `when`(mockRequestCache.loadRequests()).thenReturn(cachedRequests)
+    `when`(mockRequestCache.loadRequests(any())).thenReturn(cachedRequests)
     `when`(mockProfileRepo.getUserProfile(any())).thenReturn(createSampleProfile())
 
     val viewModel =
@@ -106,7 +106,7 @@ class RequestListViewModelTest {
     assertFalse(state.isLoading)
     assertNull(state.errorMessage)
 
-    verify(mockRequestCache).loadRequests()
+    verify(mockRequestCache).loadRequests(any())
   }
 
   @Test
@@ -115,7 +115,7 @@ class RequestListViewModelTest {
         listOf(createSampleRequest("cached1", "user1"), createSampleRequest("cached2", "user2"))
 
     `when`(mockRequestRepo.getAllRequests()).thenThrow(RuntimeException("Network error"))
-    `when`(mockRequestCache.loadRequests()).thenReturn(cachedRequests)
+    `when`(mockRequestCache.loadRequests(any())).thenReturn(cachedRequests)
     `when`(mockProfileRepo.getUserProfile("user1")).thenReturn(createSampleProfile("user1"))
     `when`(mockProfileRepo.getUserProfile("user2")).thenReturn(createSampleProfile("user2"))
 
@@ -139,7 +139,7 @@ class RequestListViewModelTest {
     val cachedRequests = listOf(createSampleRequest())
 
     `when`(mockRequestRepo.getAllRequests()).thenThrow(RuntimeException("Network error"))
-    `when`(mockRequestCache.loadRequests()).thenReturn(cachedRequests)
+    `when`(mockRequestCache.loadRequests(any())).thenReturn(cachedRequests)
     `when`(mockProfileRepo.getUserProfile(any())).thenReturn(createSampleProfile())
 
     val viewModel =
@@ -153,8 +153,8 @@ class RequestListViewModelTest {
     viewModel.loadRequests()
     advanceUntilIdle()
 
-    val state = viewModel.state.first()
-    assertTrue(state.offlineMode)
+    val state = viewModel.state
+    assertTrue(state.value.offlineMode)
   }
 
   @Test
