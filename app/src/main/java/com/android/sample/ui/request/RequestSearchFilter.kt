@@ -1,6 +1,5 @@
 package com.android.sample.ui.request
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material.icons.Icons
@@ -133,10 +132,6 @@ internal fun SortCriteriaButton(
     FilledTonalButton(
         onClick = { expanded = true },
         modifier = Modifier.testTag(RequestSearchFilterTestTags.SORT_BUTTON),
-        colors =
-            ButtonDefaults.filledTonalButtonColors(
-                containerColor = appPalette().accent, contentColor = appPalette().onAccent),
-        border = BorderStroke(1.dp, appPalette().accent),
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)) {
           Text(labelOf(current))
           Spacer(Modifier.width(4.dp))
