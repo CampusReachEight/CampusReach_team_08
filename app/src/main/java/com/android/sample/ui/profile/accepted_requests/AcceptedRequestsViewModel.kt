@@ -47,8 +47,6 @@ class AcceptedRequestsViewModel(
             try {
               requestRepository.getAcceptedRequests()
             } catch (e: Exception) {
-              println(
-                  "cache size =${requestCache?.loadRequests { it.people.contains(currentUserId) && it.creatorId != currentUserId }!!.size}")
               requestCache?.loadRequests {
                 it.people.contains(currentUserId) && it.creatorId != currentUserId
               } ?: emptyList()
