@@ -13,10 +13,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
-import com.android.sample.ui.utils.EnumFilterButtonSimple
-import com.android.sample.ui.utils.EnumFilterPanelSimple
 import com.android.sample.ui.getTextFieldColors
 import com.android.sample.ui.theme.appPalette
+import com.android.sample.ui.utils.EnumFilterButtonSimple
+import com.android.sample.ui.utils.EnumFilterPanelSimple
 
 /** Centralized filter UI consuming dynamic facets from ViewModel. */
 @Composable
