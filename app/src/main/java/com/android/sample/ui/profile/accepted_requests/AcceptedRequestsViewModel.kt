@@ -49,7 +49,7 @@ class AcceptedRequestsViewModel(
             } catch (e: Exception) {
               requestCache?.loadRequests {
                 it.people.contains(currentUserId) && it.creatorId != currentUserId
-              } ?: emptyList()
+              } ?: throw e
             }
 
         // Enrich with kudos status and sort by most recent

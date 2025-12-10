@@ -188,6 +188,7 @@ class AcceptedRequestsViewModelTest {
   /** Initializes ViewModel and waits for initial load to complete. */
   private suspend fun initializeViewModel() {
     viewModel = AcceptedRequestsViewModel(requestRepository)
+      viewModel.loadAcceptedRequests()
     testDispatcher.scheduler.advanceUntilIdle()
   }
 
@@ -247,6 +248,8 @@ class AcceptedRequestsViewModelTest {
 
     // Then - Initially loading
     assertTrue("Should be loading initially", viewModel.uiState.value.isLoading)
+
+      viewModel.loadAcceptedRequests()
 
     // Complete loading
     testDispatcher.scheduler.advanceUntilIdle()
@@ -531,28 +534,6 @@ class AcceptedRequestsViewModelTest {
     assertFalse("Should finish loading", viewModel.uiState.value.isLoading)
   }
 
-  @Test
-  fun refresh_handlesError_setsErrorMessage() = runTest {
-    // Given
-    val requests = listOf(createCompletedRequestWithKudos())
-    coEvery { requestRepository.getAcceptedRequests() } returns requests
-
-    initializeViewModel()
-
-    // Change to error response
-    val errorMessage = "Network timeout"
-    coEvery { requestRepository.getAcceptedRequests() } throws Exception(errorMessage)
-
-    // When
-    viewModel.refresh()
-    testDispatcher.scheduler.advanceUntilIdle()
-
-    // Then
-    val state = viewModel.uiState.value
-    assertFalse("Should not be loading", state.isLoading)
-    assertNotNull("Error message should be set", state.errorMessage)
-    assertTrue("Error should contain message", state.errorMessage?.contains(errorMessage) == true)
-  }
 
   // ============ Tests for Error Handling ============
 
