@@ -227,6 +227,7 @@ class MapViewModel(
         isHisRequest(request)
         canOtherZoomNow()
       } catch (e: Exception) {
+        canOtherZoomNow()
         setErrorMsg(ConstantMap.FAIL_LOAD_REQUEST + "${e.message}")
       }
     }
@@ -277,7 +278,7 @@ class MapViewModel(
           _uiState.value.currentLocation?.longitude ?: EPFL_LOCATION.longitude,
           ConstantMap.CURR_POS_NAME)
     } else if (_uiState.value.zoomPreference == MapZoomPreference.NO_AUTO_ZOOM) {
-      return null
+      null
     } else {
       findClosestRequest(_uiState.value.currentLocation, requests)
     }

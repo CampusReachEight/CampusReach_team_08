@@ -2,6 +2,7 @@ package com.android.sample.ui.map
 
 import android.content.Context
 import android.location.LocationManager
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -285,11 +286,7 @@ private fun setupRequestFiltering(
 
   LaunchedEffect(allRequests) { searchFilterViewModel.initializeWithRequests(allRequests) }
 
-  LaunchedEffect(finalFilteredRequests) {
-    if (finalFilteredRequests.isNotEmpty()) {
-      viewModel.zoomOnRequest(finalFilteredRequests)
-    }
-  }
+  LaunchedEffect(finalFilteredRequests) { viewModel.zoomOnRequest(finalFilteredRequests) }
 
   return finalFilteredRequests
 }
@@ -971,6 +968,9 @@ private fun AutoZoomEffect(
     viewModel: MapViewModel
 ) {
   LaunchedEffect(uiState.needToZoom) {
+    Log.d("AUTOZOOM", "${uiState.needToZoom}")
+    Log.d("AUTOZOOM", "${uiState.needToZoom}")
+    Log.d("AUTOZOOM", "${uiState.needToZoom}")
     if (uiState.needToZoom) {
       cameraPositionState.animate(
           update =
