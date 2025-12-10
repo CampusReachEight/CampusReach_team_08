@@ -13,11 +13,11 @@ import kotlinx.coroutines.launch
 data class PublicProfileUiState(
     val isLoading: Boolean = false,
     val profile: UserProfile? = null,
-    val error: String? = null
+    val error: String? = null,
+    val isFollowing: Boolean = false
 )
 
-class PublicProfileViewModel(private val userProfileRepository: UserProfileRepository) :
-    ViewModel() {
+class PublicProfileViewModel(val userProfileRepository: UserProfileRepository) : ViewModel() {
 
   private val _uiState = MutableStateFlow(PublicProfileUiState())
   val uiState: StateFlow<PublicProfileUiState> = _uiState.asStateFlow()
@@ -54,6 +54,57 @@ class PublicProfileViewModel(private val userProfileRepository: UserProfileRepos
 
   fun clear() {
     _uiState.value = PublicProfileUiState()
+  }
+
+  // Add after the clear() function:
+
+  fun toggleFollow(targetUserId: String) {
+    viewModelScope.launch {
+      try {
+        val currentUserId = userProfileRepository.getCurrentUserId()
+
+        if (currentUserId.isBlank()) {
+          _uiState.value = _uiState.value.copy(error = "You must be logged in to follow users")
+          return@launch
+        }
+
+        val isCurrentlyFollowing = _uiState.value.isFollowing
+        val currentProfile = _uiState.value.profile
+
+        if (isCurrentlyFollowing) {
+          userProfileRepository.unfollowUser(currentUserId, targetUserId)
+          // Update state immediately without reloading
+          _uiState.value =
+              _uiState.value.copy(
+                  isFollowing = false,
+                  profile = currentProfile?.copy(followerCount = currentProfile.followerCount - 1))
+        } else {
+          userProfileRepository.followUser(currentUserId, targetUserId)
+          // Update state immediately without reloading
+          _uiState.value =
+              _uiState.value.copy(
+                  isFollowing = true,
+                  profile = currentProfile?.copy(followerCount = currentProfile.followerCount + 1))
+        }
+      } catch (e: IllegalArgumentException) {
+        _uiState.value = _uiState.value.copy(error = e.message)
+      } catch (e: IllegalStateException) {
+        _uiState.value = _uiState.value.copy(error = e.message)
+      } catch (e: Exception) {
+        _uiState.value = _uiState.value.copy(error = "Failed to update follow status: ${e.message}")
+      }
+    }
+  }
+
+  suspend fun checkFollowingStatus(currentUserId: String, targetUserId: String) {
+    if (currentUserId.isBlank() || targetUserId.isBlank()) return
+
+    try {
+      val isFollowing = userProfileRepository.isFollowing(currentUserId, targetUserId)
+      _uiState.value = _uiState.value.copy(isFollowing = isFollowing)
+    } catch (e: Exception) {
+      // Silently fail - following status is not critical
+    }
   }
 }
 

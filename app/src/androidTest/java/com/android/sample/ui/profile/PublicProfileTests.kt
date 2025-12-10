@@ -57,21 +57,13 @@ class PublicProfileTests {
 
   @Test
   fun followButton_toggles_whenClicked_inPublicProfileScreen() {
-    val sampleProfile =
-        UserProfile(
-            id = "test123",
-            name = "Test",
-            lastName = "User",
-            email = "test@example.com",
-            photo = null,
-            kudos = 0,
-            helpReceived = 0,
-            section = UserSections.NONE,
-            arrivalDate = Date())
+    val viewModel = createMockViewModel()
 
     composeTestRule.setContent {
-      PublicProfileScreen(profile = sampleProfile, viewModel = createMockViewModel())
+      PublicProfileScreen(profile = null, viewModel = viewModel, defaultProfileId = "test123")
     }
+
+    composeTestRule.waitForIdle()
 
     val followTag = PublicProfileTestTags.FOLLOW_BUTTON
     val unfollowTag = PublicProfileTestTags.UNFOLLOW_BUTTON
@@ -503,7 +495,10 @@ class PublicProfileTests {
   }
 
   // Mock repository
+  // Replace the entire MockUserProfileRepository class with this:
   private class MockUserProfileRepository : UserProfileRepository {
+    private val followingState = mutableMapOf<Pair<String, String>, Boolean>()
+
     override fun getNewUid(): String = "mockUid"
 
     override fun getCurrentUserId(): String = "mockCurrentUser"
@@ -520,7 +515,9 @@ class PublicProfileTests {
           kudos = 0,
           helpReceived = 0,
           section = UserSections.NONE,
-          arrivalDate = Date())
+          arrivalDate = Date(),
+          followerCount = 0,
+          followingCount = 0)
     }
 
     override suspend fun addUserProfile(userProfile: UserProfile) {}
@@ -539,15 +536,15 @@ class PublicProfileTests {
     override suspend fun receiveHelp(userId: String, amount: Int) {}
 
     override suspend fun followUser(currentUserId: String, targetUserId: String) {
-      return Unit
+      followingState[Pair(currentUserId, targetUserId)] = true
     }
 
     override suspend fun unfollowUser(currentUserId: String, targetUserId: String) {
-      return Unit
+      followingState[Pair(currentUserId, targetUserId)] = false
     }
 
     override suspend fun isFollowing(currentUserId: String, targetUserId: String): Boolean {
-      return false
+      return followingState[Pair(currentUserId, targetUserId)] ?: false
     }
 
     override suspend fun getFollowerCount(userId: String): Int {
@@ -565,5 +562,68 @@ class PublicProfileTests {
     override suspend fun getFollowingIds(userId: String): List<String> {
       return emptyList()
     }
+  }
+
+  @Test
+  fun publicProfileScreen_displaysRealFollowerCounts() {
+    val sampleProfile =
+        UserProfile(
+            id = "test123",
+            name = "Test",
+            lastName = "User",
+            email = "test@example.com",
+            photo = null,
+            kudos = 10,
+            helpReceived = 5,
+            section = UserSections.COMPUTER_SCIENCE,
+            arrivalDate = Date(),
+            followerCount = 25,
+            followingCount = 15)
+
+    composeTestRule.setContent {
+      PublicProfileScreen(profile = sampleProfile, viewModel = createMockViewModel())
+    }
+
+    // Verify follower count is displayed in stats
+    composeTestRule
+        .onNodeWithTag(ProfileTestTags.PROFILE_STAT_FOLLOWERS)
+        .assertIsDisplayed()
+        .assertTextContains("25")
+
+    // Verify following count is displayed in stats
+    composeTestRule
+        .onNodeWithTag(ProfileTestTags.PROFILE_STAT_FOLLOWING)
+        .assertIsDisplayed()
+        .assertTextContains("15")
+  }
+
+  @Test
+  fun mapUserProfileToProfileState_includesFollowerCounts() {
+    val userProfile =
+        UserProfile(
+            id = "u1",
+            name = "Jane",
+            lastName = "Doe",
+            email = "test@example.com",
+            photo = null,
+            kudos = 3,
+            helpReceived = 4,
+            section = UserSections.MATHEMATICS,
+            arrivalDate = Date(),
+            followerCount = 50,
+            followingCount = 30)
+
+    val mapped = mapUserProfileToProfileState(userProfile)
+
+    assertEquals(50, mapped.followers)
+    assertEquals(30, mapped.following)
+  }
+
+  @Test
+  fun mapUserProfileToProfileState_nullProfile_hasZeroFollowerCounts() {
+    val mapped = mapUserProfileToProfileState(null)
+
+    assertEquals(0, mapped.followers)
+    assertEquals(0, mapped.following)
   }
 }
