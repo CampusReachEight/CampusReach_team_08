@@ -41,7 +41,9 @@ class RequestSearchFilterViewModelTest {
   fun setUp() =
       runTest(testDispatcher) {
         Dispatchers.setMain(testDispatcher)
-        vm = RequestSearchFilterViewModel(engineFactory = { LuceneRequestSearchEngine() })
+        vm =
+            RequestSearchFilterViewModel(
+                engineFactory = { LuceneRequestSearchEngine(dispatcher = testDispatcher) })
         requests =
             listOf(
                 req(
