@@ -99,7 +99,10 @@ fun NavigationScreen(
   val requestListViewModel: RequestListViewModel =
       viewModel(
           factory =
-              RequestListViewModelFactory(showOnlyMyRequests = false, requestCache = requestCache))
+              RequestListViewModelFactory(
+                  showOnlyMyRequests = false,
+                  requestCache = requestCache,
+                  profileCache = profileCache))
   val editRequestViewModel: EditRequestViewModel =
       viewModel(
           factory =
@@ -220,7 +223,8 @@ fun NavigationScreen(
         val userId = navBackStackEntry.arguments?.getString(Screen.PublicProfile.ARG_USER_ID)
         userId?.let { id ->
           val publicProfileViewModel: PublicProfileViewModel =
-              viewModel(factory = PublicProfileViewModelFactory(userProfileRepository))
+              viewModel(
+                  factory = PublicProfileViewModelFactory(userProfileRepository, profileCache))
           PublicProfileScreen(
               viewModel = publicProfileViewModel,
               defaultProfileId = id,
