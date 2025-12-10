@@ -22,6 +22,7 @@ import com.android.sample.ui.profile.ProfileDimens
 import com.android.sample.ui.profile.ProfileState
 import com.android.sample.ui.profile.ProfileTestTags
 import com.android.sample.ui.theme.AppPalette
+import com.android.sample.ui.theme.UiDimens
 import com.android.sample.ui.theme.appPalette
 
 @Composable
@@ -94,7 +95,7 @@ fun ProfileStats(state: ProfileState, palette: AppPalette = appPalette()) {
   Row(
       modifier =
           Modifier.fillMaxWidth()
-              .padding(start = ProfileDimens.ProfilePicture, end = ProfileDimens.ProfilePicture)
+              .padding(start = UiDimens.SpacingXxl, end = UiDimens.SpacingXxl)
               .testTag(ProfileTestTags.PROFILE_STATS),
       horizontalArrangement = Arrangement.spacedBy(ProfileDimens.Horizontal)) {
         StatGroupCard(
