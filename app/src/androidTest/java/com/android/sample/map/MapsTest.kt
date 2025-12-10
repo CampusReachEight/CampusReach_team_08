@@ -39,6 +39,7 @@ import java.util.Calendar
 import java.util.Date
 import kotlinx.coroutines.test.runTest
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Rule
@@ -525,6 +526,26 @@ class MapsTest : BaseEmulatorTest() {
           .fetchSemanticsNodes()
           .isEmpty()
     }
+  }
+
+  @Test
+  fun creatorProfileInViewModel() = runTest {
+    // GIVEN
+    viewModel.updateCurrentRequest(request2)
+    viewModel.updateCurrentProfile(profile2.id)
+    composeTestRule.waitForIdle()
+
+    // WHEN
+    composeTestRule
+        .onNodeWithTag(MapTestTags.REQUEST_CREATOR_PROFILE, useUnmergedTree = true)
+        .assertExists()
+        .performClick()
+
+    composeTestRule.waitForIdle()
+
+    // THEN
+    val loadedProfile = viewModel.uiState.value.currentProfile
+    assertEquals(profile2.id, loadedProfile?.id)
   }
 }
 
