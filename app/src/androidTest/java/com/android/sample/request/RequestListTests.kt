@@ -983,9 +983,7 @@ class RequestListTests : BaseEmulatorTest() {
             profileRepository = FakeUserProfileRepository(),
             showOnlyMyRequests = true)
 
-    composeTestRule.setContent {
-      RequestListScreen(requestListViewModel = vm, showOnlyMyRequests = true)
-    }
+    composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
 
     // Wait for requests to load
     composeTestRule.waitUntil(5_000) { vm.state.value.requests.isNotEmpty() }
@@ -1008,9 +1006,7 @@ class RequestListTests : BaseEmulatorTest() {
             profileRepository = FakeUserProfileRepository(),
             showOnlyMyRequests = true)
 
-    composeTestRule.setContent {
-      RequestListScreen(requestListViewModel = vm, showOnlyMyRequests = true)
-    }
+    composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
 
     composeTestRule.waitForIdle()
 
@@ -1029,9 +1025,7 @@ class RequestListTests : BaseEmulatorTest() {
             profileRepository = FakeUserProfileRepository(),
             showOnlyMyRequests = true)
 
-    composeTestRule.setContent {
-      RequestListScreen(requestListViewModel = vm, showOnlyMyRequests = true)
-    }
+    composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
 
     composeTestRule.waitForIdle()
 
@@ -1082,9 +1076,7 @@ class RequestListTests : BaseEmulatorTest() {
             profileRepository = FakeUserProfileRepository(),
             showOnlyMyRequests = false)
 
-    composeTestRule.setContent {
-      RequestListScreen(requestListViewModel = vm, showOnlyMyRequests = false)
-    }
+    composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
 
     composeTestRule.waitUntil(5_000) { vm.state.value.requests.size == 2 }
 
@@ -1105,9 +1097,7 @@ class RequestListTests : BaseEmulatorTest() {
             profileRepository = FakeUserProfileRepository(),
             showOnlyMyRequests = true)
 
-    composeTestRule.setContent {
-      RequestListScreen(requestListViewModel = vm, showOnlyMyRequests = true)
-    }
+    composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
 
     composeTestRule.waitForIdle()
 
@@ -1126,9 +1116,7 @@ class RequestListTests : BaseEmulatorTest() {
             profileRepository = FakeUserProfileRepository(),
             showOnlyMyRequests = false)
 
-    composeTestRule.setContent {
-      RequestListScreen(requestListViewModel = vm, showOnlyMyRequests = false)
-    }
+    composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
 
     composeTestRule.waitForIdle()
 
@@ -1188,9 +1176,7 @@ class RequestListTests : BaseEmulatorTest() {
             profileRepository = FakeUserProfileRepository(),
             showOnlyMyRequests = true)
 
-    composeTestRule.setContent {
-      RequestListScreen(requestListViewModel = vm, showOnlyMyRequests = true)
-    }
+    composeTestRule.setContent { RequestListScreen(requestListViewModel = vm) }
 
     composeTestRule.waitUntil(OFFSET_5_S_MS) { vm.state.value.requests.size == 2 }
 
@@ -1330,32 +1316,6 @@ class RequestListTests : BaseEmulatorTest() {
     composeTestRule
         .onNodeWithText("You are in offline mode. Displaying cached requests.")
         .assertIsDisplayed()
-  }
-
-  @Test
-  fun requestListScreenUsesDefaultViewModelFactory() {
-    val requests = sampleRequests(listOf("u1"))
-
-    // Don't pass a ViewModel - let it use the default factory
-    composeTestRule.setContent { RequestListScreen(showOnlyMyRequests = false) }
-
-    composeTestRule.waitForIdle()
-
-    // Screen should render without crashing
-    composeTestRule.onNodeWithTag(NavigationTestTags.REQUESTS_SCREEN).assertIsDisplayed()
-  }
-
-  @Test
-  fun requestListScreenUsesCustomViewModelFactory() {
-    val requests = sampleRequests(listOf("u1"))
-
-    // Don't pass a ViewModel - let it use the default factory with showOnlyMyRequests = true
-    composeTestRule.setContent { RequestListScreen(showOnlyMyRequests = true) }
-
-    composeTestRule.waitForIdle()
-
-    // Screen should render without crashing
-    composeTestRule.onNodeWithTag(NavigationTestTags.REQUESTS_SCREEN).assertIsDisplayed()
   }
 
   @Test
