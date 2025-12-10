@@ -187,7 +187,8 @@ fun MapScreen(
           searchFilterViewModel,
           uiState.request,
           isFirstTime = isFirstTime,
-          notFirstTime = { isFirstTime = false })
+          notFirstTime = { isFirstTime = false },
+          hasTriedToGetLocation = uiState.hasTriedToGetLocation)
 
   // Setup permissions
   SetupLocationPermissions(context, viewModel, uiState)
@@ -281,7 +282,8 @@ private fun setupRequestFiltering(
     searchFilterViewModel: RequestSearchFilterViewModel,
     allRequests: List<Request>,
     isFirstTime: Boolean,
-    notFirstTime: () -> Unit
+    notFirstTime: () -> Unit,
+    hasTriedToGetLocation: Boolean
 ): List<Request> {
   val finalFilteredRequests =
       remember(displayedRequests, requestOwnership, currentUserId) {
@@ -295,7 +297,9 @@ private fun setupRequestFiltering(
       notFirstTime()
       return@LaunchedEffect
     }
-    viewModel.zoomOnRequest(finalFilteredRequests)
+    if (hasTriedToGetLocation) {
+      viewModel.zoomOnRequest(finalFilteredRequests)
+    }
   }
 
   return finalFilteredRequests

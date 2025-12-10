@@ -45,6 +45,7 @@ data class MapUIState(
     val zoomPreference: MapZoomPreference = MapZoomPreference.NEAREST_REQUEST,
     val wasOnAnotherScreen: Boolean = true,
     val canOtherZoom: Boolean = true,
+    val hasTriedToGetLocation: Boolean = false
 )
 
 /** A class for the preference of the user for automatic zoom */
@@ -181,7 +182,10 @@ class MapViewModel(
    */
   private fun setLocToCurrentRequest(): Boolean {
     if (_uiState.value.wasOnAnotherScreen) {
-      if (_uiState.value.canOtherZoom && _uiState.value.currentRequest != null) {
+      if (_uiState.value.currentRequest == null) {
+        comeBackFromAnotherScreen()
+        return false
+      } else if (_uiState.value.canOtherZoom) {
         val loc =
             LatLng(
                 _uiState.value.currentRequest!!.location.latitude,
@@ -340,18 +344,24 @@ class MapViewModel(
                   target = locLatLng,
                   needToZoom = true,
                   isLoadingLocation = false,
-                  currentLocation = locLatLng)
+                  currentLocation = locLatLng,
+                  hasTriedToGetLocation = true)
             }
           } else {
-            _uiState.update { it.copy(isLoadingLocation = false, currentLocation = locLatLng) }
+            _uiState.update {
+              it.copy(
+                  isLoadingLocation = false,
+                  currentLocation = locLatLng,
+                  hasTriedToGetLocation = true)
+            }
           }
         } else {
-          _uiState.update { it.copy(isLoadingLocation = false) }
+          _uiState.update { it.copy(isLoadingLocation = false, hasTriedToGetLocation = true) }
           setErrorMsg(ConstantMap.ERROR_FAILED_TO_GET_CURRENT_LOCATION)
         }
       } catch (e: Exception) {
         setErrorMsg(ConstantMap.ERROR_FAILED_TO_GET_CURRENT_LOCATION + " ${e.message}")
-        _uiState.update { it.copy(isLoadingLocation = false) }
+        _uiState.update { it.copy(isLoadingLocation = false, hasTriedToGetLocation = true) }
       }
     }
   }
@@ -359,7 +369,10 @@ class MapViewModel(
   /** Set location permission error message */
   fun setLocationPermissionError() {
     _uiState.update {
-      it.copy(errorMsg = ConstantMap.ERROR_MESSAGE_LOCATION_PERMISSION, isLoadingLocation = false)
+      it.copy(
+          errorMsg = ConstantMap.ERROR_MESSAGE_LOCATION_PERMISSION,
+          isLoadingLocation = false,
+          hasTriedToGetLocation = true)
     }
   }
 
