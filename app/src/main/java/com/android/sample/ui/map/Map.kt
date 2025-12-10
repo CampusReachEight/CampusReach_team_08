@@ -191,7 +191,7 @@ fun MapScreen(
           hasTriedToGetLocation = uiState.hasTriedToGetLocation)
 
   // Setup permissions
-  SetupLocationPermissions(context, viewModel, uiState)
+  SetupLocationPermissions(context, viewModel)
 
   // Handle errors
   HandleErrorMessages(context, uiState.errorMsg, viewModel)
@@ -239,14 +239,9 @@ fun MapScreen(
  *
  * @param context Android context for accessing system services
  * @param viewModel ViewModel to handle location updates
- * @param uiState Current UI state containing permission status
  */
 @Composable
-private fun SetupLocationPermissions(
-    context: Context,
-    viewModel: MapViewModel,
-    uiState: MapUIState
-) {
+private fun SetupLocationPermissions(context: Context, viewModel: MapViewModel) {
   val locationManager = remember {
     context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
   }
