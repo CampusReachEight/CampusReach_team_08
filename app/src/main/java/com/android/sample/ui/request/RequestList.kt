@@ -106,7 +106,7 @@ fun RequestListScreen(
     requestListViewModel: RequestListViewModel,
     navigationActions: NavigationActions? = null
 ) {
-    val showOnlyMyRequests = requestListViewModel.showOnlyMyRequests
+  val showOnlyMyRequests = requestListViewModel.showOnlyMyRequests
   val searchFilterViewModel: RequestSearchFilterViewModel = viewModel()
   LaunchedEffect(Unit) { requestListViewModel.loadRequests() }
 

@@ -345,7 +345,8 @@ class RequestCacheTest {
     requestCache.saveRequests(requests)
 
     // Filter only STUDYING requests
-    val studyingRequests = requestCache.loadRequests { it.requestType.contains(RequestType.STUDYING) }
+    val studyingRequests =
+        requestCache.loadRequests { it.requestType.contains(RequestType.STUDYING) }
     assertEquals(2, studyingRequests.size)
     assertTrue(studyingRequests.all { it.requestType.contains(RequestType.STUDYING) })
 
@@ -474,11 +475,12 @@ class RequestCacheTest {
     requestCache.saveRequests(requests)
 
     // Complex filter: SPORT requests with OPEN status and more than 1 person
-    val filteredRequests = requestCache.loadRequests {
-      it.requestType.contains(RequestType.SPORT) &&
-      it.status == RequestStatus.OPEN &&
-      it.people.size > 1
-    }
+    val filteredRequests =
+        requestCache.loadRequests {
+          it.requestType.contains(RequestType.SPORT) &&
+              it.status == RequestStatus.OPEN &&
+              it.people.size > 1
+        }
 
     assertEquals(0, filteredRequests.size) // Soccer has only 1 person, Basketball is IN_PROGRESS
 

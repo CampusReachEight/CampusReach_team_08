@@ -110,7 +110,6 @@ fun NavigationScreen(
           factory =
               RequestListViewModelFactory(showOnlyMyRequests = true, requestCache = requestCache))
 
-
   val editRequestViewModel: EditRequestViewModel =
       viewModel(
           factory =
@@ -127,12 +126,11 @@ fun NavigationScreen(
                   userProfileRepository = UserProfileRepositoryFirestore(Firebase.firestore),
                   requestCache = requestCache))
 
-    val acceptedRequestsViewModel : AcceptedRequestsViewModel =
-        viewModel(
-            factory =
-                AcceptedRequestsViewModelFactory(
-                    requestRepository = requestRepository,
-                    requestCache = requestCache))
+  val acceptedRequestsViewModel: AcceptedRequestsViewModel =
+      viewModel(
+          factory =
+              AcceptedRequestsViewModelFactory(
+                  requestRepository = requestRepository, requestCache = requestCache))
 
   NavHost(
       navController = navController,
@@ -251,8 +249,7 @@ fun NavigationScreen(
       }
       composable(Screen.MyRequest.route) {
         RequestListScreen(
-            requestListViewModel = myRequestListViewModel,
-            navigationActions = navigationActions)
+            requestListViewModel = myRequestListViewModel, navigationActions = navigationActions)
       }
       composable(Screen.PublicProfile.route) { navBackStackEntry ->
         val userId = navBackStackEntry.arguments?.getString(Screen.PublicProfile.ARG_USER_ID)
@@ -266,7 +263,9 @@ fun NavigationScreen(
         }
       }
       composable(Screen.AcceptedRequests.route) {
-        AcceptedRequestsScreen(navigationActions = navigationActions, acceptedRequestsViewModel = acceptedRequestsViewModel)
+        AcceptedRequestsScreen(
+            navigationActions = navigationActions,
+            acceptedRequestsViewModel = acceptedRequestsViewModel)
       }
     }
 

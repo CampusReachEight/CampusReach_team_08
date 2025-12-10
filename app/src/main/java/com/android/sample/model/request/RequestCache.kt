@@ -39,10 +39,12 @@ class RequestCache(private val context: Context) {
   /**
    * Loads all cached requests from disk.
    *
-   * @param filter A predicate function to filter requests. Only requests matching the filter will be returned.
-   * @return A list of cached Request objects that match the filter. Returns an empty list if cache is empty or fails.
+   * @param filter A predicate function to filter requests. Only requests matching the filter will
+   *   be returned.
+   * @return A list of cached Request objects that match the filter. Returns an empty list if cache
+   *   is empty or fails.
    */
-  fun loadRequests(filter : (Request) -> Boolean = { true }): List<Request> {
+  fun loadRequests(filter: (Request) -> Boolean = { true }): List<Request> {
     if (!cacheDir.exists()) return emptyList()
 
     return cacheDir

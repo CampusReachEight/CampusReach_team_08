@@ -68,12 +68,10 @@ class RequestListViewModel(
         if (verboseLogging) Log.e("RequestListViewModel", "Failed to load requests", e)
 
         // Try to load from cache if there's an error (e.g., no internet)
-        val cachedRequests = requestCache?.loadRequests {
-            if (showOnlyMyRequests)
-                it.creatorId == Firebase.auth.uid
-            else
-                true
-        } ?: emptyList()
+        val cachedRequests =
+            requestCache?.loadRequests {
+              if (showOnlyMyRequests) it.creatorId == Firebase.auth.uid else true
+            } ?: emptyList()
 
         if (cachedRequests.isNotEmpty()) {
           // Successfully loaded from cache
