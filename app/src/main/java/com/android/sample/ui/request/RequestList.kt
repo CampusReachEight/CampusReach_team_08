@@ -13,7 +13,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -23,7 +22,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.model.request.Request
-import com.android.sample.model.request.RequestCache
 import com.android.sample.model.request.RequestType
 import com.android.sample.model.request.displayString
 import com.android.sample.ui.navigation.BottomNavigationMenu
@@ -105,15 +103,10 @@ private const val TEXT_TODO = "TODO"
 @Composable
 fun RequestListScreen(
     modifier: Modifier = Modifier,
-    showOnlyMyRequests: Boolean = false,
-    requestListViewModel: RequestListViewModel =
-        viewModel(
-            factory =
-                RequestListViewModelFactory(
-                    showOnlyMyRequests = showOnlyMyRequests,
-                    requestCache = RequestCache(LocalContext.current))),
-    navigationActions: NavigationActions? = null,
+    requestListViewModel: RequestListViewModel,
+    navigationActions: NavigationActions? = null
 ) {
+    val showOnlyMyRequests = requestListViewModel.showOnlyMyRequests
   val searchFilterViewModel: RequestSearchFilterViewModel = viewModel()
   LaunchedEffect(Unit) { requestListViewModel.loadRequests() }
 

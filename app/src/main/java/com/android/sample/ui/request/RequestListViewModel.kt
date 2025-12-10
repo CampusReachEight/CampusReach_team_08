@@ -13,6 +13,7 @@ import com.android.sample.model.request.Request
 import com.android.sample.model.request.RequestCache
 import com.android.sample.model.request.RequestRepository
 import com.android.sample.model.request.RequestRepositoryFirestore
+import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import java.net.URL
@@ -67,7 +68,13 @@ class RequestListViewModel(
         if (verboseLogging) Log.e("RequestListViewModel", "Failed to load requests", e)
 
         // Try to load from cache if there's an error (e.g., no internet)
-        val cachedRequests = requestCache?.loadRequests() ?: emptyList()
+        val cachedRequests = requestCache?.loadRequests {
+            if (showOnlyMyRequests)
+                it.creatorId == Firebase.auth.uid
+            else
+                true
+        } ?: emptyList()
+
         if (cachedRequests.isNotEmpty()) {
           // Successfully loaded from cache
           _state.update {

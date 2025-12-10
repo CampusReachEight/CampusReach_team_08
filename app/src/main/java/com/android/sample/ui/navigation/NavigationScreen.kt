@@ -88,6 +88,7 @@ fun NavigationScreen(
           factory =
               SignInViewModelFactory(
                   profileRepository = userProfileRepository, profileCache = profileCache))
+
   val mapViewModel: MapViewModel =
       viewModel(
           factory =
@@ -95,10 +96,19 @@ fun NavigationScreen(
                   requestRepository = requestRepository,
                   profileRepository = userProfileRepository,
                   locationProvider = fusedLocationProvider))
+
   val requestListViewModel: RequestListViewModel =
       viewModel(
+          key = "allRequestsViewModel",
           factory =
               RequestListViewModelFactory(showOnlyMyRequests = false, requestCache = requestCache))
+  val myRequestListViewModel: RequestListViewModel =
+      viewModel(
+          key = "myRequestsViewModel",
+          factory =
+              RequestListViewModelFactory(showOnlyMyRequests = true, requestCache = requestCache))
+
+
   val editRequestViewModel: EditRequestViewModel =
       viewModel(
           factory =
@@ -231,7 +241,9 @@ fun NavigationScreen(
             navigationActions = navigationActions)
       }
       composable(Screen.MyRequest.route) {
-        RequestListScreen(showOnlyMyRequests = true, navigationActions = navigationActions)
+        RequestListScreen(
+            requestListViewModel = myRequestListViewModel,
+            navigationActions = navigationActions)
       }
       composable(Screen.PublicProfile.route) { navBackStackEntry ->
         val userId = navBackStackEntry.arguments?.getString(Screen.PublicProfile.ARG_USER_ID)
