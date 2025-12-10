@@ -39,11 +39,12 @@ data class MapUIState(
     val currentProfile: UserProfile? = null,
     val currentListRequest: List<Request>? = null,
     val requestOwnership: RequestOwnership = RequestOwnership.ALL,
-    val needToZoom: Boolean = true,
+    val needToZoom: Boolean = false,
     val isLoadingLocation: Boolean = false,
     val currentLocation: LatLng? = null,
     val zoomPreference: MapZoomPreference = MapZoomPreference.NEAREST_REQUEST,
-    val wasOnAnotherScreen: Boolean = true
+    val wasOnAnotherScreen: Boolean = true,
+    val canOtherZoom: Boolean = true
 )
 
 /** A class for the preference of the user for automatic zoom */
@@ -180,14 +181,26 @@ class MapViewModel(
    */
   private fun setLocToCurrentRequest(): Boolean {
     if (_uiState.value.wasOnAnotherScreen && _uiState.value.currentRequest != null) {
-      val loc =
-          LatLng(
-              _uiState.value.currentRequest!!.location.latitude,
-              _uiState.value.currentRequest!!.location.longitude)
-      _uiState.value = _uiState.value.copy(target = loc, needToZoom = true)
+      if (_uiState.value.canOtherZoom) {
+        val loc =
+            LatLng(
+                _uiState.value.currentRequest!!.location.latitude,
+                _uiState.value.currentRequest!!.location.longitude)
+        _uiState.value = _uiState.value.copy(target = loc, needToZoom = true)
+      }
       return true
     }
     return false
+  }
+
+  /** Put canOtherZoom to true */
+  fun canOtherZoomNow() {
+    _uiState.value = _uiState.value.copy(canOtherZoom = true)
+  }
+
+  /** Put canOtherZoom to false */
+  fun cannotOtherZoomNow() {
+    _uiState.value = _uiState.value.copy(canOtherZoom = false)
   }
 
   /**
@@ -199,6 +212,7 @@ class MapViewModel(
   fun fromRequestDetailsToRequest(requestId: String) {
     viewModelScope.launch {
       try {
+        cannotOtherZoomNow()
         val request = requestRepository.getRequest(requestId)
 
         val target = LatLng(request.location.latitude, request.location.longitude)
@@ -211,6 +225,7 @@ class MapViewModel(
 
         updateCurrentProfile(request.creatorId)
         isHisRequest(request)
+        canOtherZoomNow()
       } catch (e: Exception) {
         setErrorMsg(ConstantMap.FAIL_LOAD_REQUEST + "${e.message}")
       }
@@ -223,6 +238,9 @@ class MapViewModel(
    * @param requests the lists of request
    */
   fun zoomOnRequest(requests: List<Request>) {
+    if (!_uiState.value.canOtherZoom) {
+      return
+    }
     if (!setLocToCurrentRequest()) {
       var location: Location?
       val currentLocIsNotNull = _uiState.value.currentLocation != null
@@ -315,7 +333,7 @@ class MapViewModel(
         val location = locationProvider.getCurrentLocation()
         if (location != null) {
           val locLatLng = LatLng(location.latitude, location.longitude)
-          if (_uiState.value.currentRequest == null && _uiState.value.currentListRequest == null) {
+          if (_uiState.value.currentRequest == null && _uiState.value.canOtherZoom) {
             _uiState.update {
               it.copy(
                   target = locLatLng,
@@ -329,9 +347,6 @@ class MapViewModel(
         } else {
           _uiState.update { it.copy(isLoadingLocation = false) }
           setErrorMsg(ConstantMap.ERROR_FAILED_TO_GET_CURRENT_LOCATION)
-          if (_uiState.value.currentRequest == null && _uiState.value.currentListRequest == null) {
-            zoomOnRequest(_uiState.value.request)
-          }
         }
       } catch (e: Exception) {
         setErrorMsg(ConstantMap.ERROR_FAILED_TO_GET_CURRENT_LOCATION + " ${e.message}")
@@ -376,15 +391,18 @@ class MapViewModel(
                   currentRequest = null,
                   isOwner = null)
         } else {
-          // currentRequest found and up to date
-          val location = LatLng(updatedCurrent.location.latitude, updatedCurrent.location.longitude)
-          _uiState.value =
-              _uiState.value.copy(
-                  request = requests,
-                  currentRequest = updatedCurrent,
-                  isOwner = _uiState.value.isOwner,
-                  target = location,
-                  needToZoom = true)
+          if (_uiState.value.canOtherZoom) {
+            // currentRequest found and up to date
+            val location =
+                LatLng(updatedCurrent.location.latitude, updatedCurrent.location.longitude)
+            _uiState.value =
+                _uiState.value.copy(
+                    request = requests,
+                    currentRequest = updatedCurrent,
+                    isOwner = _uiState.value.isOwner,
+                    target = location,
+                    needToZoom = true)
+          }
         }
       } catch (e: Exception) {
         setErrorMsg("Failed to load requests: ${e.message}")

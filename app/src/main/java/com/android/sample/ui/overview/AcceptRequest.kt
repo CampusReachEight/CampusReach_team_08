@@ -39,6 +39,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -139,6 +140,8 @@ fun AcceptRequestScreen(
 
   // UI local state
   var volunteersExpanded by rememberSaveable { mutableStateOf(false) }
+
+  var isLoading by remember { mutableStateOf(false) }
 
   Scaffold(
       modifier = Modifier.testTag(NavigationTestTags.ACCEPT_REQUEST_SCREEN),
@@ -303,7 +306,11 @@ fun AcceptRequestScreen(
                         }
                       }
                   FilledTonalButton(
-                      onClick = { onMapClick(requestId) },
+                      onClick = {
+                        isLoading = true
+                        onMapClick(requestId)
+                      },
+                      enabled = !isLoading,
                       modifier =
                           Modifier.fillMaxWidth()
                               .height(AcceptRequestScreenConstants.BUTTON_HEIGHT)
@@ -312,9 +319,17 @@ fun AcceptRequestScreen(
                           ButtonDefaults.buttonColors(
                               containerColor = appPalette().accent,
                               contentColor = appPalette().onAccent)) {
-                        Text(
-                            text = AcceptRequestScreenLabels.SEE_REQUEST_ON_MAP,
-                            style = MaterialTheme.typography.labelLarge)
+                        if (isLoading) {
+                          CircularProgressIndicator(
+                              modifier =
+                                  Modifier.size(
+                                      AcceptRequestScreenConstants.CIRCULAR_PROGRESS_SIZE),
+                              color = appPalette().onAccent)
+                        } else {
+                          Text(
+                              text = AcceptRequestScreenLabels.SEE_REQUEST_ON_MAP,
+                              style = MaterialTheme.typography.labelLarge)
+                        }
                       }
 
                   if (isOwner) {
