@@ -126,6 +126,7 @@ object MapTestTags {
   const val MAP_LIST_REQUEST = "mapListRequest"
   const val MAP_FILTER_OWNER = "mapFilterOwner"
   const val MAP_LIST_FILTER = "mapListFilter"
+  const val REQUEST_CREATOR_PROFILE = "request_creator_profile"
 
   fun testTagForTab(tab: String): String {
     return "tag${tab}"
@@ -1013,8 +1014,11 @@ fun CurrentProfileUI(
                   ProfilePicture(
                       profileRepository = mapViewModel.profileRepository,
                       profileId = profile.id,
-                      onClick = {},
-                      modifier = Modifier.size(ConstantMap.REQUEST_ITEM_ICON_SIZE))
+                      onClick = { navigationActions?.navigateTo(Screen.PublicProfile(profile.id)) },
+                      modifier =
+                          Modifier.size(ConstantMap.REQUEST_ITEM_ICON_SIZE).semantics {
+                            testTag = MapTestTags.REQUEST_CREATOR_PROFILE
+                          })
 
                   Text(
                       text = "${profile.lastName} ${profile.name}",
