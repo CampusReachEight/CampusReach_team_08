@@ -331,7 +331,7 @@ class PublicProfileViewModelTest {
   }
 
   @Test
-  fun checkFollowingStatus_whenExceptionThrown_doesNotSetError() = runTest {
+  fun checkFollowingStatus_whenExceptionThrown_setsError() = runTest {
     // Given
     coEvery { userProfileRepository.isFollowing(CURRENT_USER_ID, TARGET_USER_ID) } throws
         Exception("Network error")
@@ -343,7 +343,7 @@ class PublicProfileViewModelTest {
     // Then
     assertUiState(
         expectedIsLoading = false,
-        expectedError = null, // Should silently fail
+        expectedError = "Failed to check following status: Network error",
         expectedIsFollowing = false)
   }
 

@@ -22,7 +22,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -57,8 +56,6 @@ fun PublicProfileScreen(
     onBackClick: () -> Unit = {},
     defaultProfileId: String = PublicProfileDefaults.DEFAULT_PUBLIC_PROFILE_ID
 ) {
-  // If caller provided an explicit profile, render static UI only.
-  // Otherwise use the ViewModel (and auto-load preview id).
   LaunchedEffect(defaultProfileId) {
     if (profile == null && defaultProfileId.isNotBlank()) {
       viewModel.loadPublicProfile(defaultProfileId)
@@ -109,9 +106,6 @@ fun PublicProfileScreen(
                       profile = shownState.profile,
                       isFollowing = shownState.isFollowing,
                       onFollowToggle = { viewModel.toggleFollow(defaultProfileId) },
-                      modifier = Modifier.testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER))
-                      isFollowing = isFollowing,
-                      onFollowToggle = { isFollowing = !isFollowing },
                       modifier = Modifier.testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER),
                       uiState = shownState)
                   Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
@@ -127,9 +121,7 @@ fun PublicProfileScreen(
 }
 
 private const val UNKNOWN = "Unknown"
-
 private const val NONE = "None"
-
 private const val MAX_LENGTH = 25
 
 @Composable
@@ -143,13 +135,9 @@ fun PublicProfileHeader(
 ) {
   val accent = palette.accent
   val textColor = AppColors.WhiteColor
-
-  // Text limits to avoid overflow in smaller devices
   val maxNameLength = MAX_LENGTH
-
   val uiUtils = com.android.sample.ui.UiUtils()
 
-  // Combine name and lastName
   val fullName =
       when {
         profile == null -> UNKNOWN
@@ -157,7 +145,6 @@ fun PublicProfileHeader(
         else -> "${profile.name} ${profile.lastName}"
       }
 
-  // Get section label
   val sectionLabel =
       try {
         UserSections.entries
@@ -208,13 +195,8 @@ fun PublicProfileHeader(
 }
 
 private const val UNFOLLOW = "Unfollow"
-
 private const val FOLLOW = "Follow"
 
-/**
- * Simple follow button used by the public profile UI and tests. Adds distinct test tags for follow
- * vs unfollow states.
- */
 @Composable
 fun FollowButton(isFollowing: Boolean, onToggle: () -> Unit) {
   val tag =
@@ -226,7 +208,6 @@ fun FollowButton(isFollowing: Boolean, onToggle: () -> Unit) {
 }
 
 private const val ZERO = 0
-
 private const val FORMAT = "dd/MM/yyyy"
 
 fun mapUserProfileToProfileState(userProfile: UserProfile?): ProfileState {
@@ -244,7 +225,6 @@ fun mapUserProfileToProfileState(userProfile: UserProfile?): ProfileState {
         isEditMode = false)
   }
 
-  // Combine name and lastName
   val fullName =
       if (userProfile.lastName.isBlank()) {
         userProfile.name
@@ -252,7 +232,6 @@ fun mapUserProfileToProfileState(userProfile: UserProfile?): ProfileState {
         "${userProfile.name} ${userProfile.lastName}"
       }
 
-  // Get section label
   val sectionLabel =
       try {
         UserSections.entries

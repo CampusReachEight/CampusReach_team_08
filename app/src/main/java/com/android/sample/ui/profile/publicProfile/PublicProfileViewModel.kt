@@ -15,19 +15,15 @@ data class PublicProfileUiState(
     val isLoading: Boolean = false,
     val profile: UserProfile? = null,
     val error: String? = null,
-    val isFollowing: Boolean = false
-)
-
-private const val ONE = 1
-
-private const val LOGGED_IN_ERROR = "You must be logged in to follow users"
-
-class PublicProfileViewModel(val userProfileRepository: UserProfileRepository) : ViewModel() {
+    val isFollowing: Boolean = false,
     val offlineMode: Boolean = false
 )
 
+private const val ONE = 1
+private const val LOGGED_IN_ERROR = "You must be logged in to follow users"
+
 class PublicProfileViewModel(
-    private val userProfileRepository: UserProfileRepository,
+    val userProfileRepository: UserProfileRepository,
     val profileCache: UserProfileCache? = null
 ) : ViewModel() {
 
@@ -65,18 +61,6 @@ class PublicProfileViewModel(
     }
   }
 
-  fun setLoading(loading: Boolean) {
-    _uiState.value = _uiState.value.copy(isLoading = loading)
-  }
-
-  fun setError(message: String?) {
-    _uiState.value = _uiState.value.copy(error = message)
-  }
-
-  fun clear() {
-    _uiState.value = PublicProfileUiState()
-  }
-
   fun toggleFollow(targetUserId: String) {
     viewModelScope.launch {
       try {
@@ -92,7 +76,6 @@ class PublicProfileViewModel(
 
         if (isCurrentlyFollowing) {
           userProfileRepository.unfollowUser(currentUserId, targetUserId)
-          // Update state immediately without reloading
           _uiState.value =
               _uiState.value.copy(
                   isFollowing = false,
@@ -100,7 +83,6 @@ class PublicProfileViewModel(
                       currentProfile?.copy(followerCount = currentProfile.followerCount - ONE))
         } else {
           userProfileRepository.followUser(currentUserId, targetUserId)
-          // Update state immediately without reloading
           _uiState.value =
               _uiState.value.copy(
                   isFollowing = true,
@@ -125,9 +107,22 @@ class PublicProfileViewModel(
         val isFollowing = userProfileRepository.isFollowing(currentUserId, targetUserId)
         _uiState.value = _uiState.value.copy(isFollowing = isFollowing)
       } catch (e: Exception) {
-        // Silently fail - following status is not critical
+        _uiState.value =
+            _uiState.value.copy(error = "Failed to check following status: ${e.message}")
       }
     }
+  }
+
+  fun setLoading(loading: Boolean) {
+    _uiState.value = _uiState.value.copy(isLoading = loading)
+  }
+
+  fun setError(message: String?) {
+    _uiState.value = _uiState.value.copy(error = message)
+  }
+
+  fun clear() {
+    _uiState.value = PublicProfileUiState()
   }
 }
 
