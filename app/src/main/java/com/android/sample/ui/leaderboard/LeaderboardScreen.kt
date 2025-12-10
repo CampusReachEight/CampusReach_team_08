@@ -400,7 +400,7 @@ private fun LeaderboardCard(
                   testTag = LeaderboardTestTags.CARD_KUDOS_VALUE)
               Spacer(modifier = Modifier.width(ConstantLeaderboard.RowSpacing))
               StatsColumn(
-                  label = "Helped",
+                  label = "Was helped",
                   value = profile.helpReceived,
                   testTag = LeaderboardTestTags.CARD_HELP_VALUE)
             }
