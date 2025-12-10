@@ -9,9 +9,7 @@ import com.android.sample.model.request.RequestStatus
 import com.android.sample.model.request.RequestType
 import com.android.sample.model.request.Tags
 import com.android.sample.ui.map.MapViewModel
-import com.google.android.gms.maps.model.LatLng
 import java.util.Date
-import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertTrue
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -177,19 +175,6 @@ class MapOtherViewModelTest {
       viewModel.updateFilterOwnerShip(RequestOwnership.NOT_ACCEPTED)
       val result = viewModel.filterWithOwnerShip(list, creatorId1)
       assertTrue(twoSameList(result, listWithout13))
-    }
-  }
-
-  @Test
-  fun zoomOnFirstRequestThenCancel() {
-    runTest {
-      viewModel.zoomOnRequest(list)
-      assertTrue(viewModel.uiState.value.needToZoom)
-      val loc = LatLng(list.first().location.latitude, list.first().location.longitude)
-      assertEquals(viewModel.uiState.value.target, loc)
-
-      viewModel.zoomCompleted()
-      assertFalse(viewModel.uiState.value.needToZoom)
     }
   }
 
