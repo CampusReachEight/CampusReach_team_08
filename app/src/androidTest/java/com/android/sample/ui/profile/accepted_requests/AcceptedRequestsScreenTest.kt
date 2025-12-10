@@ -11,6 +11,7 @@ import com.android.sample.model.request.RequestStatus
 import com.android.sample.model.request.RequestType
 import com.android.sample.model.request.Tags
 import com.android.sample.ui.navigation.NavigationActions
+import com.android.sample.ui.navigation.Screen
 import com.android.sample.ui.request.RequestListViewModel
 import com.android.sample.ui.request.accepted.AcceptedRequestsScreen
 import com.android.sample.ui.request.accepted.AcceptedRequestsTestTags
@@ -765,5 +766,91 @@ class AcceptedRequestsScreenTest : BaseEmulatorTest() {
     // Then - Both requests should be visible
     assertTextExists(TITLE_WITH_KUDOS)
     assertTextExists(TITLE_WITHOUT_KUDOS)
+  }
+
+  @Test
+  fun profilePicture_inList_opensPublicProfile() = runTest {
+    // Given
+    mainUserId = currentUserId
+    setupOtherUser()
+
+    createAndAddRequest(
+        REQUEST_ID_1,
+        TITLE_WITH_KUDOS,
+        DESCRIPTION_WITH_KUDOS,
+        RequestStatus.COMPLETED,
+        listOf(mainUserId),
+        listOf(mainUserId, otherUserId))
+
+    val mockNav = mock<NavigationActions>()
+
+    signInUser()
+    delay(AUTH_DELAY)
+
+    viewModel = AcceptedRequestsViewModel(repository)
+    composeTestRule.setContent {
+      MaterialTheme {
+        AcceptedRequestsScreen(
+            navigationActions = mockNav,
+            acceptedRequestsViewModel = viewModel,
+            requestListViewModel = RequestListViewModel())
+      }
+    }
+
+    composeTestRule.waitUntil(timeoutMillis = VIEWMODEL_LOAD_TIMEOUT) {
+      !viewModel.uiState.value.isLoading
+    }
+    waitForUI()
+
+    // When
+    composeTestRule.onNodeWithTag(AcceptedRequestsTestTags.PROFILE_PICTURE_ITEM).performClick()
+
+    // Then
+    org.mockito.kotlin.verify(mockNav).navigateTo(Screen.PublicProfile(otherUserId))
+  }
+
+  @Test
+  fun profilePicture_inDialog_opensPublicProfile() = runTest {
+    // Given
+    mainUserId = currentUserId
+    setupOtherUser()
+
+    createAndAddRequest(
+        REQUEST_ID_1,
+        TITLE_WITH_KUDOS,
+        DESCRIPTION_WITH_KUDOS,
+        RequestStatus.COMPLETED,
+        listOf(mainUserId),
+        listOf(mainUserId, otherUserId))
+
+    val mockNav = mock<NavigationActions>()
+
+    signInUser()
+    delay(AUTH_DELAY)
+
+    viewModel = AcceptedRequestsViewModel(repository)
+    composeTestRule.setContent {
+      MaterialTheme {
+        AcceptedRequestsScreen(
+            navigationActions = mockNav,
+            acceptedRequestsViewModel = viewModel,
+            requestListViewModel = RequestListViewModel())
+      }
+    }
+
+    composeTestRule.waitUntil(timeoutMillis = VIEWMODEL_LOAD_TIMEOUT) {
+      !viewModel.uiState.value.isLoading
+    }
+    waitForUI()
+
+    // Open dialog
+    composeTestRule.onNodeWithText(TITLE_WITH_KUDOS).performClick()
+    waitForDialog()
+
+    // When
+    composeTestRule.onNodeWithTag(AcceptedRequestsTestTags.PROFILE_PICTURE_DIALOG).performClick()
+
+    // Then
+    org.mockito.kotlin.verify(mockNav).navigateTo(Screen.PublicProfile(otherUserId))
   }
 }
