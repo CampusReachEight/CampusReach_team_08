@@ -111,13 +111,10 @@ class LuceneProfileSearchEngine(
           }
 
           writer?.commit()
-          println("Lucene Indexing Committed. Docs: ${writer?.docStats?.numDocs}")
           reader?.close()
           reader = DirectoryReader.open(writer)
           searcher = IndexSearcher(reader)
         } catch (e: Exception) {
-          println("Lucene Indexing Error: ${e.message}")
-          e.printStackTrace()
           try {
             writer?.rollback()
           } catch (_: Exception) {}
@@ -146,7 +143,6 @@ class LuceneProfileSearchEngine(
       query: String
   ): List<SearchResult<UserProfile>> =
       withContext(dispatcher) {
-        println("Lucene Search: $query")
         if (query.isBlank()) return@withContext emptyList()
         val localSearcher = searcher ?: return@withContext emptyList()
 
@@ -162,7 +158,6 @@ class LuceneProfileSearchEngine(
         val luceneQuery = buildNameQuery(terms)
 
         val top: TopDocs = localSearcher.search(luceneQuery, maxResults)
-        println("Lucene Hits: ${top.totalHits}")
         val hits: Array<ScoreDoc> = top.scoreDocs
         if (hits.isEmpty()) return@withContext emptyList()
 

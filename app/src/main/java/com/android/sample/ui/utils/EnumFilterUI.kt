@@ -46,6 +46,12 @@ object EnumFilterUIDimens {
   val DropdownMaxHeight = 200.dp
   val SurfaceTonalElevation = 2.dp
   val SurfaceShadowElevation = 2.dp
+
+  val EnumFilterSpacing = 1f
+}
+
+object EnumFilterUIText {
+  val SearchOptionsLabel = "Search options"
 }
 
 /**
@@ -151,7 +157,7 @@ fun EnumFilterPanelSimple(
                 onValueChange = { localQuery = it },
                 modifier = Modifier.fillMaxWidth().testTag(dropdownSearchBarTestTag),
                 singleLine = true,
-                placeholder = { Text("Search options") })
+                placeholder = { Text(EnumFilterUIText.SearchOptionsLabel) })
 
             Spacer(modifier = Modifier.height(EnumFilterUIDimens.PaddingSmall))
 

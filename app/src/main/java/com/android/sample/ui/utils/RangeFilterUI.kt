@@ -56,6 +56,10 @@ object RangeFilterTestTags {
   fun getResetButtonTag(filterId: String): String = "${filterId}${RESET_BUTTON_SUFFIX}"
 }
 
+object RangeFilterUIText {
+  val ResetButtonLabel = "Reset"
+}
+
 /**
  * Button that displays a range filter with current selection info. When clicked, opens the range
  * filter panel.
@@ -127,7 +131,7 @@ fun <T> RangeFilterPanel(rangeFacet: RangeFacet<T>, modifier: Modifier = Modifie
                     },
                     modifier =
                         Modifier.testTag(RangeFilterTestTags.getResetButtonTag(rangeFacet.id))) {
-                      Text("Reset")
+                      Text(RangeFilterUIText.ResetButtonLabel)
                     }
               }
 
