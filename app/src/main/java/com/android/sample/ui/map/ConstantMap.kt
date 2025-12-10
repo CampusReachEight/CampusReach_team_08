@@ -7,6 +7,7 @@ object ConstantMap {
   const val TEXT_SEE_DETAILS = "See details"
   const val TEXT_EDIT = "Edit your request"
   const val PROBLEM_OCCUR = "A problem occur, click to reload"
+  const val FAIL_LOAD_REQUEST = "Failed to load requests: "
 
   const val DETAILS = "Details"
 
@@ -55,6 +56,7 @@ object ConstantMap {
   const val ALPHA_ON_CONTAINER_MEDIUM = 0.7f
   const val ALPHA_TEXT_UNSELECTED = 0.6f
   const val ALPHA_DIVIDER = 0.12f
+  const val ALPHA_BLOCK_CLICK = 0.5f
 
   // ======================
   // Bottom Sheet
@@ -222,4 +224,6 @@ object ConstantMap {
       "You will not have access to all the feature of the map"
   const val ERROR_FAILED_TO_GET_CURRENT_LOCATION = "Failed to get current location:"
   const val ZOOM_SETTING = "Zoom Settings"
+  const val LATITUDE_EPFL = 46.5191
+  const val LONGITUDE_EPFL = 6.5668
 }

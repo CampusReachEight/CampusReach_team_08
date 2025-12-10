@@ -7,6 +7,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.rule.GrantPermissionRule
 import com.android.sample.model.map.Location
 import com.android.sample.model.profile.UserProfile
@@ -23,7 +24,9 @@ import com.android.sample.ui.map.MapScreen
 import com.android.sample.ui.map.MapSettingsTestTags
 import com.android.sample.ui.map.MapTestTags
 import com.android.sample.ui.map.MapViewModel
+import com.android.sample.ui.map.toDisplayStringWithoutHours
 import com.android.sample.ui.navigation.NavigationTestTags
+import com.android.sample.ui.overview.toDisplayString
 import com.android.sample.ui.profile.UserSections
 import com.android.sample.ui.request.FakeLocationProvider
 import com.android.sample.utils.BaseEmulatorTest
@@ -170,6 +173,132 @@ class MapWithCurrentLocationTest : BaseEmulatorTest() {
     composeTestRule.waitForIdle()
 
     checkSettingsWithFilter()
+  }
+
+  @Test
+  fun beginWithACurrentRequestAndValidLocation() {
+    fakeFusedLocationProvider.locationToReturn = currentLocation
+    fakeFusedLocationProvider.exceptionToThrow = null
+
+    composeTestRule.setContent { MapScreen(viewModel, requestId = requestId1) }
+    composeTestRule.waitForIdle()
+
+    checkDetailsRequest()
+    checkDetailsProfile()
+  }
+
+  @Test
+  fun beginWithACurrentRequestAndNoLocation() {
+    fakeFusedLocationProvider.locationToReturn = null
+    fakeFusedLocationProvider.exceptionToThrow = Exception(messageError)
+
+    composeTestRule.setContent { MapScreen(viewModel, requestId = requestId2) }
+    composeTestRule.waitForIdle()
+
+    checkDetailsRequest()
+    checkDetailsProfile()
+  }
+
+  fun checkDetailsProfile() {
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule
+          .onAllNodesWithTag(MapTestTags.testTagForTab(ConstantMap.PROFILE))
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    composeTestRule
+        .onNodeWithTag(MapTestTags.testTagForTab(ConstantMap.PROFILE))
+        .assertIsDisplayed()
+        .performClick()
+
+    composeTestRule
+        .onNodeWithTag(MapTestTags.PROFILE_NAME)
+        .performScrollTo()
+        .assertIsDisplayed()
+        .assertTextContains("$name2 $firstName2")
+
+    composeTestRule
+        .onNodeWithTag(MapTestTags.PROFILE_SECTION_TEXT)
+        .performScrollTo()
+        .assertIsDisplayed()
+        .assertTextContains(ConstantMap.SECTION)
+
+    composeTestRule
+        .onNodeWithTag(MapTestTags.PROFILE_SECTION)
+        .performScrollTo()
+        .assertIsDisplayed()
+        .assertTextContains(section2.label)
+
+    composeTestRule
+        .onNodeWithTag(MapTestTags.PROFILE_KUDOS_TEXT)
+        .performScrollTo()
+        .assertIsDisplayed()
+        .assertTextContains(ConstantMap.KUDOS)
+
+    composeTestRule
+        .onNodeWithTag(MapTestTags.PROFILE_KUDOS)
+        .performScrollTo()
+        .assertIsDisplayed()
+        .assertTextContains(kudos2.toString())
+
+    composeTestRule
+        .onNodeWithTag(MapTestTags.PROFILE_CREATION_DATE)
+        .performScrollTo()
+        .assertIsDisplayed()
+        .assertTextContains(date.toDisplayStringWithoutHours())
+
+    composeTestRule
+        .onNodeWithTag(MapTestTags.PROFILE_EDIT_BUTTON)
+        .performScrollTo()
+        .assertIsDisplayed()
+        .performClick()
+  }
+
+  fun checkDetailsRequest() {
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule.onAllNodesWithTag(MapTestTags.DRAG).fetchSemanticsNodes().isNotEmpty()
+    }
+
+    composeTestRule.onNodeWithTag(MapTestTags.DRAG).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(MapTestTags.DRAG_DOWN_MENU).assertIsDisplayed()
+
+    composeTestRule
+        .onNodeWithTag(MapTestTags.REQUEST_TITLE)
+        .assertIsDisplayed()
+        .assertTextContains(request1.title)
+
+    composeTestRule
+        .onNodeWithTag(MapTestTags.REQUEST_DESCRIPTION)
+        .performScrollTo()
+        .assertIsDisplayed()
+        .assertTextContains(request1.description)
+
+    composeTestRule
+        .onNodeWithTag(MapTestTags.START_DATE)
+        .performScrollTo()
+        .assertIsDisplayed()
+        .assertTextContains(request1.startTimeStamp.toDisplayString())
+
+    composeTestRule
+        .onNodeWithTag(MapTestTags.END_DATE)
+        .performScrollTo()
+        .assertIsDisplayed()
+        .assertTextContains(request1.expirationTime.toDisplayString())
+
+    composeTestRule.onNodeWithTag(MapTestTags.BUTTON_X).assertIsDisplayed()
+
+    composeTestRule
+        .onNodeWithTag(MapTestTags.REQUEST_STATUS)
+        .performScrollTo()
+        .assertIsDisplayed()
+        .assertTextContains(request1.status.name)
+
+    composeTestRule
+        .onNodeWithTag(MapTestTags.REQUEST_LOCATION_NAME)
+        .performScrollTo()
+        .assertIsDisplayed()
+        .assertTextContains(request1.locationName)
   }
 
   fun clickOnARequestOwnership(filter: RequestOwnership) {

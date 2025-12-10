@@ -8,7 +8,9 @@ import com.android.sample.model.request.RequestRepository
 import com.android.sample.model.request.RequestStatus
 import com.android.sample.model.request.RequestType
 import com.android.sample.model.request.Tags
+import com.android.sample.ui.map.ConstantMap
 import com.android.sample.ui.map.MapViewModel
+import com.android.sample.ui.map.MapZoomPreference
 import com.google.android.gms.maps.model.LatLng
 import java.util.Date
 import junit.framework.TestCase.assertFalse
@@ -18,12 +20,14 @@ import kotlin.test.assertEquals
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Before
 import org.mockito.Mockito.mock
+import org.mockito.Mockito.`when`
 
 class MapOtherViewModelTest {
   private lateinit var viewModel: MapViewModel
@@ -180,17 +184,103 @@ class MapOtherViewModelTest {
     }
   }
 
+  @OptIn(ExperimentalCoroutinesApi::class)
   @Test
-  fun zoomOnFirstRequestThenCancel() {
+  fun fetchAcceptedRequestHaveCurrent() {
     runTest {
-      viewModel.zoomOnRequest(list)
-      assertTrue(viewModel.uiState.value.needToZoom)
-      val loc = LatLng(list.first().location.latitude, list.first().location.longitude)
-      assertEquals(viewModel.uiState.value.target, loc)
+      `when`(requestRepository.getAllCurrentRequests()).thenReturn(list)
 
-      viewModel.zoomCompleted()
-      assertFalse(viewModel.uiState.value.needToZoom)
+      viewModel.updateCurrentRequest(request1)
+
+      advanceUntilIdle()
+
+      viewModel.refreshUIState(null)
+
+      advanceUntilIdle()
+
+      assertTrue(viewModel.uiState.value.needToZoom)
+      assertEquals(request1, viewModel.uiState.value.currentRequest)
     }
+  }
+
+  @Test
+  fun setLocationPermissionError_stopsLoadingAndSetsFlags() {
+
+    viewModel.setLocationPermissionError()
+
+    with(viewModel.uiState.value) {
+      assertEquals(ConstantMap.ERROR_MESSAGE_LOCATION_PERMISSION, errorMsg)
+      assertFalse(isLoadingLocation)
+      assertTrue(hasTriedToGetLocation)
+    }
+  }
+
+  @Test
+  fun zoomOnRequest_whenCannotOtherZoom_doesNothing() {
+
+    viewModel.cannotOtherZoomNow()
+    val initialState = viewModel.uiState.value
+
+    viewModel.zoomOnRequest(list)
+
+    assertEquals(initialState, viewModel.uiState.value)
+    assertFalse(viewModel.uiState.value.needToZoom)
+  }
+
+  @Test
+  fun zoomOnRequest_whenWasOnAnotherScreen_comesBackFromAnotherScreen() {
+
+    viewModel.goOnAnotherScreen()
+    viewModel.updateCurrentRequest(request1)
+
+    viewModel.zoomOnRequest(list)
+
+    assertFalse(viewModel.uiState.value.wasOnAnotherScreen)
+  }
+
+  @Test
+  fun zoomOnRequest_whenNoAutoZoom_doesNothing() {
+    viewModel.updateZoomPreference(MapZoomPreference.NO_AUTO_ZOOM)
+    val initialTarget = viewModel.uiState.value.target
+
+    viewModel.zoomOnRequest(list)
+
+    assertEquals(initialTarget, viewModel.uiState.value.target)
+    assertFalse(viewModel.uiState.value.needToZoom)
+  }
+
+  @Test
+  fun zoomOnRequest_withNoCurrentLocation_zoomsToFirstRequest() {
+
+    viewModel.zoomOnRequest(list)
+
+    val expectedTarget = LatLng(request1.location.latitude, request1.location.longitude)
+    assertEquals(expectedTarget, viewModel.uiState.value.target)
+    assertTrue(viewModel.uiState.value.needToZoom)
+  }
+
+  @Test
+  fun zoomOnRequest_withNoCurrentLocation_andEmptyList_zoomsToEPFL() {
+
+    viewModel.zoomOnRequest(emptyList())
+
+    val expectedTarget =
+        LatLng(MapViewModel.EPFL_LOCATION.latitude, MapViewModel.EPFL_LOCATION.longitude)
+    assertEquals(expectedTarget, viewModel.uiState.value.target)
+    assertTrue(viewModel.uiState.value.needToZoom)
+  }
+
+  @Test
+  fun zoomOnRequest_whenWasOnAnotherScreenWithCurrentRequest_zoomsToCurrentRequest() {
+    viewModel.updateCurrentRequest(request1)
+    viewModel.goOnAnotherScreen()
+
+    viewModel.zoomOnRequest(list)
+
+    val expectedTarget = LatLng(request1.location.latitude, request1.location.longitude)
+    assertEquals(expectedTarget, viewModel.uiState.value.target)
+    assertTrue(viewModel.uiState.value.needToZoom)
+    assertFalse(viewModel.uiState.value.wasOnAnotherScreen)
   }
 
   private fun doARequest(

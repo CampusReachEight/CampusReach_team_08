@@ -15,6 +15,7 @@ import androidx.core.graphics.createBitmap
 import androidx.core.graphics.toColorInt
 import com.android.sample.model.map.Location
 import com.android.sample.model.request.Request
+import com.android.sample.ui.map.MapViewModel.Companion.EPFL_LOCATION
 import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
@@ -224,7 +225,7 @@ fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): D
  */
 fun findClosestRequest(currentPosition: LatLng?, requests: List<Request>): Location {
   if (currentPosition == null) {
-    return MapViewModel.EPFL_LOCATION
+    return requests.firstOrNull()?.location ?: EPFL_LOCATION
   }
   return requests
       .minByOrNull { request ->
@@ -400,7 +401,6 @@ internal class MapPermissionResultHandler(
       }
       else -> {
         viewModel.setLocationPermissionError()
-        viewModel.markLocationPermissionAsked()
       }
     }
   }

@@ -29,7 +29,7 @@ sealed class NavigationTab(val name: String, val icon: ImageVector, val destinat
 
   object Leaderboard : NavigationTab("Leaderboard", Icons.Outlined.EmojiEvents, Screen.Leaderboard)
 
-  object Map : NavigationTab("Map", Icons.Outlined.Place, Screen.Map)
+  object Map : NavigationTab("Map", Icons.Outlined.Place, Screen.Map())
 }
 
 private val navigationTabs =
@@ -65,7 +65,7 @@ fun BottomNavigationMenu(
                     navigationActions?.navigateTo(Screen.Leaderboard)
                   }
                   NavigationTab.Map -> {
-                    navigationActions?.navigateTo(Screen.Map)
+                    navigationActions?.navigateTo(Screen.Map())
                   }
                 }
               },

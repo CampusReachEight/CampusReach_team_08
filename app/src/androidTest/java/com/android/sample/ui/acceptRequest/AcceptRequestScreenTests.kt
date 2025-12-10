@@ -23,6 +23,7 @@ import com.android.sample.model.request.RequestStatus
 import com.android.sample.model.request.RequestType
 import com.android.sample.model.request.Tags
 import com.android.sample.ui.overview.AcceptRequestScreen
+import com.android.sample.ui.overview.AcceptRequestScreenLabels
 import com.android.sample.ui.overview.AcceptRequestScreenTestTags
 import com.android.sample.ui.overview.AcceptRequestViewModel
 import com.android.sample.utils.BaseEmulatorTest
@@ -840,5 +841,28 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.VOLUNTEERS_SECTION_CONTAINER)
         .assertIsDisplayed()
+  }
+
+  @Test
+  fun buttonGoToMapWithoutNavigation() {
+    composeTestRule.setContent { AcceptRequestScreen(request1_id) }
+
+    composeTestRule.waitUntil(uiWaitTimeout) {
+      composeTestRule
+          .onAllNodesWithTag(AcceptRequestScreenTestTags.REQUEST_DESCRIPTION)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    composeTestRule
+        .onNodeWithTag(AcceptRequestScreenTestTags.NAVIGATE_TO_MAP)
+        .performScrollTo()
+        .assertIsDisplayed()
+
+    composeTestRule
+        .onNodeWithTag(AcceptRequestScreenTestTags.NAVIGATE_TO_MAP)
+        .assertTextContains(AcceptRequestScreenLabels.SEE_REQUEST_ON_MAP)
+
+    composeTestRule.onNodeWithTag(AcceptRequestScreenTestTags.NAVIGATE_TO_MAP).performClick()
   }
 }

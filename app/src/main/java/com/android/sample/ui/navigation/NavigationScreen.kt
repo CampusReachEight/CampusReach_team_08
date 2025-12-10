@@ -18,9 +18,11 @@ import androidx.compose.ui.unit.dp
 import androidx.credentials.CredentialManager
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import androidx.navigation.navigation
 import com.android.sample.model.map.FusedLocationProvider
 import com.android.sample.model.map.NominatimLocationRepository
@@ -40,6 +42,8 @@ import com.android.sample.ui.overview.AcceptRequestViewModel
 import com.android.sample.ui.overview.AcceptRequestViewModelFactory
 import com.android.sample.ui.profile.ProfileScreen
 import com.android.sample.ui.profile.ProfileViewModel
+import com.android.sample.ui.profile.accepted_requests.AcceptedRequestsViewModel
+import com.android.sample.ui.profile.accepted_requests.AcceptedRequestsViewModelFactory
 import com.android.sample.ui.profile.publicProfile.PublicProfileScreen
 import com.android.sample.ui.profile.publicProfile.PublicProfileViewModel
 import com.android.sample.ui.profile.publicProfile.PublicProfileViewModelFactory
@@ -89,6 +93,7 @@ fun NavigationScreen(
           factory =
               SignInViewModelFactory(
                   profileRepository = userProfileRepository, profileCache = profileCache))
+
   val mapViewModel: MapViewModel =
       viewModel(
           factory =
@@ -96,13 +101,25 @@ fun NavigationScreen(
                   requestRepository = requestRepository,
                   profileRepository = userProfileRepository,
                   locationProvider = fusedLocationProvider))
+
   val requestListViewModel: RequestListViewModel =
       viewModel(
+          key = "allRequestsViewModel",
           factory =
               RequestListViewModelFactory(
                   showOnlyMyRequests = false,
                   requestCache = requestCache,
                   profileCache = profileCache))
+
+  val myRequestListViewModel: RequestListViewModel =
+      viewModel(
+          key = "myRequestsViewModel",
+          factory =
+              RequestListViewModelFactory(
+                  showOnlyMyRequests = true,
+                  requestCache = requestCache,
+                  profileCache = profileCache))
+
   val editRequestViewModel: EditRequestViewModel =
       viewModel(
           factory =
@@ -118,6 +135,12 @@ fun NavigationScreen(
                   requestRepository = requestRepository,
                   userProfileRepository = UserProfileRepositoryFirestore(Firebase.firestore),
                   requestCache = requestCache))
+
+  val acceptedRequestsViewModel: AcceptedRequestsViewModel =
+      viewModel(
+          factory =
+              AcceptedRequestsViewModelFactory(
+                  requestRepository = requestRepository, requestCache = requestCache))
 
   NavHost(
       navController = navController,
@@ -156,7 +179,10 @@ fun NavigationScreen(
               onEditClick = { requestIdForEdit ->
                 navigationActions.navigateTo(Screen.EditRequest(requestIdForEdit))
               },
-              acceptRequestViewModel = acceptRequestViewModel)
+              acceptRequestViewModel = acceptRequestViewModel,
+              onMapClick = { requestIdForMap ->
+                navigationActions.navigateTo(Screen.Map(requestIdForMap))
+              })
         }
       }
       composable(Screen.ValidateRequest.route) { navBackStackEntry ->
@@ -217,7 +243,8 @@ fun NavigationScreen(
             navigationActions = navigationActions)
       }
       composable(Screen.MyRequest.route) {
-        RequestListScreen(showOnlyMyRequests = true, navigationActions = navigationActions)
+        RequestListScreen(
+            requestListViewModel = myRequestListViewModel, navigationActions = navigationActions)
       }
       composable(Screen.PublicProfile.route) { navBackStackEntry ->
         val userId = navBackStackEntry.arguments?.getString(Screen.PublicProfile.ARG_USER_ID)
@@ -232,14 +259,28 @@ fun NavigationScreen(
         }
       }
       composable(Screen.AcceptedRequests.route) {
-        AcceptedRequestsScreen(navigationActions = navigationActions)
+        AcceptedRequestsScreen(
+            navigationActions = navigationActions,
+            acceptedRequestsViewModel = acceptedRequestsViewModel)
       }
     }
 
-    navigation(startDestination = Screen.Map.route, route = "map") {
-      composable(Screen.Map.route) {
-        MapScreen(viewModel = mapViewModel, navigationActions = navigationActions)
-      }
+    navigation(startDestination = "map/main", route = "map") {
+      composable(
+          route = Screen.Map.ROUTE,
+          arguments =
+              listOf(
+                  navArgument(Screen.Map.ARG_REQUEST_ID) {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                  })) { backStackEntry ->
+            val requestId = backStackEntry.arguments?.getString(Screen.Map.ARG_REQUEST_ID)
+            MapScreen(
+                viewModel = mapViewModel,
+                navigationActions = navigationActions,
+                requestId = requestId)
+          }
     }
   }
 }
