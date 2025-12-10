@@ -188,7 +188,7 @@ class AcceptedRequestsViewModelTest {
   /** Initializes ViewModel and waits for initial load to complete. */
   private suspend fun initializeViewModel() {
     viewModel = AcceptedRequestsViewModel(requestRepository)
-      viewModel.loadAcceptedRequests()
+    viewModel.loadAcceptedRequests()
     testDispatcher.scheduler.advanceUntilIdle()
   }
 
@@ -249,7 +249,7 @@ class AcceptedRequestsViewModelTest {
     // Then - Initially loading
     assertTrue("Should be loading initially", viewModel.uiState.value.isLoading)
 
-      viewModel.loadAcceptedRequests()
+    viewModel.loadAcceptedRequests()
 
     // Complete loading
     testDispatcher.scheduler.advanceUntilIdle()
@@ -533,7 +533,6 @@ class AcceptedRequestsViewModelTest {
     // Then - Should finish loading
     assertFalse("Should finish loading", viewModel.uiState.value.isLoading)
   }
-
 
   // ============ Tests for Error Handling ============
 
