@@ -14,7 +14,7 @@ echo ""
 echo ">> [1/2] Running Unit Tests..."
 
 set +e  # Temporarily disable exit on error
-./gradlew testDebugUnitTest --build-cache --configuration-cache
+./gradlew testDebugUnitTest --build-cache --configuration-cache --no-parallel
 UNIT_EXIT_CODE=$?
 set -e  # Re-enable exit on error
 
@@ -29,7 +29,7 @@ echo ""
 echo ">> [2/2] Running Android Tests..."
 
 set +e  # Temporarily disable exit on error
-./gradlew createDebugCoverageReport --parallel --build-cache --configuration-cache
+./gradlew createDebugCoverageReport --no-parallel --build-cache --configuration-cache
 ANDROID_EXIT_CODE=$?
 set -e  # Re-enable exit on error
 
