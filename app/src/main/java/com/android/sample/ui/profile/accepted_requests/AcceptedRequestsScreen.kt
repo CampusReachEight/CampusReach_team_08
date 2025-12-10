@@ -1,5 +1,6 @@
 package com.android.sample.ui.request.accepted
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -53,9 +54,9 @@ private val DIALOG_SMALL_SPACING = 8.dp
 private val DIALOG_MAX_WIDTH = 400.dp
 private val BIG_MODIFIER = 40.dp
 private val FONT_SIZE_14 = 14.sp
-private val ALPHA_6 = 0.6f
-private val ALPHA_7 = 0.7f
-private val WEIGHT = 1f
+private const val ALPHA_6 = 0.6f
+private const val ALPHA_7 = 0.7f
+private const val WEIGHT = 1f
 
 private const val KUDOS_RECEIVED_TEXT = "✓ Kudos Received"
 private const val KUDOS_NOT_RECEIVED_TEXT = "✗ No Kudos"
@@ -102,6 +103,7 @@ fun AcceptedRequestsScreen(
 
   Scaffold(
       modifier = Modifier.fillMaxSize().testTag(AcceptedRequestsTestTags.SCREEN),
+      containerColor = appPalette().background,
       topBar = {
         TopAppBar(
             title = { Text(SCREEN_TITLE) },
@@ -193,6 +195,9 @@ private fun AcceptedRequestItem(
               .fillMaxWidth()
               .height(ConstantRequestList.RequestItemHeight)
               .testTag(AcceptedRequestsTestTags.REQUEST_ITEM),
+      colors =
+          CardDefaults.cardColors(
+              containerColor = appPalette().surface, contentColor = appPalette().onSurface),
       onClick = { onClick(requestWithStatus) }) {
         Box(modifier = Modifier.fillMaxSize()) {
           // Main content
@@ -307,97 +312,109 @@ private fun RequestDetailsDialog(
             Modifier.widthIn(max = DIALOG_MAX_WIDTH)
                 .testTag(AcceptedRequestsTestTags.REQUEST_DIALOG),
         shape = MaterialTheme.shapes.large,
+        color = appPalette().surface,
         tonalElevation = DIALOG_SPACING) {
-          Column(modifier = Modifier.fillMaxWidth().padding(DIALOG_PADDING)) {
-            // Header with close button
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically) {
-                  Text(
-                      text = request.title,
-                      style = MaterialTheme.typography.headlineSmall,
-                      fontWeight = FontWeight.Bold,
-                      modifier = Modifier.weight(WEIGHT))
-                  IconButton(
-                      onClick = onDismiss,
-                      modifier = Modifier.testTag(AcceptedRequestsTestTags.DIALOG_CLOSE_BUTTON)) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = DIALOG_CLOSE_BUTTON)
-                      }
+          Column(
+              modifier =
+                  Modifier.fillMaxWidth()
+                      .padding(DIALOG_PADDING)
+                      .background(color = appPalette().surface)) {
+                // Header with close button
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically) {
+                      Text(
+                          text = request.title,
+                          style = MaterialTheme.typography.headlineSmall,
+                          fontWeight = FontWeight.Bold,
+                          modifier = Modifier.weight(WEIGHT))
+                      IconButton(
+                          onClick = onDismiss,
+                          modifier =
+                              Modifier.testTag(AcceptedRequestsTestTags.DIALOG_CLOSE_BUTTON)) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = DIALOG_CLOSE_BUTTON)
+                          }
+                    }
+
+                Spacer(modifier = Modifier.height(DIALOG_SPACING))
+
+                // Kudos status
+                KudosStatusChip(kudosStatus = requestWithStatus.kudosStatus)
+
+                Spacer(modifier = Modifier.height(DIALOG_SPACING))
+
+                // Creator info
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()) {
+                      Text(
+                          text = LABEL_CREATOR,
+                          fontWeight = FontWeight.SemiBold,
+                          fontSize = FONT_SIZE_14)
+                      Spacer(modifier = Modifier.width(DIALOG_SMALL_SPACING))
+                      ProfilePicture(
+                          profileRepository = requestListViewModel.profileRepository,
+                          profileId = request.creatorId,
+                          onClick = {},
+                          modifier = Modifier.size(BIG_MODIFIER),
+                          withName = true)
+                    }
+
+                Spacer(modifier = Modifier.height(DIALOG_SPACING))
+
+                // Description
+                Text(
+                    text = request.description,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = appPalette().text.copy(alpha = WEIGHT_08))
+
+                Spacer(modifier = Modifier.height(DIALOG_SPACING))
+
+                // Request types
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(DIALOG_SMALL_SPACING)) {
+                  items(request.requestType.size) { index ->
+                    TypeChip(requestType = request.requestType[index])
+                  }
                 }
 
-            Spacer(modifier = Modifier.height(DIALOG_SPACING))
+                Spacer(modifier = Modifier.height(DIALOG_SPACING))
 
-            // Kudos status
-            KudosStatusChip(kudosStatus = requestWithStatus.kudosStatus)
+                // Location
+                DialogInfoRow(label = LABEL_LOCATION, value = request.locationName)
 
-            Spacer(modifier = Modifier.height(DIALOG_SPACING))
+                Spacer(modifier = Modifier.height(DIALOG_SMALL_SPACING))
 
-            // Creator info
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()) {
-                  Text(
-                      text = LABEL_CREATOR,
-                      fontWeight = FontWeight.SemiBold,
-                      fontSize = FONT_SIZE_14)
-                  Spacer(modifier = Modifier.width(DIALOG_SMALL_SPACING))
-                  ProfilePicture(
-                      profileRepository = requestListViewModel.profileRepository,
-                      profileId = request.creatorId,
-                      onClick = {},
-                      modifier = Modifier.size(BIG_MODIFIER),
-                      withName = true)
-                }
+                // Start time
+                DialogInfoRow(
+                    label = LABEL_START_TIME, value = dateFormat.format(request.startTimeStamp))
 
-            Spacer(modifier = Modifier.height(DIALOG_SPACING))
+                Spacer(modifier = Modifier.height(DIALOG_SMALL_SPACING))
 
-            // Description
-            Text(
-                text = request.description,
-                style = MaterialTheme.typography.bodyMedium,
-                color = appPalette().text.copy(alpha = WEIGHT_08))
+                // Expiration time
+                DialogInfoRow(
+                    label = LABEL_EXPIRATION, value = dateFormat.format(request.expirationTime))
 
-            Spacer(modifier = Modifier.height(DIALOG_SPACING))
+                Spacer(modifier = Modifier.height(DIALOG_SMALL_SPACING))
 
-            // Request types
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(DIALOG_SMALL_SPACING)) {
-              items(request.requestType.size) { index ->
-                TypeChip(requestType = request.requestType[index])
+                // Number of people who accepted
+                DialogInfoRow(label = LABEL_HELPERS, value = request.people.size.toString())
+
+                Spacer(modifier = Modifier.height(DIALOG_SPACING))
+
+                // Close button
+                Button(
+                    onClick = onDismiss,
+                    modifier = Modifier.align(Alignment.End),
+                    colors =
+                        ButtonDefaults.buttonColors(
+                            containerColor = appPalette().accent,
+                            contentColor = appPalette().onAccent)) {
+                      Text(DIALOG_CLOSE_BUTTON)
+                    }
               }
-            }
-
-            Spacer(modifier = Modifier.height(DIALOG_SPACING))
-
-            // Location
-            DialogInfoRow(label = LABEL_LOCATION, value = request.locationName)
-
-            Spacer(modifier = Modifier.height(DIALOG_SMALL_SPACING))
-
-            // Start time
-            DialogInfoRow(
-                label = LABEL_START_TIME, value = dateFormat.format(request.startTimeStamp))
-
-            Spacer(modifier = Modifier.height(DIALOG_SMALL_SPACING))
-
-            // Expiration time
-            DialogInfoRow(
-                label = LABEL_EXPIRATION, value = dateFormat.format(request.expirationTime))
-
-            Spacer(modifier = Modifier.height(DIALOG_SMALL_SPACING))
-
-            // Number of people who accepted
-            DialogInfoRow(label = LABEL_HELPERS, value = request.people.size.toString())
-
-            Spacer(modifier = Modifier.height(DIALOG_SPACING))
-
-            // Close button
-            Button(onClick = onDismiss, modifier = Modifier.align(Alignment.End)) {
-              Text(DIALOG_CLOSE_BUTTON)
-            }
-          }
         }
   }
 }
