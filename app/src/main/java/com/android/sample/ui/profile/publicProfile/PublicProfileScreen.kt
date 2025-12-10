@@ -65,15 +65,14 @@ fun PublicProfileScreen(
       }
     }
   }
-  val vmState by viewModel.uiState.collectAsState()
 
+  val vmState by viewModel.uiState.collectAsState()
   val shownState =
       if (profile != null) {
         PublicProfileUiState(isLoading = false, profile = profile, error = null)
       } else {
         vmState
       }
-
   val profileState =
       if (profile != null) {
         mapUserProfileToProfileState(profile)
@@ -85,39 +84,69 @@ fun PublicProfileScreen(
       modifier = Modifier.testTag(PublicProfileTestTags.PUBLIC_PROFILE_SCREEN),
       containerColor = appPalette().primary,
       topBar = { ProfileTopBar(onBackClick) }) { padding ->
-        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
-          when {
-            shownState.isLoading -> ProfileLoadingBuffer(Modifier.fillMaxSize())
-            else ->
-                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                  shownState.error?.let {
-                    ErrorBanner(it)
-                    Spacer(modifier = Modifier.height(ProfileDimens.Vertical))
-                  }
-                  if (shownState.offlineMode) {
-                    Text(
-                        PROFILE_OFFLINE_TEXT,
-                        color = appPalette().error,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth())
-                  }
-
-                  PublicProfileHeader(
-                      profile = shownState.profile,
-                      isFollowing = shownState.isFollowing,
-                      onFollowToggle = { viewModel.toggleFollow(defaultProfileId) },
-                      modifier = Modifier.testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER),
-                      uiState = shownState)
-                  Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
-                  ProfileStats(state = profileState)
-                  Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
-                  ProfileInformation(state = profileState, showSensitiveInfo = false)
-
-                  Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
-                }
-          }
-        }
+        PublicProfileContent(
+            shownState = shownState,
+            profileState = profileState,
+            defaultProfileId = defaultProfileId,
+            viewModel = viewModel,
+            modifier = Modifier.fillMaxSize().padding(padding))
       }
+}
+
+@Composable
+private fun PublicProfileContent(
+    shownState: PublicProfileUiState,
+    profileState: ProfileState,
+    defaultProfileId: String,
+    viewModel: PublicProfileViewModel,
+    modifier: Modifier = Modifier
+) {
+  Box(modifier = modifier) {
+    when {
+      shownState.isLoading -> ProfileLoadingBuffer(Modifier.fillMaxSize())
+      else ->
+          PublicProfileScrollableContent(
+              shownState = shownState,
+              profileState = profileState,
+              defaultProfileId = defaultProfileId,
+              viewModel = viewModel)
+    }
+  }
+}
+
+@Composable
+private fun PublicProfileScrollableContent(
+    shownState: PublicProfileUiState,
+    profileState: ProfileState,
+    defaultProfileId: String,
+    viewModel: PublicProfileViewModel
+) {
+  Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+    shownState.error?.let {
+      ErrorBanner(it)
+      Spacer(modifier = Modifier.height(ProfileDimens.Vertical))
+    }
+
+    if (shownState.offlineMode) {
+      Text(
+          PROFILE_OFFLINE_TEXT,
+          color = appPalette().error,
+          textAlign = TextAlign.Center,
+          modifier = Modifier.fillMaxWidth())
+    }
+
+    PublicProfileHeader(
+        profile = shownState.profile,
+        isFollowing = shownState.isFollowing,
+        onFollowToggle = { viewModel.toggleFollow(defaultProfileId) },
+        modifier = Modifier.testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER),
+        uiState = shownState)
+    Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
+    ProfileStats(state = profileState)
+    Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
+    ProfileInformation(state = profileState, showSensitiveInfo = false)
+    Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
+  }
 }
 
 private const val UNKNOWN = "Unknown"
