@@ -2,6 +2,7 @@ package com.android.sample.ui.request
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -241,16 +242,23 @@ fun RequestList(
                 viewModel = viewModel,
                 request = request,
                 onClick = onRequestClick,
-                navigationActions = navigationActions)
+                navigationActions = navigationActions,
+                state = state)
           }
         }
   }
 }
 
-private const val WEIGHT = 1f
+private const val WEIGHT_1f = 1f
+
+private const val WEIGHT = WEIGHT_1f
 
 private const val MAX_PARAM = 2
 private const val ChipsDescriptionRatio = 0.4f
+
+private const val THREE = 3
+
+private const val ZERO = 0
 
 @Composable
 fun RequestListItem(
@@ -258,8 +266,15 @@ fun RequestListItem(
     request: Request,
     onClick: (Request) -> Unit,
     navigationActions: NavigationActions?,
+    state: RequestListState,
     modifier: Modifier = Modifier
 ) {
+  val accentColor =
+      when {
+        request.creatorId in state.followingIds -> appPalette().accent
+        request.creatorId in state.followerIds -> appPalette().secondary
+        else -> null
+      }
 
   Card(
       modifier =
@@ -272,38 +287,48 @@ fun RequestListItem(
       colors =
           CardDefaults.cardColors(
               containerColor = appPalette().surface, contentColor = appPalette().onSurface)) {
-        Row(
-            modifier =
-                Modifier.fillMaxSize().padding(ConstantRequestList.RequestItemInnerPadding)) {
-              ProfilePicture(
-                  profileRepository = viewModel.profileRepository,
-                  profileId = request.creatorId,
-                  navigationActions = navigationActions,
-                  modifier =
-                      Modifier.width(ConstantRequestList.RequestItemCreatorSectionSize)
-                          .fillMaxHeight()
-                          .align(Alignment.CenterVertically)
-                          .padding(vertical = ConstantRequestList.RequestItemProfileHeightPadding),
-                  withName = true,
-              )
+        Row(modifier = Modifier.fillMaxSize()) {
+          // Left edge accent indicator
+          if (accentColor != null) {
+            val width = 4.dp
+            Box(modifier = Modifier.width(width).fillMaxHeight().background(accentColor))
+          }
 
-              Spacer(Modifier.width(ConstantRequestList.RowSpacing))
+          // Original card content
+          Row(
+              modifier =
+                  Modifier.fillMaxSize().padding(ConstantRequestList.RequestItemInnerPadding)) {
+                ProfilePicture(
+                    profileRepository = viewModel.profileRepository,
+                    profileId = request.creatorId,
+                    navigationActions = navigationActions,
+                    modifier =
+                        Modifier.width(ConstantRequestList.RequestItemCreatorSectionSize)
+                            .fillMaxHeight()
+                            .align(Alignment.CenterVertically)
+                            .padding(
+                                vertical = ConstantRequestList.RequestItemProfileHeightPadding),
+                    withName = true,
+                )
 
-              TitleAndDescription(request, modifier = Modifier.weight(1f))
+                Spacer(Modifier.width(ConstantRequestList.RowSpacing))
 
-              Spacer(Modifier.width(ConstantRequestList.RowSpacing))
-              LazyColumn(
-                  modifier = Modifier.weight(ChipsDescriptionRatio),
-                  verticalArrangement = Arrangement.spacedBy(TypeChipColumnSpacing)) {
-                    val sortedRequestTypes = request.requestType.sortedBy { it.ordinal }
-                    items(sortedRequestTypes.size) { index ->
-                      val requestType = sortedRequestTypes[index]
-                      TypeChip(
-                          requestType = requestType,
-                      )
+                TitleAndDescription(request, modifier = Modifier.weight(1f))
+
+                Spacer(Modifier.width(ConstantRequestList.RowSpacing))
+                LazyColumn(
+                    modifier = Modifier.weight(ChipsDescriptionRatio),
+                    verticalArrangement = Arrangement.spacedBy(TypeChipColumnSpacing)) {
+                      val sortedRequestTypes = request.requestType.sortedBy { it.ordinal }
+                      items(sortedRequestTypes.size) { index ->
+                        val requestType = sortedRequestTypes[index]
+                        TypeChip(
+                            requestType = requestType,
+                        )
+                      }
                     }
-                  }
-            }
+              }
+        }
       }
 }
 
@@ -353,7 +378,7 @@ fun TypeChip(
               val baseFontSizePx = with(density) { baseFontSize.toPx() }
 
               val estimatedTextWidth = textLength * baseFontSizePx * TypeChipTextSizeFactor
-              val scaleFactor = (availableWidthPx / estimatedTextWidth).coerceAtMost(1.0f)
+              val scaleFactor = (availableWidthPx / estimatedTextWidth).coerceAtMost(WEIGHT_1f)
 
               Text(
                   text = requestType.displayString(),

@@ -1290,7 +1290,8 @@ fun ListOfRequest(
                     viewModel.updateCurrentRequest(request)
                     viewModel.updateCurrentProfile(request.creatorId)
                   },
-                  navigationActions = navigationActions)
+                  navigationActions = navigationActions,
+                  state = com.android.sample.ui.request.RequestListState())
             }
           }
     }

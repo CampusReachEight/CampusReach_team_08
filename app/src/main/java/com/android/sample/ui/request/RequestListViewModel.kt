@@ -67,6 +67,7 @@ class RequestListViewModel(
         saveProfilesToCache(requests)
 
         requests.forEach { loadProfileImage(it.creatorId) }
+        loadFollowRelationships()
       } catch (e: Exception) {
         if (verboseLogging) Log.e("RequestListViewModel", "Failed to load requests", e)
 
@@ -86,6 +87,7 @@ class RequestListViewModel(
                 errorMessage = null)
           }
           cachedRequests.forEach { loadProfileImage(it.creatorId) }
+          loadFollowRelationships()
           if (verboseLogging)
               Log.i("RequestListViewModel", "Loaded ${cachedRequests.size} requests from cache")
         } else {
@@ -154,6 +156,23 @@ class RequestListViewModel(
       }
     }
   }
+
+  /** Loads the current user's followers and following lists for request highlighting. */
+  private fun loadFollowRelationships() {
+    viewModelScope.launch {
+      try {
+        val currentUserId = profileRepository.getCurrentUserId()
+        if (currentUserId.isEmpty()) return@launch
+
+        val following = profileRepository.getFollowingIds(currentUserId).toSet()
+        val followers = profileRepository.getFollowerIds(currentUserId).toSet()
+
+        _state.update { it.copy(followingIds = following, followerIds = followers) }
+      } catch (e: Exception) {
+        if (verboseLogging) Log.e("RequestListViewModel", "Failed to load follow relationships", e)
+      }
+    }
+  }
 }
 
 class RequestListViewModelFactory(
@@ -178,5 +197,7 @@ data class RequestListState(
     val requests: List<Request> = emptyList(),
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
-    val offlineMode: Boolean = false
+    val offlineMode: Boolean = false,
+    val followingIds: Set<String> = emptySet(),
+    val followerIds: Set<String> = emptySet()
 )
