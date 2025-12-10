@@ -15,6 +15,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.android.sample.R
+import com.android.sample.ui.theme.AppPalette
+import com.android.sample.ui.theme.appPalette
 
 // Constants extracted to avoid magic numbers and repeated modifiers.
 private val deleteProgressIndicatorSize = 24.dp
@@ -36,13 +38,19 @@ const val DELETE_CANCEL_BUTTON_TEST_TAG = "delete_cancel_button"
  * @param onDeleteClick callback invoked when the button is clicked.
  */
 @Composable
-fun DeleteButton(isDeleting: Boolean, onDeleteClick: () -> Unit) {
+fun DeleteButton(
+    isDeleting: Boolean,
+    onDeleteClick: () -> Unit,
+    palette: AppPalette = appPalette()
+) {
   // Button uses the error color to indicate destructive action.
   Button(
       onClick = onDeleteClick,
       modifier = fullWidthModifier.testTag(DELETE_BUTTON_TEST_TAG),
       enabled = !isDeleting,
-      colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) {
+      colors =
+          ButtonDefaults.buttonColors(
+              containerColor = palette.errorContainer, contentColor = palette.onErrorContainer)) {
         if (isDeleting) {
           // Show a small progress indicator inside the button while deleting.
           CircularProgressIndicator(

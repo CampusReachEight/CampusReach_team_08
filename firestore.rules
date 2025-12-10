@@ -12,10 +12,34 @@ service cloud.firestore {
       // Other authenticated users may only update the single `kudos` field (no other changes)
       allow update: if request.auth != null
                     && request.auth.uid != userId
-                    // Only the `kudos` key is allowed to change
                     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['kudos'])
-                    // `kudos` must be an integer and non-negative
-                    && request.resource.data.kudos is int
+                    && request.resource.data.kudos is int;
+
+      // Other authenticated users may only update followerCount (for follow operations)
+      allow update: if request.auth != null
+                    && request.auth.uid != userId
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['followerCount'])
+                    && request.resource.data.followerCount is int
+                    && request.resource.data.followerCount >= 0;
+
+      // Other authenticated users may only update followingCount (for follow operations)
+      allow update: if request.auth != null
+                    && request.auth.uid != userId
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['followingCount'])
+                    && request.resource.data.followingCount is int
+                    && request.resource.data.followingCount >= 0;
+
+      // Followers subcollection
+      match /followers/{followerId} {
+        allow read: if true;
+        allow create, delete: if request.auth != null && request.auth.uid == followerId;
+      }
+
+      // Following subcollection
+      match /following/{followingId} {
+        allow read: if true;
+        allow create, delete: if request.auth != null && request.auth.uid == userId;
+      }
     }
 
     // Private profiles: only the owner can read/write
@@ -24,36 +48,35 @@ service cloud.firestore {
     }
 
     match /requests/{requestId} {
-          // Create: allow only if auth UID equals creatorId in the new document
-          allow create: if request.auth != null
-                        && request.auth.uid == request.resource.data.creatorId;
+      // Create: allow only if auth UID equals creatorId in the new document
+      allow create: if request.auth != null
+                    && request.auth.uid == request.resource.data.creatorId;
 
-
-          allow update: if request.auth != null && (
-                // Creator can change everything
-                request.auth.uid == resource.data.creatorId
+      allow update: if request.auth != null && (
+            // Creator can change everything
+            request.auth.uid == resource.data.creatorId
+            ||
+            // Others can only add or remove their own UID from 'people'
+            (
+              request.resource.data.diff(resource.data).affectedKeys().hasOnly(['people']) &&
+              (
+                // Adding their UID
+                (request.resource.data.people.hasAll(resource.data.people) &&
+                 request.resource.data.people.removeAll(resource.data.people) == [request.auth.uid])
                 ||
-                // Others can only add or remove their own UID from 'people'
-                  (
-                    request.resource.data.diff(resource.data).affectedKeys().hasOnly(['people']) &&
-                    (
-                      // Adding their UID
-                      (request.resource.data.people.hasAll(resource.data.people) &&
-                       request.resource.data.people.removeAll(resource.data.people) == [request.auth.uid])
-                      ||
-                      // Removing their UID
-                      (resource.data.people.hasAll(request.resource.data.people) &&
-                       resource.data.people.removeAll(request.resource.data.people) == [request.auth.uid])
-                    )
-                  )
+                // Removing their UID
+                (resource.data.people.hasAll(request.resource.data.people) &&
+                 resource.data.people.removeAll(request.resource.data.people) == [request.auth.uid])
+              )
             )
+        );
 
-          // Delete: allow only if auth UID equals stored creatorId
-          allow delete: if request.auth != null
-                        && request.auth.uid == resource.data.creatorId;
+      // Delete: allow only if auth UID equals stored creatorId
+      allow delete: if request.auth != null
+                    && request.auth.uid == resource.data.creatorId;
 
-          // Read: Allow any user to read requests
-          allow read: if true;
-        }
+      // Read: Allow any user to read requests
+      allow read: if true;
+    }
   }
 }

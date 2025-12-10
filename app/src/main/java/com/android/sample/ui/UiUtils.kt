@@ -1,5 +1,11 @@
 package com.android.sample.ui
 
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.TextFieldColors
+import androidx.compose.runtime.Composable
+import com.android.sample.ui.theme.AppPalette
+import com.android.sample.ui.theme.appPalette
+
 class UiUtils {
 
   /**
@@ -34,4 +40,18 @@ class UiUtils {
       text.take(maxLength - ellipsis.length) + ellipsis
     }
   }
+}
+
+@Composable
+fun getTextFieldColors(palette: AppPalette = appPalette()): TextFieldColors {
+  return OutlinedTextFieldDefaults.colors(
+      focusedTextColor = palette.onSurface,
+      unfocusedTextColor = palette.onSurface,
+      cursorColor = palette.accent,
+      focusedBorderColor = palette.accent,
+      unfocusedBorderColor = palette.onSurface,
+      focusedContainerColor = palette.surface,
+      unfocusedContainerColor = palette.surface,
+      unfocusedLabelColor = palette.onSurface,
+      focusedLabelColor = palette.accent)
 }
