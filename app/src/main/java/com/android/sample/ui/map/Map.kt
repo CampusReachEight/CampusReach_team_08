@@ -1016,9 +1016,8 @@ fun CurrentProfileUI(
                       profileId = profile.id,
                       onClick = { navigationActions?.navigateTo(Screen.PublicProfile(profile.id)) },
                       modifier =
-                          Modifier.size(ConstantMap.REQUEST_ITEM_ICON_SIZE).semantics {
-                            testTag = MapTestTags.REQUEST_CREATOR_PROFILE
-                          })
+                          Modifier.size(ConstantMap.REQUEST_ITEM_ICON_SIZE)
+                              .testTag(MapTestTags.REQUEST_CREATOR_PROFILE))
 
                   Text(
                       text = "${profile.lastName} ${profile.name}",

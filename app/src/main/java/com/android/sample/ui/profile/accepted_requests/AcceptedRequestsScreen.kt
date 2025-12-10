@@ -215,12 +215,11 @@ private fun AcceptedRequestItem(
                       navigationActions.navigateTo(Screen.PublicProfile(request.creatorId))
                     },
                     modifier =
-                        Modifier.testTag(AcceptedRequestsTestTags.PROFILE_PICTURE_ITEM)
-                            .width(ConstantRequestList.RequestItemCreatorSectionSize)
+                        Modifier.width(ConstantRequestList.RequestItemCreatorSectionSize)
                             .fillMaxHeight()
                             .align(Alignment.CenterVertically)
-                            .padding(
-                                vertical = ConstantRequestList.RequestItemProfileHeightPadding),
+                            .padding(vertical = ConstantRequestList.RequestItemProfileHeightPadding)
+                            .testTag(AcceptedRequestsTestTags.PROFILE_PICTURE_ITEM),
                     withName = true)
 
                 Spacer(Modifier.width(ConstantRequestList.RowSpacing))
