@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.ui.navigation.NavigationActions
+import com.android.sample.ui.navigation.Screen
 import com.android.sample.ui.profile.ProfilePicture
 import com.android.sample.ui.profile.accepted_requests.AcceptedRequestsViewModel
 import com.android.sample.ui.profile.accepted_requests.AcceptedRequestsViewModelFactory
@@ -81,6 +82,8 @@ object AcceptedRequestsTestTags {
   const val KUDOS_BADGE = "kudosBadge"
   const val REQUEST_DIALOG = "requestDetailsDialog"
   const val DIALOG_CLOSE_BUTTON = "dialogCloseButton"
+  const val PROFILE_PICTURE_ITEM = "profilePictureItem"
+  const val PROFILE_PICTURE_DIALOG = "profilePictureDialog"
 }
 
 // ============ Main Screen ============
@@ -134,6 +137,7 @@ fun AcceptedRequestsScreen(
               AcceptedRequestsList(
                   requests = uiState.requests,
                   requestListViewModel = requestListViewModel,
+                  navigationActions = navigationActions,
                   onRequestClick = { selectedRequest = it })
             }
           }
@@ -144,6 +148,7 @@ fun AcceptedRequestsScreen(
           RequestDetailsDialog(
               requestWithStatus = requestWithStatus,
               requestListViewModel = requestListViewModel,
+              navigationActions = navigationActions,
               onDismiss = { selectedRequest = null })
         }
       }
@@ -155,6 +160,7 @@ fun AcceptedRequestsScreen(
 private fun AcceptedRequestsList(
     requests: List<RequestWithKudosStatus>,
     requestListViewModel: RequestListViewModel,
+    navigationActions: NavigationActions,
     onRequestClick: (RequestWithKudosStatus) -> Unit
 ) {
   LazyColumn(
@@ -166,6 +172,7 @@ private fun AcceptedRequestsList(
           AcceptedRequestItem(
               requestWithStatus = requests[index],
               requestListViewModel = requestListViewModel,
+              navigationActions = navigationActions,
               onClick = onRequestClick)
         }
       }
@@ -183,6 +190,7 @@ private const val WEIGHT_08 = 0.8f
 private fun AcceptedRequestItem(
     requestWithStatus: RequestWithKudosStatus,
     requestListViewModel: RequestListViewModel,
+    navigationActions: NavigationActions,
     onClick: (RequestWithKudosStatus) -> Unit
 ) {
   val request = requestWithStatus.request
@@ -203,9 +211,12 @@ private fun AcceptedRequestItem(
                 ProfilePicture(
                     profileRepository = requestListViewModel.profileRepository,
                     profileId = request.creatorId,
-                    onClick = {},
+                    onClick = {
+                      navigationActions.navigateTo(Screen.PublicProfile(request.creatorId))
+                    },
                     modifier =
-                        Modifier.width(ConstantRequestList.RequestItemCreatorSectionSize)
+                        Modifier.testTag(AcceptedRequestsTestTags.PROFILE_PICTURE_ITEM)
+                            .width(ConstantRequestList.RequestItemCreatorSectionSize)
                             .fillMaxHeight()
                             .align(Alignment.CenterVertically)
                             .padding(
@@ -296,6 +307,7 @@ private fun KudosStatusBadge(kudosStatus: KudosStatus, modifier: Modifier = Modi
 private fun RequestDetailsDialog(
     requestWithStatus: RequestWithKudosStatus,
     requestListViewModel: RequestListViewModel,
+    navigationActions: NavigationActions,
     onDismiss: () -> Unit
 ) {
   val request = requestWithStatus.request
@@ -347,8 +359,12 @@ private fun RequestDetailsDialog(
                   ProfilePicture(
                       profileRepository = requestListViewModel.profileRepository,
                       profileId = request.creatorId,
-                      onClick = {},
-                      modifier = Modifier.size(BIG_MODIFIER),
+                      onClick = {
+                        navigationActions.navigateTo(Screen.PublicProfile(request.creatorId))
+                      },
+                      modifier =
+                          Modifier.size(BIG_MODIFIER)
+                              .testTag(AcceptedRequestsTestTags.PROFILE_PICTURE_DIALOG),
                       withName = true)
                 }
 
