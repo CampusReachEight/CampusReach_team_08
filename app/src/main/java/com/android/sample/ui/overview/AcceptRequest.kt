@@ -22,6 +22,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.*
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -78,6 +79,7 @@ object AcceptRequestScreenTestTags {
   const val REQUEST_DETAILS_CARD = "requestDetailsCard"
   const val VOLUNTEERS_SECTION_HEADER = "volunteersHeader"
   const val VOLUNTEERS_SECTION_CONTAINER = "volunteersContainer"
+  const val NAVIGATE_TO_MAP = "navigateToMap"
 }
 
 // Centralized user-visible strings for AcceptRequest screen
@@ -108,6 +110,7 @@ object AcceptRequestScreenLabels {
   const val INITIALS_PLACEHOLDER = "?"
 
   const val DATE_TIME_FORMAT = "dd/MM/yyyy HH:mm"
+  const val SEE_REQUEST_ON_MAP = "See request on map"
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -117,7 +120,8 @@ fun AcceptRequestScreen(
     acceptRequestViewModel: AcceptRequestViewModel = viewModel(),
     onGoBack: () -> Unit = {},
     onEditClick: (String) -> Unit = {},
-    onValidateClick: (String) -> Unit = {}
+    onValidateClick: (String) -> Unit = {},
+    onMapClick: (String) -> Unit = {}
 ) {
   LaunchedEffect(requestId) { acceptRequestViewModel.loadRequest(requestId) }
 
@@ -292,6 +296,20 @@ fun AcceptRequestScreen(
                                   else AcceptRequestScreenLabels.ACCEPT_REQUEST,
                               style = MaterialTheme.typography.labelLarge)
                         }
+                      }
+                  FilledTonalButton(
+                      onClick = { onMapClick(requestId) },
+                      modifier =
+                          Modifier.fillMaxWidth()
+                              .height(AcceptRequestScreenConstants.BUTTON_HEIGHT)
+                              .testTag(AcceptRequestScreenTestTags.NAVIGATE_TO_MAP),
+                      colors =
+                          ButtonDefaults.buttonColors(
+                              containerColor = appPalette().accent,
+                              contentColor = appPalette().onAccent)) {
+                        Text(
+                            text = AcceptRequestScreenLabels.SEE_REQUEST_ON_MAP,
+                            style = MaterialTheme.typography.labelLarge)
                       }
 
                   if (isOwner) {

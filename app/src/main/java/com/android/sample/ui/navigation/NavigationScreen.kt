@@ -18,9 +18,11 @@ import androidx.compose.ui.unit.dp
 import androidx.credentials.CredentialManager
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import androidx.navigation.navigation
 import com.android.sample.model.map.FusedLocationProvider
 import com.android.sample.model.map.NominatimLocationRepository
@@ -152,7 +154,10 @@ fun NavigationScreen(
               onEditClick = { requestIdForEdit ->
                 navigationActions.navigateTo(Screen.EditRequest(requestIdForEdit))
               },
-              acceptRequestViewModel = acceptRequestViewModel)
+              acceptRequestViewModel = acceptRequestViewModel,
+              onMapClick = { requestIdForMap ->
+                navigationActions.navigateTo(Screen.Map(requestIdForMap))
+              })
         }
       }
       composable(Screen.ValidateRequest.route) { navBackStackEntry ->
@@ -249,10 +254,22 @@ fun NavigationScreen(
       }
     }
 
-    navigation(startDestination = Screen.Map.route, route = "map") {
-      composable(Screen.Map.route) {
-        MapScreen(viewModel = mapViewModel, navigationActions = navigationActions)
-      }
+    navigation(startDestination = "map/main", route = "map") {
+      composable(
+          route = Screen.Map.ROUTE,
+          arguments =
+              listOf(
+                  navArgument(Screen.Map.ARG_REQUEST_ID) {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                  })) { backStackEntry ->
+            val requestId = backStackEntry.arguments?.getString(Screen.Map.ARG_REQUEST_ID)
+            MapScreen(
+                viewModel = mapViewModel,
+                navigationActions = navigationActions,
+                requestId = requestId)
+          }
     }
   }
 }

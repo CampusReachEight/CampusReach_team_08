@@ -8,6 +8,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -35,6 +36,7 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -154,15 +156,24 @@ fun MapScreen(
                 MapViewModelFactory(
                     locationProvider = FusedLocationProvider(LocalContext.current))),
     navigationActions: NavigationActions? = null,
-    searchFilterViewModel: RequestSearchFilterViewModel = viewModel()
+    searchFilterViewModel: RequestSearchFilterViewModel = viewModel(),
+    requestId: String? = null
 ) {
   val context = LocalContext.current
   val uiState: MapUIState by viewModel.uiState.collectAsState()
   val currentUserId = viewModel.getCurrentUserID()
   var showZoomDialog by remember { mutableStateOf(false) }
 
-  // Setup permissions
-  SetupLocationPermissions(context, viewModel, uiState)
+  var isMapReady by remember { mutableStateOf(false) }
+
+  // Refresh UI on start
+  LaunchedEffect(Unit) { viewModel.refreshUIState(requestId) }
+
+  LaunchedEffect(requestId, isMapReady) {
+    if (isMapReady && requestId != null) {
+      viewModel.fromRequestDetailsToRequest(requestId)
+    }
+  }
 
   // Setup filters and requests
   val displayedRequests by searchFilterViewModel.displayedRequests.collectAsState()
@@ -175,11 +186,11 @@ fun MapScreen(
           searchFilterViewModel,
           uiState.request)
 
+  // Setup permissions
+  SetupLocationPermissions(context, viewModel, uiState)
+
   // Handle errors
   HandleErrorMessages(context, uiState.errorMsg, viewModel)
-
-  // Refresh UI on start
-  LaunchedEffect(Unit) { viewModel.refreshUIState() }
 
   Scaffold(
       modifier = Modifier.testTag(NavigationTestTags.MAP_SCREEN),
@@ -203,7 +214,9 @@ fun MapScreen(
             viewModel = viewModel,
             navigationActions = navigationActions,
             finalFilteredRequests = finalFilteredRequests,
-            searchFilterViewModel = searchFilterViewModel)
+            searchFilterViewModel = searchFilterViewModel,
+            onMapReady = { isMapReady = true },
+            isMapReady)
       })
   if (showZoomDialog) {
     ZoomSettingsDialog(
@@ -241,11 +254,7 @@ private fun SetupLocationPermissions(
           ActivityResultContracts.RequestMultiplePermissions(),
           permissionHandler::handlePermissionResult)
 
-  LaunchedEffect(Unit) {
-    if (!uiState.hasAskedLocationPermission) {
-      handleLocationPermissionCheck(context, viewModel, permissionLauncher)
-    }
-  }
+  LaunchedEffect(Unit) { handleLocationPermissionCheck(context, viewModel, permissionLauncher) }
 }
 
 /**
@@ -320,7 +329,9 @@ private fun MapContent(
     viewModel: MapViewModel,
     navigationActions: NavigationActions?,
     finalFilteredRequests: List<Request>,
-    searchFilterViewModel: RequestSearchFilterViewModel
+    searchFilterViewModel: RequestSearchFilterViewModel,
+    onMapReady: () -> Unit,
+    isMapReady: Boolean
 ) {
   val appPalette = appPalette()
   val coroutineScope = rememberCoroutineScope()
@@ -330,9 +341,15 @@ private fun MapContent(
       CameraPositionState(
           position =
               CameraPosition.fromLatLngZoom(
-                  uiState.target, calculateZoomLevel(uiState.request.size)))
+                  uiState.target, calculateZoomLevel(finalFilteredRequests.size)))
   val cameraPositionState = remember { initialPosition }
   val zoomLevel by remember { derivedStateOf { cameraPositionState.position.zoom } }
+
+  LaunchedEffect(cameraPositionState.isMoving) {
+    if (!isMapReady) {
+      onMapReady()
+    }
+  }
 
   // Clustering
   val clusters =
@@ -354,7 +371,8 @@ private fun MapContent(
         zoomLevel = zoomLevel,
         viewModel = viewModel,
         coroutineScope = coroutineScope,
-        currentLocation = uiState.currentLocation)
+        currentLocation = uiState.currentLocation,
+        isMapReady = isMapReady)
 
     // Bottom Sheet for current request
     CurrentRequestBottomSheet(
@@ -416,12 +434,18 @@ private fun MapWithMarkers(
     zoomLevel: Float,
     viewModel: MapViewModel,
     coroutineScope: CoroutineScope,
-    currentLocation: LatLng?
+    currentLocation: LatLng?,
+    isMapReady: Boolean
 ) {
   GoogleMap(
       modifier = Modifier.fillMaxSize().testTag(MapTestTags.GOOGLE_MAP_SCREEN),
       cameraPositionState = cameraPositionState,
-      uiSettings = uiSettings) {
+      uiSettings =
+          uiSettings.copy(
+              scrollGesturesEnabled = isMapReady,
+              zoomGesturesEnabled = isMapReady,
+              tiltGesturesEnabled = isMapReady,
+              rotationGesturesEnabled = isMapReady)) {
 
         // Process clusters and merge with current location if needed
         val processedClusters =
@@ -452,6 +476,18 @@ private fun MapWithMarkers(
           CurrentLocationMarker(location = currentLocation)
         }
       }
+
+  // Overlay for blocking interaction
+  if (!isMapReady) {
+    Box(
+        modifier =
+            Modifier.fillMaxSize()
+                .background(appPalette().white.copy(alpha = ConstantMap.ALPHA_BLOCK_CLICK))
+                .clickable(enabled = false) {},
+        contentAlignment = Alignment.Center) {
+          CircularProgressIndicator()
+        }
+  }
 }
 
 /**
@@ -488,19 +524,19 @@ private fun MapMarker(
           if (isACluster) {
             // Single request marker
             if (isAtCurrentLocation) {
-              BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN)
+              createMarkerWithNumber(cluster.size, true)
             } else {
               BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)
             }
           } else {
             // Cluster marker with number
-            createMarkerWithNumber(cluster.size, isAtCurrentLocation) // ← MODIFIER CETTE LIGNE
+            createMarkerWithNumber(cluster.size, isAtCurrentLocation)
           },
       onClick = {
         coroutineScope.launch {
           if (isACluster) {
             cameraPositionState.animate(
-                update = CameraUpdateFactory.newLatLngZoom(position, ConstantMap.ZOOM_AFTER_CHOSEN),
+                update = CameraUpdateFactory.newLatLngZoom(position, zoomLevel),
                 durationMs = ConstantMap.LONG_DURATION_ANIMATION)
             viewModel.updateCurrentRequest(cluster.first())
             viewModel.updateCurrentProfile(cluster.first().creatorId)
@@ -530,7 +566,8 @@ private fun CurrentLocationMarker(location: LatLng) {
       state = MarkerState(position = location),
       icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN),
       title = ConstantMap.YOUR_LOCATION,
-      snippet = ConstantMap.YOU_ARE_HERE)
+      snippet = ConstantMap.YOU_ARE_HERE,
+      onClick = { true })
 }
 
 /**

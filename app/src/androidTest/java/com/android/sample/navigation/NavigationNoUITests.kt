@@ -1,11 +1,13 @@
 package com.android.sample.navigation
 
+import android.Manifest
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.navigation.compose.rememberNavController
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.rule.GrantPermissionRule
 import com.android.sample.ui.navigation.NavigationActions
 import com.android.sample.ui.navigation.NavigationScreen
 import com.android.sample.ui.navigation.NavigationTestTags
@@ -22,7 +24,14 @@ import org.junit.runner.RunWith
 class NavigationNoUITests : TestCase() {
   @get:Rule val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
+  @get:Rule
+  val permissionRule: GrantPermissionRule =
+      GrantPermissionRule.grant(
+          Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
+
   lateinit var navigationActions: NavigationActions
+
+  private val TEST = "test"
 
   @Before
   public override fun setUp() {
@@ -81,7 +90,7 @@ class NavigationNoUITests : TestCase() {
 
   @Test
   fun canGoToMapScreen() {
-    navigateTo(Screen.Map)
+    navigateTo(Screen.Map())
     assertScreen(NavigationTestTags.MAP_SCREEN)
   }
 
@@ -109,7 +118,7 @@ class NavigationNoUITests : TestCase() {
     navigateTo(Screen.Requests)
     assertScreen(NavigationTestTags.REQUESTS_SCREEN)
 
-    navigateTo(Screen.Map)
+    navigateTo(Screen.Map())
     assertScreen(NavigationTestTags.MAP_SCREEN)
 
     navigateTo(Screen.Requests)
@@ -124,7 +133,7 @@ class NavigationNoUITests : TestCase() {
     navigateTo(Screen.Events)
     assertScreen(NavigationTestTags.EVENTS_SCREEN)
 
-    navigateTo(Screen.Map)
+    navigateTo(Screen.Map())
     assertScreen(NavigationTestTags.MAP_SCREEN)
 
     navigateTo(Screen.Events)
@@ -136,13 +145,13 @@ class NavigationNoUITests : TestCase() {
     navigateTo(Screen.Requests)
     assertScreen(NavigationTestTags.REQUESTS_SCREEN)
 
-    navigateTo(Screen.Map)
+    navigateTo(Screen.Map())
     assertScreen(NavigationTestTags.MAP_SCREEN)
 
     navigateTo(Screen.Events)
     assertScreen(NavigationTestTags.EVENTS_SCREEN)
 
-    navigateTo(Screen.Map)
+    navigateTo(Screen.Map())
     assertScreen(NavigationTestTags.MAP_SCREEN)
   }
 
@@ -158,7 +167,7 @@ class NavigationNoUITests : TestCase() {
 
   @Test
   fun pressBackOnMapReturnsToRequests() {
-    navigateTo(Screen.Map)
+    navigateTo(Screen.Map())
     assertScreen(NavigationTestTags.MAP_SCREEN)
 
     pressSystemBack(shouldFinish = false)
@@ -186,7 +195,7 @@ class NavigationNoUITests : TestCase() {
 
   @Test
   fun pressBackTwiceFromMapClosesApp() {
-    navigateTo(Screen.Map)
+    navigateTo(Screen.Map())
     assertScreen(NavigationTestTags.MAP_SCREEN)
 
     pressSystemBack(shouldFinish = false)
@@ -207,7 +216,7 @@ class NavigationNoUITests : TestCase() {
 
   @Test
   fun goBackOnMapReturnsToRequests() {
-    navigateTo(Screen.Map)
+    navigateTo(Screen.Map())
     assertScreen(NavigationTestTags.MAP_SCREEN)
 
     goBack()
@@ -332,7 +341,7 @@ class NavigationNoUITests : TestCase() {
     navigateTo(Screen.Events)
     assertScreen(NavigationTestTags.EVENTS_SCREEN)
 
-    navigateTo(Screen.Map)
+    navigateTo(Screen.Map())
     assertScreen(NavigationTestTags.MAP_SCREEN)
 
     navigateTo(Screen.Requests)
@@ -384,7 +393,7 @@ class NavigationNoUITests : TestCase() {
     assertScreen(NavigationTestTags.ADD_EVENT_SCREEN)
 
     // Navigate to Map from sub-screen
-    navigateTo(Screen.Map)
+    navigateTo(Screen.Map())
     assertScreen(NavigationTestTags.MAP_SCREEN)
 
     // Back should go to Requests (not to AddEvent)
@@ -402,11 +411,11 @@ class NavigationNoUITests : TestCase() {
     goBack()
     assertScreen(NavigationTestTags.REQUESTS_SCREEN)
 
-    navigateTo(Screen.Map)
+    navigateTo(Screen.Map())
     pressSystemBack(shouldFinish = false)
     assertScreen(NavigationTestTags.REQUESTS_SCREEN)
 
-    navigateTo(Screen.Map)
+    navigateTo(Screen.Map())
     goBack()
     assertScreen(NavigationTestTags.REQUESTS_SCREEN)
 
@@ -415,6 +424,16 @@ class NavigationNoUITests : TestCase() {
     assertScreen(NavigationTestTags.REQUESTS_SCREEN)
 
     navigateTo(Screen.AddRequest)
+    goBack()
+    assertScreen(NavigationTestTags.REQUESTS_SCREEN)
+  }
+
+  @Test
+  fun goToMapWithARequestId() {
+    navigateTo(Screen.Requests)
+    navigateTo(Screen.Map(TEST))
+    assertScreen(NavigationTestTags.MAP_SCREEN)
+
     goBack()
     assertScreen(NavigationTestTags.REQUESTS_SCREEN)
   }

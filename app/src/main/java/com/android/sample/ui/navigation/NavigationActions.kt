@@ -20,7 +20,15 @@ sealed class Screen(
 
   object Events : Screen(route = "events/main", NavigationType.TAB)
 
-  object Map : Screen(route = "map/main", NavigationType.TAB)
+  data class Map(val requestId: String? = null) :
+      Screen(
+          route = if (requestId != null) "map/main?requestId=$requestId" else "map/main",
+          NavigationType.TAB) {
+    companion object {
+      const val ARG_REQUEST_ID = REQUEST_ID
+      const val ROUTE = "map/main?requestId={$ARG_REQUEST_ID}"
+    }
+  }
 
   object AddRequest : Screen(route = "requests/add")
 

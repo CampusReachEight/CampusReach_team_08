@@ -19,6 +19,7 @@ interface AppPalette {
   val onPrimary: Color
   val onBackground: Color
   val onSurface: Color
+  val onAccent: Color
 
   fun getRequestTypeColor(type: RequestType): Color
 
@@ -39,6 +40,7 @@ object LightPalette : AppPalette {
   override val onPrimary: Color = AppColors.BlackColor
   override val onBackground: Color = AppColors.BlackColor
   override val onSurface: Color = AppColors.BlackColor
+  override val onAccent: Color = AppColors.WhiteColor
 
   override fun getRequestTypeColor(type: RequestType): Color {
     return when (type) {
@@ -81,6 +83,7 @@ object DarkPalette : AppPalette {
   override val onPrimary: Color = AppColors.WhiteColor
   override val onBackground: Color = AppColors.WhiteColor
   override val onSurface: Color = AppColors.WhiteColor
+  override val onAccent: Color = AppColors.WhiteColor
 
   override fun getRequestTypeColor(type: RequestType): Color {
     return when (type) {
