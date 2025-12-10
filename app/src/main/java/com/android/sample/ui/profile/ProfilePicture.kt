@@ -110,8 +110,6 @@ fun ProfilePicture(
               ProfileCache.put(profileId, p)
               p
             } catch (e: Exception) {
-              // couldn't fetch profile
-              ProfileCache.put(profileId, null)
               null
             }
 
