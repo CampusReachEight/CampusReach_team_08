@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.android.sample.model.request.Request
+import com.android.sample.model.request.RequestCache
 import com.android.sample.model.request.RequestRepository
 import com.android.sample.model.request.RequestRepositoryProvider
 import com.android.sample.model.request.RequestStatus
@@ -22,15 +23,12 @@ import kotlinx.coroutines.launch
  * status information.
  */
 class AcceptedRequestsViewModel(
-    private val requestRepository: RequestRepository = RequestRepositoryProvider.repository
+    private val requestRepository: RequestRepository = RequestRepositoryProvider.repository,
+  val requestCache: RequestCache? = null
 ) : ViewModel() {
 
   private val _uiState = MutableStateFlow(AcceptedRequestsUiState())
   val uiState: StateFlow<AcceptedRequestsUiState> = _uiState.asStateFlow()
-
-  init {
-    loadAcceptedRequests()
-  }
 
   /**
    * Loads all requests that the current user has accepted as a helper. Enriches each request with
@@ -45,7 +43,13 @@ class AcceptedRequestsViewModel(
             Firebase.auth.currentUser?.uid ?: throw IllegalStateException("No authenticated user")
 
         // Get all requests user has accepted
-        val acceptedRequests = requestRepository.getAcceptedRequests()
+        val acceptedRequests = try {
+          requestRepository.getAcceptedRequests()
+        } catch (e: Exception) {
+          println("cache size =${requestCache?.loadRequests { it.people.contains(currentUserId) && it.creatorId != currentUserId }!!.size}")
+          requestCache?.loadRequests { it.people.contains(currentUserId) && it.creatorId != currentUserId }
+              ?: emptyList()
+        }
 
         // Enrich with kudos status and sort by most recent
         val requestsWithStatus =
@@ -101,12 +105,13 @@ class AcceptedRequestsViewModel(
 
 /** Factory for creating AcceptedRequestsViewModel with dependencies. */
 class AcceptedRequestsViewModelFactory(
-    private val requestRepository: RequestRepository = RequestRepositoryProvider.repository
+    private val requestRepository: RequestRepository = RequestRepositoryProvider.repository,
+  private val requestCache: RequestCache? = null
 ) : ViewModelProvider.Factory {
   @Suppress("UNCHECKED_CAST")
   override fun <T : ViewModel> create(modelClass: Class<T>): T {
     if (modelClass.isAssignableFrom(AcceptedRequestsViewModel::class.java)) {
-      return AcceptedRequestsViewModel(requestRepository) as T
+      return AcceptedRequestsViewModel(requestRepository = requestRepository,  requestCache = requestCache) as T
     }
     throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
   }

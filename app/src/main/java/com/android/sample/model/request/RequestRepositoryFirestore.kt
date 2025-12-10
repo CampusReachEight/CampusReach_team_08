@@ -294,13 +294,17 @@ class RequestRepositoryFirestore(private val db: FirebaseFirestore) : RequestRep
   override suspend fun getAcceptedRequests(): List<Request> {
     val currentUserId = Firebase.auth.currentUser?.uid ?: notAuthenticated()
 
-    return collectionRef
-        .whereArrayContains("people", currentUserId)
-        .get()
-        .await()
-        .documents
-        .mapNotNull { doc -> doc.data?.let { Request.fromMap(it) } }
-        .filter { it.creatorId != currentUserId } // Exclude own requests
+      val snapshot =
+          collectionRef.whereArrayContains("people", currentUserId).get(Source.SERVER).await()
+
+      if (snapshot.metadata.isFromCache) {
+        throw IllegalStateException(
+            "Cannot retrieve accepted requests: data from cache (network unavailable)")
+      }
+
+      return snapshot.documents
+          .mapNotNull { doc -> doc.data?.let { Request.fromMap(it) } }
+          .filter { it.creatorId != currentUserId } // Exclude own requests
   }
 
   override suspend fun closeRequest(requestId: String, selectedHelperIds: List<String>): Boolean {
