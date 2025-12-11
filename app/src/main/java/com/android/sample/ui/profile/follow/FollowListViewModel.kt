@@ -1,4 +1,4 @@
-package com.android.sample.ui.profile
+package com.android.sample.ui.profile.follow
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -13,16 +13,16 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+enum class FollowListType {
+  FOLLOWERS,
+  FOLLOWING
+}
+
 data class FollowListState(
     val users: List<UserProfile> = emptyList(),
     val isLoading: Boolean = false,
     val errorMessage: String? = null
 )
-
-enum class FollowListType {
-  FOLLOWERS,
-  FOLLOWING
-}
 
 open class FollowListViewModel(
     private val userId: String,

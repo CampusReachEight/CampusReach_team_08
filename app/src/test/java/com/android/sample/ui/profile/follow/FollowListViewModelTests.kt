@@ -1,16 +1,16 @@
 package com.android.sample.ui.profile.follow
 
+import androidx.lifecycle.ViewModel
 import com.android.sample.model.profile.UserProfile
 import com.android.sample.model.profile.UserProfileRepository
-import com.android.sample.ui.profile.FollowListState
-import com.android.sample.ui.profile.FollowListType
-import com.android.sample.ui.profile.FollowListViewModel
 import com.android.sample.ui.profile.UserSections
 import io.mockk.clearAllMocks
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import java.util.Date
+import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -431,5 +431,71 @@ class FollowListViewModelTest {
         viewModel.state.value.users[1].section)
     assertEquals(
         "User3 should have NONE section", UserSections.NONE, viewModel.state.value.users[2].section)
+  }
+
+  @Test
+  fun factory_createsFollowListViewModelSuccessfully() {
+    val factory =
+        FollowListViewModelFactory("testUser123", FollowListType.FOLLOWERS, mockRepository)
+
+    val viewModel = factory.create(FollowListViewModel::class.java)
+
+    assertNotNull(viewModel)
+    assertTrue(viewModel is FollowListViewModel)
+  }
+
+  @Test
+  fun factory_createsFollowingTypeViewModel() {
+    val factory =
+        FollowListViewModelFactory("testUser123", FollowListType.FOLLOWING, mockRepository)
+
+    val viewModel = factory.create(FollowListViewModel::class.java)
+
+    assertNotNull(viewModel)
+    assertTrue(viewModel is FollowListViewModel)
+  }
+
+  @Test
+  fun factory_throwsExceptionForUnknownViewModelClass() {
+    val factory =
+        FollowListViewModelFactory("testUser123", FollowListType.FOLLOWERS, mockRepository)
+
+    class UnknownViewModel : ViewModel()
+
+    val exception =
+        assertFailsWith<IllegalArgumentException> { factory.create(UnknownViewModel::class.java) }
+
+    assertEquals("Unknown ViewModel class", exception.message)
+  }
+
+  @Test
+  fun factory_usesProvidedRepository() {
+    val customRepository = mockk<UserProfileRepository>(relaxed = true)
+    val factory =
+        FollowListViewModelFactory("testUser123", FollowListType.FOLLOWERS, customRepository)
+
+    val viewModel = factory.create(FollowListViewModel::class.java)
+
+    assertNotNull(viewModel)
+  }
+
+  @Test
+  fun factory_usesProvidedUserId() {
+    val customUserId = "customUser456"
+    val factory = FollowListViewModelFactory(customUserId, FollowListType.FOLLOWERS, mockRepository)
+
+    val viewModel = factory.create(FollowListViewModel::class.java)
+
+    assertNotNull(viewModel)
+  }
+
+  @Test
+  fun factory_usesProvidedListType() {
+    val factory =
+        FollowListViewModelFactory("testUser123", FollowListType.FOLLOWING, mockRepository)
+
+    val viewModel = factory.create(FollowListViewModel::class.java)
+
+    assertNotNull(viewModel)
   }
 }
