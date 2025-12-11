@@ -1,5 +1,6 @@
 package com.android.sample.ui.profile.composables
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -25,6 +26,8 @@ import com.android.sample.ui.theme.AppPalette
 import com.android.sample.ui.theme.UiDimens
 import com.android.sample.ui.theme.appPalette
 
+private const val WEIGHT_1F = 1f
+
 @Composable
 fun StatGroupCard(
     labelTop: String,
@@ -34,6 +37,8 @@ fun StatGroupCard(
     modifier: Modifier = Modifier,
     topTag: String,
     bottomTag: String,
+    onTopClick: (() -> Unit)? = null,
+    onBottomClick: (() -> Unit)? = null,
     palette: AppPalette = appPalette()
 ) {
   Card(
@@ -49,7 +54,11 @@ fun StatGroupCard(
             horizontalAlignment = Alignment.CenterHorizontally) {
               // Top half (weighted) to ensure vertical symmetry across cards
               Column(
-                  modifier = Modifier.weight(1f),
+                  modifier =
+                      Modifier.weight(WEIGHT_1F)
+                          .then(
+                              if (onTopClick != null) Modifier.clickable(onClick = onTopClick)
+                              else Modifier),
                   horizontalAlignment = Alignment.CenterHorizontally,
                   verticalArrangement = Arrangement.Center) {
                     Text(
@@ -69,7 +78,11 @@ fun StatGroupCard(
 
               // Bottom half (weighted) to ensure vertical symmetry across cards
               Column(
-                  modifier = Modifier.weight(1f),
+                  modifier =
+                      Modifier.weight(WEIGHT_1F)
+                          .then(
+                              if (onBottomClick != null) Modifier.clickable(onClick = onBottomClick)
+                              else Modifier),
                   horizontalAlignment = Alignment.CenterHorizontally,
                   verticalArrangement = Arrangement.Center) {
                     Text(
@@ -91,7 +104,12 @@ fun StatGroupCard(
 }
 
 @Composable
-fun ProfileStats(state: ProfileState, palette: AppPalette = appPalette()) {
+fun ProfileStats(
+    state: ProfileState,
+    onFollowersClick: (() -> Unit)? = null,
+    onFollowingClick: (() -> Unit)? = null,
+    palette: AppPalette = appPalette()
+) {
   Row(
       modifier =
           Modifier.fillMaxWidth()
@@ -103,7 +121,7 @@ fun ProfileStats(state: ProfileState, palette: AppPalette = appPalette()) {
             topValue = state.kudosReceived,
             labelBottom = "Help\u00A0Received",
             bottomValue = state.helpReceived,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(WEIGHT_1F),
             topTag = ProfileTestTags.PROFILE_STAT_TOP_KUDOS,
             bottomTag = ProfileTestTags.PROFILE_STAT_BOTTOM_HELP_RECEIVED,
             palette = palette)
@@ -113,9 +131,11 @@ fun ProfileStats(state: ProfileState, palette: AppPalette = appPalette()) {
             topValue = state.followers,
             labelBottom = "Following",
             bottomValue = state.following,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(WEIGHT_1F),
             topTag = ProfileTestTags.PROFILE_STAT_TOP_FOLLOWERS,
             bottomTag = ProfileTestTags.PROFILE_STAT_BOTTOM_FOLLOWING,
+            onTopClick = onFollowersClick,
+            onBottomClick = onFollowingClick,
             palette = palette)
       }
 }

@@ -22,7 +22,9 @@ fun ProfileContent(
     onLogoutRequested: () -> Unit = {},
     onMyRequestAction: () -> Unit,
     onAcceptedRequestsAction: () -> Unit = {},
-    onEditRequested: () -> Unit = {}
+    onEditRequested: () -> Unit = {},
+    onFollowersClick: (() -> Unit)? = null,
+    onFollowingClick: (() -> Unit)? = null
 ) {
   val scrollState = rememberScrollState()
 
@@ -35,7 +37,8 @@ fun ProfileContent(
     ProfileHeader(state = state, onEditRequested = onEditRequested)
     Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
 
-    ProfileStats(state = state)
+    ProfileStats(
+        state = state, onFollowersClick = onFollowersClick, onFollowingClick = onFollowingClick)
     Spacer(modifier = Modifier.height(ProfileDimens.Horizontal))
 
     ProfileInformation(state = state)

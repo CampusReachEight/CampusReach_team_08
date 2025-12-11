@@ -39,6 +39,8 @@ import com.android.sample.ui.map.MapViewModelFactory
 import com.android.sample.ui.overview.AcceptRequestScreen
 import com.android.sample.ui.overview.AcceptRequestViewModel
 import com.android.sample.ui.overview.AcceptRequestViewModelFactory
+import com.android.sample.ui.profile.FollowListScreen
+import com.android.sample.ui.profile.FollowListType
 import com.android.sample.ui.profile.ProfileScreen
 import com.android.sample.ui.profile.ProfileViewModel
 import com.android.sample.ui.profile.accepted_requests.AcceptedRequestsViewModel
@@ -280,6 +282,29 @@ fun NavigationScreen(
             navigationActions = navigationActions,
             acceptedRequestsViewModel = acceptedRequestsViewModel)
       }
+      composable(
+          route = Screen.FollowList.route, // Uses companion object route
+          arguments =
+              listOf(
+                  navArgument(Screen.FollowList.ARG_USER_ID) { type = NavType.StringType },
+                  navArgument(Screen.FollowList.ARG_LIST_TYPE) { type = NavType.StringType })) {
+              backStackEntry ->
+            val userId = backStackEntry.arguments?.getString(Screen.FollowList.ARG_USER_ID) ?: ""
+            val listTypeString =
+                backStackEntry.arguments?.getString(Screen.FollowList.ARG_LIST_TYPE) ?: "FOLLOWERS"
+            val listType =
+                try {
+                  FollowListType.valueOf(listTypeString)
+                } catch (e: Exception) {
+                  FollowListType.FOLLOWERS
+                }
+
+            FollowListScreen(
+                userId = userId,
+                listType = listType,
+                navigationActions = navigationActions,
+                onBackClick = { navigationActions.goBack() })
+          }
     }
 
     navigation(startDestination = "map/main", route = "map") {
