@@ -23,7 +23,7 @@ class UserProfileCache(private val context: Context) {
   }
 
   /**
-   * Saves a single user profile to the cache.
+   * Saves a single user profile to the cache and syncs with leaderboard cache.
    *
    * @param profile The UserProfile to save.
    * @throws java.io.IOException if the file cannot be written.
@@ -33,6 +33,8 @@ class UserProfileCache(private val context: Context) {
       val profileJson = json.encodeToString(UserProfile.serializer(), profile)
       val file = File(cacheDir, "${profile.id}.json")
       file.writeText(profileJson)
+      // Sync with leaderboard cache
+      updateProfileInLeaderboard(profile)
     } catch (e: SerializationException) {
       throw IOException("Failed to serialize profile with ID ${profile.id}", e)
     } catch (e: IOException) {
@@ -91,20 +93,46 @@ class UserProfileCache(private val context: Context) {
   }
 
   /**
-   * Saves the leaderboard list to cache. All profiles are stored in a single file to preserve order
-   * and ties.
+   * Saves the leaderboard list to cache and syncs logged user's individual profile.
    *
    * @param profiles The list of profiles to save as the leaderboard.
+   * @param loggedUserId Optional ID of logged user to sync their individual profile cache.
    */
-  fun saveLeaderboard(profiles: List<UserProfile>) {
+  fun saveLeaderboard(profiles: List<UserProfile>, loggedUserId: String? = null) {
     try {
       // Strip photos so we do not cache user images for leaderboard snapshots.
       val sanitized = profiles.map { it.copy(photo = null) }
       val payload = json.encodeToString(ListSerializer(UserProfile.serializer()), sanitized)
       leaderboardCacheFile.writeText(payload)
+      // Sync logged user's profile from leaderboard to individual cache
+      loggedUserId?.let { uid ->
+        profiles.find { it.id == uid }?.let { saveProfileWithoutSync(it) }
+      }
     } catch (e: Exception) {
       // Non-fatal; just log to aid debugging
       e.printStackTrace()
+    }
+  }
+
+  /** Saves profile without triggering leaderboard sync (to avoid recursion). */
+  private fun saveProfileWithoutSync(profile: UserProfile) {
+    try {
+      val profileJson = json.encodeToString(UserProfile.serializer(), profile)
+      val file = File(cacheDir, "${profile.id}.json")
+      file.writeText(profileJson)
+    } catch (_: Exception) {}
+  }
+
+  /** Updates a profile in the leaderboard cache if it exists there. */
+  private fun updateProfileInLeaderboard(profile: UserProfile) {
+    val leaderboard = loadLeaderboard().toMutableList()
+    val index = leaderboard.indexOfFirst { it.id == profile.id }
+    if (index >= 0) {
+      leaderboard[index] = profile.copy(photo = null)
+      try {
+        val payload = json.encodeToString(ListSerializer(UserProfile.serializer()), leaderboard)
+        leaderboardCacheFile.writeText(payload)
+      } catch (_: Exception) {}
     }
   }
 

@@ -8,6 +8,7 @@ import com.android.sample.model.profile.UserProfile
 import com.android.sample.model.profile.UserProfileCache
 import com.android.sample.model.profile.UserProfileRepository
 import com.android.sample.model.profile.UserProfileRepositoryFirestore
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -52,7 +53,7 @@ class LeaderboardViewModel(
         }
 
         // Save profiles to cache if available
-        profileCache?.saveLeaderboard(profiles)
+        profileCache?.saveLeaderboard(profiles, FirebaseAuth.getInstance().currentUser?.uid)
       } catch (e: Exception) {
         if (verboseLogging) Log.e(LOG_TAG, "Failed to load profiles", e)
 
