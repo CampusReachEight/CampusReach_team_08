@@ -29,11 +29,6 @@ object FollowListTestTags {
   const val FOLLOW_LIST_ERROR = "followListError"
 }
 
-enum class FollowListType {
-  FOLLOWERS,
-  FOLLOWING
-}
-
 /**
  * Screen displaying a list of users (either followers or following). Clicking on a user navigates
  * to their public profile.

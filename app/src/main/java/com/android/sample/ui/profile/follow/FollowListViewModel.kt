@@ -19,6 +19,11 @@ data class FollowListState(
     val errorMessage: String? = null
 )
 
+enum class FollowListType {
+  FOLLOWERS,
+  FOLLOWING
+}
+
 open class FollowListViewModel(
     private val userId: String,
     private val listType: FollowListType,
