@@ -40,12 +40,12 @@ import com.android.sample.ui.map.MapViewModelFactory
 import com.android.sample.ui.overview.AcceptRequestScreen
 import com.android.sample.ui.overview.AcceptRequestViewModel
 import com.android.sample.ui.overview.AcceptRequestViewModelFactory
-import com.android.sample.ui.profile.FollowListScreen
-import com.android.sample.ui.profile.FollowListType
 import com.android.sample.ui.profile.ProfileScreen
 import com.android.sample.ui.profile.ProfileViewModel
 import com.android.sample.ui.profile.accepted_requests.AcceptedRequestsViewModel
 import com.android.sample.ui.profile.accepted_requests.AcceptedRequestsViewModelFactory
+import com.android.sample.ui.profile.follow.FollowListScreen
+import com.android.sample.ui.profile.follow.FollowListType
 import com.android.sample.ui.profile.publicProfile.PublicProfileScreen
 import com.android.sample.ui.profile.publicProfile.PublicProfileViewModel
 import com.android.sample.ui.profile.publicProfile.PublicProfileViewModelFactory

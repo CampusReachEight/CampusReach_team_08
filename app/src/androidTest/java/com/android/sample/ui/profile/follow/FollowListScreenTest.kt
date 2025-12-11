@@ -11,16 +11,10 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
 import com.android.sample.model.profile.UserProfile
 import com.android.sample.model.profile.UserProfileRepository
 import com.android.sample.ui.navigation.NavigationActions
 import com.android.sample.ui.navigation.Screen
-import com.android.sample.ui.profile.FollowListScreen
-import com.android.sample.ui.profile.FollowListState
-import com.android.sample.ui.profile.FollowListTestTags
-import com.android.sample.ui.profile.FollowListType
-import com.android.sample.ui.profile.FollowListViewModel
 import com.android.sample.ui.profile.UserSections
 import java.util.Date
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -132,9 +126,6 @@ class FollowListScreenTest {
     override suspend fun updateUserProfile(userId: String, updatedProfile: UserProfile) {}
 
     override suspend fun deleteUserProfile(userId: String) {}
-
-    override suspend fun searchUserProfiles(query: String, limit: Int): List<UserProfile> =
-        emptyList()
 
     override suspend fun awardKudos(userId: String, amount: Int) {}
 

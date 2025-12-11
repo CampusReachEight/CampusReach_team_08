@@ -1,4 +1,4 @@
-package com.android.sample.ui.profile
+package com.android.sample.ui.profile.follow
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -17,6 +17,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.model.profile.UserProfile
 import com.android.sample.ui.navigation.NavigationActions
 import com.android.sample.ui.navigation.Screen
+import com.android.sample.ui.profile.ProfilePicture
+import com.android.sample.ui.profile.UserSections
 import com.android.sample.ui.theme.appPalette
 
 object FollowListTestTags {
