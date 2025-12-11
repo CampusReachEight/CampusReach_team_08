@@ -93,6 +93,7 @@ fun ProfilePicture(
     onClick: (String) -> Unit = {},
     navigationActions: NavigationActions? = null,
     modifier: Modifier = Modifier,
+    testTag: String? = null,
     withName: Boolean = false,
 ) {
   var loading: Boolean by remember { mutableStateOf(true) }
@@ -160,22 +161,27 @@ fun ProfilePicture(
       modifier = modifier.fillMaxSize()) {
         val sizeMod = Modifier.weight(PictureNameRatio, fill = true)
 
-        Surface(
-            modifier =
-                sizeMod.aspectRatio(PADDING).clip(CircleShape).clickable() {
-                  if (navigationActions != null) {
-                    val currentUserId = profileRepository.getCurrentUserId()
-                    if (profileId == currentUserId) {
-                      navigationActions.navigateTo(Screen.Profile(profileId))
-                    } else {
-                      navigationActions.navigateTo(Screen.PublicProfile(profileId))
-                    }
-                  } else {
-                    onClick(profileId)
+      Surface(
+          modifier =
+              sizeMod
+                  .aspectRatio(PADDING)
+                  .clip(CircleShape)
+                  .clickable {
+                      if (navigationActions != null) {
+                          val currentUserId = profileRepository.getCurrentUserId()
+                          if (profileId == currentUserId) {
+                              navigationActions.navigateTo(Screen.Profile(profileId))
+                          } else {
+                              navigationActions.navigateTo(Screen.PublicProfile(profileId))
+                          }
+                      } else {
+                          onClick(profileId)
+                      }
                   }
-                },
-            shape = CircleShape,
-        ) {
+                  .then(if (testTag != null) Modifier.testTag(testTag) else Modifier),
+          shape = CircleShape,
+      )
+      {
           if (loading) {
             Box(
                 modifier =
