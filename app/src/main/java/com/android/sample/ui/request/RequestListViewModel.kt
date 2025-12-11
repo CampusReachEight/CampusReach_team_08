@@ -135,6 +135,11 @@ class RequestListViewModel(
     _state.update { it.copy(errorMessage = null) }
   }
 
+  /** Explicit refresh entrypoint for pull-to-refresh gestures. */
+  fun refresh() {
+    loadRequests()
+  }
+
   @VisibleForTesting
   internal fun setOfflineMode(offline: Boolean) {
     _state.update { it.copy(offlineMode = offline) }

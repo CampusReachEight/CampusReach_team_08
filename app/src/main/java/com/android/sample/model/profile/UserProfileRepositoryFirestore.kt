@@ -243,69 +243,6 @@ class UserProfileRepositoryFirestore(private val db: FirebaseFirestore) : UserPr
     publicCollectionRef.document(userId).delete().await()
   }
 
-  /**
-   * Searches public user profiles by first or last name using Firestore prefix range queries. Uses
-   * the standard [query, query+"\uf8ff") bounds for efficient server-side filtering. Performs a
-   * second query on lastNameLowercase if needed, deduplicates results and applies a client-side
-   * contains() filter for substring matching, then enforces the limit.
-   */
-  override suspend fun searchUserProfiles(query: String, limit: Int): List<UserProfile> {
-    if (query.length < 2) return emptyList()
-    val normalizedQuery = query.lowercase().trim()
-    if (normalizedQuery.isEmpty()) return emptyList()
-
-    return try {
-      // First: prefix search on nameLowercase
-      val nameQuerySnapshot =
-          publicCollectionRef
-              .whereGreaterThanOrEqualTo("nameLowercase", normalizedQuery)
-              .whereLessThan("nameLowercase", normalizedQuery + "\uf8ff")
-              .limit(limit.toLong())
-              .get(Source.SERVER)
-              .await()
-
-      if (nameQuerySnapshot.metadata.isFromCache) {
-        throw IllegalStateException("Search data retrieved from cache instead of server")
-      }
-
-      val byName = nameQuerySnapshot.documents.mapNotNull { it.data?.let(UserProfile::fromMap) }
-
-      val remaining = limit - byName.size
-
-      val byLastName =
-          if (remaining > ZERO) {
-            // Second: prefix search on lastNameLowercase if we still need more results
-            val lastNameSnapshot =
-                publicCollectionRef
-                    .whereGreaterThanOrEqualTo("lastNameLowercase", normalizedQuery)
-                    .whereLessThan("lastNameLowercase", normalizedQuery + "\uf8ff")
-                    .limit(remaining.toLong())
-                    .get(Source.SERVER)
-                    .await()
-
-            if (lastNameSnapshot.metadata.isFromCache) {
-              throw IllegalStateException("Search data retrieved from cache instead of server")
-            }
-
-            lastNameSnapshot.documents.mapNotNull { it.data?.let(UserProfile::fromMap) }
-          } else {
-            emptyList()
-          }
-
-      // Combine, deduplicate and apply substring filtering for robustness
-      (byName + byLastName)
-          .distinctBy { it.id }
-          .filter {
-            it.nameLowercase.contains(normalizedQuery) ||
-                it.lastNameLowercase.contains(normalizedQuery)
-          }
-          .take(limit)
-    } catch (_: Exception) {
-      // Graceful degradation: return empty list on any error
-      emptyList()
-    }
-  }
-
   override suspend fun awardKudos(userId: String, amount: Int) {
     // Validation
     if (amount <= ZERO) {

@@ -33,6 +33,7 @@ import com.android.sample.model.request.RequestRepositoryFirestore
 import com.android.sample.ui.authentication.SignInScreen
 import com.android.sample.ui.authentication.SignInViewModel
 import com.android.sample.ui.authentication.SignInViewModelFactory
+import com.android.sample.ui.leaderboard.LeaderboardScreen
 import com.android.sample.ui.map.MapScreen
 import com.android.sample.ui.map.MapViewModel
 import com.android.sample.ui.map.MapViewModelFactory
@@ -222,27 +223,9 @@ fun NavigationScreen(
       }
     }
 
-    navigation(startDestination = Screen.Events.route, route = "events") {
-      composable(Screen.Events.route) {
-        PlaceHolderScreen(
-            text = "Events Screen",
-            modifier = Modifier.testTag(NavigationTestTags.EVENTS_SCREEN),
-            withBottomBar = true,
-            navigationActions = navigationActions,
-            defaultTab = NavigationTab.Events)
-      }
-      composable(Screen.AddEvent.route) {
-        PlaceHolderScreen(
-            text = "Add Event Screen",
-            modifier = Modifier.testTag(NavigationTestTags.ADD_EVENT_SCREEN),
-            withBottomBar = false)
-      }
-      composable(Screen.EventDetails.route) { navBackStackEntry ->
-        val eventId = navBackStackEntry.arguments?.getString(Screen.EventDetails.ARG_EVENT_ID)
-        PlaceHolderScreen(
-            text = "Edit Event Screen : $eventId",
-            modifier = Modifier.testTag(NavigationTestTags.EDIT_EVENT_SCREEN),
-            withBottomBar = false)
+    navigation(startDestination = Screen.Leaderboard.route, route = "leaderboard") {
+      composable(Screen.Leaderboard.route) {
+        LeaderboardScreen(navigationActions = navigationActions)
       }
     }
 

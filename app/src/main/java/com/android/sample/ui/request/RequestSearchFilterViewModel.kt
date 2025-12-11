@@ -6,6 +6,8 @@ import com.android.sample.model.request.Request
 import com.android.sample.model.request.RequestStatus
 import com.android.sample.model.search.LuceneRequestSearchEngine
 import com.android.sample.model.search.SearchResult
+import com.android.sample.ui.utils.RequestFacet
+import com.android.sample.ui.utils.RequestFacetDefinitions
 import java.util.Comparator
 import kotlin.math.ceil
 import kotlin.math.max
@@ -40,7 +42,7 @@ class RequestSearchFilterViewModel(
   private val _sortCriteria = MutableStateFlow(RequestSort.default())
   val sortCriteria: StateFlow<RequestSort> = _sortCriteria
 
-  val facets: List<RequestFacet> = RequestFacetDefinitions.all.map { RequestFacet(it) }
+  val facets: List<RequestFacet> = RequestFacetDefinitions.requests_all.map { RequestFacet(it) }
 
   @Volatile private var hasIndex: Boolean = false
 
