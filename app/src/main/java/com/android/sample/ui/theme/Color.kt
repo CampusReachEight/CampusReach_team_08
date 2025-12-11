@@ -28,6 +28,14 @@ object AppColors {
   val ErrorOnContainerDark = ErrorDark
 }
 
+/** Colors for the Leaderboard badge themes (medals, ranks, etc.). */
+object LeaderboardColors {
+  val Gold = Color(0xFFF4C542)
+  val Silver = Color(0xFFC0C0C0)
+  val Bronze = Color(0xFFCD7F32)
+  val Cutie = Color(0xFFEA4C89)
+}
+
 // Legacy/compatibility aliases
 val Purple80 = Color(0xFFD0BCFF)
 val PurpleGrey80 = Color(0xFFCCC2DC)

@@ -37,7 +37,7 @@ class BottomBarUITests : TestCase() {
     composeTestRule.onNodeWithTag(NavigationTestTags.BOTTOM_NAVIGATION_MENU).assertIsDisplayed()
     composeTestRule.onNodeWithTag(NavigationTestTags.REQUEST_TAB).assertIsDisplayed()
     composeTestRule.onNodeWithTag(NavigationTestTags.MAP_TAB).assertIsDisplayed()
-    composeTestRule.onNodeWithTag(NavigationTestTags.EVENT_TAB).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(NavigationTestTags.LEADERBOARD_TAB).assertIsDisplayed()
   }
 
   @Test
@@ -55,6 +55,9 @@ class BottomBarUITests : TestCase() {
   fun tabsAreClickable() {
     composeTestRule.onNodeWithTag(NavigationTestTags.REQUEST_TAB).assertIsDisplayed().performClick()
     composeTestRule.onNodeWithTag(NavigationTestTags.MAP_TAB).assertIsDisplayed().performClick()
-    composeTestRule.onNodeWithTag(NavigationTestTags.EVENT_TAB).assertIsDisplayed().performClick()
+    composeTestRule
+        .onNodeWithTag(NavigationTestTags.LEADERBOARD_TAB)
+        .assertIsDisplayed()
+        .performClick()
   }
 }

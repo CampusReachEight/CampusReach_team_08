@@ -33,7 +33,7 @@ fun TopNavigationBar(
   val title =
       when (selectedTab) {
         NavigationTab.Requests -> "Reach Out"
-        NavigationTab.Events -> "Campus Events"
+        NavigationTab.Leaderboard -> "Leaderboard"
         NavigationTab.Map -> "Map"
       }
 
@@ -73,5 +73,5 @@ fun TopNavigationBar(
 @Preview(showBackground = true)
 @Composable
 fun TopNavigationBarPreview() {
-  MaterialTheme { TopNavigationBar(selectedTab = NavigationTab.Events, onProfileClick = {}) }
+  MaterialTheme { TopNavigationBar(selectedTab = NavigationTab.Leaderboard, onProfileClick = {}) }
 }

@@ -17,7 +17,6 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Assert.assertThrows
@@ -397,7 +396,13 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
   // --------------------------
   // Search tests (emulator-backed)
   // --------------------------
+  // DEPRECATED: searchUserProfiles tests are commented out because the interface method is now
+  // deprecated in favor of local Lucene-based search via LuceneProfileSearchEngine.
+  // See UserProfileRepository.kt for detailed rationale.
+  // The helper function and tests below are preserved for reference.
+  // --------------------------
 
+  /*
   private suspend fun addProfileFor(email: String, name: String, lastName: String) {
     // Switch auth context to a deterministic user and add their own profile (ID must match UID)
     signInUser(email, DEFAULT_USER_PASSWORD)
@@ -521,6 +526,8 @@ class UserProfileRepositoryFirestoreTest : BaseEmulatorTest() {
       assertEquals(9, results.size)
     }
   }
+  */
+
   // ==================== Award Kudos Tests ====================
 
   @Test

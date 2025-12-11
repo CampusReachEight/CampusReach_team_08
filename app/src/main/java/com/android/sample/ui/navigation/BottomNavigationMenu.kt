@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Alarm
+import androidx.compose.material.icons.outlined.EmojiEvents
 import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material.icons.outlined.SyncAlt
 import androidx.compose.material3.Icon
@@ -27,12 +27,13 @@ import com.android.sample.ui.theme.appPalette
 sealed class NavigationTab(val name: String, val icon: ImageVector, val destination: Screen) {
   object Requests : NavigationTab("Reach", Icons.Outlined.SyncAlt, Screen.Requests)
 
-  object Events : NavigationTab("Events", Icons.Outlined.Alarm, Screen.Events)
+  object Leaderboard : NavigationTab("Leaderboard", Icons.Outlined.EmojiEvents, Screen.Leaderboard)
 
   object Map : NavigationTab("Map", Icons.Outlined.Place, Screen.Map())
 }
 
-private val navigationTabs = listOf(NavigationTab.Requests, NavigationTab.Events, NavigationTab.Map)
+private val navigationTabs =
+    listOf(NavigationTab.Requests, NavigationTab.Leaderboard, NavigationTab.Map)
 
 @Composable
 fun BottomNavigationMenu(
@@ -60,8 +61,8 @@ fun BottomNavigationMenu(
                   NavigationTab.Requests -> {
                     navigationActions?.navigateTo(Screen.Requests)
                   }
-                  NavigationTab.Events -> {
-                    navigationActions?.navigateTo(Screen.Events)
+                  NavigationTab.Leaderboard -> {
+                    navigationActions?.navigateTo(Screen.Leaderboard)
                   }
                   NavigationTab.Map -> {
                     navigationActions?.navigateTo(Screen.Map())
