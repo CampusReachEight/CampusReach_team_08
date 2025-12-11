@@ -1,7 +1,7 @@
 package com.android.sample.ui.navigation
 
 import androidx.navigation.NavHostController
-import com.android.sample.ui.profile.FollowListType
+import com.android.sample.ui.profile.follow.FollowListType
 
 private const val REQUEST_ID = "requestId"
 

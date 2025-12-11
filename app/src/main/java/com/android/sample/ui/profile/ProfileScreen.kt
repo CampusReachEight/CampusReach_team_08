@@ -15,6 +15,7 @@ import com.android.sample.ui.profile.composables.LogoutDialog
 import com.android.sample.ui.profile.composables.ProfileContent
 import com.android.sample.ui.profile.composables.ProfileLoadingBuffer
 import com.android.sample.ui.profile.composables.ProfileTopBar
+import com.android.sample.ui.profile.follow.FollowListType
 import com.android.sample.ui.theme.appPalette
 
 /**
