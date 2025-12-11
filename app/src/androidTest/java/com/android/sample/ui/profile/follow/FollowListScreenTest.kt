@@ -132,9 +132,8 @@ class FollowListScreenTest {
 
     override suspend fun deleteUserProfile(userId: String) {}
 
-    override suspend fun searchUserProfiles(query: String, limit: Int): List<UserProfile> {
-      return emptyList()
-    }
+    override suspend fun searchUserProfiles(query: String, limit: Int): List<UserProfile> =
+        emptyList()
 
     override suspend fun awardKudos(userId: String, amount: Int) {}
 
