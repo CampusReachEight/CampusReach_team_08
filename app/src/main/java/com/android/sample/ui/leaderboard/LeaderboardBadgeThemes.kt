@@ -7,6 +7,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.android.sample.ui.theme.LeaderboardColors
 
 /** Describes how to render a badge/medal: icon, colors, and optional test tag. */
 data class BadgeTheme(
@@ -22,36 +23,33 @@ data class BadgeTheme(
 /** Central place to declare reusable badge themes (gold, silver, bronze, roles, etc.). */
 object LeaderboardBadgeThemes {
 
-  private val GoldColor = Color(0xFFF4C542)
-  private val SilverColor = Color(0xFFC0C0C0)
-  private val BronzeColor = Color(0xFFCD7F32)
-  val CutieColor = Color(0xFFEA4C89)
+  val CutieColor = LeaderboardColors.Cutie
 
   val Gold =
       BadgeTheme(
           id = "gold",
           icon = Icons.Filled.MilitaryTech,
-          primaryColor = GoldColor,
-          haloColor = GoldColor.copy(alpha = BadgeThemeDefaults.HaloAlphaStrong),
-          borderColor = GoldColor,
+          primaryColor = LeaderboardColors.Gold,
+          haloColor = LeaderboardColors.Gold.copy(alpha = BadgeThemeDefaults.HaloAlphaStrong),
+          borderColor = LeaderboardColors.Gold,
           testTag = LeaderboardTestTags.MEDAL_GOLD)
 
   val Silver =
       BadgeTheme(
           id = "silver",
           icon = Icons.Filled.Star,
-          primaryColor = SilverColor,
-          haloColor = SilverColor.copy(alpha = BadgeThemeDefaults.HaloAlphaStrong),
-          borderColor = SilverColor,
+          primaryColor = LeaderboardColors.Silver,
+          haloColor = LeaderboardColors.Silver.copy(alpha = BadgeThemeDefaults.HaloAlphaStrong),
+          borderColor = LeaderboardColors.Silver,
           testTag = LeaderboardTestTags.MEDAL_SILVER)
 
   val Bronze =
       BadgeTheme(
           id = "bronze",
           icon = Icons.Filled.Star,
-          primaryColor = BronzeColor,
-          haloColor = BronzeColor.copy(alpha = BadgeThemeDefaults.HaloAlphaSoft),
-          borderColor = BronzeColor,
+          primaryColor = LeaderboardColors.Bronze,
+          haloColor = LeaderboardColors.Bronze.copy(alpha = BadgeThemeDefaults.HaloAlphaSoft),
+          borderColor = LeaderboardColors.Bronze,
           testTag = LeaderboardTestTags.MEDAL_BRONZE)
 
   /** Map any rank to a badge theme; extend here for custom roles (admin, beta, etc.). */
