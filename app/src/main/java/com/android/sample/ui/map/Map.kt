@@ -1011,14 +1011,13 @@ fun CurrentProfileUI(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier =
                     Modifier.padding(ConstantMap.PADDING_HORIZONTAL_STANDARD).fillMaxWidth()) {
-                ProfilePicture(
-                    profileRepository = mapViewModel.profileRepository,
-                    profileId = profile.id,
-                    onClick = { navigationActions?.navigateTo(Screen.PublicProfile(profile.id)) },
-                    modifier = Modifier.size(ConstantMap.REQUEST_ITEM_ICON_SIZE),
-                    testTag = MapTestTags.REQUEST_CREATOR_PROFILE
-                )
-                Text(
+                  ProfilePicture(
+                      profileRepository = mapViewModel.profileRepository,
+                      profileId = profile.id,
+                      onClick = { navigationActions?.navigateTo(Screen.PublicProfile(profile.id)) },
+                      modifier = Modifier.size(ConstantMap.REQUEST_ITEM_ICON_SIZE),
+                      testTag = MapTestTags.REQUEST_CREATOR_PROFILE)
+                  Text(
                       text = "${profile.lastName} ${profile.name}",
                       style =
                           MaterialTheme.typography.titleMedium.copy(

@@ -208,24 +208,21 @@ private fun AcceptedRequestItem(
               modifier =
                   Modifier.fillMaxSize().padding(ConstantRequestList.RequestItemInnerPadding)) {
                 // Creator profile picture
-              ProfilePicture(
-                  profileRepository = requestListViewModel.profileRepository,
-                  profileId = request.creatorId,
-                  onClick = {
+                ProfilePicture(
+                    profileRepository = requestListViewModel.profileRepository,
+                    profileId = request.creatorId,
+                    onClick = {
                       navigationActions.navigateTo(Screen.PublicProfile(request.creatorId))
-                  },
-                  testTag = AcceptedRequestsTestTags.PROFILE_PICTURE_ITEM,   // IMPORTANT
-                  modifier =
-                      Modifier
-                          .width(ConstantRequestList.RequestItemCreatorSectionSize)
-                          .fillMaxHeight()
-                          .align(Alignment.CenterVertically)
-                          .padding(
-                              vertical = ConstantRequestList.RequestItemProfileHeightPadding
-                          ),
-                  withName = true
-              )
-              Spacer(Modifier.width(ConstantRequestList.RowSpacing))
+                    },
+                    testTag = AcceptedRequestsTestTags.PROFILE_PICTURE_ITEM, // IMPORTANT
+                    modifier =
+                        Modifier.width(ConstantRequestList.RequestItemCreatorSectionSize)
+                            .fillMaxHeight()
+                            .align(Alignment.CenterVertically)
+                            .padding(
+                                vertical = ConstantRequestList.RequestItemProfileHeightPadding),
+                    withName = true)
+                Spacer(Modifier.width(ConstantRequestList.RowSpacing))
 
                 // Title and description
                 Column(modifier = Modifier.weight(WEIGHT)) {
@@ -358,18 +355,16 @@ private fun RequestDetailsDialog(
                       fontWeight = FontWeight.SemiBold,
                       fontSize = FONT_SIZE_14)
                   Spacer(modifier = Modifier.width(DIALOG_SMALL_SPACING))
-                ProfilePicture(
-                    profileRepository = requestListViewModel.profileRepository,
-                    profileId = request.creatorId,
-                    onClick = {
+                  ProfilePicture(
+                      profileRepository = requestListViewModel.profileRepository,
+                      profileId = request.creatorId,
+                      onClick = {
                         navigationActions.navigateTo(Screen.PublicProfile(request.creatorId))
-                    },
-                    testTag = AcceptedRequestsTestTags.PROFILE_PICTURE_DIALOG,
-                    modifier =
-                        Modifier
-                            .size(BIG_MODIFIER),
-                    withName = true)
-            }
+                      },
+                      testTag = AcceptedRequestsTestTags.PROFILE_PICTURE_DIALOG,
+                      modifier = Modifier.size(BIG_MODIFIER),
+                      withName = true)
+                }
 
             Spacer(modifier = Modifier.height(DIALOG_SPACING))
 

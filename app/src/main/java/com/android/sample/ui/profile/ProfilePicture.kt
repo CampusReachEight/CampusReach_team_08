@@ -161,27 +161,26 @@ fun ProfilePicture(
       modifier = modifier.fillMaxSize()) {
         val sizeMod = Modifier.weight(PictureNameRatio, fill = true)
 
-      Surface(
-          modifier =
-              sizeMod
-                  .aspectRatio(PADDING)
-                  .clip(CircleShape)
-                  .clickable {
+        Surface(
+            modifier =
+                sizeMod
+                    .aspectRatio(PADDING)
+                    .clip(CircleShape)
+                    .clickable {
                       if (navigationActions != null) {
-                          val currentUserId = profileRepository.getCurrentUserId()
-                          if (profileId == currentUserId) {
-                              navigationActions.navigateTo(Screen.Profile(profileId))
-                          } else {
-                              navigationActions.navigateTo(Screen.PublicProfile(profileId))
-                          }
+                        val currentUserId = profileRepository.getCurrentUserId()
+                        if (profileId == currentUserId) {
+                          navigationActions.navigateTo(Screen.Profile(profileId))
+                        } else {
+                          navigationActions.navigateTo(Screen.PublicProfile(profileId))
+                        }
                       } else {
-                          onClick(profileId)
+                        onClick(profileId)
                       }
-                  }
-                  .then(if (testTag != null) Modifier.testTag(testTag) else Modifier),
-          shape = CircleShape,
-      )
-      {
+                    }
+                    .then(if (testTag != null) Modifier.testTag(testTag) else Modifier),
+            shape = CircleShape,
+        ) {
           if (loading) {
             Box(
                 modifier =
