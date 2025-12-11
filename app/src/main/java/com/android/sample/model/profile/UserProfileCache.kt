@@ -4,6 +4,7 @@ import android.content.Context
 import java.io.File
 import java.io.IOException
 import kotlinx.serialization.SerializationException
+import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 
 class UserProfileCache(private val context: Context) {
@@ -12,6 +13,7 @@ class UserProfileCache(private val context: Context) {
     ignoreUnknownKeys = true
   }
   private val cacheDir = File(context.cacheDir, "user_profiles_cache")
+  private val leaderboardCacheFile = File(cacheDir, "leaderboard.json")
 
   init {
     // Ensure the cache directory exists
@@ -86,6 +88,40 @@ class UserProfileCache(private val context: Context) {
   fun hasProfile(profileId: String): Boolean {
     val file = File(cacheDir, "$profileId.json")
     return file.exists()
+  }
+
+  /**
+   * Saves the leaderboard list to cache. All profiles are stored in a single file to preserve order
+   * and ties.
+   *
+   * @param profiles The list of profiles to save as the leaderboard.
+   */
+  fun saveLeaderboard(profiles: List<UserProfile>) {
+    try {
+      // Strip photos so we do not cache user images for leaderboard snapshots.
+      val sanitized = profiles.map { it.copy(photo = null) }
+      val payload = json.encodeToString(ListSerializer(UserProfile.serializer()), sanitized)
+      leaderboardCacheFile.writeText(payload)
+    } catch (e: Exception) {
+      // Non-fatal; just log to aid debugging
+      e.printStackTrace()
+    }
+  }
+
+  /**
+   * Loads the cached leaderboard, or returns an empty list if unavailable or corrupted.
+   *
+   * @return The list of cached leaderboard profiles.
+   */
+  fun loadLeaderboard(): List<UserProfile> {
+    if (!leaderboardCacheFile.exists()) return emptyList()
+    return try {
+      val payload = leaderboardCacheFile.readText()
+      json.decodeFromString(ListSerializer(UserProfile.serializer()), payload)
+    } catch (e: Exception) {
+      e.printStackTrace()
+      emptyList()
+    }
   }
 
   /** Clears all cached profiles. */

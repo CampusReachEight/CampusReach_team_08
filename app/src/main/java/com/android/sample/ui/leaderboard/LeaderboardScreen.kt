@@ -56,7 +56,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.model.profile.UserProfile
 import com.android.sample.model.profile.UserProfileCache
@@ -91,7 +90,6 @@ object LeaderBoardScreenUILabels {
   const val CUTIE_PATOOTIE_DESCRIPTION = "Cutie Patootie filter"
   const val PROFILE_ADDON_DESCRIPTION = "Profile add-on"
 }
-
 
 /** Top-level screen composable for the leaderboard. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -227,7 +225,8 @@ private fun LeaderboardFilters(
       placeholder = { Text(LeaderBoardScreenUILabels.SEARCH_PLACEHOLDER) },
       trailingIcon = {
         when {
-          query.isNotEmpty() -> TextButton(onClick = onClearQuery) { Text(LeaderBoardScreenUILabels.CLEAR_BUTTON) }
+          query.isNotEmpty() ->
+              TextButton(onClick = onClearQuery) { Text(LeaderBoardScreenUILabels.CLEAR_BUTTON) }
           isSearching ->
               CircularProgressIndicator(
                   modifier = Modifier.size(ConstantLeaderboard.SmallIndicatorSize),
@@ -502,7 +501,10 @@ private fun ProfilePictureWithAddon(
             imageVector = addon.image,
             contentDescription = LeaderBoardScreenUILabels.CROWN_DESCRIPTION,
             tint = crownTint,
-            modifier = Modifier.align(Alignment.TopCenter).offset(y = ConstantLeaderboard.CrownOffsetY).size(addon.size))
+            modifier =
+                Modifier.align(Alignment.TopCenter)
+                    .offset(y = ConstantLeaderboard.CrownOffsetY)
+                    .size(addon.size))
       }
       LeaderboardAddOns.cutiePatootie -> {
         Icon(
