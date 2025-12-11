@@ -23,6 +23,8 @@ object LeaderboardAddOns {
 
 /** Eligible hashed user ids for CutiePatootie overlay. Currently empty placeholder. */
 object AddonEligibility {
+  val crownPositions: Set<Int> = setOf(1)
+
   val cutiePatootieHashes: Set<String> =
       setOf(
           "73eec23b48744023c605dd11894c173ad9d42edfbc21c28910345a7b242b533c",

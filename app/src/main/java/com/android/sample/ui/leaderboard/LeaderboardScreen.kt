@@ -533,7 +533,7 @@ private fun ProfilePictureWithAddon(
 
 private fun resolveAddon(position: Int, profileId: String): ProfileAddon? {
   return when {
-    position == 1 -> crown
+    AddonEligibility.crownPositions.contains(position) -> crown
     AddonEligibility.cutiePatootieHashes.contains(hashIdSha256(profileId)) -> cutiePatootie
     else -> null
   }
