@@ -24,9 +24,8 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 
 /**
- * Test class for MapScreen offline mode functionality.
- * This class has its own setup and doesn't inherit the default MapTest setup
- * to avoid setContent conflicts.
+ * Test class for MapScreen offline mode functionality. This class has its own setup and doesn't
+ * inherit the default MapTest setup to avoid setContent conflicts.
  */
 class MapsOfflineTest : BaseEmulatorTest() {
   @get:Rule val composeTestRule = createComposeRule()
@@ -53,27 +52,26 @@ class MapsOfflineTest : BaseEmulatorTest() {
 
   @Test
   fun offlineMode_displaysOfflineMessage() {
-      // Create a mock repository that throws when getAllCurrentRequests is called
-      runTest {
-          val mockRepository = mock(RequestRepository::class.java)
-          `when`(mockRepository.getAllCurrentRequests()).thenThrow(RuntimeException("No internet"))
+    // Create a mock repository that throws when getAllCurrentRequests is called
+    runTest {
+      val mockRepository = mock(RequestRepository::class.java)
+      `when`(mockRepository.getAllCurrentRequests()).thenThrow(RuntimeException("No internet"))
 
-          // Create a new ViewModel with the mock repository
-          val offlineViewModel =
-              MapViewModel(mockRepository, profileRepository, fakeFusedLocationProvider)
+      // Create a new ViewModel with the mock repository
+      val offlineViewModel =
+          MapViewModel(mockRepository, profileRepository, fakeFusedLocationProvider)
 
-          // Set the content with the offline viewModel
-          composeTestRule.setContent { MapScreen(offlineViewModel) }
+      // Set the content with the offline viewModel
+      composeTestRule.setContent { MapScreen(offlineViewModel) }
 
-          // Trigger refresh which will call getAllCurrentRequests
-          offlineViewModel.refreshUIState(null)
+      // Trigger refresh which will call getAllCurrentRequests
+      offlineViewModel.refreshUIState(null)
 
-          // Wait until offline mode is set
-          composeTestRule.waitUntil(UI_WAIT_TIMEOUT) { offlineViewModel.uiState.value.offlineMode }
+      // Wait until offline mode is set
+      composeTestRule.waitUntil(UI_WAIT_TIMEOUT) { offlineViewModel.uiState.value.offlineMode }
 
-          // Verify the offline message is displayed
-          composeTestRule.onNodeWithText("Map is unavailable in offline mode").assertIsDisplayed()
-      }
+      // Verify the offline message is displayed
+      composeTestRule.onNodeWithText("Map is unavailable in offline mode").assertIsDisplayed()
+    }
   }
 }
-
