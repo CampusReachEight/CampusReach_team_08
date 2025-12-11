@@ -432,17 +432,6 @@ class MapViewModel(
       }
     }
   }
-
-  fun checkOnlineMode() {
-    viewModelScope.launch {
-      try {
-        requestRepository.getAllCurrentRequests()
-        _uiState.value = uiState.value.copy(offlineMode = false)
-      } catch (e: IllegalStateException) {
-        _uiState.value = uiState.value.copy(offlineMode = true)
-      }
-    }
-  }
 }
 
 class MapViewModelFactory(
