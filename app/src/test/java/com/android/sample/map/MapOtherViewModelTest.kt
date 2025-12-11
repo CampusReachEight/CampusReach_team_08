@@ -203,6 +203,21 @@ class MapOtherViewModelTest {
     }
   }
 
+  @OptIn(ExperimentalCoroutinesApi::class)
+  @Test
+  fun fetchAcceptedRequestSetsOfflineModeWhenRepositoryFails() {
+    runTest {
+      `when`(requestRepository.getAllCurrentRequests()).thenThrow(RuntimeException("no internet"))
+
+      // Call the public entrypoint that triggers fetchAcceptedRequest
+      viewModel.refreshUIState(null)
+
+      advanceUntilIdle()
+
+      assertTrue(viewModel.uiState.value.offlineMode)
+    }
+  }
+
   @Test
   fun setLocationPermissionError_stopsLoadingAndSetsFlags() {
 

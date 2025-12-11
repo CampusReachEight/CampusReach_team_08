@@ -45,7 +45,8 @@ data class MapUIState(
     val zoomPreference: MapZoomPreference = MapZoomPreference.NEAREST_REQUEST,
     val wasOnAnotherScreen: Boolean = true,
     val canOtherZoom: Boolean = true,
-    val hasTriedToGetLocation: Boolean = false
+    val hasTriedToGetLocation: Boolean = false,
+    val offlineMode: Boolean = false
 )
 
 /** A class for the preference of the user for automatic zoom */
@@ -66,7 +67,7 @@ class MapViewModel(
         RequestRepositoryFirestore(Firebase.firestore),
     val profileRepository: UserProfileRepository =
         UserProfileRepositoryFirestore(Firebase.firestore),
-    private val locationProvider: LocationProvider
+    private val locationProvider: LocationProvider,
 ) : ViewModel() {
   companion object {
     val EPFL_LOCATION = Location(ConstantMap.LATITUDE_EPFL, ConstantMap.LONGITUDE_EPFL, "EPFL")
@@ -383,7 +384,13 @@ class MapViewModel(
   private fun fetchAcceptedRequest(requestId: String? = null) {
     viewModelScope.launch {
       try {
-        val requests = requestRepository.getAllCurrentRequests()
+        val requests =
+            try {
+              requestRepository.getAllCurrentRequests()
+            } catch (e: Exception) {
+              _uiState.value = uiState.value.copy(offlineMode = true)
+              return@launch
+            }
 
         val matchingRequest = requests.firstOrNull { it.requestId == requestId }
         if (matchingRequest != null) {
@@ -403,7 +410,8 @@ class MapViewModel(
                   request = requests,
                   target = LatLng(target.latitude, target.longitude),
                   currentRequest = null,
-                  isOwner = null)
+                  isOwner = null,
+                  offlineMode = false)
         } else {
           if (_uiState.value.canOtherZoom) {
             // currentRequest found and up to date
@@ -415,7 +423,8 @@ class MapViewModel(
                     currentRequest = updatedCurrent,
                     isOwner = _uiState.value.isOwner,
                     target = location,
-                    needToZoom = true)
+                    needToZoom = true,
+                    offlineMode = false)
           }
         }
       } catch (e: Exception) {
