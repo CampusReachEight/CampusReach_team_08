@@ -178,42 +178,34 @@ fun ProfilePicture(
                         onClick(profileId)
                       }
                     }
-                    .then(if (testTag != null) Modifier.testTag(testTag) else Modifier),
-            shape = CircleShape,
-        ) {
-          if (loading) {
-            Box(
-                modifier =
-                    Modifier.fillMaxSize()
-                        .background(SecondaryDark.copy(alpha = 0.3f))
-                        .testTag(ProfilePictureTestTags.PROFILE_PICTURE_LOADING),
-            )
-            return@Surface
-          }
-
-          // Error loading image fallback
-          if (bitmap == null) {
-            Box(
-                modifier =
-                    Modifier.fillMaxSize()
-                        .background(appPalette().secondary)
-                        .testTag(ProfilePictureTestTags.PROFILE_PICTURE_DEFAULT),
-                contentAlignment = Alignment.Center) {
-                  Icon(
-                      imageVector = Icons.Default.Person,
-                      contentDescription = "Default profile picture",
-                      modifier = Modifier.fillMaxSize(0.6f),
-                      tint = WhiteColor)
-                }
-            return@Surface
-          }
-
-          Image(
-              bitmap = bitmap!!.asImageBitmap(),
-              contentDescription = "Profile picture",
-              Modifier.fillMaxSize().testTag(ProfilePictureTestTags.PROFILE_PICTURE))
-        }
-
+                    .testTag(testTag ?: ""), // <── ALWAYS applied here
+            shape = CircleShape) {
+              when {
+                loading ->
+                    Box(
+                        Modifier.fillMaxSize()
+                            .background(SecondaryDark.copy(alpha = 0.3f))
+                            .testTag(ProfilePictureTestTags.PROFILE_PICTURE_LOADING))
+                bitmap == null ->
+                    Box(
+                        Modifier.fillMaxSize()
+                            .background(appPalette().secondary)
+                            .testTag(ProfilePictureTestTags.PROFILE_PICTURE_DEFAULT),
+                        contentAlignment = Alignment.Center) {
+                          Icon(
+                              imageVector = Icons.Default.Person,
+                              contentDescription = "Default profile picture",
+                              modifier = Modifier.fillMaxSize(0.6f),
+                              tint = WhiteColor)
+                        }
+                else ->
+                    Image(
+                        bitmap = bitmap!!.asImageBitmap(),
+                        contentDescription = "Profile picture",
+                        modifier =
+                            Modifier.fillMaxSize().testTag(ProfilePictureTestTags.PROFILE_PICTURE))
+              }
+            }
         if (withName && name.isNotBlank()) {
           Text(
               text = name,
