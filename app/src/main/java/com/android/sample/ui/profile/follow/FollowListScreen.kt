@@ -31,6 +31,21 @@ object FollowListTestTags {
   const val FOLLOW_LIST_ERROR = "followListError"
 }
 
+private val PADDING_16 = 16.dp
+private val PADDING_8 = 8.dp
+
+private const val NOT_FOLLOWING_ANYONE = "Not following anyone yet"
+
+private const val ERROR_OCCURED = "An error occurred"
+
+private const val NO_FOLLOERS_YET = "No followers yet"
+
+private const val BACK = "Back"
+
+private const val FOLLOWERS = "Followers"
+
+private const val FOLLOWING = "Following"
+
 /**
  * Screen displaying a list of users (either followers or following). Clicking on a user navigates
  * to their public profile.
@@ -56,12 +71,12 @@ fun FollowListScreen(
         TopAppBar(
             title = {
               Text(
-                  text = if (listType == FollowListType.FOLLOWERS) "Followers" else "Following",
+                  text = if (listType == FollowListType.FOLLOWERS) FOLLOWERS else FOLLOWING,
                   modifier = Modifier.testTag(FollowListTestTags.FOLLOW_LIST_TITLE))
             },
             navigationIcon = {
               IconButton(onClick = onBackClick) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                Icon(Icons.Default.ArrowBack, contentDescription = BACK)
               }
             },
             colors =
@@ -79,19 +94,19 @@ fun FollowListScreen(
             }
             state.errorMessage != null -> {
               Text(
-                  text = state.errorMessage ?: "An error occurred",
+                  text = state.errorMessage ?: ERROR_OCCURED,
                   color = appPalette().error,
                   textAlign = TextAlign.Center,
                   modifier =
                       Modifier.align(Alignment.Center)
-                          .padding(16.dp)
+                          .padding(PADDING_16)
                           .testTag(FollowListTestTags.FOLLOW_LIST_ERROR))
             }
             state.users.isEmpty() -> {
               Text(
                   text =
-                      if (listType == FollowListType.FOLLOWERS) "No followers yet"
-                      else "Not following anyone yet",
+                      if (listType == FollowListType.FOLLOWERS) NO_FOLLOERS_YET
+                      else NOT_FOLLOWING_ANYONE,
                   textAlign = TextAlign.Center,
                   modifier =
                       Modifier.align(Alignment.Center)
@@ -100,8 +115,8 @@ fun FollowListScreen(
             else -> {
               LazyColumn(
                   modifier = Modifier.fillMaxSize().testTag(FollowListTestTags.FOLLOW_LIST),
-                  contentPadding = PaddingValues(16.dp),
-                  verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                  contentPadding = PaddingValues(PADDING_16),
+                  verticalArrangement = Arrangement.spacedBy(PADDING_8)) {
                     items(state.users.size) { index ->
                       val user = state.users[index]
                       FollowListItem(
@@ -117,6 +132,10 @@ fun FollowListScreen(
       }
 }
 
+private const val ALPHA = 0.7f
+private val PADDING_12 = 12.dp
+private val PADDING_48 = 48.dp
+
 @Composable
 fun FollowListItem(user: UserProfile, onClick: () -> Unit, modifier: Modifier = Modifier) {
   Card(
@@ -127,11 +146,13 @@ fun FollowListItem(user: UserProfile, onClick: () -> Unit, modifier: Modifier = 
               .testTag(FollowListTestTags.FOLLOW_LIST_ITEM),
       colors = CardDefaults.cardColors(containerColor = appPalette().surface)) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            modifier = Modifier.fillMaxWidth().padding(PADDING_12),
             verticalAlignment = Alignment.CenterVertically) {
               ProfilePicture(
-                  profileId = user.id, onClick = { onClick() }, modifier = Modifier.size(48.dp))
-              Spacer(modifier = Modifier.width(12.dp))
+                  profileId = user.id,
+                  onClick = { onClick() },
+                  modifier = Modifier.size(PADDING_48))
+              Spacer(modifier = Modifier.width(PADDING_12))
               Column {
                 val fullName =
                     if (user.lastName.isBlank()) {
@@ -148,7 +169,7 @@ fun FollowListItem(user: UserProfile, onClick: () -> Unit, modifier: Modifier = 
                   Text(
                       text = user.section.label,
                       style = MaterialTheme.typography.bodySmall,
-                      color = appPalette().text.copy(alpha = 0.7f))
+                      color = appPalette().text.copy(alpha = ALPHA))
                 }
               }
             }
