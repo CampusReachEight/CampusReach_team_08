@@ -803,7 +803,9 @@ class AcceptedRequestsScreenTest : BaseEmulatorTest() {
     waitForUI()
 
     // When
-    composeTestRule.onNodeWithTag(AcceptedRequestsTestTags.PROFILE_PICTURE_ITEM, useUnmergedTree = true).performClick()
+    composeTestRule
+        .onNodeWithTag(AcceptedRequestsTestTags.PROFILE_PICTURE_ITEM, useUnmergedTree = true)
+        .performClick()
 
     // Then
     org.mockito.kotlin.verify(mockNav).navigateTo(Screen.PublicProfile(otherUserId))
@@ -848,7 +850,9 @@ class AcceptedRequestsScreenTest : BaseEmulatorTest() {
     waitForDialog()
 
     // When
-    composeTestRule.onNodeWithTag(AcceptedRequestsTestTags.PROFILE_PICTURE_DIALOG, useUnmergedTree = true).performClick()
+    composeTestRule
+        .onNodeWithTag(AcceptedRequestsTestTags.PROFILE_PICTURE_DIALOG, useUnmergedTree = true)
+        .performClick()
 
     // Then
     org.mockito.kotlin.verify(mockNav).navigateTo(Screen.PublicProfile(otherUserId))
