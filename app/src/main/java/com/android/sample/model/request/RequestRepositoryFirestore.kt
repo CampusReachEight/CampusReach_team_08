@@ -47,10 +47,14 @@ class RequestRepositoryFirestore(private val db: FirebaseFirestore) : RequestRep
   }
 
   override suspend fun getAllCurrentRequests(): List<Request> {
-    return collectionRef
-        .get()
-        .await()
-        .documents
+    val snapshot = collectionRef.get(Source.SERVER).await()
+
+    if (snapshot.metadata.isFromCache) {
+      throw IllegalStateException(
+          "Cannot retrieve current requests: data from cache (network unavailable)")
+    }
+
+    return snapshot.documents
         .mapNotNull { doc -> doc.data?.let { Request.fromMap(it) } }
         .filter { request ->
           // Exclude requests that are completed (either by status or by expiration) or cancelled

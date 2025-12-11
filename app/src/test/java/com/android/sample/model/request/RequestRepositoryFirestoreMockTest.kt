@@ -68,6 +68,20 @@ class RequestRepositoryFirestoreMockTest {
     unmockkAll()
   }
 
+  @Test
+  fun getAllCurrentRequests_throwsWhenIsFromCache() = runTest {
+    every { mockCollection.get(Source.SERVER) } returns Tasks.forResult(mockQuerySnapshot)
+    every { mockQuerySnapshot.metadata } returns mockMetadata
+    every { mockMetadata.isFromCache } returns true
+
+    try {
+      repository.getAllCurrentRequests()
+      fail("Should throw IllegalStateException")
+    } catch (e: IllegalStateException) {
+      assertTrue(e.message?.contains("data from cache") == true)
+    }
+  }
+
   // Test 1: getAllRequests - isFromCache = true
   @Test
   fun getAllRequests_throwsWhenIsFromCache() = runTest {
