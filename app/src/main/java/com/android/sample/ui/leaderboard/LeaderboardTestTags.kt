@@ -52,6 +52,7 @@ object LeaderboardTestTags {
   const val MEDAL_GOLD = "leaderboardMedalGold"
   const val MEDAL_SILVER = "leaderboardMedalSilver"
   const val MEDAL_BRONZE = "leaderboardMedalBronze"
+  const val CUTIE_PATOOTIE_FILTER = "cutie_patootie_filter"
 
   /**
    * Generates a test tag for a section filter row.

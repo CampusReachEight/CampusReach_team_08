@@ -37,18 +37,12 @@ object ConstantLeaderboard {
   val SortButtonPaddingHorizontal = 12.dp
   val SortButtonPaddingVertical = 6.dp
 
-  // Dropdown menu
-  val DropdownMaxHeight = 280.dp
-  val MenuCornerRadius = 12.dp
-
-  // Rows inside dropdown
-  val FilterRowHeight = 48.dp
-  val FilterRowHorizontalPadding = 12.dp
-  val CheckboxSize = 20.dp
-
   // Loading indicator
   val SmallIndicatorSize = 18.dp
   val SmallIndicatorStroke = 2.dp
+
+  // Profile picture addons
+  val CrownOffsetY = (-6).dp
 
   // Utility
   val WeightFill = 1f

@@ -58,8 +58,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.android.sample.model.leaderboard.LeaderboardCache
 import com.android.sample.model.profile.UserProfile
+import com.android.sample.model.profile.UserProfileCache
 import com.android.sample.ui.leaderboard.LeaderboardAddOns.crown
 import com.android.sample.ui.leaderboard.LeaderboardAddOns.cutiePatootie
 import com.android.sample.ui.leaderboard.LeaderboardBadgeThemes.CutieColor
@@ -77,6 +77,22 @@ import com.android.sample.ui.utils.EnumFilterPanel
 import com.android.sample.ui.utils.RangeFilterButton
 import com.android.sample.ui.utils.RangeFilterPanel
 
+object LeaderBoardScreenUILabels {
+  const val OFFLINE_MODE_MESSAGE = "You are in offline mode. Displaying cached profiles."
+  const val NO_PROFILES_FOUND = "No profiles found."
+  const val SEARCH_PLACEHOLDER = "Search by name"
+  const val CLEAR_BUTTON = "Clear"
+  const val KUDOS_LABEL = "Kudos"
+  const val WAS_HELPED_LABEL = "Was helped"
+  const val MEDAL_DESCRIPTION = "Medal"
+  const val ERROR_DIALOG_TITLE = "An error occurred"
+  const val OK_BUTTON = "OK"
+  const val CROWN_DESCRIPTION = "Top crown"
+  const val CUTIE_PATOOTIE_DESCRIPTION = "Cutie Patootie filter"
+  const val PROFILE_ADDON_DESCRIPTION = "Profile add-on"
+}
+
+
 /** Top-level screen composable for the leaderboard. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -92,7 +108,7 @@ fun LeaderboardScreen(
           ?: viewModel(
               factory =
                   remember(context) {
-                    LeaderboardViewModelFactory(leaderboardCache = LeaderboardCache(context))
+                    LeaderboardViewModelFactory(profileCache = UserProfileCache(context))
                   })
 
   val state by leaderboardViewModel.state.collectAsState()
@@ -146,7 +162,7 @@ fun LeaderboardScreen(
 
                 if (state.offlineMode) {
                   Text(
-                      text = "You are in offline mode. Displaying cached profiles.",
+                      text = LeaderBoardScreenUILabels.OFFLINE_MODE_MESSAGE,
                       color = appPalette().error,
                       style = MaterialTheme.typography.bodyMedium,
                       modifier =
@@ -166,7 +182,7 @@ fun LeaderboardScreen(
                   }
                   displayedProfiles.isEmpty() -> {
                     Text(
-                        text = "No profiles found.",
+                        text = LeaderBoardScreenUILabels.NO_PROFILES_FOUND,
                         modifier =
                             Modifier.fillMaxSize()
                                 .padding(ConstantLeaderboard.PaddingLarge)
@@ -208,10 +224,10 @@ private fun LeaderboardFilters(
               .padding(horizontal = ConstantLeaderboard.PaddingLarge)
               .testTag(LeaderboardTestTags.SEARCH_BAR),
       singleLine = true,
-      placeholder = { Text("Search by name") },
+      placeholder = { Text(LeaderBoardScreenUILabels.SEARCH_PLACEHOLDER) },
       trailingIcon = {
         when {
-          query.isNotEmpty() -> TextButton(onClick = onClearQuery) { Text("Clear") }
+          query.isNotEmpty() -> TextButton(onClick = onClearQuery) { Text(LeaderBoardScreenUILabels.CLEAR_BUTTON) }
           isSearching ->
               CircularProgressIndicator(
                   modifier = Modifier.size(ConstantLeaderboard.SmallIndicatorSize),
@@ -395,12 +411,12 @@ private fun LeaderboardCard(
               Spacer(modifier = Modifier.width(ConstantLeaderboard.RowSpacing))
 
               StatsColumn(
-                  label = "Kudos",
+                  label = LeaderBoardScreenUILabels.KUDOS_LABEL,
                   value = profile.kudos,
                   testTag = LeaderboardTestTags.CARD_KUDOS_VALUE)
               Spacer(modifier = Modifier.width(ConstantLeaderboard.RowSpacing))
               StatsColumn(
-                  label = "Was helped",
+                  label = LeaderBoardScreenUILabels.WAS_HELPED_LABEL,
                   value = profile.helpReceived,
                   testTag = LeaderboardTestTags.CARD_HELP_VALUE)
             }
@@ -420,7 +436,9 @@ private fun Medal(position: Int, theme: BadgeTheme?) {
 
   Box(modifier = tagged, contentAlignment = Alignment.Center) {
     Icon(
-        imageVector = theme.icon, contentDescription = "Medal $position", tint = theme.primaryColor)
+        imageVector = theme.icon,
+        contentDescription = "${LeaderBoardScreenUILabels.MEDAL_DESCRIPTION} $position",
+        tint = theme.primaryColor)
   }
 }
 
@@ -445,7 +463,7 @@ private fun StatsColumn(label: String, value: Int, testTag: String) {
 private fun ErrorDialog(message: String, onDismiss: () -> Unit) {
   AlertDialog(
       onDismissRequest = onDismiss,
-      title = { Text("An error occurred") },
+      title = { Text(LeaderBoardScreenUILabels.ERROR_DIALOG_TITLE) },
       text = {
         Text(message, modifier = Modifier.testTag(LeaderboardTestTags.ERROR_MESSAGE_DIALOG))
       },
@@ -453,7 +471,7 @@ private fun ErrorDialog(message: String, onDismiss: () -> Unit) {
         TextButton(
             onClick = onDismiss,
             modifier = Modifier.testTag(LeaderboardTestTags.OK_BUTTON_ERROR_DIALOG)) {
-              Text("OK")
+              Text(LeaderBoardScreenUILabels.OK_BUTTON)
             }
       })
 }
@@ -482,25 +500,25 @@ private fun ProfilePictureWithAddon(
       LeaderboardAddOns.crown -> {
         Icon(
             imageVector = addon.image,
-            contentDescription = "Top crown",
+            contentDescription = LeaderBoardScreenUILabels.CROWN_DESCRIPTION,
             tint = crownTint,
-            modifier = Modifier.align(Alignment.TopCenter).offset(y = (-6).dp).size(addon.size))
+            modifier = Modifier.align(Alignment.TopCenter).offset(y = ConstantLeaderboard.CrownOffsetY).size(addon.size))
       }
       LeaderboardAddOns.cutiePatootie -> {
         Icon(
             imageVector = addon.image,
-            contentDescription = "Cutie Patootie filter",
+            contentDescription = LeaderBoardScreenUILabels.CUTIE_PATOOTIE_DESCRIPTION,
             tint = Color.Unspecified,
             modifier =
                 Modifier.matchParentSize()
                     .align(Alignment.Center)
                     .clip(RoundedCornerShape(ConstantLeaderboard.CardCornerRadius))
-                    .testTag("cutie_patootie_filter"))
+                    .testTag(LeaderboardTestTags.CUTIE_PATOOTIE_FILTER))
       }
       else -> {
         Icon(
             imageVector = addon.image,
-            contentDescription = "Profile add-on",
+            contentDescription = LeaderBoardScreenUILabels.PROFILE_ADDON_DESCRIPTION,
             tint = Color.Unspecified,
             modifier =
                 Modifier.matchParentSize()
