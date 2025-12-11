@@ -54,6 +54,7 @@ class FollowListScreenTest {
     const val EXPECTED_ONE_ITEM = 1
     const val EXPECTED_TWO_ITEMS = 2
     const val EXPECTED_THREE_ITEMS = 3
+    private const val LIMIT = 20
   }
 
   // ============ Test Fixtures ============

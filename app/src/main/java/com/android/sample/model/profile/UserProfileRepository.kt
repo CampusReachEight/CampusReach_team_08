@@ -57,7 +57,7 @@ interface UserProfileRepository {
    * @param limit Maximum number of results (default 20)
    * @return List of matching user profiles (without loading photos to save bandwidth)
    */
-  suspend fun searchUserProfiles(query: String, limit: Int = LIMIT): List<UserProfile>
+  suspend fun searchUserProfiles(query: String, limit: Int): List<UserProfile>
 
   /**
    * Awards kudos to a user by incrementing their kudos count.
