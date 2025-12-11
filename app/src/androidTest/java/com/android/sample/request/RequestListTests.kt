@@ -176,8 +176,6 @@ class RequestListTests : BaseEmulatorTest() {
 
     override suspend fun deleteUserProfile(userId: String) {}
 
-    override suspend fun searchUserProfiles(query: String, limit: Int): List<UserProfile> = listOf()
-
     override suspend fun awardKudos(userId: String, amount: Int) {
       return Unit
     }

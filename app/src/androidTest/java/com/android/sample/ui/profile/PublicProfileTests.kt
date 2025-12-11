@@ -442,9 +442,6 @@ class PublicProfileTests {
 
           override suspend fun deleteUserProfile(userId: String) {}
 
-          override suspend fun searchUserProfiles(query: String, limit: Int): List<UserProfile> =
-              emptyList()
-
           override suspend fun awardKudos(userId: String, amount: Int) {}
 
           override suspend fun awardKudosBatch(awards: Map<String, Int>) {}
@@ -525,9 +522,6 @@ class PublicProfileTests {
     override suspend fun updateUserProfile(userId: String, updatedProfile: UserProfile) {}
 
     override suspend fun deleteUserProfile(userId: String) {}
-
-    override suspend fun searchUserProfiles(query: String, limit: Int): List<UserProfile> =
-        emptyList()
 
     override suspend fun awardKudos(userId: String, amount: Int) {}
 

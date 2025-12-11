@@ -49,10 +49,10 @@ class TopNavigationBarTest {
   @Test
   fun topNavigationBar_displaysCorrectTitle_forEventsTab() {
     composeTestRule.setContent {
-      TopNavigationBar(selectedTab = NavigationTab.Events, onProfileClick = {})
+      TopNavigationBar(selectedTab = NavigationTab.Leaderboard, onProfileClick = {})
     }
 
-    composeTestRule.onNodeWithText("Campus Events").assertIsDisplayed()
+    composeTestRule.onNodeWithText("Leaderboard").assertIsDisplayed()
   }
 
   @Test
@@ -77,7 +77,7 @@ class TopNavigationBarTest {
   fun settingsButton_invokesCallbackOnClick() {
     composeTestRule.setContent {
       TopNavigationBar(
-          selectedTab = NavigationTab.Events, onProfileClick = { settingsClicked = true })
+          selectedTab = NavigationTab.Leaderboard, onProfileClick = { settingsClicked = true })
     }
 
     composeTestRule.onNodeWithTag(NavigationTestTags.PROFILE_BUTTON).performClick()

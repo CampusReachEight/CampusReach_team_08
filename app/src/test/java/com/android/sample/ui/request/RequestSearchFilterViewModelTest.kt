@@ -5,6 +5,7 @@ import com.android.sample.model.request.Request
 import com.android.sample.model.request.RequestStatus
 import com.android.sample.model.request.RequestType
 import com.android.sample.model.request.Tags
+import com.android.sample.model.search.LuceneRequestSearchEngine
 import java.util.Date
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -40,7 +41,9 @@ class RequestSearchFilterViewModelTest {
   fun setUp() =
       runTest(testDispatcher) {
         Dispatchers.setMain(testDispatcher)
-        vm = RequestSearchFilterViewModel()
+        vm =
+            RequestSearchFilterViewModel(
+                engineFactory = { LuceneRequestSearchEngine(dispatcher = testDispatcher) })
         requests =
             listOf(
                 req(
