@@ -9,7 +9,6 @@ import com.android.sample.model.profile.UserProfile
 import com.android.sample.model.profile.UserProfileRepository
 import com.android.sample.model.profile.UserProfileRepositoryFirestore
 import com.android.sample.model.request.Request
-import com.android.sample.model.request.RequestCache
 import com.android.sample.model.request.RequestOwnership
 import com.android.sample.model.request.RequestRepository
 import com.android.sample.model.request.RequestRepositoryFirestore
@@ -385,12 +384,13 @@ class MapViewModel(
   private fun fetchAcceptedRequest(requestId: String? = null) {
     viewModelScope.launch {
       try {
-        val requests = try {
-            requestRepository.getAllCurrentRequests()
-        } catch (e: Exception) {
-            _uiState.value = uiState.value.copy(offlineMode = true)
-            return@launch
-        }
+        val requests =
+            try {
+              requestRepository.getAllCurrentRequests()
+            } catch (e: Exception) {
+              _uiState.value = uiState.value.copy(offlineMode = true)
+              return@launch
+            }
 
         val matchingRequest = requests.firstOrNull { it.requestId == requestId }
         if (matchingRequest != null) {
@@ -433,16 +433,16 @@ class MapViewModel(
     }
   }
 
-    fun checkOnlineMode() {
-        viewModelScope.launch {
-            try {
-                requestRepository.getAllCurrentRequests()
-                _uiState.value = uiState.value.copy(offlineMode = false)
-            } catch (e: IllegalStateException) {
-                _uiState.value = uiState.value.copy(offlineMode = true)
-            }
-        }
+  fun checkOnlineMode() {
+    viewModelScope.launch {
+      try {
+        requestRepository.getAllCurrentRequests()
+        _uiState.value = uiState.value.copy(offlineMode = false)
+      } catch (e: IllegalStateException) {
+        _uiState.value = uiState.value.copy(offlineMode = true)
+      }
     }
+  }
 }
 
 class MapViewModelFactory(

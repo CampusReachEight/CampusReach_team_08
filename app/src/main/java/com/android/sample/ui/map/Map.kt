@@ -213,17 +213,16 @@ fun MapScreen(
             onZoomSettingsClick = { showZoomDialog = true })
       },
       content = { pd ->
-          if (uiState.offlineMode) {
-              Box(modifier = Modifier.fillMaxSize().padding(pd), contentAlignment = Alignment.Center) {
-                  Text(
-                      text = "Map is unavailable in offline mode",
-                      color = appPalette().error,
-                      textAlign = TextAlign.Center,
-                      modifier = Modifier.padding(16.dp)
-                  )
-              }
-              return@Scaffold
+        if (uiState.offlineMode) {
+          Box(modifier = Modifier.fillMaxSize().padding(pd), contentAlignment = Alignment.Center) {
+            Text(
+                text = "Map is unavailable in offline mode",
+                color = appPalette().error,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(16.dp))
           }
+          return@Scaffold
+        }
         MapContent(
             paddingValues = pd,
             uiState = uiState,
