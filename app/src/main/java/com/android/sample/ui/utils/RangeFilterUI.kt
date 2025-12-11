@@ -57,7 +57,10 @@ object RangeFilterTestTags {
 }
 
 object RangeFilterUIText {
-  val ResetButtonLabel = "Reset"
+  const val ResetButtonLabel = "Reset"
+  const val MinLabel = "Min"
+  const val MaxLabel = "Max"
+  const val ToLabel = "to"
 }
 
 /**
@@ -174,7 +177,7 @@ fun <T> RangeFilterPanel(rangeFacet: RangeFacet<T>, modifier: Modifier = Modifie
                       minText = newValue
                       newValue.toIntOrNull()?.let { rangeFacet.setMin(it) }
                     },
-                    label = { Text("Min") },
+                    label = { Text(RangeFilterUIText.MinLabel) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
                     modifier =
@@ -182,7 +185,7 @@ fun <T> RangeFilterPanel(rangeFacet: RangeFacet<T>, modifier: Modifier = Modifie
                             .testTag(rangeFacet.minFieldTestTag))
 
                 Text(
-                    text = "to",
+                    text = RangeFilterUIText.ToLabel,
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(horizontal = RangeFilterUIDimens.FieldSpacing))
 
@@ -192,7 +195,7 @@ fun <T> RangeFilterPanel(rangeFacet: RangeFacet<T>, modifier: Modifier = Modifie
                       maxText = newValue
                       newValue.toIntOrNull()?.let { rangeFacet.setMax(it) }
                     },
-                    label = { Text("Max") },
+                    label = { Text(RangeFilterUIText.MaxLabel) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
                     modifier =
