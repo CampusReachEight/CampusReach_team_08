@@ -1,5 +1,6 @@
 package com.android.sample.ui
 
+import android.graphics.Color
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -52,8 +53,8 @@ fun getTextFieldColors(palette: AppPalette = appPalette()): TextFieldColors {
       cursorColor = palette.accent,
       focusedBorderColor = palette.accent,
       unfocusedBorderColor = palette.onSurface,
-      focusedContainerColor = palette.surface,
-      unfocusedContainerColor = palette.surface,
+      focusedContainerColor = palette.transparent,
+      unfocusedContainerColor = palette.transparent,
       unfocusedLabelColor = palette.onSurface,
       focusedLabelColor = palette.accent)
 }
