@@ -33,6 +33,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.android.sample.ui.getFilterAndSortButtonColors
+import com.android.sample.ui.getTextFieldColors
 
 /** Constants for EnumFilterUI dimensions. */
 object EnumFilterUIDimens {
@@ -157,7 +159,9 @@ fun EnumFilterPanelSimple(
                 onValueChange = { localQuery = it },
                 modifier = Modifier.fillMaxWidth().testTag(dropdownSearchBarTestTag),
                 singleLine = true,
-                placeholder = { Text(EnumFilterUIText.SearchOptionsLabel) })
+                placeholder = { Text(EnumFilterUIText.SearchOptionsLabel) },
+                colors = getTextFieldColors()
+            )
 
             Spacer(modifier = Modifier.height(EnumFilterUIDimens.PaddingSmall))
 
@@ -214,7 +218,11 @@ fun EnumFilterButtonSimple(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-  OutlinedButton(onClick = onClick, modifier = modifier.testTag(testTag)) {
+  OutlinedButton(
+      onClick = onClick,
+      modifier = modifier.testTag(testTag),
+      colors = getFilterAndSortButtonColors()
+  ) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(EnumFilterUIDimens.RowSpacing),
         verticalAlignment = Alignment.CenterVertically) {

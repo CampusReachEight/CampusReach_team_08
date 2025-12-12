@@ -76,6 +76,8 @@ import com.android.sample.ui.utils.EnumFilterPanel
 import com.android.sample.ui.utils.RangeFilterButton
 import com.android.sample.ui.utils.RangeFilterPanel
 import com.android.sample.ui.getFilterAndSortButtonColors
+import com.android.sample.ui.getTextFieldColors
+
 object LeaderBoardScreenUILabels {
   const val OFFLINE_MODE_MESSAGE = "You are in offline mode. Displaying cached profiles."
   const val NO_PROFILES_FOUND = "No profiles found."
@@ -232,7 +234,9 @@ private fun LeaderboardFilters(
                   modifier = Modifier.size(ConstantLeaderboard.SmallIndicatorSize),
                   strokeWidth = ConstantLeaderboard.SmallIndicatorStroke)
         }
-      })
+      },
+      colors = getTextFieldColors()
+  )
 
   Spacer(modifier = Modifier.height(ConstantLeaderboard.PaddingMedium))
 
@@ -245,7 +249,7 @@ private fun LeaderboardFilters(
         SortButton(
             current = sort,
             onSelect = { searchFilterViewModel.setSortCriteria(it) },
-            modifier = Modifier.height(ConstantLeaderboard.FilterButtonHeight)
+            modifier = Modifier.height(ConstantLeaderboard.FilterButtonHeight),
         )
 
         facets.forEachIndexed { index, facet ->
@@ -257,7 +261,8 @@ private fun LeaderboardFilters(
                 openRangeId = null
                 openEnumId = if (openEnumId == facet.id) null else facet.id
               },
-              modifier = Modifier.height(ConstantLeaderboard.FilterButtonHeight))
+              modifier = Modifier.height(ConstantLeaderboard.FilterButtonHeight),
+              )
         }
 
         rangeFacets.forEach { rangeFacet ->
@@ -267,7 +272,8 @@ private fun LeaderboardFilters(
                 openEnumId = null
                 openRangeId = if (openRangeId == rangeFacet.id) null else rangeFacet.id
               },
-              modifier = Modifier.height(ConstantLeaderboard.FilterButtonHeight))
+              modifier = Modifier.height(ConstantLeaderboard.FilterButtonHeight)
+          )
         }
       }
 

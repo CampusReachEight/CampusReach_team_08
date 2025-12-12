@@ -33,6 +33,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.android.sample.ui.getFilterAndSortButtonColors
+import com.android.sample.ui.getTextFieldColors
 
 /** Constants for RangeFilterUI dimensions. */
 object RangeFilterUIDimens {
@@ -88,7 +90,11 @@ fun <T> RangeFilterButton(
         rangeFacet.title
       }
 
-  OutlinedButton(onClick = onClick, modifier = modifier.testTag(rangeFacet.buttonTestTag)) {
+  OutlinedButton(
+      onClick = onClick,
+      modifier = modifier.testTag(rangeFacet.buttonTestTag),
+      colors = getFilterAndSortButtonColors()
+      ) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(RangeFilterUIDimens.FieldSpacing),
         verticalAlignment = Alignment.CenterVertically) {
@@ -182,7 +188,9 @@ fun <T> RangeFilterPanel(rangeFacet: RangeFacet<T>, modifier: Modifier = Modifie
                     singleLine = true,
                     modifier =
                         Modifier.width(RangeFilterUIDimens.FieldWidth)
-                            .testTag(rangeFacet.minFieldTestTag))
+                            .testTag(rangeFacet.minFieldTestTag),
+                    colors = getTextFieldColors()
+                    )
 
                 Text(
                     text = RangeFilterUIText.ToLabel,
@@ -200,7 +208,9 @@ fun <T> RangeFilterPanel(rangeFacet: RangeFacet<T>, modifier: Modifier = Modifie
                     singleLine = true,
                     modifier =
                         Modifier.width(RangeFilterUIDimens.FieldWidth)
-                            .testTag(rangeFacet.maxFieldTestTag))
+                            .testTag(rangeFacet.maxFieldTestTag),
+                    colors = getTextFieldColors()
+                    )
               }
         }
       }
