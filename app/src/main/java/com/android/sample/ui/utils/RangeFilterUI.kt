@@ -1,5 +1,6 @@
 package com.android.sample.ui.utils
 
+import android.R
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,6 +12,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material3.ButtonColors
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
@@ -134,7 +137,10 @@ fun <T> RangeFilterPanel(rangeFacet: RangeFacet<T>, modifier: Modifier = Modifie
               modifier = Modifier.fillMaxWidth(),
               horizontalArrangement = Arrangement.SpaceBetween,
               verticalAlignment = Alignment.CenterVertically) {
-                Text(text = rangeFacet.title, style = MaterialTheme.typography.titleSmall)
+                Text(text = rangeFacet.title,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = appPalette().onSurface
+                )
                 TextButton(
                     onClick = {
                       rangeFacet.reset()
@@ -142,7 +148,11 @@ fun <T> RangeFilterPanel(rangeFacet: RangeFacet<T>, modifier: Modifier = Modifie
                       maxText = rangeFacet.maxBound.toString()
                     },
                     modifier =
-                        Modifier.testTag(RangeFilterTestTags.getResetButtonTag(rangeFacet.id))) {
+                        Modifier.testTag(RangeFilterTestTags.getResetButtonTag(rangeFacet.id)),
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = appPalette().accent
+                    )
+                ) {
                       Text(RangeFilterUIText.ResetButtonLabel)
                     }
               }
@@ -206,7 +216,9 @@ fun <T> RangeFilterPanel(rangeFacet: RangeFacet<T>, modifier: Modifier = Modifie
                 Text(
                     text = RangeFilterUIText.ToLabel,
                     style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(horizontal = RangeFilterUIDimens.FieldSpacing))
+                    modifier = Modifier.padding(horizontal = RangeFilterUIDimens.FieldSpacing),
+                    color = appPalette().onSurface
+                )
 
                 OutlinedTextField(
                     value = maxText,
