@@ -27,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.model.profile.UserProfile
@@ -235,14 +236,15 @@ fun FollowButton(isFollowing: Boolean, onToggle: () -> Unit) {
   ElevatedButton(
       onClick = onToggle,
       modifier = Modifier.testTag(tag),
-      colors = ButtonDefaults.elevatedButtonColors(
-          containerColor = appPalette().onAccent,
-          contentColor = appPalette().accent
-      )
-
-  ) {
-    Text(text = if (isFollowing) UNFOLLOW else FOLLOW)
-  }
+      colors =
+          ButtonDefaults.elevatedButtonColors(
+              containerColor = appPalette().onAccent, contentColor = appPalette().accent)) {
+        Text(
+            text = if (isFollowing) UNFOLLOW else FOLLOW,
+            maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Ellipsis)
+      }
 }
 
 private const val ZERO = 0
