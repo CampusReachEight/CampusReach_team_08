@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedButton
@@ -231,7 +232,15 @@ fun FollowButton(isFollowing: Boolean, onToggle: () -> Unit) {
   val tag =
       if (isFollowing) PublicProfileTestTags.UNFOLLOW_BUTTON
       else PublicProfileTestTags.FOLLOW_BUTTON
-  ElevatedButton(onClick = onToggle, modifier = Modifier.testTag(tag)) {
+  ElevatedButton(
+      onClick = onToggle,
+      modifier = Modifier.testTag(tag),
+      colors = ButtonDefaults.elevatedButtonColors(
+          containerColor = appPalette().onAccent,
+          contentColor = appPalette().accent
+      )
+
+  ) {
     Text(text = if (isFollowing) UNFOLLOW else FOLLOW)
   }
 }
