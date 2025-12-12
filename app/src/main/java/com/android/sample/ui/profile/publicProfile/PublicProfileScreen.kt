@@ -151,7 +151,7 @@ private fun PublicProfileScrollableContent(
 
 private const val UNKNOWN = "Unknown"
 private const val NONE = "None"
-private const val MAX_LENGTH = 25
+private const val MAX_LENGTH = 20
 
 @Composable
 fun PublicProfileHeader(
