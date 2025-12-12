@@ -18,6 +18,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RangeSlider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -35,6 +36,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.android.sample.ui.getFilterAndSortButtonColors
 import com.android.sample.ui.getTextFieldColors
+import com.android.sample.ui.theme.appPalette
 
 /** Constants for RangeFilterUI dimensions. */
 object RangeFilterUIDimens {
@@ -124,6 +126,7 @@ fun <T> RangeFilterPanel(rangeFacet: RangeFacet<T>, modifier: Modifier = Modifie
       shape = MaterialTheme.shapes.medium,
       tonalElevation = RangeFilterUIDimens.SurfaceTonalElevation,
       shadowElevation = RangeFilterUIDimens.SurfaceShadowElevation,
+      color = appPalette().surface,
       modifier = modifier.testTag(rangeFacet.panelTestTag)) {
         Column(modifier = Modifier.fillMaxWidth().padding(RangeFilterUIDimens.PanelPadding)) {
           // Title row with reset button
@@ -167,7 +170,15 @@ fun <T> RangeFilterPanel(rangeFacet: RangeFacet<T>, modifier: Modifier = Modifie
                     modifier =
                         Modifier.fillMaxWidth()
                             .height(RangeFilterUIDimens.SliderHeight)
-                            .testTag(rangeFacet.sliderTestTag))
+                            .testTag(rangeFacet.sliderTestTag),
+                    colors = SliderDefaults.colors(
+                        thumbColor = appPalette().accent,
+                        activeTrackColor = appPalette().accent,
+                        inactiveTrackColor = appPalette().secondary,
+                        activeTickColor = appPalette().secondary,
+                        inactiveTickColor = appPalette().accent
+                    )
+                )
               }
 
           Spacer(modifier = Modifier.height(RangeFilterUIDimens.PanelVerticalSpacing))
