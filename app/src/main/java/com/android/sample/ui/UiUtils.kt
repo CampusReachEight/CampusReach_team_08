@@ -1,5 +1,7 @@
 package com.android.sample.ui
 
+import androidx.compose.material3.ButtonColors
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.TextFieldColors
 import androidx.compose.runtime.Composable
@@ -54,4 +56,14 @@ fun getTextFieldColors(palette: AppPalette = appPalette()): TextFieldColors {
       unfocusedContainerColor = palette.surface,
       unfocusedLabelColor = palette.onSurface,
       focusedLabelColor = palette.accent)
+}
+
+@Composable
+fun getFilterAndSortButtonColors(palette: AppPalette = appPalette()): ButtonColors {
+    return ButtonDefaults.buttonColors(
+        containerColor = palette.accent,
+        contentColor = palette.onAccent,
+        disabledContainerColor = palette.secondary,
+        disabledContentColor = palette.onPrimary
+    )
 }

@@ -75,7 +75,7 @@ import com.android.sample.ui.utils.EnumFilterButton
 import com.android.sample.ui.utils.EnumFilterPanel
 import com.android.sample.ui.utils.RangeFilterButton
 import com.android.sample.ui.utils.RangeFilterPanel
-
+import com.android.sample.ui.getFilterAndSortButtonColors
 object LeaderBoardScreenUILabels {
   const val OFFLINE_MODE_MESSAGE = "You are in offline mode. Displaying cached profiles."
   const val NO_PROFILES_FOUND = "No profiles found."
@@ -245,7 +245,8 @@ private fun LeaderboardFilters(
         SortButton(
             current = sort,
             onSelect = { searchFilterViewModel.setSortCriteria(it) },
-            modifier = Modifier.height(ConstantLeaderboard.FilterButtonHeight))
+            modifier = Modifier.height(ConstantLeaderboard.FilterButtonHeight)
+        )
 
         facets.forEachIndexed { index, facet ->
           val selectedCount = selectedSets[index].value.size
@@ -309,11 +310,13 @@ private fun SortButton(
         contentPadding =
             androidx.compose.foundation.layout.PaddingValues(
                 horizontal = ConstantLeaderboard.SortButtonPaddingHorizontal,
-                vertical = ConstantLeaderboard.SortButtonPaddingVertical)) {
+                vertical = ConstantLeaderboard.SortButtonPaddingVertical),
+        colors = getFilterAndSortButtonColors()
+    ) {
           Text(current.displayLabel())
           Spacer(Modifier.width(ConstantLeaderboard.FilterRowSpacingSmall))
           Icon(Icons.Filled.ArrowDropDown, contentDescription = null)
-        }
+    }
 
     DropdownMenu(
         expanded = expanded,
