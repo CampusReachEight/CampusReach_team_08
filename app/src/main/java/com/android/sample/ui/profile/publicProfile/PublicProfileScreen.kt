@@ -42,7 +42,6 @@ import com.android.sample.ui.profile.composables.ProfileInformation
 import com.android.sample.ui.profile.composables.ProfileLoadingBuffer
 import com.android.sample.ui.profile.composables.ProfileStats
 import com.android.sample.ui.profile.composables.ProfileTopBar
-import com.android.sample.ui.theme.AppColors
 import com.android.sample.ui.theme.AppPalette
 import com.android.sample.ui.theme.appPalette
 
@@ -154,6 +153,8 @@ private fun PublicProfileScrollableContent(
 private const val UNKNOWN = "Unknown"
 private const val NONE = "None"
 private const val MAX_LENGTH = 20
+private const val ONE_LINE = 1
+private const val BUTTON_WIDTH = 96
 
 @Composable
 fun PublicProfileHeader(
@@ -165,7 +166,7 @@ fun PublicProfileHeader(
     uiState: PublicProfileUiState
 ) {
   val accent = palette.accent
-  val textColor = AppColors.WhiteColor
+  val textColor = palette.onAccent
   val maxNameLength = MAX_LENGTH
   val uiUtils = com.android.sample.ui.UiUtils()
 
@@ -204,19 +205,32 @@ fun PublicProfileHeader(
                     Modifier.size(ProfileDimens.ProfilePicture)
                         .testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_PROFILE_PICTURE))
             Spacer(modifier = Modifier.width(ProfileDimens.HeaderSpacer))
-            Column {
+
+            // Column takes remaining space so texts will ellipsize based on available width
+            Column(modifier = Modifier.weight(1f)) {
               Text(
                   text = displayName,
                   style = MaterialTheme.typography.titleMedium,
                   color = textColor,
-                  modifier = Modifier.testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_NAME))
+                  modifier =
+                      Modifier.fillMaxWidth()
+                          .testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_NAME),
+                  maxLines = ONE_LINE,
+                  softWrap = false,
+                  overflow = TextOverflow.Ellipsis)
               Text(
                   text = sectionLabel,
                   style = MaterialTheme.typography.bodyMedium,
                   color = textColor,
-                  modifier = Modifier.testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_EMAIL))
+                  modifier =
+                      Modifier.fillMaxWidth()
+                          .testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_NAME),
+                  maxLines = ONE_LINE,
+                  softWrap = false,
+                  overflow = TextOverflow.Ellipsis)
             }
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.width(ProfileDimens.HeaderSpacer))
+
             if (!uiState.offlineMode) {
               FollowButton(isFollowing = isFollowing, onToggle = onFollowToggle)
             }
