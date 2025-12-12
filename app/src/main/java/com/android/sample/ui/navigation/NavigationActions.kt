@@ -1,6 +1,7 @@
 package com.android.sample.ui.navigation
 
 import androidx.navigation.NavHostController
+import com.android.sample.ui.profile.follow.FollowListType
 
 private const val REQUEST_ID = "requestId"
 
@@ -68,6 +69,15 @@ sealed class Screen(
     companion object {
       const val ARG_USER_ID = "userId"
       const val route = "profile/public/{$ARG_USER_ID}"
+    }
+  }
+
+  data class FollowList(val userId: String, val listType: FollowListType) :
+      Screen(route = "follow_list/$userId/${listType.name}") {
+    companion object {
+      const val ARG_USER_ID = "userId"
+      const val ARG_LIST_TYPE = "listType"
+      const val route = "follow_list/{$ARG_USER_ID}/{$ARG_LIST_TYPE}"
     }
   }
 }
