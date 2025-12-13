@@ -59,6 +59,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.model.profile.UserProfile
 import com.android.sample.model.profile.UserProfileCache
+import com.android.sample.ui.UiUtils
 import com.android.sample.ui.leaderboard.LeaderboardAddOns.crown
 import com.android.sample.ui.leaderboard.LeaderboardAddOns.cutiePatootie
 import com.android.sample.ui.leaderboard.LeaderboardBadgeThemes.CutieColor
@@ -190,6 +191,7 @@ fun LeaderboardScreen(
                   else -> {
                     LeaderboardList(
                         profiles = displayedProfiles,
+                        positions = state.positions,
                         profileRepository = leaderboardViewModel.profileRepository)
                   }
                 }
@@ -339,6 +341,7 @@ private fun SortButton(
 @Composable
 private fun LeaderboardList(
     profiles: List<UserProfile>,
+    positions: Map<String, Int>,
     profileRepository: com.android.sample.model.profile.UserProfileRepository
 ) {
   LazyColumn(
@@ -349,10 +352,10 @@ private fun LeaderboardList(
       verticalArrangement = Arrangement.spacedBy(ConstantLeaderboard.ListItemSpacing)) {
         itemsIndexed(items = profiles, key = { _, item -> item.id }) { index, profile ->
           Box(modifier = Modifier.testTag(LeaderboardTestTags.LEADERBOARD_CARD)) {
+            val actualPosition =
+                positions[profile.id] ?: (index + ConstantLeaderboard.ListIndexOffset)
             LeaderboardCard(
-                position = index + ConstantLeaderboard.ListIndexOffset,
-                profile = profile,
-                profileRepository = profileRepository)
+                position = actualPosition, profile = profile, profileRepository = profileRepository)
           }
         }
       }
@@ -378,12 +381,11 @@ private fun LeaderboardCard(
         Row(
             modifier = Modifier.fillMaxSize().padding(ConstantLeaderboard.CardInnerPadding),
             verticalAlignment = Alignment.CenterVertically) {
-              Medal(position, badgeTheme)
+              PositionWithMedal(position, badgeTheme)
 
               Spacer(modifier = Modifier.width(ConstantLeaderboard.RowSpacing))
 
               ProfilePictureWithAddon(
-                  position = position,
                   profile = profile,
                   badgeTheme = badgeTheme,
                   addon = addon,
@@ -400,8 +402,11 @@ private fun LeaderboardCard(
                     maxLines = ConstantLeaderboard.SingleLineMax,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.testTag(LeaderboardTestTags.CARD_NAME))
+                val uiUtils = UiUtils()
+                val truncatedSection =
+                    uiUtils.ellipsizeWithMiddle(sectionLabel(profile.section), maxLength = 25)
                 Text(
-                    text = sectionLabel(profile.section),
+                    text = truncatedSection,
                     style = MaterialTheme.typography.bodySmall,
                     color = appPalette().text.copy(alpha = ConstantLeaderboard.SecondaryTextAlpha),
                     modifier = Modifier.testTag(LeaderboardTestTags.CARD_SECTION))
@@ -423,22 +428,37 @@ private fun LeaderboardCard(
 }
 
 @Composable
-private fun Medal(position: Int, theme: BadgeTheme?) {
-  if (theme == null) {
-    Spacer(modifier = Modifier.width(ConstantLeaderboard.MedalIconSize))
-    return
-  }
+private fun PositionWithMedal(position: Int, theme: BadgeTheme?) {
+  Column(
+      horizontalAlignment = Alignment.CenterHorizontally,
+      modifier = Modifier.width(ConstantLeaderboard.MedalIconSize)) {
+        // Position display above medal
+        Text(
+            text = "#$position",
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.Bold,
+            color = theme?.primaryColor ?: appPalette().accent,
+            modifier = Modifier.testTag(LeaderboardTestTags.CARD_POSITION))
+        Spacer(modifier = Modifier.height(ConstantLeaderboard.PaddingSmall))
 
-  val base =
-      Modifier.size(ConstantLeaderboard.MedalIconSize).clip(CircleShape).background(theme.haloColor)
-  val tagged = theme.testTag?.let { base.testTag(it) } ?: base
+        // Medal or spacer
+        if (theme == null) {
+          Spacer(modifier = Modifier.size(ConstantLeaderboard.MedalIconSize))
+        } else {
+          val base =
+              Modifier.size(ConstantLeaderboard.MedalIconSize)
+                  .clip(CircleShape)
+                  .background(theme.haloColor)
+          val tagged = theme.testTag?.let { base.testTag(it) } ?: base
 
-  Box(modifier = tagged, contentAlignment = Alignment.Center) {
-    Icon(
-        imageVector = theme.icon,
-        contentDescription = "${LeaderBoardScreenUILabels.MEDAL_DESCRIPTION} $position",
-        tint = theme.primaryColor)
-  }
+          Box(modifier = tagged, contentAlignment = Alignment.Center) {
+            Icon(
+                imageVector = theme.icon,
+                contentDescription = "${LeaderBoardScreenUILabels.MEDAL_DESCRIPTION} $position",
+                tint = theme.primaryColor)
+          }
+        }
+      }
 }
 
 @Composable
@@ -477,7 +497,6 @@ private fun ErrorDialog(message: String, onDismiss: () -> Unit) {
 
 @Composable
 private fun ProfilePictureWithAddon(
-    position: Int,
     profile: UserProfile,
     badgeTheme: BadgeTheme?,
     addon: ProfileAddon?,
@@ -496,7 +515,7 @@ private fun ProfilePictureWithAddon(
 
     when (addon) {
       null -> Unit
-      LeaderboardAddOns.crown -> {
+      crown -> {
         Icon(
             imageVector = addon.image,
             contentDescription = LeaderBoardScreenUILabels.CROWN_DESCRIPTION,
@@ -506,7 +525,7 @@ private fun ProfilePictureWithAddon(
                     .offset(y = ConstantLeaderboard.CrownOffsetY)
                     .size(addon.size))
       }
-      LeaderboardAddOns.cutiePatootie -> {
+      cutiePatootie -> {
         Icon(
             imageVector = addon.image,
             contentDescription = LeaderBoardScreenUILabels.CUTIE_PATOOTIE_DESCRIPTION,

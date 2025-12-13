@@ -137,5 +137,37 @@ fun ProfileStats(
             onTopClick = onFollowersClick,
             onBottomClick = onFollowingClick,
             palette = palette)
+
+        if (state.leaderboardPosition != null) {
+          // Custom rank card with "#" prefix
+          Card(
+              modifier = Modifier.weight(WEIGHT_1F).height(ProfileDimens.StatCardHeight),
+              colors = CardDefaults.cardColors(containerColor = palette.secondary),
+              elevation =
+                  CardDefaults.cardElevation(defaultElevation = ProfileDimens.CardElevation)) {
+                Column(
+                    modifier =
+                        Modifier.fillMaxSize()
+                            .padding(
+                                vertical = ProfileDimens.StatCardVerticalPadding,
+                                horizontal = ProfileDimens.StatCardHorizontalPadding),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center) {
+                      Text(
+                          text = "Rank",
+                          style = MaterialTheme.typography.bodySmall,
+                          color = palette.text,
+                          textAlign = TextAlign.Center)
+                      Spacer(modifier = Modifier.height(ProfileDimens.StatCardSpacer))
+                      Text(
+                          text = "#${state.leaderboardPosition}",
+                          style = MaterialTheme.typography.titleLarge,
+                          fontWeight = FontWeight.Bold,
+                          color = palette.accent,
+                          textAlign = TextAlign.Center,
+                          modifier = Modifier.testTag(ProfileTestTags.PROFILE_STAT_TOP_RANK))
+                    }
+              }
+        }
       }
 }

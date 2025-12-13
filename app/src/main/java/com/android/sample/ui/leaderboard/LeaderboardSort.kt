@@ -12,9 +12,7 @@ import java.util.Comparator
 enum class LeaderboardSort(val comparator: Comparator<UserProfile>) {
   /** Sort by kudos count, highest first. Default for leaderboard ranking. */
   KUDOS_DESC(
-      compareByDescending<UserProfile> { it.kudos }
-          .thenBy { it.name.lowercase() }
-          .thenBy { it.id }),
+      compareByDescending<UserProfile> { it.kudos }.thenBy { it.helpReceived }.thenBy { it.id }),
 
   /** Sort by kudos count, lowest first. */
   KUDOS_ASC(compareBy<UserProfile> { it.kudos }.thenBy { it.name.lowercase() }.thenBy { it.id }),
