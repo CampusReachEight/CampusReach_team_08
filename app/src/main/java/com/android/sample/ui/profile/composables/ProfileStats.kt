@@ -154,6 +154,11 @@ fun ProfileStats(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center) {
                       Text(
+                          text = "Helper's",
+                          style = MaterialTheme.typography.bodySmall,
+                          color = palette.text,
+                          textAlign = TextAlign.Center)
+                      Text(
                           text = "Rank",
                           style = MaterialTheme.typography.bodySmall,
                           color = palette.text,

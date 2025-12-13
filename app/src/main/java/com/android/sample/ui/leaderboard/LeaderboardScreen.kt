@@ -59,7 +59,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.model.profile.UserProfile
 import com.android.sample.model.profile.UserProfileCache
-import com.android.sample.ui.UiUtils
 import com.android.sample.ui.leaderboard.LeaderboardAddOns.crown
 import com.android.sample.ui.leaderboard.LeaderboardAddOns.cutiePatootie
 import com.android.sample.ui.leaderboard.LeaderboardBadgeThemes.CutieColor
@@ -383,8 +382,6 @@ private fun LeaderboardCard(
             verticalAlignment = Alignment.CenterVertically) {
               PositionWithMedal(position, badgeTheme)
 
-              Spacer(modifier = Modifier.width(ConstantLeaderboard.RowSpacing))
-
               ProfilePictureWithAddon(
                   profile = profile,
                   badgeTheme = badgeTheme,
@@ -396,19 +393,25 @@ private fun LeaderboardCard(
               Column(modifier = Modifier.weight(ConstantLeaderboard.WeightFill)) {
                 // Main identity block stretches to take available horizontal space
                 Text(
-                    text = "${profile.name} ${profile.lastName}",
-                    style = MaterialTheme.typography.titleMedium,
+                    text = profile.name,
+                    style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
                     maxLines = ConstantLeaderboard.SingleLineMax,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.testTag(LeaderboardTestTags.CARD_NAME))
-                val uiUtils = UiUtils()
-                val truncatedSection =
-                    uiUtils.ellipsizeWithMiddle(sectionLabel(profile.section), maxLength = 25)
                 Text(
-                    text = truncatedSection,
+                    text = profile.lastName,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = ConstantLeaderboard.SingleLineMax,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.testTag(LeaderboardTestTags.CARD_NAME))
+                Text(
+                    text = sectionLabel(profile.section),
                     style = MaterialTheme.typography.bodySmall,
                     color = appPalette().text.copy(alpha = ConstantLeaderboard.SecondaryTextAlpha),
+                    maxLines = ConstantLeaderboard.TwoLineMax,
+                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.testTag(LeaderboardTestTags.CARD_SECTION))
               }
 
