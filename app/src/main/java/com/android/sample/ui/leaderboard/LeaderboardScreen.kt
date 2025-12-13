@@ -59,6 +59,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.model.profile.UserProfile
 import com.android.sample.model.profile.UserProfileCache
+import com.android.sample.ui.getFilterAndSortButtonColors
+import com.android.sample.ui.getTextFieldColors
 import com.android.sample.ui.leaderboard.LeaderboardAddOns.crown
 import com.android.sample.ui.leaderboard.LeaderboardAddOns.cutiePatootie
 import com.android.sample.ui.leaderboard.LeaderboardBadgeThemes.CutieColor
@@ -75,8 +77,6 @@ import com.android.sample.ui.utils.EnumFilterButton
 import com.android.sample.ui.utils.EnumFilterPanel
 import com.android.sample.ui.utils.RangeFilterButton
 import com.android.sample.ui.utils.RangeFilterPanel
-import com.android.sample.ui.getFilterAndSortButtonColors
-import com.android.sample.ui.getTextFieldColors
 
 object LeaderBoardScreenUILabels {
   const val OFFLINE_MODE_MESSAGE = "You are in offline mode. Displaying cached profiles."
@@ -235,8 +235,7 @@ private fun LeaderboardFilters(
                   strokeWidth = ConstantLeaderboard.SmallIndicatorStroke)
         }
       },
-      colors = getTextFieldColors()
-  )
+      colors = getTextFieldColors())
 
   Spacer(modifier = Modifier.height(ConstantLeaderboard.PaddingMedium))
 
@@ -262,7 +261,7 @@ private fun LeaderboardFilters(
                 openEnumId = if (openEnumId == facet.id) null else facet.id
               },
               modifier = Modifier.height(ConstantLeaderboard.FilterButtonHeight),
-              )
+          )
         }
 
         rangeFacets.forEach { rangeFacet ->
@@ -272,8 +271,7 @@ private fun LeaderboardFilters(
                 openEnumId = null
                 openRangeId = if (openRangeId == rangeFacet.id) null else rangeFacet.id
               },
-              modifier = Modifier.height(ConstantLeaderboard.FilterButtonHeight)
-          )
+              modifier = Modifier.height(ConstantLeaderboard.FilterButtonHeight))
         }
       }
 
@@ -317,12 +315,11 @@ private fun SortButton(
             androidx.compose.foundation.layout.PaddingValues(
                 horizontal = ConstantLeaderboard.SortButtonPaddingHorizontal,
                 vertical = ConstantLeaderboard.SortButtonPaddingVertical),
-        colors = getFilterAndSortButtonColors()
-    ) {
+        colors = getFilterAndSortButtonColors()) {
           Text(current.displayLabel())
           Spacer(Modifier.width(ConstantLeaderboard.FilterRowSpacingSmall))
           Icon(Icons.Filled.ArrowDropDown, contentDescription = null)
-    }
+        }
 
     DropdownMenu(
         expanded = expanded,
@@ -409,8 +406,7 @@ private fun LeaderboardCard(
                     maxLines = ConstantLeaderboard.SingleLineMax,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.testTag(LeaderboardTestTags.CARD_NAME),
-                    color = appPalette().onSurface
-                    )
+                    color = appPalette().onSurface)
                 Text(
                     text = sectionLabel(profile.section),
                     style = MaterialTheme.typography.bodySmall,
@@ -418,8 +414,7 @@ private fun LeaderboardCard(
                     modifier = Modifier.testTag(LeaderboardTestTags.CARD_SECTION),
                     maxLines = ConstantLeaderboard.SingleLineMax,
                     softWrap = true,
-                    overflow = TextOverflow.Ellipsis
-                )
+                    overflow = TextOverflow.Ellipsis)
               }
 
               Spacer(modifier = Modifier.width(ConstantLeaderboard.RowSpacing))
@@ -470,8 +465,7 @@ private fun StatsColumn(label: String, value: Int, testTag: String) {
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.testTag(testTag),
-            color = appPalette().onSurface
-        )
+            color = appPalette().onSurface)
       }
 }
 

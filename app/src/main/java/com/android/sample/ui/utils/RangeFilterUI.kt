@@ -1,6 +1,5 @@
 package com.android.sample.ui.utils
 
-import android.R
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,7 +11,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -98,15 +96,14 @@ fun <T> RangeFilterButton(
   OutlinedButton(
       onClick = onClick,
       modifier = modifier.testTag(rangeFacet.buttonTestTag),
-      colors = getFilterAndSortButtonColors()
-      ) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(RangeFilterUIDimens.FieldSpacing),
-        verticalAlignment = Alignment.CenterVertically) {
-          Text(label)
-          Icon(imageVector = Icons.Filled.ArrowDropDown, contentDescription = null)
-        }
-  }
+      colors = getFilterAndSortButtonColors()) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(RangeFilterUIDimens.FieldSpacing),
+            verticalAlignment = Alignment.CenterVertically) {
+              Text(label)
+              Icon(imageVector = Icons.Filled.ArrowDropDown, contentDescription = null)
+            }
+      }
 }
 
 /**
@@ -137,10 +134,10 @@ fun <T> RangeFilterPanel(rangeFacet: RangeFacet<T>, modifier: Modifier = Modifie
               modifier = Modifier.fillMaxWidth(),
               horizontalArrangement = Arrangement.SpaceBetween,
               verticalAlignment = Alignment.CenterVertically) {
-                Text(text = rangeFacet.title,
+                Text(
+                    text = rangeFacet.title,
                     style = MaterialTheme.typography.titleSmall,
-                    color = appPalette().onSurface
-                )
+                    color = appPalette().onSurface)
                 TextButton(
                     onClick = {
                       rangeFacet.reset()
@@ -149,10 +146,7 @@ fun <T> RangeFilterPanel(rangeFacet: RangeFacet<T>, modifier: Modifier = Modifie
                     },
                     modifier =
                         Modifier.testTag(RangeFilterTestTags.getResetButtonTag(rangeFacet.id)),
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = appPalette().accent
-                    )
-                ) {
+                    colors = ButtonDefaults.textButtonColors(contentColor = appPalette().accent)) {
                       Text(RangeFilterUIText.ResetButtonLabel)
                     }
               }
@@ -181,14 +175,13 @@ fun <T> RangeFilterPanel(rangeFacet: RangeFacet<T>, modifier: Modifier = Modifie
                         Modifier.fillMaxWidth()
                             .height(RangeFilterUIDimens.SliderHeight)
                             .testTag(rangeFacet.sliderTestTag),
-                    colors = SliderDefaults.colors(
-                        thumbColor = appPalette().accent,
-                        activeTrackColor = appPalette().accent,
-                        inactiveTrackColor = appPalette().secondary,
-                        activeTickColor = appPalette().secondary,
-                        inactiveTickColor = appPalette().accent
-                    )
-                )
+                    colors =
+                        SliderDefaults.colors(
+                            thumbColor = appPalette().accent,
+                            activeTrackColor = appPalette().accent,
+                            inactiveTrackColor = appPalette().secondary,
+                            activeTickColor = appPalette().secondary,
+                            inactiveTickColor = appPalette().accent))
               }
 
           Spacer(modifier = Modifier.height(RangeFilterUIDimens.PanelVerticalSpacing))
@@ -210,15 +203,13 @@ fun <T> RangeFilterPanel(rangeFacet: RangeFacet<T>, modifier: Modifier = Modifie
                     modifier =
                         Modifier.width(RangeFilterUIDimens.FieldWidth)
                             .testTag(rangeFacet.minFieldTestTag),
-                    colors = getTextFieldColors()
-                    )
+                    colors = getTextFieldColors())
 
                 Text(
                     text = RangeFilterUIText.ToLabel,
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(horizontal = RangeFilterUIDimens.FieldSpacing),
-                    color = appPalette().onSurface
-                )
+                    color = appPalette().onSurface)
 
                 OutlinedTextField(
                     value = maxText,
@@ -232,8 +223,7 @@ fun <T> RangeFilterPanel(rangeFacet: RangeFacet<T>, modifier: Modifier = Modifie
                     modifier =
                         Modifier.width(RangeFilterUIDimens.FieldWidth)
                             .testTag(rangeFacet.maxFieldTestTag),
-                    colors = getTextFieldColors()
-                    )
+                    colors = getTextFieldColors())
               }
         }
       }

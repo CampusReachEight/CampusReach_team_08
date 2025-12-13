@@ -162,8 +162,7 @@ fun EnumFilterPanelSimple(
                 modifier = Modifier.fillMaxWidth().testTag(dropdownSearchBarTestTag),
                 singleLine = true,
                 placeholder = { Text(EnumFilterUIText.SearchOptionsLabel) },
-                colors = getTextFieldColors()
-            )
+                colors = getTextFieldColors())
 
             Spacer(modifier = Modifier.height(EnumFilterUIDimens.PaddingSmall))
 
@@ -191,11 +190,10 @@ fun EnumFilterPanelSimple(
                         Checkbox(
                             checked = isChecked,
                             onCheckedChange = null,
-                            colors = CheckboxDefaults.colors(
-                                uncheckedColor = appPalette().onSurface,
-                                checkedColor = appPalette().accent
-                            )
-                        )
+                            colors =
+                                CheckboxDefaults.colors(
+                                    uncheckedColor = appPalette().onSurface,
+                                    checkedColor = appPalette().accent))
                         Spacer(modifier = Modifier.width(EnumFilterUIDimens.RowSpacing))
                         Text(text = labelOf(v), color = appPalette().onSurface)
                         Spacer(modifier = Modifier.weight(1f))
@@ -230,14 +228,13 @@ fun EnumFilterButtonSimple(
   OutlinedButton(
       onClick = onClick,
       modifier = modifier.testTag(testTag),
-      colors = getFilterAndSortButtonColors()
-  ) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(EnumFilterUIDimens.RowSpacing),
-        verticalAlignment = Alignment.CenterVertically) {
-          val label = if (selectedCount > 0) "$title ($selectedCount)" else title
-          Text(label)
-          Icon(imageVector = Icons.Filled.ArrowDropDown, contentDescription = null)
-        }
-  }
+      colors = getFilterAndSortButtonColors()) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(EnumFilterUIDimens.RowSpacing),
+            verticalAlignment = Alignment.CenterVertically) {
+              val label = if (selectedCount > 0) "$title ($selectedCount)" else title
+              Text(label)
+              Icon(imageVector = Icons.Filled.ArrowDropDown, contentDescription = null)
+            }
+      }
 }

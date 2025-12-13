@@ -23,7 +23,8 @@ interface AppPalette {
   val onSurface: Color
   val onAccent: Color
 
-  val transparent: Color get() = Color(0x00000000)
+  val transparent: Color
+    get() = Color(0x00000000)
 
   fun getRequestTypeColor(type: RequestType): Color
 
