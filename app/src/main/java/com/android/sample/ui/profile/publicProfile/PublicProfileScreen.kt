@@ -155,6 +155,7 @@ private const val NONE = "None"
 private const val MAX_LENGTH = 20
 private const val ONE_LINE = 1
 private const val BUTTON_WIDTH = 96
+private const val WEIGHT = 1f
 
 @Composable
 fun PublicProfileHeader(
@@ -186,8 +187,6 @@ fun PublicProfileHeader(
         NONE
       }
 
-  val displayName = uiUtils.ellipsizeWithMiddle(fullName, maxLength = maxNameLength)
-
   Card(
       modifier =
           modifier
@@ -207,9 +206,9 @@ fun PublicProfileHeader(
             Spacer(modifier = Modifier.width(ProfileDimens.HeaderSpacer))
 
             // Column takes remaining space so texts will ellipsize based on available width
-            Column(modifier = Modifier.weight(1f)) {
+            Column(modifier = Modifier.weight(WEIGHT)) {
               Text(
-                  text = displayName,
+                  text = fullName,
                   style = MaterialTheme.typography.titleMedium,
                   color = textColor,
                   modifier =
@@ -217,14 +216,21 @@ fun PublicProfileHeader(
                           .testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_NAME),
                   maxLines = ONE_LINE,
                   softWrap = false,
-                  overflow = TextOverflow.Ellipsis)
+                  overflow = TextOverflow.Ellipsis
+              )
               Text(
-                  text = sectionLabel,
+                  text =
+                      if (profile?.email != null) {
+                        uiUtils.ellipsizeWithMiddle(
+                            profile.email, maxLength = maxNameLength, keepSuffixLength = 10)
+                      } else {
+                        UNKNOWN
+                      },
                   style = MaterialTheme.typography.bodyMedium,
                   color = textColor,
                   modifier =
                       Modifier.fillMaxWidth()
-                          .testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_NAME),
+                          .testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_EMAIL),
                   maxLines = ONE_LINE,
                   softWrap = false,
                   overflow = TextOverflow.Ellipsis)
@@ -255,7 +261,7 @@ fun FollowButton(isFollowing: Boolean, onToggle: () -> Unit) {
               containerColor = appPalette().onAccent, contentColor = appPalette().accent)) {
         Text(
             text = if (isFollowing) UNFOLLOW else FOLLOW,
-            maxLines = 1,
+            maxLines = ONE_LINE,
             softWrap = false,
             overflow = TextOverflow.Ellipsis)
       }
@@ -314,10 +320,4 @@ fun mapUserProfileToProfileState(userProfile: UserProfile?): ProfileState {
           },
       isLoggingOut = false,
       isEditMode = false)
-}
-
-@Preview
-@Composable
-fun PublicProfileScreenPreview() {
-  PublicProfileScreen()
 }
