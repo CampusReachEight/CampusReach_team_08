@@ -19,6 +19,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
+import com.android.sample.ui.leaderboard.LeaderboardBadgeThemes.forRank
 import com.android.sample.ui.profile.ProfileDimens
 import com.android.sample.ui.profile.ProfileState
 import com.android.sample.ui.profile.ProfileTestTags
@@ -104,6 +106,42 @@ fun StatGroupCard(
 }
 
 @Composable
+fun PositionCard(state: ProfileState, palette: AppPalette = appPalette(), modifier: Modifier) {
+  // Custom rank card with "#" prefix
+  Card(
+      modifier = modifier,
+      colors = CardDefaults.cardColors(containerColor = palette.secondary),
+      elevation = CardDefaults.cardElevation(defaultElevation = ProfileDimens.CardElevation)) {
+        Column(
+            modifier =
+                Modifier.fillMaxSize()
+                    .padding(
+                        vertical = ProfileDimens.StatCardVerticalPadding,
+                        horizontal = ProfileDimens.StatCardHorizontalPadding),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center) {
+              Text(
+                  text = "Helper's\nRank",
+                  style = MaterialTheme.typography.bodySmall,
+                  color = palette.text,
+                  textAlign = TextAlign.Center)
+              Spacer(modifier = Modifier.height(ProfileDimens.StatCardSpacer))
+              Text(
+                  text = "#${state.leaderboardPosition}",
+                  style =
+                      MaterialTheme.typography.titleLarge.copy(
+                          textDecoration = TextDecoration.Underline),
+                  fontWeight = FontWeight.Bold,
+                  color =
+                      forRank(state.leaderboardPosition ?: Int.MAX_VALUE)?.primaryColor
+                          ?: palette.accent,
+                  textAlign = TextAlign.Center,
+                  modifier = Modifier.testTag(ProfileTestTags.PROFILE_STAT_TOP_RANK))
+            }
+      }
+}
+
+@Composable
 fun ProfileStats(
     state: ProfileState,
     onFollowersClick: (() -> Unit)? = null,
@@ -119,7 +157,7 @@ fun ProfileStats(
         StatGroupCard(
             labelTop = "Kudos",
             topValue = state.kudosReceived,
-            labelBottom = "Help\u00A0Received",
+            labelBottom = "Help\nReceived",
             bottomValue = state.helpReceived,
             modifier = Modifier.weight(WEIGHT_1F),
             topTag = ProfileTestTags.PROFILE_STAT_TOP_KUDOS,
@@ -139,40 +177,10 @@ fun ProfileStats(
             palette = palette)
 
         if (state.leaderboardPosition != null) {
-          // Custom rank card with "#" prefix
-          Card(
-              modifier = Modifier.weight(WEIGHT_1F).height(ProfileDimens.StatCardHeight),
-              colors = CardDefaults.cardColors(containerColor = palette.secondary),
-              elevation =
-                  CardDefaults.cardElevation(defaultElevation = ProfileDimens.CardElevation)) {
-                Column(
-                    modifier =
-                        Modifier.fillMaxSize()
-                            .padding(
-                                vertical = ProfileDimens.StatCardVerticalPadding,
-                                horizontal = ProfileDimens.StatCardHorizontalPadding),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center) {
-                      Text(
-                          text = "Helper's",
-                          style = MaterialTheme.typography.bodySmall,
-                          color = palette.text,
-                          textAlign = TextAlign.Center)
-                      Text(
-                          text = "Rank",
-                          style = MaterialTheme.typography.bodySmall,
-                          color = palette.text,
-                          textAlign = TextAlign.Center)
-                      Spacer(modifier = Modifier.height(ProfileDimens.StatCardSpacer))
-                      Text(
-                          text = "#${state.leaderboardPosition}",
-                          style = MaterialTheme.typography.titleLarge,
-                          fontWeight = FontWeight.Bold,
-                          color = palette.accent,
-                          textAlign = TextAlign.Center,
-                          modifier = Modifier.testTag(ProfileTestTags.PROFILE_STAT_TOP_RANK))
-                    }
-              }
+          PositionCard(
+              state = state,
+              palette = palette,
+              modifier = Modifier.weight(WEIGHT_1F).height(ProfileDimens.StatCardHeight))
         }
       }
 }

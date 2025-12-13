@@ -55,10 +55,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.model.profile.UserProfile
 import com.android.sample.model.profile.UserProfileCache
+import com.android.sample.model.profile.UserProfileRepository
 import com.android.sample.ui.leaderboard.LeaderboardAddOns.crown
 import com.android.sample.ui.leaderboard.LeaderboardAddOns.cutiePatootie
 import com.android.sample.ui.leaderboard.LeaderboardBadgeThemes.CutieColor
@@ -364,7 +366,7 @@ private fun LeaderboardList(
 private fun LeaderboardCard(
     position: Int,
     profile: UserProfile,
-    profileRepository: com.android.sample.model.profile.UserProfileRepository,
+    profileRepository: UserProfileRepository,
 ) {
   val badgeTheme = forRank(position)
   val addon = resolveAddon(position, profile.id)
@@ -381,6 +383,8 @@ private fun LeaderboardCard(
             modifier = Modifier.fillMaxSize().padding(ConstantLeaderboard.CardInnerPadding),
             verticalAlignment = Alignment.CenterVertically) {
               PositionWithMedal(position, badgeTheme)
+
+              Spacer(modifier = Modifier.width(ConstantLeaderboard.RowSpacing))
 
               ProfilePictureWithAddon(
                   profile = profile,
@@ -432,22 +436,22 @@ private fun LeaderboardCard(
 
 @Composable
 private fun PositionWithMedal(position: Int, theme: BadgeTheme?) {
-  Column(
-      horizontalAlignment = Alignment.CenterHorizontally,
-      modifier = Modifier.width(ConstantLeaderboard.MedalIconSize)) {
-        // Position display above medal
-        Text(
-            text = "#$position",
-            style = MaterialTheme.typography.bodySmall,
-            fontWeight = FontWeight.Bold,
-            color = theme?.primaryColor ?: appPalette().accent,
-            modifier = Modifier.testTag(LeaderboardTestTags.CARD_POSITION))
-        Spacer(modifier = Modifier.height(ConstantLeaderboard.PaddingSmall))
+  if (theme == null) {
+    // When no theme, center the position text vertically
+    Box(
+        modifier = Modifier.width(ConstantLeaderboard.MedalIconSize),
+        contentAlignment = Alignment.Center) {
+          PositionText(position, theme)
+        }
+  } else {
+    // When theme exists, position text above medal
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.width(ConstantLeaderboard.MedalIconSize)) {
+          PositionText(position, theme)
 
-        // Medal or spacer
-        if (theme == null) {
-          Spacer(modifier = Modifier.size(ConstantLeaderboard.MedalIconSize))
-        } else {
+          Spacer(modifier = Modifier.height(ConstantLeaderboard.PaddingSmall))
+
           val base =
               Modifier.size(ConstantLeaderboard.MedalIconSize)
                   .clip(CircleShape)
@@ -461,7 +465,17 @@ private fun PositionWithMedal(position: Int, theme: BadgeTheme?) {
                 tint = theme.primaryColor)
           }
         }
-      }
+  }
+}
+
+@Composable
+private fun PositionText(position: Int, theme: BadgeTheme?) {
+  Text(
+      text = "#$position",
+      style = MaterialTheme.typography.bodySmall.copy(textDecoration = TextDecoration.Underline),
+      fontWeight = FontWeight.Bold,
+      color = theme?.primaryColor ?: Color.Gray,
+      modifier = Modifier.testTag(LeaderboardTestTags.CARD_POSITION))
 }
 
 @Composable

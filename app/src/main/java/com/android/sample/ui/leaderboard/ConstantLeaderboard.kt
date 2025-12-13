@@ -17,7 +17,7 @@ object ConstantLeaderboard {
   val ListPadding = 16.dp
   val ListItemSpacing = 8.dp
   val CardHeight = 80.dp
-  val CardInnerPadding = 12.dp
+  val CardInnerPadding = 8.dp
   val CardCornerRadius = 12.dp
   val CardBorderWidth = 1.dp
   val SurfaceTonalElevation = 2.dp
