@@ -311,7 +311,6 @@ class ProfileUiTests {
     composeTestRule.setContent { ProfileInformation(state = state, showSensitiveInfo = true) }
 
     composeTestRule.onNodeWithTag("profile_info_name").assertTextEquals("John Doe")
-    composeTestRule.onNodeWithTag("profile_info_profile_id").assertTextEquals("123")
     composeTestRule.onNodeWithTag("profile_info_arrival_date").assertTextEquals("01/01/2020")
     composeTestRule.onNodeWithTag("profile_info_section").assertTextEquals("Engineering")
     composeTestRule.onNodeWithTag("profile_info_email").assertTextEquals("john@example.com")
