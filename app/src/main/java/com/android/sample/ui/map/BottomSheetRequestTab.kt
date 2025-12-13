@@ -57,48 +57,48 @@ fun RequestDetailsTab(
     viewModel: MapViewModel,
     appPalette: AppPalette
 ) {
-    // Title
-    Surface(
-        color = appPalette.accent.copy(alpha = ConstantMap.ALPHA_PRIMARY_SURFACE),
-        shape = RoundedCornerShape(ConstantMap.CORNER_RADIUS_SMALL),
-        modifier = Modifier.padding(bottom = ConstantMap.SPACER_HEIGHT_LARGE)) {
+  // Title
+  Surface(
+      color = appPalette.accent.copy(alpha = ConstantMap.ALPHA_PRIMARY_SURFACE),
+      shape = RoundedCornerShape(ConstantMap.CORNER_RADIUS_SMALL),
+      modifier = Modifier.padding(bottom = ConstantMap.SPACER_HEIGHT_LARGE)) {
         Text(
             text = request.title,
             style = MaterialTheme.typography.titleMedium,
             color = appPalette.accent,
             modifier =
                 Modifier.padding(
-                    horizontal = ConstantMap.PADDING_STANDARD,
-                    vertical = ConstantMap.SPACER_HEIGHT_SMALL)
+                        horizontal = ConstantMap.PADDING_STANDARD,
+                        vertical = ConstantMap.SPACER_HEIGHT_SMALL)
                     .testTag(MapTestTags.REQUEST_TITLE))
-    }
+      }
 
-    // Description
-    Text(
-        text = request.description,
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier =
-            Modifier.padding(bottom = ConstantMap.SPACER_HEIGHT_LARGE)
-                .testTag(MapTestTags.REQUEST_DESCRIPTION))
+  // Description
+  Text(
+      text = request.description,
+      style = MaterialTheme.typography.bodyMedium,
+      color = MaterialTheme.colorScheme.onSurfaceVariant,
+      modifier =
+          Modifier.padding(bottom = ConstantMap.SPACER_HEIGHT_LARGE)
+              .testTag(MapTestTags.REQUEST_DESCRIPTION))
 
-    // Dates Row
-    RequestDatesRow(request)
+  // Dates Row
+  RequestDatesRow(request)
 
-    Spacer(modifier = Modifier.height(ConstantMap.SPACER_HEIGHT_LARGE))
+  Spacer(modifier = Modifier.height(ConstantMap.SPACER_HEIGHT_LARGE))
 
-    // Status
-    RequestStatusChip(request)
+  // Status
+  RequestStatusChip(request)
 
-    Spacer(modifier = Modifier.height(ConstantMap.SPACER_HEIGHT_MEDIUM))
+  Spacer(modifier = Modifier.height(ConstantMap.SPACER_HEIGHT_MEDIUM))
 
-    // Location
-    RequestLocationChip(request, appPalette)
+  // Location
+  RequestLocationChip(request, appPalette)
 
-    Spacer(modifier = Modifier.height(ConstantMap.SPACER_HEIGHT_MEDIUM))
+  Spacer(modifier = Modifier.height(ConstantMap.SPACER_HEIGHT_MEDIUM))
 
-    // Action Buttons
-    ButtonDetails(uiState.isOwner, navigationActions, request, viewModel, appPalette)
+  // Action Buttons
+  ButtonDetails(uiState.isOwner, navigationActions, request, viewModel, appPalette)
 }
 
 /**
@@ -108,15 +108,15 @@ fun RequestDetailsTab(
  */
 @Composable
 private fun RequestDatesRow(request: Request) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(ConstantMap.SPACER_HEIGHT_MEDIUM)) {
+  Row(
+      modifier = Modifier.fillMaxWidth(),
+      horizontalArrangement = Arrangement.spacedBy(ConstantMap.SPACER_HEIGHT_MEDIUM)) {
         // Start Date
         Surface(
             modifier = Modifier.weight(ConstantMap.WEIGHT_FILL),
             shape = RoundedCornerShape(ConstantMap.CORNER_RADIUS_MEDIUM),
             color = MaterialTheme.colorScheme.secondaryContainer) {
-            Column(modifier = Modifier.padding(ConstantMap.PADDING_STANDARD)) {
+              Column(modifier = Modifier.padding(ConstantMap.PADDING_STANDARD)) {
                 Text(
                     text = ConstantMap.START_DATE,
                     style = MaterialTheme.typography.labelSmall,
@@ -130,15 +130,15 @@ private fun RequestDatesRow(request: Request) {
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                     modifier = Modifier.testTag(MapTestTags.START_DATE))
+              }
             }
-        }
 
         // End Date
         Surface(
             modifier = Modifier.weight(ConstantMap.WEIGHT_FILL),
             shape = RoundedCornerShape(ConstantMap.CORNER_RADIUS_MEDIUM),
             color = MaterialTheme.colorScheme.secondaryContainer) {
-            Column(modifier = Modifier.padding(ConstantMap.PADDING_STANDARD)) {
+              Column(modifier = Modifier.padding(ConstantMap.PADDING_STANDARD)) {
                 Text(
                     text = ConstantMap.END_DATE,
                     style = MaterialTheme.typography.labelSmall,
@@ -152,9 +152,9 @@ private fun RequestDatesRow(request: Request) {
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSecondaryContainer,
                     modifier = Modifier.testTag(MapTestTags.END_DATE))
+              }
             }
-        }
-    }
+      }
 }
 
 /**
@@ -164,10 +164,10 @@ private fun RequestDatesRow(request: Request) {
  */
 @Composable
 private fun RequestStatusChip(request: Request) {
-    Surface(
-        shape = RoundedCornerShape(ConstantMap.CORNER_RADIUS_LARGE),
-        color = MaterialTheme.colorScheme.tertiaryContainer,
-        modifier = Modifier.fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally)) {
+  Surface(
+      shape = RoundedCornerShape(ConstantMap.CORNER_RADIUS_LARGE),
+      color = MaterialTheme.colorScheme.tertiaryContainer,
+      modifier = Modifier.fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally)) {
         Text(
             text = request.status.name,
             style = MaterialTheme.typography.labelMedium,
@@ -175,10 +175,10 @@ private fun RequestStatusChip(request: Request) {
             color = MaterialTheme.colorScheme.onTertiaryContainer,
             modifier =
                 Modifier.padding(
-                    horizontal = ConstantMap.SPACER_HEIGHT_LARGE,
-                    vertical = ConstantMap.SPACER_HEIGHT_MID)
+                        horizontal = ConstantMap.SPACER_HEIGHT_LARGE,
+                        vertical = ConstantMap.SPACER_HEIGHT_MID)
                     .testTag(MapTestTags.REQUEST_STATUS))
-    }
+      }
 }
 
 /**
@@ -189,30 +189,30 @@ private fun RequestStatusChip(request: Request) {
  */
 @Composable
 private fun RequestLocationChip(request: Request, appPalette: AppPalette) {
-    Surface(
-        shape = RoundedCornerShape(ConstantMap.CORNER_RADIUS_MEDIUM),
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        modifier = Modifier.fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally)) {
+  Surface(
+      shape = RoundedCornerShape(ConstantMap.CORNER_RADIUS_MEDIUM),
+      color = MaterialTheme.colorScheme.surfaceVariant,
+      modifier = Modifier.fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally)) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier =
                 Modifier.padding(
                     horizontal = ConstantMap.PADDING_HORIZONTAL_STANDARD,
                     vertical = ConstantMap.PADDING_STANDARD)) {
-            Icon(
-                imageVector = Icons.Default.LocationOn,
-                contentDescription = ConstantMap.LOCATION,
-                tint = appPalette.primary,
-                modifier = Modifier.size(ConstantMap.ICON_SIZE_LOCATION))
-            Spacer(modifier = Modifier.width(ConstantMap.SPACER_WIDTH_SMALL))
-            Text(
-                text = request.locationName,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.testTag(MapTestTags.REQUEST_LOCATION_NAME))
-        }
-    }
+              Icon(
+                  imageVector = Icons.Default.LocationOn,
+                  contentDescription = ConstantMap.LOCATION,
+                  tint = appPalette.primary,
+                  modifier = Modifier.size(ConstantMap.ICON_SIZE_LOCATION))
+              Spacer(modifier = Modifier.width(ConstantMap.SPACER_WIDTH_SMALL))
+              Text(
+                  text = request.locationName,
+                  style = MaterialTheme.typography.bodyMedium,
+                  fontWeight = FontWeight.Medium,
+                  color = MaterialTheme.colorScheme.onSurfaceVariant,
+                  modifier = Modifier.testTag(MapTestTags.REQUEST_LOCATION_NAME))
+            }
+      }
 }
 
 /**
@@ -232,32 +232,32 @@ private fun ButtonDetails(
     mapViewModel: MapViewModel,
     appPalette: AppPalette
 ) {
-    Button(
-        onClick = {
-            // Always navigate to the view-only details (Accept) page; edit is accessible from there
-            when (isOwner) {
-                true,
-                false -> {
-                    navigationActions?.navigateTo(Screen.RequestAccept(request.requestId))
-                    mapViewModel.goOnAnotherScreen()
-                }
-                else -> mapViewModel.isHisRequest(request)
-            }
-        },
-        colors =
-            ButtonDefaults.buttonColors(
-                containerColor = appPalette.accent, contentColor = appPalette.primary),
-        modifier =
-            Modifier.fillMaxWidth()
-                .padding(bottom = ConstantMap.SPACER_HEIGHT_LARGE)
-                .testTag(MapTestTags.BUTTON_DETAILS)) {
+  Button(
+      onClick = {
+        // Always navigate to the view-only details (Accept) page; edit is accessible from there
+        when (isOwner) {
+          true,
+          false -> {
+            navigationActions?.navigateTo(Screen.RequestAccept(request.requestId))
+            mapViewModel.goOnAnotherScreen()
+          }
+          else -> mapViewModel.isHisRequest(request)
+        }
+      },
+      colors =
+          ButtonDefaults.buttonColors(
+              containerColor = appPalette.accent, contentColor = appPalette.primary),
+      modifier =
+          Modifier.fillMaxWidth()
+              .padding(bottom = ConstantMap.SPACER_HEIGHT_LARGE)
+              .testTag(MapTestTags.BUTTON_DETAILS)) {
         Text(
             when (isOwner) {
-                true -> ConstantMap.TEXT_SEE_DETAILS
-                false -> ConstantMap.TEXT_SEE_DETAILS
-                else -> ConstantMap.PROBLEM_OCCUR
+              true -> ConstantMap.TEXT_SEE_DETAILS
+              false -> ConstantMap.TEXT_SEE_DETAILS
+              else -> ConstantMap.PROBLEM_OCCUR
             })
-    }
+      }
 }
 
 /**
@@ -280,34 +280,34 @@ fun ListOfRequest(
     cameraPositionState: CameraPositionState,
     navigationActions: NavigationActions?
 ) {
-    uiState.currentListRequest?.let { list ->
-        AnimatedBottomSheet(viewModel, appPalette, modifier) {
-            LazyColumn(
-                modifier =
-                    modifier
-                        .padding(ConstantRequestList.ListPadding)
-                        .testTag(MapTestTags.MAP_LIST_REQUEST)) {
-                items(list.size) { index ->
-                    val request = list[index]
-                    RequestListItem(
-                        viewModel = viewModel(),
-                        request = request,
-                        onClick = {
-                            coroutineScope.launch {
-                                cameraPositionState.animate(
-                                    update =
-                                        CameraUpdateFactory.newLatLngZoom(
-                                            LatLng(request.location.latitude, request.location.longitude),
-                                            ConstantMap.ZOOM_AFTER_CHOSEN),
-                                    durationMs = ConstantMap.LONG_DURATION_ANIMATION)
-                            }
-                            viewModel.updateCurrentRequest(request)
-                            viewModel.updateCurrentProfile(request.creatorId)
-                        },
-                        navigationActions = navigationActions,
-                        state = com.android.sample.ui.request.RequestListState())
-                }
+  uiState.currentListRequest?.let { list ->
+    AnimatedBottomSheet(viewModel, appPalette, modifier) {
+      LazyColumn(
+          modifier =
+              modifier
+                  .padding(ConstantRequestList.ListPadding)
+                  .testTag(MapTestTags.MAP_LIST_REQUEST)) {
+            items(list.size) { index ->
+              val request = list[index]
+              RequestListItem(
+                  viewModel = viewModel(),
+                  request = request,
+                  onClick = {
+                    coroutineScope.launch {
+                      cameraPositionState.animate(
+                          update =
+                              CameraUpdateFactory.newLatLngZoom(
+                                  LatLng(request.location.latitude, request.location.longitude),
+                                  ConstantMap.ZOOM_AFTER_CHOSEN),
+                          durationMs = ConstantMap.LONG_DURATION_ANIMATION)
+                    }
+                    viewModel.updateCurrentRequest(request)
+                    viewModel.updateCurrentProfile(request.creatorId)
+                  },
+                  navigationActions = navigationActions,
+                  state = com.android.sample.ui.request.RequestListState())
             }
-        }
+          }
     }
+  }
 }

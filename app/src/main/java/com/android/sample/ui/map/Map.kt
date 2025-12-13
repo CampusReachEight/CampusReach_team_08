@@ -341,71 +341,58 @@ private fun MapContent(
 
   // Map UI settings
   val uiSettings = remember { MapUiSettings(zoomControlsEnabled = false) }
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(paddingValues)
-    ) {
+  Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+    MapFilter(
+        searchFilterViewModel = searchFilterViewModel,
+        selectedOwnership = uiState.requestOwnership,
+        viewModel = viewModel,
+        modifier = Modifier.fillMaxWidth().wrapContentHeight())
 
-        MapFilter(
-            searchFilterViewModel = searchFilterViewModel,
-            selectedOwnership = uiState.requestOwnership,
-            viewModel = viewModel,
-            modifier = Modifier
-                .fillMaxWidth()
-                .wrapContentHeight()
-        )
+    Box(modifier = Modifier.fillMaxSize()) {
+      // Google Map
+      MapWithMarkers(
+          cameraPositionState = cameraPositionState,
+          uiSettings = uiSettings,
+          clusters = clusters,
+          zoomLevel = zoomLevel,
+          viewModel = viewModel,
+          coroutineScope = coroutineScope,
+          currentLocation = uiState.currentLocation,
+          isMapReady = isMapReady)
 
-        Box(modifier = Modifier.fillMaxSize()) {
-            // Google Map
-            MapWithMarkers(
-                cameraPositionState = cameraPositionState,
-                uiSettings = uiSettings,
-                clusters = clusters,
-                zoomLevel = zoomLevel,
-                viewModel = viewModel,
-                coroutineScope = coroutineScope,
-                currentLocation = uiState.currentLocation,
-                isMapReady = isMapReady
-            )
+      // Bottom Sheet for current request
+      CurrentRequestBottomSheet(
+          uiState = uiState,
+          viewModel = viewModel,
+          navigationActions = navigationActions,
+          appPalette = appPalette,
+          modifier = Modifier.align(Alignment.BottomCenter))
 
-            // Bottom Sheet for current request
-            CurrentRequestBottomSheet(
-                uiState = uiState,
-                viewModel = viewModel,
-                navigationActions = navigationActions,
-                appPalette = appPalette,
-                modifier = Modifier.align(Alignment.BottomCenter)
-            )
+      // List of requests overlay
+      ListOfRequest(
+          uiState,
+          viewModel,
+          appPalette,
+          Modifier.align(Alignment.BottomCenter),
+          coroutineScope,
+          cameraPositionState,
+          navigationActions)
 
-            // List of requests overlay
-            ListOfRequest(
-                uiState,
-                viewModel,
-                appPalette,
-                Modifier.align(Alignment.BottomCenter),
-                coroutineScope,
-                cameraPositionState,
-                navigationActions
-            )
+      // Zoom controls
+      ZoomControls(
+          uiState = uiState,
+          cameraPositionState = cameraPositionState,
+          coroutineScope = coroutineScope,
+          appPalette = appPalette,
+          modifier = Modifier.align(Alignment.BottomEnd))
 
-            // Zoom controls
-            ZoomControls(
-                uiState = uiState,
-                cameraPositionState = cameraPositionState,
-                coroutineScope = coroutineScope,
-                appPalette = appPalette,
-                modifier = Modifier.align(Alignment.BottomEnd)
-            )
+      // Zoom level test tag
+      ZoomLevelTestTag(cameraPositionState)
 
-            // Zoom level test tag
-            ZoomLevelTestTag(cameraPositionState)
-
-            // Auto-zoom animation
-            AutoZoomEffect(uiState, cameraPositionState, viewModel)
-
-        }
+      // Auto-zoom animation
+      AutoZoomEffect(uiState, cameraPositionState, viewModel)
     }
+  }
 }
 
 /**
@@ -658,7 +645,6 @@ private fun AutoZoomEffect(
     }
   }
 }
-
 
 @Preview(showBackground = true)
 @Composable

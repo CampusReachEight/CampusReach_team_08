@@ -44,7 +44,6 @@ import com.android.sample.model.request.Request
 import com.android.sample.ui.navigation.NavigationActions
 import com.android.sample.ui.theme.AppPalette
 
-
 /**
  * A bottom sheet component with drag-to-resize functionality and smooth animations.
  *
@@ -60,73 +59,73 @@ fun AnimatedBottomSheet(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    val minHeight = ConstantMap.MIN_HEIGHT
+  val minHeight = ConstantMap.MIN_HEIGHT
 
-    val density = LocalDensity.current
-    val screenHeight = with(density) { LocalConfiguration.current.screenHeightDp.dp.toPx() }
-    val minHeightPx = with(density) { minHeight.toPx() }
-    val thirdOfScreen = screenHeight * ConstantMap.PROPORTION_FOR_INITIALIZE_SHEET
-    var offsetY by remember { mutableFloatStateOf(thirdOfScreen) }
+  val density = LocalDensity.current
+  val screenHeight = with(density) { LocalConfiguration.current.screenHeightDp.dp.toPx() }
+  val minHeightPx = with(density) { minHeight.toPx() }
+  val thirdOfScreen = screenHeight * ConstantMap.PROPORTION_FOR_INITIALIZE_SHEET
+  var offsetY by remember { mutableFloatStateOf(thirdOfScreen) }
 
-    val currentHeight by
-    animateDpAsState(
-        targetValue =
-            with(density) {
+  val currentHeight by
+      animateDpAsState(
+          targetValue =
+              with(density) {
                 (screenHeight -
                         offsetY.coerceIn(ConstantMap.MIN_OFFSET_Y, screenHeight - minHeightPx))
                     .toDp()
-            },
-        animationSpec = tween(durationMillis = ConstantMap.DURATION_ANIMATION))
+              },
+          animationSpec = tween(durationMillis = ConstantMap.DURATION_ANIMATION))
 
-    Box(modifier = modifier.fillMaxWidth().testTag(MapTestTags.DRAG_DOWN_MENU)) {
-        Surface(
-            modifier = Modifier.fillMaxWidth().height(currentHeight),
-            shape =
-                RoundedCornerShape(
-                    topStart = ConstantMap.BOTTOM_SHEET_SHAPE, topEnd = ConstantMap.BOTTOM_SHEET_SHAPE),
-            color = appPalette.primary,
-            shadowElevation = ConstantMap.BOTTOM_SHEET_ELEVATION) {
-            Column(modifier = Modifier.fillMaxSize()) {
-                // Drag Handle + Button
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    // Drag Handle
-                    Box(
-                        modifier =
-                            Modifier.width(ConstantMap.DRAG_HANDLE_WIDTH)
-                                .height(ConstantMap.DRAG_HANDLE_HEIGHT)
-                                .background(
-                                    color =
-                                        MaterialTheme.colorScheme.onSurface.copy(
-                                            alpha = ConstantMap.DRAG_HANDLE_ALPHA),
-                                    shape = RoundedCornerShape(ConstantMap.DRAG_HANDLE_CORNER_RADIUS))
-                                .align(Alignment.Center)
-                                .pointerInput(Unit) {
-                                    detectVerticalDragGestures(
-                                        onVerticalDrag = { _, dragAmount ->
-                                            offsetY =
-                                                (offsetY + dragAmount).coerceIn(
-                                                    ConstantMap.MIN_OFFSET_Y, screenHeight - minHeightPx)
-                                        })
-                                }
-                                .testTag(MapTestTags.DRAG))
+  Box(modifier = modifier.fillMaxWidth().testTag(MapTestTags.DRAG_DOWN_MENU)) {
+    Surface(
+        modifier = Modifier.fillMaxWidth().height(currentHeight),
+        shape =
+            RoundedCornerShape(
+                topStart = ConstantMap.BOTTOM_SHEET_SHAPE, topEnd = ConstantMap.BOTTOM_SHEET_SHAPE),
+        color = appPalette.primary,
+        shadowElevation = ConstantMap.BOTTOM_SHEET_ELEVATION) {
+          Column(modifier = Modifier.fillMaxSize()) {
+            // Drag Handle + Button
+            Box(modifier = Modifier.fillMaxWidth()) {
+              // Drag Handle
+              Box(
+                  modifier =
+                      Modifier.width(ConstantMap.DRAG_HANDLE_WIDTH)
+                          .height(ConstantMap.DRAG_HANDLE_HEIGHT)
+                          .background(
+                              color =
+                                  MaterialTheme.colorScheme.onSurface.copy(
+                                      alpha = ConstantMap.DRAG_HANDLE_ALPHA),
+                              shape = RoundedCornerShape(ConstantMap.DRAG_HANDLE_CORNER_RADIUS))
+                          .align(Alignment.Center)
+                          .pointerInput(Unit) {
+                            detectVerticalDragGestures(
+                                onVerticalDrag = { _, dragAmount ->
+                                  offsetY =
+                                      (offsetY + dragAmount).coerceIn(
+                                          ConstantMap.MIN_OFFSET_Y, screenHeight - minHeightPx)
+                                })
+                          }
+                          .testTag(MapTestTags.DRAG))
 
-                    // Button X
-                    IconButton(
-                        onClick = { viewModel.updateNoRequests() },
-                        modifier = Modifier.align(Alignment.CenterEnd).testTag(MapTestTags.BUTTON_X)) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = ConstantMap.CLOSE_BUTTON_DESCRIPTION,
-                            tint =
-                                MaterialTheme.colorScheme.onSurface.copy(
-                                    alpha = ConstantMap.CLOSE_BUTTON_ALPHA))
-                    }
-                }
-
-                content()
+              // Button X
+              IconButton(
+                  onClick = { viewModel.updateNoRequests() },
+                  modifier = Modifier.align(Alignment.CenterEnd).testTag(MapTestTags.BUTTON_X)) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = ConstantMap.CLOSE_BUTTON_DESCRIPTION,
+                        tint =
+                            MaterialTheme.colorScheme.onSurface.copy(
+                                alpha = ConstantMap.CLOSE_BUTTON_ALPHA))
+                  }
             }
+
+            content()
+          }
         }
-    }
+  }
 }
 
 /**
@@ -147,35 +146,34 @@ fun CurrentRequestBottomSheet(
     appPalette: AppPalette,
     modifier: Modifier = Modifier
 ) {
-    uiState.currentRequest?.let { req ->
-        var selectedTab by remember { mutableIntStateOf(0) }
-        val tabs = listOf(ConstantMap.DETAILS, ConstantMap.PROFILE)
+  uiState.currentRequest?.let { req ->
+    var selectedTab by remember { mutableIntStateOf(0) }
+    val tabs = listOf(ConstantMap.DETAILS, ConstantMap.PROFILE)
 
-        AnimatedBottomSheet(viewModel = viewModel, appPalette = appPalette, modifier = modifier) {
+    AnimatedBottomSheet(viewModel = viewModel, appPalette = appPalette, modifier = modifier) {
 
-            // Tab Row
-            BottomSheetTabRow(
-                tabs = tabs,
-                selectedTab = selectedTab,
-                onTabSelected = { selectedTab = it },
-                appPalette = appPalette)
+      // Tab Row
+      BottomSheetTabRow(
+          tabs = tabs,
+          selectedTab = selectedTab,
+          onTabSelected = { selectedTab = it },
+          appPalette = appPalette)
 
-            HorizontalDivider(
-                thickness = ConstantMap.DIVIDER_THICKNESS,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = ConstantMap.ALPHA_DIVIDER))
+      HorizontalDivider(
+          thickness = ConstantMap.DIVIDER_THICKNESS,
+          color = MaterialTheme.colorScheme.onSurface.copy(alpha = ConstantMap.ALPHA_DIVIDER))
 
-            // Tab Content
-            BottomSheetContent(
-                selectedTab = selectedTab,
-                request = req,
-                uiState = uiState,
-                navigationActions = navigationActions,
-                viewModel = viewModel,
-                appPalette = appPalette)
-        }
+      // Tab Content
+      BottomSheetContent(
+          selectedTab = selectedTab,
+          request = req,
+          uiState = uiState,
+          navigationActions = navigationActions,
+          viewModel = viewModel,
+          appPalette = appPalette)
     }
+  }
 }
-
 
 /**
  * Displays a scrollable row of tabs for switching between different views in the bottom sheet.
@@ -192,32 +190,32 @@ private fun BottomSheetTabRow(
     onTabSelected: (Int) -> Unit,
     appPalette: AppPalette
 ) {
-    ScrollableTabRow(
-        selectedTabIndex = selectedTab,
-        modifier = Modifier.fillMaxWidth(),
-        edgePadding = ConstantMap.TAB_ROW_EDGE_PADDING,
-        indicator = { tabPositions ->
-            TabRowDefaults.SecondaryIndicator(
-                Modifier.tabIndicatorOffset(tabPositions[selectedTab]), color = appPalette.accent)
-        },
-        divider = {}) {
+  ScrollableTabRow(
+      selectedTabIndex = selectedTab,
+      modifier = Modifier.fillMaxWidth(),
+      edgePadding = ConstantMap.TAB_ROW_EDGE_PADDING,
+      indicator = { tabPositions ->
+        TabRowDefaults.SecondaryIndicator(
+            Modifier.tabIndicatorOffset(tabPositions[selectedTab]), color = appPalette.accent)
+      },
+      divider = {}) {
         tabs.forEachIndexed { index, title ->
-            Tab(
-                selected = selectedTab == index,
-                onClick = { onTabSelected(index) },
-                text = {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleSmall,
-                        color =
-                            if (selectedTab == index) appPalette.accent
-                            else
-                                MaterialTheme.colorScheme.onSurface.copy(
-                                    alpha = ConstantMap.ALPHA_TEXT_UNSELECTED))
-                },
-                modifier = Modifier.testTag(MapTestTags.testTagForTab(title)))
+          Tab(
+              selected = selectedTab == index,
+              onClick = { onTabSelected(index) },
+              text = {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleSmall,
+                    color =
+                        if (selectedTab == index) appPalette.accent
+                        else
+                            MaterialTheme.colorScheme.onSurface.copy(
+                                alpha = ConstantMap.ALPHA_TEXT_UNSELECTED))
+              },
+              modifier = Modifier.testTag(MapTestTags.testTagForTab(title)))
         }
-    }
+      }
 }
 
 /**
@@ -239,33 +237,33 @@ private fun ColumnScope.BottomSheetContent(
     viewModel: MapViewModel,
     appPalette: AppPalette
 ) {
-    Column(
-        modifier =
-            Modifier.fillMaxWidth()
-                .weight(ConstantMap.WEIGHT_FILL)
-                .verticalScroll(rememberScrollState())
-                .padding(
-                    horizontal = ConstantMap.PADDING_HORIZONTAL_STANDARD,
-                    vertical = ConstantMap.PADDING_STANDARD)) {
+  Column(
+      modifier =
+          Modifier.fillMaxWidth()
+              .weight(ConstantMap.WEIGHT_FILL)
+              .verticalScroll(rememberScrollState())
+              .padding(
+                  horizontal = ConstantMap.PADDING_HORIZONTAL_STANDARD,
+                  vertical = ConstantMap.PADDING_STANDARD)) {
         when (selectedTab) {
-            0 -> { // Details
-                RequestDetailsTab(
-                    request = request,
-                    uiState = uiState,
-                    navigationActions = navigationActions,
-                    viewModel = viewModel,
-                    appPalette = appPalette)
-            }
-            1 -> { // Profile
-                CurrentProfileUI(
-                    uiState.isOwner,
-                    navigationActions,
-                    uiState.currentProfile,
-                    viewModel,
-                    this,
-                    request,
-                    appPalette)
-            }
+          0 -> { // Details
+            RequestDetailsTab(
+                request = request,
+                uiState = uiState,
+                navigationActions = navigationActions,
+                viewModel = viewModel,
+                appPalette = appPalette)
+          }
+          1 -> { // Profile
+            CurrentProfileUI(
+                uiState.isOwner,
+                navigationActions,
+                uiState.currentProfile,
+                viewModel,
+                this,
+                request,
+                appPalette)
+          }
         }
-    }
+      }
 }
