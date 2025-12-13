@@ -28,7 +28,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.model.profile.UserProfile
 import com.android.sample.ui.profile.PROFILE_OFFLINE_TEXT
@@ -216,8 +215,7 @@ fun PublicProfileHeader(
                           .testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_NAME),
                   maxLines = ONE_LINE,
                   softWrap = false,
-                  overflow = TextOverflow.Ellipsis
-              )
+                  overflow = TextOverflow.Ellipsis)
               Text(
                   text =
                       if (profile?.email != null) {
