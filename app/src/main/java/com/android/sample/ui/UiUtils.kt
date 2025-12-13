@@ -1,25 +1,43 @@
 package com.android.sample.ui
 
+import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldColors
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextOverflow
 import com.android.sample.ui.theme.AppPalette
 import com.android.sample.ui.theme.appPalette
+
+// Extracted constants for magic values used in this file
+private const val DEFAULT_ELLIPSIS = "\u2026"
+private const val FALLBACK_MIDDLE_ELLIPSIS = "..."
+private const val DEFAULT_MAX_LINES = 2
+private const val SECOND_LINE_INDEX = 1
+private const val MIN_ALLOWED_MAX_LENGTH = 1
+private const val SPACE_CHAR = ' '
 
 class UiUtils {
 
     /**
      * Truncates a given text to fit within a specified maximum length, optionally preserving a suffix
-     * (e.g., domain in an email) and appending an ellipsis ("...") to indicate truncation.
+     * (e.g., domain in an email) and appending an ellipsis to indicate truncation.
      *
      * @param text The input string to be truncated.
      * @param maxLength The maximum allowed length of the resulting string, including the ellipsis.
      *   Must be greater than or equal to 1.
      * @param keepSuffixLength The number of characters to preserve at the end of the string. Useful
      *   for keeping domains or other important suffixes. Defaults to 0.
-     * @param ellipsis The string to append to indicate truncation. Defaults to "...".
+     * @param ellipsis The string to append to indicate truncation. Defaults to "..." (fallback).
      * @return The truncated string with the ellipsis and optional suffix preserved.
      * @throws IllegalArgumentException if `maxLength` is less than 1.
      */
@@ -27,9 +45,9 @@ class UiUtils {
         text: String,
         maxLength: Int,
         keepSuffixLength: Int = 0,
-        ellipsis: String = "..."
+        ellipsis: String = FALLBACK_MIDDLE_ELLIPSIS
     ): String {
-        require(maxLength >= 1) { "maxLength must be >= 1" }
+        require(maxLength >= MIN_ALLOWED_MAX_LENGTH) { "maxLength must be >= $MIN_ALLOWED_MAX_LENGTH" }
         if (text.length <= maxLength) return text
         val suffix =
             if (keepSuffixLength > 0 && keepSuffixLength < text.length) text.takeLast(keepSuffixLength)
@@ -65,5 +83,55 @@ fun getFilterAndSortButtonColors(palette: AppPalette = appPalette()): ButtonColo
         contentColor = palette.onAccent,
         disabledContainerColor = palette.secondary,
         disabledContentColor = palette.onPrimary
+    )
+}
+
+@Composable
+fun TwoLineEndEllipsizeAtSpace(
+    text: String,
+    modifier: Modifier = Modifier,
+    style: TextStyle = MaterialTheme.typography.bodyMedium,
+    textColor: Color = appPalette().onSurface,
+    ellipsis: String = DEFAULT_ELLIPSIS
+) {
+    // One-shot measurement: start with the full text, then replace with a whitespace-friendly
+    // truncated version if it overflows.
+    var displayText by remember(text, style) { mutableStateOf(text) }
+    var measuredOnce by remember { mutableStateOf(false) }
+
+    Text(
+        text = displayText,
+        maxLines = DEFAULT_MAX_LINES,
+        overflow = TextOverflow.Clip, // we'll append our own ellipsis if needed
+        style = style,
+        color = textColor,
+        modifier = modifier,
+        onTextLayout = { layout ->
+            if (measuredOnce) return@Text
+
+            // If the full text fits, nothing to do
+            if (displayText.length == text.length && layout.lineCount <= DEFAULT_MAX_LINES && !layout.didOverflowHeight) {
+                measuredOnce = true
+                return@Text
+            }
+
+            // End index (exclusive) of the second visual line
+            val lastLineIndex = minOf(SECOND_LINE_INDEX, layout.lineCount - 1)
+            val visibleEnd = layout.getLineEnd(lastLineIndex).coerceAtMost(text.length)
+
+            // Visible substring and last whitespace within it
+            val visibleSub = text.substring(0, visibleEnd).trimEnd()
+            val lastSpace = visibleSub.lastIndexOf(SPACE_CHAR)
+
+            val candidate = if (lastSpace > 0) {
+                visibleSub.substring(0, lastSpace).trimEnd() + ellipsis
+            } else {
+                // No space found -> fallback to visible-range truncation with ellipsis
+                if (visibleSub.isEmpty()) ellipsis else visibleSub + ellipsis
+            }
+
+            if (candidate != displayText) displayText = candidate
+            measuredOnce = true
+        }
     )
 }

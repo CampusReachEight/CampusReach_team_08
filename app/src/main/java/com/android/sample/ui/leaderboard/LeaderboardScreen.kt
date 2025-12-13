@@ -59,6 +59,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.model.profile.UserProfile
 import com.android.sample.model.profile.UserProfileCache
+import com.android.sample.ui.TwoLineEndEllipsizeAtSpace
 import com.android.sample.ui.leaderboard.LeaderboardAddOns.crown
 import com.android.sample.ui.leaderboard.LeaderboardAddOns.cutiePatootie
 import com.android.sample.ui.leaderboard.LeaderboardBadgeThemes.CutieColor
@@ -415,7 +416,11 @@ private fun LeaderboardCard(
                     text = sectionLabel(profile.section),
                     style = MaterialTheme.typography.bodySmall,
                     color = appPalette().text.copy(alpha = ConstantLeaderboard.SecondaryTextAlpha),
-                    modifier = Modifier.testTag(LeaderboardTestTags.CARD_SECTION))
+                    modifier = Modifier.testTag(LeaderboardTestTags.CARD_SECTION),
+                    maxLines = ConstantLeaderboard.SingleLineMax,
+                    softWrap = true,
+                    overflow = TextOverflow.Ellipsis
+                )
               }
 
               Spacer(modifier = Modifier.width(ConstantLeaderboard.RowSpacing))

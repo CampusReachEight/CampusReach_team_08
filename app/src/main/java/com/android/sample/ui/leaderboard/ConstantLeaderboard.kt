@@ -49,4 +49,6 @@ object ConstantLeaderboard {
   val ZeroCountFallback = 0
   val ListIndexOffset = 1
   val SingleLineMax = 1
+
+  val DoubleLineMax = 2
 }
