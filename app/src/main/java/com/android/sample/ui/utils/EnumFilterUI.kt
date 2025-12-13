@@ -16,6 +16,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -35,6 +36,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.android.sample.ui.getFilterAndSortButtonColors
 import com.android.sample.ui.getTextFieldColors
+import com.android.sample.ui.theme.appPalette
 
 /** Constants for EnumFilterUI dimensions. */
 object EnumFilterUIDimens {
@@ -186,11 +188,18 @@ fun EnumFilterPanelSimple(
                               .height(EnumFilterUIDimens.FilterRowHeight),
                       horizontalArrangement = Arrangement.Start,
                       verticalAlignment = Alignment.CenterVertically) {
-                        Checkbox(checked = isChecked, onCheckedChange = null)
+                        Checkbox(
+                            checked = isChecked,
+                            onCheckedChange = null,
+                            colors = CheckboxDefaults.colors(
+                                uncheckedColor = appPalette().onSurface,
+                                checkedColor = appPalette().accent
+                            )
+                        )
                         Spacer(modifier = Modifier.width(EnumFilterUIDimens.RowSpacing))
-                        Text(text = labelOf(v))
+                        Text(text = labelOf(v), color = appPalette().onSurface)
                         Spacer(modifier = Modifier.weight(1f))
-                        Text(text = count.toString())
+                        Text(text = count.toString(), color = appPalette().onSurface)
                       }
                 }
               }
