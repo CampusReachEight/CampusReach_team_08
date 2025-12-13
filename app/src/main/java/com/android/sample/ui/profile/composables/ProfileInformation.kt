@@ -83,12 +83,6 @@ fun ProfileInformation(
         InfoRow(label = "Name", value = state.userName, palette = palette)
         Spacer(modifier = Modifier.height(ProfileDimens.InfoSpacer))
 
-        // Only show Profile Id in private profile
-        if (showSensitiveInfo && state.profileId.isNotBlank()) {
-          InfoRow(label = "Profile Id", value = state.profileId, palette = palette)
-          Spacer(modifier = Modifier.height(ProfileDimens.InfoSpacer))
-        }
-
         // Only show Arrival date if it's not empty
         if (state.arrivalDate.isNotBlank()) {
           InfoRow(label = "Arrival date", value = state.arrivalDate, palette = palette)

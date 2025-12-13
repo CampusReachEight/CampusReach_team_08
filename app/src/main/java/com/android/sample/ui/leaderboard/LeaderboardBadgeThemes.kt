@@ -1,8 +1,7 @@
 package com.android.sample.ui.leaderboard
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MilitaryTech
-import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Stars
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.Dp
@@ -28,7 +27,7 @@ object LeaderboardBadgeThemes {
   val Gold =
       BadgeTheme(
           id = "gold",
-          icon = Icons.Filled.MilitaryTech,
+          icon = Icons.Filled.Stars,
           primaryColor = LeaderboardColors.Gold,
           haloColor = LeaderboardColors.Gold.copy(alpha = BadgeThemeDefaults.HaloAlphaStrong),
           borderColor = LeaderboardColors.Gold,
@@ -37,7 +36,7 @@ object LeaderboardBadgeThemes {
   val Silver =
       BadgeTheme(
           id = "silver",
-          icon = Icons.Filled.Star,
+          icon = Icons.Filled.Stars,
           primaryColor = LeaderboardColors.Silver,
           haloColor = LeaderboardColors.Silver.copy(alpha = BadgeThemeDefaults.HaloAlphaStrong),
           borderColor = LeaderboardColors.Silver,
@@ -46,7 +45,7 @@ object LeaderboardBadgeThemes {
   val Bronze =
       BadgeTheme(
           id = "bronze",
-          icon = Icons.Filled.Star,
+          icon = Icons.Filled.Stars,
           primaryColor = LeaderboardColors.Bronze,
           haloColor = LeaderboardColors.Bronze.copy(alpha = BadgeThemeDefaults.HaloAlphaSoft),
           borderColor = LeaderboardColors.Bronze,
@@ -60,6 +59,10 @@ object LeaderboardBadgeThemes {
         BadgeThemeDefaults.RankBronze -> Bronze
         else -> null
       }
+
+  fun isPodiumTheme(theme: BadgeTheme): Boolean {
+    return theme == Gold || theme == Silver || theme == Bronze
+  }
 }
 
 /** Shared defaults for badge themes to avoid scattered literals. */

@@ -198,6 +198,15 @@ class LeaderboardSearchFilterViewModel(
     // For tests: immediately set displayed profiles since the flow might not emit fast enough
     _displayedProfiles.value = applySort(profiles, _sortCriteria.value)
 
+    // Update range facet max bounds based on actual data
+    if (profiles.isNotEmpty()) {
+      rangeFacets.forEach { facet ->
+        val maxValue = profiles.maxOfOrNull { facet.extract(it) } ?: facet.minBound
+        // Ensure max is at least the minimum bound
+        facet.updateMaxBound(maxValue.coerceAtLeast(facet.minBound))
+      }
+    }
+
     viewModelScope.launch {
       try {
         if (engine == null) engine = engineFactory()

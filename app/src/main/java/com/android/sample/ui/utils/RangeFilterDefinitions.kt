@@ -66,8 +66,16 @@ class RangeFacet<T>(val def: RangeFilterDefinitions.RangeFilterDefinition<T>) {
   val minBound: Int
     get() = def.minBound
 
-  val maxBound: Int
-    get() = def.maxBound
+  /** Dynamic maximum bound, initialized from definition but can be updated based on actual data. */
+  private val _maxBound = MutableStateFlow(def.maxBound)
+
+  /** Observable maximum bound for the slider. */
+  val maxBound: StateFlow<Int>
+    get() = _maxBound
+
+  /** Current maximum bound value (for non-reactive access). */
+  val maxBoundValue: Int
+    get() = _maxBound.value
 
   val step: Int
     get() = def.step
@@ -92,7 +100,7 @@ class RangeFacet<T>(val def: RangeFilterDefinitions.RangeFilterDefinition<T>) {
 
   /** The full range representing no filter applied. */
   val fullRange: IntRange
-    get() = minBound..maxBound
+    get() = minBound.._maxBound.value
 
   private val _currentRange = MutableStateFlow(fullRange)
 
@@ -105,6 +113,30 @@ class RangeFacet<T>(val def: RangeFilterDefinitions.RangeFilterDefinition<T>) {
     get() = _currentRange.value != fullRange
 
   /**
+   * Updates the maximum bound based on actual data. This should be called when data is loaded to
+   * set the slider maximum to the highest value in the dataset.
+   *
+   * @param newMax The new maximum bound (should be the highest value in the dataset)
+   */
+  fun updateMaxBound(newMax: Int) {
+    val oldMax = _maxBound.value
+    val current = _currentRange.value
+    val wasFullRange = current == IntRange(minBound, oldMax)
+
+    _maxBound.value = newMax.coerceAtLeast(minBound)
+
+    // If current range was the full range (no filter active), update to new full range
+    if (wasFullRange) {
+      _currentRange.value = fullRange
+    } else {
+      // Adjust current range if it exceeds new bounds
+      if (current.last > _maxBound.value) {
+        _currentRange.value = current.first.._maxBound.value
+      }
+    }
+  }
+
+  /**
    * Updates the current range selection.
    *
    * @param range The new range, will be clamped to bounds
@@ -112,8 +144,8 @@ class RangeFacet<T>(val def: RangeFilterDefinitions.RangeFilterDefinition<T>) {
   fun setRange(range: IntRange) {
     val clamped =
         IntRange(
-            start = range.first.coerceIn(minBound, maxBound),
-            endInclusive = range.last.coerceIn(minBound, maxBound))
+            start = range.first.coerceIn(minBound, _maxBound.value),
+            endInclusive = range.last.coerceIn(minBound, _maxBound.value))
     _currentRange.value = clamped
   }
 
@@ -125,7 +157,7 @@ class RangeFacet<T>(val def: RangeFilterDefinitions.RangeFilterDefinition<T>) {
 
   /** Sets only the maximum value, keeping the current minimum. */
   fun setMax(max: Int) {
-    val clampedMax = max.coerceIn(_currentRange.value.first, maxBound)
+    val clampedMax = max.coerceIn(_currentRange.value.first, _maxBound.value)
     _currentRange.value = _currentRange.value.first..clampedMax
   }
 

@@ -79,6 +79,7 @@ class ProfileLogoutTests : BaseEmulatorTest() {
     composeTestRule
         .onNodeWithTag(ProfileTestTags.PROFILE_ACTION_LOG_OUT)
         .performScrollTo()
+        .assertIsDisplayed()
         .performClick()
 
     composeTestRule.waitForIdle()

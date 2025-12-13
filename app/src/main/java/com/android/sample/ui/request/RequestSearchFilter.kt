@@ -125,8 +125,7 @@ internal fun SortCriteriaButton(
 ) {
   var expanded by remember { mutableStateOf(false) }
   // User-facing label: transform enum name to Title Case
-  fun labelOf(sort: RequestSort) =
-      sort.name.lowercase().replace('_', ' ').replaceFirstChar { it.uppercase() }
+  fun labelOf(sort: RequestSort) = sort.label
 
   Box(modifier = modifier) {
     FilledTonalButton(

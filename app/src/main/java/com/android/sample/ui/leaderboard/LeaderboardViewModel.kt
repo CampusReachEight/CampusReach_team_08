@@ -48,8 +48,14 @@ class LeaderboardViewModel(
     viewModelScope.launch {
       try {
         val profiles = profileRepository.getAllUserProfiles()
+        val positions = LeaderboardPositionCalculator.calculatePositions(profiles)
         _state.update {
-          it.copy(profiles = profiles, offlineMode = false, isLoading = false, errorMessage = null)
+          it.copy(
+              profiles = profiles,
+              positions = positions,
+              offlineMode = false,
+              isLoading = false,
+              errorMessage = null)
         }
 
         // Save profiles to cache if available
@@ -60,9 +66,11 @@ class LeaderboardViewModel(
         // Try to load from cache if there's an error (e.g., no internet)
         val cachedProfiles = loadFromCache()
         if (cachedProfiles.isNotEmpty()) {
+          val positions = LeaderboardPositionCalculator.calculatePositions(cachedProfiles)
           _state.update {
             it.copy(
                 profiles = cachedProfiles,
+                positions = positions,
                 offlineMode = true,
                 isLoading = false,
                 errorMessage = null)
@@ -104,7 +112,8 @@ class LeaderboardViewModel(
 
   @VisibleForTesting
   internal fun setProfiles(profiles: List<UserProfile>) {
-    _state.update { it.copy(profiles = profiles) }
+    val positions = LeaderboardPositionCalculator.calculatePositions(profiles)
+    _state.update { it.copy(profiles = profiles, positions = positions) }
   }
 
   companion object {
@@ -139,12 +148,14 @@ class LeaderboardViewModelFactory(
  * UI state for the leaderboard screen.
  *
  * @property profiles List of all loaded user profiles
+ * @property positions Map of user ID to position (1-indexed) based on kudos ranking
  * @property isLoading Whether profiles are currently being loaded
  * @property errorMessage User-facing error message, if any
  * @property offlineMode Whether the data is from cache due to network issues
  */
 data class LeaderboardState(
     val profiles: List<UserProfile> = emptyList(),
+    val positions: Map<String, Int> = emptyMap(),
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
     val offlineMode: Boolean = false

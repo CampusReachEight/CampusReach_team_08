@@ -79,7 +79,9 @@ fun <T> RangeFilterButton(
     modifier: Modifier = Modifier
 ) {
   val currentRange by rangeFacet.currentRange.collectAsState()
-  val isActive = currentRange != rangeFacet.fullRange
+  val maxBound by rangeFacet.maxBound.collectAsState()
+  val fullRange = rangeFacet.minBound..maxBound
+  val isActive = currentRange != fullRange
 
   val label =
       if (isActive) {
@@ -109,6 +111,7 @@ fun <T> RangeFilterButton(
 @Composable
 fun <T> RangeFilterPanel(rangeFacet: RangeFacet<T>, modifier: Modifier = Modifier) {
   val currentRange by rangeFacet.currentRange.collectAsState()
+  val maxBound by rangeFacet.maxBound.collectAsState()
 
   // Local state for text fields to allow typing without immediate updates
   var minText by remember(currentRange.first) { mutableStateOf(currentRange.first.toString()) }
@@ -130,7 +133,7 @@ fun <T> RangeFilterPanel(rangeFacet: RangeFacet<T>, modifier: Modifier = Modifie
                     onClick = {
                       rangeFacet.reset()
                       minText = rangeFacet.minBound.toString()
-                      maxText = rangeFacet.maxBound.toString()
+                      maxText = maxBound.toString()
                     },
                     modifier =
                         Modifier.testTag(RangeFilterTestTags.getResetButtonTag(rangeFacet.id))) {
@@ -153,9 +156,9 @@ fun <T> RangeFilterPanel(rangeFacet: RangeFacet<T>, modifier: Modifier = Modifie
                       minText = newMin.toString()
                       maxText = newMax.toString()
                     },
-                    valueRange = rangeFacet.minBound.toFloat()..rangeFacet.maxBound.toFloat(),
+                    valueRange = rangeFacet.minBound.toFloat()..maxBound.toFloat(),
                     steps =
-                        ((rangeFacet.maxBound - rangeFacet.minBound) / rangeFacet.step -
+                        ((maxBound - rangeFacet.minBound) / rangeFacet.step -
                                 RangeFilterUIDimens.SliderStepOffset)
                             .coerceAtLeast(RangeFilterUIDimens.SliderMinSteps),
                     modifier =
