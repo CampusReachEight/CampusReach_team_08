@@ -379,7 +379,7 @@ private fun LeaderboardCard(
   Card(
       shape = RoundedCornerShape(ConstantLeaderboard.CardCornerRadius),
       border = cardBorder,
-      colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+      colors = CardDefaults.cardColors(containerColor = appPalette().surface),
       modifier =
           Modifier.fillMaxWidth()
               .height(ConstantLeaderboard.CardHeight)
@@ -408,7 +408,9 @@ private fun LeaderboardCard(
                     fontWeight = FontWeight.SemiBold,
                     maxLines = ConstantLeaderboard.SingleLineMax,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.testTag(LeaderboardTestTags.CARD_NAME))
+                    modifier = Modifier.testTag(LeaderboardTestTags.CARD_NAME),
+                    color = appPalette().onSurface
+                    )
                 Text(
                     text = sectionLabel(profile.section),
                     style = MaterialTheme.typography.bodySmall,
@@ -463,7 +465,9 @@ private fun StatsColumn(label: String, value: Int, testTag: String) {
             text = value.toString(),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.testTag(testTag))
+            modifier = Modifier.testTag(testTag),
+            color = appPalette().onSurface
+        )
       }
 }
 
