@@ -132,7 +132,12 @@ fun LeaderboardScreen(
       topBar = {
         TopNavigationBar(
             selectedTab = NavigationTab.Leaderboard,
-            onProfileClick = { navigationActions?.navigateTo(Screen.Profile("TODO")) },
+            onProfileClick = {
+              val currentUserId = leaderboardViewModel.profileRepository.getCurrentUserId()
+              if (currentUserId.isNotBlank()) {
+                navigationActions?.navigateTo(Screen.Profile(currentUserId))
+              }
+            },
             navigationActions = navigationActions)
       },
       bottomBar = {
@@ -193,7 +198,8 @@ fun LeaderboardScreen(
                     LeaderboardList(
                         profiles = displayedProfiles,
                         positions = state.positions,
-                        profileRepository = leaderboardViewModel.profileRepository)
+                        profileRepository = leaderboardViewModel.profileRepository,
+                        navigationActions = navigationActions)
                   }
                 }
               }
@@ -343,7 +349,8 @@ private fun SortButton(
 private fun LeaderboardList(
     profiles: List<UserProfile>,
     positions: Map<String, Int>,
-    profileRepository: com.android.sample.model.profile.UserProfileRepository
+    profileRepository: com.android.sample.model.profile.UserProfileRepository,
+    navigationActions: NavigationActions? = null
 ) {
   LazyColumn(
       modifier =
@@ -356,7 +363,10 @@ private fun LeaderboardList(
             val actualPosition =
                 positions[profile.id] ?: (index + ConstantLeaderboard.ListIndexOffset)
             LeaderboardCard(
-                position = actualPosition, profile = profile, profileRepository = profileRepository)
+                position = actualPosition,
+                profile = profile,
+                profileRepository = profileRepository,
+                navigationActions = navigationActions)
           }
         }
       }
@@ -367,6 +377,7 @@ private fun LeaderboardCard(
     position: Int,
     profile: UserProfile,
     profileRepository: UserProfileRepository,
+    navigationActions: NavigationActions? = null
 ) {
   val badgeTheme = forRank(position)
   val addon = resolveAddon(position, profile.id)
@@ -390,7 +401,8 @@ private fun LeaderboardCard(
                   profile = profile,
                   badgeTheme = badgeTheme,
                   addon = addon,
-                  profileRepository = profileRepository)
+                  profileRepository = profileRepository,
+                  navigationActions = navigationActions)
 
               Spacer(modifier = Modifier.width(ConstantLeaderboard.RowSpacing))
 
@@ -518,6 +530,7 @@ private fun ProfilePictureWithAddon(
     badgeTheme: BadgeTheme?,
     addon: ProfileAddon?,
     profileRepository: com.android.sample.model.profile.UserProfileRepository,
+    navigationActions: NavigationActions? = null
 ) {
   val crownTint = badgeTheme?.primaryColor ?: MaterialTheme.colorScheme.primary
 
@@ -525,6 +538,7 @@ private fun ProfilePictureWithAddon(
     ProfilePicture(
         profileRepository = profileRepository,
         profileId = profile.id,
+        navigationActions = navigationActions,
         modifier =
             Modifier.matchParentSize()
                 .clip(RoundedCornerShape(ConstantLeaderboard.CardCornerRadius))
