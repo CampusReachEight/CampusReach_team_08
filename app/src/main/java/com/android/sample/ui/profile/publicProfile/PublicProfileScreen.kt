@@ -177,15 +177,6 @@ fun PublicProfileHeader(
         else -> "${profile.name} ${profile.lastName}"
       }
 
-  val sectionLabel =
-      try {
-        UserSections.entries
-            .firstOrNull { it.name.equals(profile?.section.toString(), ignoreCase = true) }
-            ?.label ?: profile?.section.toString()
-      } catch (e: Exception) {
-        NONE
-      }
-
   Card(
       modifier =
           modifier
