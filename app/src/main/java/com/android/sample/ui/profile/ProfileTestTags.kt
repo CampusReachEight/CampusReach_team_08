@@ -33,6 +33,7 @@ object ProfileTestTags {
   const val PROFILE_STAT_BOTTOM_HELP_RECEIVED = "profile_stat_bottom_help_received"
   const val PROFILE_STAT_TOP_FOLLOWERS = "profile_stat_top_followers"
   const val PROFILE_STAT_BOTTOM_FOLLOWING = "profile_stat_bottom_following"
+  const val PROFILE_STAT_TOP_RANK = "profile_stat_top_rank"
 
   // Information section and individual info rows (match InfoRow generated tags)
   const val PROFILE_INFORMATION = "profile_information"

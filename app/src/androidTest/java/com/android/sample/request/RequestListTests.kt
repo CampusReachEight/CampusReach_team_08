@@ -44,6 +44,7 @@ import com.android.sample.ui.request.RequestListState
 import com.android.sample.ui.request.RequestListTestTags
 import com.android.sample.ui.request.RequestListViewModel
 import com.android.sample.ui.request.RequestSearchFilterTestTags
+import com.android.sample.ui.request.RequestSort
 import com.android.sample.ui.theme.DarkPalette
 import com.android.sample.ui.theme.LocalAppPalette
 import com.android.sample.utils.BaseEmulatorTest
@@ -873,7 +874,7 @@ class RequestListTests : BaseEmulatorTest() {
 
     // Select Title Asc
     composeTestRule
-        .onNodeWithText("Title ascending", ignoreCase = true)
+        .onNodeWithText(RequestSort.TITLE_ASCENDING.label, ignoreCase = true)
         .assertIsDisplayed()
         .performClick()
 
@@ -885,7 +886,9 @@ class RequestListTests : BaseEmulatorTest() {
 
     // Switch to Most participants
     composeTestRule.onNodeWithTag(RequestSearchFilterTestTags.SORT_BUTTON).performClick()
-    composeTestRule.onNodeWithText("Most participants", ignoreCase = true).performClick()
+    composeTestRule
+        .onNodeWithText(RequestSort.MOST_PARTICIPANTS.label, ignoreCase = true)
+        .performClick()
 
     // Expect request with 5 participants (A Alpha) first.
     composeTestRule.waitUntil(WAIT_TIMEOUT_MS) { extractVisibleTitles().first().startsWith("A") }

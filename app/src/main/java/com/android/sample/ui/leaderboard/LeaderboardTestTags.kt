@@ -45,6 +45,7 @@ object LeaderboardTestTags {
   const val CARD_PROFILE_PICTURE = "leaderboardCardProfilePicture"
   const val CARD_NAME = "leaderboardCardName"
   const val CARD_SECTION = "leaderboardCardSection"
+  const val CARD_POSITION = "leaderboardCardPosition"
   const val CARD_KUDOS_VALUE = "leaderboardCardKudosValue"
   const val CARD_HELP_VALUE = "leaderboardCardHelpValue"
 
