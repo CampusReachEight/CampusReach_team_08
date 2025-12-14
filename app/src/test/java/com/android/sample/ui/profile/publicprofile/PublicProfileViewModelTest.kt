@@ -163,7 +163,7 @@ class PublicProfileViewModelTest {
   }
 
   @Test
-  fun toggleFollow_whenNotLoggedIn_setsError() = runTest {
+  fun toggleFollow_whenNotLoggedIn_doesNotPerformOperation() = runTest {
     // Given
     coEvery { userProfileRepository.getCurrentUserId() } returns ""
 
@@ -172,9 +172,12 @@ class PublicProfileViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     // Then
-    assertUiState(expectedIsLoading = false, expectedError = ERROR_NOT_LOGGED_IN)
+    // Verify no follow/unfollow operations were attempted
     coVerify(exactly = 0) { userProfileRepository.followUser(any(), any()) }
     coVerify(exactly = 0) { userProfileRepository.unfollowUser(any(), any()) }
+
+    // Verify operation finished without error displayed
+    assertEquals(false, viewModel.uiState.value.isFollowOperationInProgress)
   }
 
   @Test

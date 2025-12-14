@@ -22,15 +22,28 @@ class ProfileLogoutTests : BaseEmulatorTest() {
 
   @Before
   override fun setUp() {
+    super.setUp()
+
     viewModel =
         ProfileViewModel(
-            initialState = ProfileState.default(),
+            initialState =
+                ProfileState(
+                    isLoading = false,
+                    userName = "Test User",
+                    userSection = "Test Section",
+                    profilePictureUrl = null,
+                    kudosReceived = 0,
+                    helpReceived = 0,
+                    followers = 0,
+                    following = 0,
+                    arrivalDate = "",
+                    isLoggingOut = false,
+                    isEditMode = false,
+                    offlineMode = false,
+                    profileId = currentUserId // From BaseEmulatorTest
+                    ),
         )
-    composeTestRule.setContent {
-      ProfileScreen(
-          viewModel,
-      )
-    }
+    composeTestRule.setContent { ProfileScreen(viewModel = viewModel, navigationActions = null) }
     composeTestRule.waitForIdle()
   }
 
