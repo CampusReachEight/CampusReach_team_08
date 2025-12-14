@@ -11,13 +11,13 @@ object ConstantLeaderboard {
   val PaddingSmall = 8.dp
   val PaddingMedium = 12.dp
   val PaddingLarge = 16.dp
-  val RowSpacing = 8.dp
+  val RowSpacing = 4.dp
 
   // List and items
   val ListPadding = 16.dp
   val ListItemSpacing = 8.dp
   val CardHeight = 80.dp
-  val CardInnerPadding = 12.dp
+  val CardInnerPadding = 8.dp
   val CardCornerRadius = 12.dp
   val CardBorderWidth = 1.dp
   val SurfaceTonalElevation = 2.dp
@@ -49,4 +49,6 @@ object ConstantLeaderboard {
   val ZeroCountFallback = 0
   val ListIndexOffset = 1
   val SingleLineMax = 1
+
+  val TwoLineMax = 2
 }
