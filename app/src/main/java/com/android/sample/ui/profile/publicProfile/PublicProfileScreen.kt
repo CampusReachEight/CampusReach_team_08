@@ -216,7 +216,10 @@ fun PublicProfileHeader(
             }
             Spacer(modifier = Modifier.weight(1f))
             if (!uiState.offlineMode) {
-              FollowButton(isFollowing = isFollowing, onToggle = onFollowToggle)
+              FollowButton(
+                  isFollowing = isFollowing,
+                  onToggle = onFollowToggle,
+                  isOperationInProgress = uiState.isFollowOperationInProgress)
             }
           }
         }
@@ -227,13 +230,14 @@ private const val UNFOLLOW = "Unfollow"
 private const val FOLLOW = "Follow"
 
 @Composable
-fun FollowButton(isFollowing: Boolean, onToggle: () -> Unit) {
+fun FollowButton(isFollowing: Boolean, onToggle: () -> Unit, isOperationInProgress: Boolean) {
   val tag =
       if (isFollowing) PublicProfileTestTags.UNFOLLOW_BUTTON
       else PublicProfileTestTags.FOLLOW_BUTTON
-  ElevatedButton(onClick = onToggle, modifier = Modifier.testTag(tag)) {
-    Text(text = if (isFollowing) UNFOLLOW else FOLLOW)
-  }
+  ElevatedButton(
+      onClick = onToggle, modifier = Modifier.testTag(tag), enabled = !isOperationInProgress) {
+        Text(text = if (isFollowing) UNFOLLOW else FOLLOW)
+      }
 }
 
 private const val ZERO = 0
