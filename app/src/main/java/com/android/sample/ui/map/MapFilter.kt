@@ -25,6 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.testTag
 import com.android.sample.model.request.RequestOwnership
 import com.android.sample.ui.request.RequestSearchFilterViewModel
@@ -36,7 +37,8 @@ fun MapFilter(
     searchFilterViewModel: RequestSearchFilterViewModel,
     selectedOwnership: RequestOwnership,
     viewModel: MapViewModel,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onFilterBarHeightChanged: (Int) -> Unit = {}
 ) {
   val facets = searchFilterViewModel.facets
   val selectedSets = facets.map { it.selected.collectAsState() }
@@ -44,7 +46,10 @@ fun MapFilter(
 
   Column(modifier = modifier) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier =
+            Modifier.fillMaxWidth().onGloballyPositioned { coordinates ->
+              onFilterBarHeightChanged(coordinates.size.height)
+            },
         elevation =
             CardDefaults.cardElevation(defaultElevation = ConstantMap.CARD_DEFAULT_ELEVATION),
         shape = RectangleShape) {
