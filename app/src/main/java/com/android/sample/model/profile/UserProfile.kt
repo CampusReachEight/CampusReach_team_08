@@ -168,6 +168,7 @@ data class UserProfile(
           "email" to email,
           "photo" to photo,
           "kudos" to kudos,
+          "helpReceived" to helpReceived,
           "section" to section.name,
           "arrivalDate" to Timestamp(arrivalDate),
           // Used exclusively for search queries

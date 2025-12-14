@@ -208,36 +208,34 @@ class RequestSearchFilterViewModel(
 }
 
 // --- Sorting definitions ---
-enum class RequestSort(val comparator: Comparator<Request>) {
-  NEWEST(compareByDescending<Request> { it.startTimeStamp }.thenBy { it.requestId }),
-  OLDEST(compareBy<Request> { it.startTimeStamp }.thenBy { it.requestId }),
-  LAST_MINUTE(compareBy<Request> { it.expirationTime }.thenBy { it.startTimeStamp }),
-  STATUS(
-      Comparator<Request> { a, b ->
-            val diff = statusOrderForSort(a.status) - statusOrderForSort(b.status)
-            if (diff != 0) diff else a.startTimeStamp.compareTo(b.startTimeStamp)
-          }
-          .thenBy { it.requestId }),
+enum class RequestSort(val comparator: Comparator<Request>, val label: String) {
+  NEWEST(compareByDescending<Request> { it.startTimeStamp }.thenBy { it.requestId }, "Latest"),
+  OLDEST(compareBy<Request> { it.startTimeStamp }.thenBy { it.requestId }, "Oldest"),
+  LAST_MINUTE(compareBy<Request> { it.expirationTime }.thenBy { it.startTimeStamp }, "Last minute"),
   MOST_PARTICIPANTS(
       Comparator<Request> { a, b ->
             val diff = b.people.size - a.people.size
             if (diff != 0) diff else a.startTimeStamp.compareTo(b.startTimeStamp)
           }
-          .thenBy { it.requestId }),
+          .thenBy { it.requestId },
+      "Participants (Descending)"),
   LEAST_PARTICIPANTS(
       Comparator<Request> { a, b ->
             val diff = a.people.size - b.people.size
             if (diff != 0) diff else a.startTimeStamp.compareTo(b.startTimeStamp)
           }
-          .thenBy { it.requestId }),
+          .thenBy { it.requestId },
+      "Participants (Ascending)"),
   TITLE_ASCENDING(
       compareBy<Request> { it.title.lowercase() }
           .thenBy { it.startTimeStamp }
-          .thenBy { it.requestId }),
+          .thenBy { it.requestId },
+      "Title (A-Z)"),
   TITLE_DESCENDING(
       compareByDescending<Request> { it.title.lowercase() }
           .thenBy { it.startTimeStamp }
-          .thenBy { it.requestId });
+          .thenBy { it.requestId },
+      "Title (Z-A)");
 
   companion object {
     fun default(): RequestSort = NEWEST

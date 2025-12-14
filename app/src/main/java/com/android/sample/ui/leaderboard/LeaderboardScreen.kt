@@ -55,12 +55,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.model.profile.UserProfile
 import com.android.sample.model.profile.UserProfileCache
 import com.android.sample.ui.getFilterAndSortButtonColors
 import com.android.sample.ui.getTextFieldColors
+import com.android.sample.model.profile.UserProfileRepository
 import com.android.sample.ui.leaderboard.LeaderboardAddOns.crown
 import com.android.sample.ui.leaderboard.LeaderboardAddOns.cutiePatootie
 import com.android.sample.ui.leaderboard.LeaderboardBadgeThemes.CutieColor
@@ -192,6 +194,7 @@ fun LeaderboardScreen(
                   else -> {
                     LeaderboardList(
                         profiles = displayedProfiles,
+                        positions = state.positions,
                         profileRepository = leaderboardViewModel.profileRepository)
                   }
                 }
@@ -345,6 +348,7 @@ private fun SortButton(
 @Composable
 private fun LeaderboardList(
     profiles: List<UserProfile>,
+    positions: Map<String, Int>,
     profileRepository: com.android.sample.model.profile.UserProfileRepository
 ) {
   LazyColumn(
@@ -355,10 +359,10 @@ private fun LeaderboardList(
       verticalArrangement = Arrangement.spacedBy(ConstantLeaderboard.ListItemSpacing)) {
         itemsIndexed(items = profiles, key = { _, item -> item.id }) { index, profile ->
           Box(modifier = Modifier.testTag(LeaderboardTestTags.LEADERBOARD_CARD)) {
+            val actualPosition =
+                positions[profile.id] ?: (index + ConstantLeaderboard.ListIndexOffset)
             LeaderboardCard(
-                position = index + ConstantLeaderboard.ListIndexOffset,
-                profile = profile,
-                profileRepository = profileRepository)
+                position = actualPosition, profile = profile, profileRepository = profileRepository)
           }
         }
       }
@@ -368,7 +372,7 @@ private fun LeaderboardList(
 private fun LeaderboardCard(
     position: Int,
     profile: UserProfile,
-    profileRepository: com.android.sample.model.profile.UserProfileRepository,
+    profileRepository: UserProfileRepository,
 ) {
   val badgeTheme = forRank(position)
   val addon = resolveAddon(position, profile.id)
@@ -384,12 +388,11 @@ private fun LeaderboardCard(
         Row(
             modifier = Modifier.fillMaxSize().padding(ConstantLeaderboard.CardInnerPadding),
             verticalAlignment = Alignment.CenterVertically) {
-              Medal(position, badgeTheme)
+              PositionWithMedal(position, badgeTheme)
 
               Spacer(modifier = Modifier.width(ConstantLeaderboard.RowSpacing))
 
               ProfilePictureWithAddon(
-                  position = position,
                   profile = profile,
                   badgeTheme = badgeTheme,
                   addon = addon,
@@ -400,8 +403,15 @@ private fun LeaderboardCard(
               Column(modifier = Modifier.weight(ConstantLeaderboard.WeightFill)) {
                 // Main identity block stretches to take available horizontal space
                 Text(
-                    text = "${profile.name} ${profile.lastName}",
-                    style = MaterialTheme.typography.titleMedium,
+                    text = profile.name,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = ConstantLeaderboard.SingleLineMax,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.testTag(LeaderboardTestTags.CARD_NAME))
+                Text(
+                    text = profile.lastName,
+                    style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
                     maxLines = ConstantLeaderboard.SingleLineMax,
                     overflow = TextOverflow.Ellipsis,
@@ -411,10 +421,10 @@ private fun LeaderboardCard(
                     text = sectionLabel(profile.section),
                     style = MaterialTheme.typography.bodySmall,
                     color = appPalette().text.copy(alpha = ConstantLeaderboard.SecondaryTextAlpha),
-                    modifier = Modifier.testTag(LeaderboardTestTags.CARD_SECTION),
                     maxLines = ConstantLeaderboard.SingleLineMax,
                     softWrap = true,
-                    overflow = TextOverflow.Ellipsis)
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.testTag(LeaderboardTestTags.CARD_SECTION))
               }
 
               Spacer(modifier = Modifier.width(ConstantLeaderboard.RowSpacing))
@@ -433,22 +443,47 @@ private fun LeaderboardCard(
 }
 
 @Composable
-private fun Medal(position: Int, theme: BadgeTheme?) {
+private fun PositionWithMedal(position: Int, theme: BadgeTheme?) {
   if (theme == null) {
-    Spacer(modifier = Modifier.width(ConstantLeaderboard.MedalIconSize))
-    return
-  }
+    // When no theme, center the position text vertically
+    Box(
+        modifier = Modifier.width(ConstantLeaderboard.MedalIconSize),
+        contentAlignment = Alignment.Center) {
+          PositionText(position, theme)
+        }
+  } else {
+    // When theme exists, position text above medal
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.width(ConstantLeaderboard.MedalIconSize)) {
+          PositionText(position, theme)
 
-  val base =
-      Modifier.size(ConstantLeaderboard.MedalIconSize).clip(CircleShape).background(theme.haloColor)
-  val tagged = theme.testTag?.let { base.testTag(it) } ?: base
+          Spacer(modifier = Modifier.height(ConstantLeaderboard.PaddingSmall))
 
-  Box(modifier = tagged, contentAlignment = Alignment.Center) {
-    Icon(
-        imageVector = theme.icon,
-        contentDescription = "${LeaderBoardScreenUILabels.MEDAL_DESCRIPTION} $position",
-        tint = theme.primaryColor)
+          val base =
+              Modifier.size(ConstantLeaderboard.MedalIconSize)
+                  .clip(CircleShape)
+                  .background(theme.haloColor)
+          val tagged = theme.testTag?.let { base.testTag(it) } ?: base
+
+          Box(modifier = tagged, contentAlignment = Alignment.Center) {
+            Icon(
+                imageVector = theme.icon,
+                contentDescription = "${LeaderBoardScreenUILabels.MEDAL_DESCRIPTION} $position",
+                tint = theme.primaryColor)
+          }
+        }
   }
+}
+
+@Composable
+private fun PositionText(position: Int, theme: BadgeTheme?) {
+  Text(
+      text = "#$position",
+      style = MaterialTheme.typography.bodySmall.copy(textDecoration = TextDecoration.Underline),
+      fontWeight = FontWeight.Bold,
+      color = theme?.primaryColor ?: Color.Gray,
+      modifier = Modifier.testTag(LeaderboardTestTags.CARD_POSITION))
 }
 
 @Composable
@@ -488,7 +523,6 @@ private fun ErrorDialog(message: String, onDismiss: () -> Unit) {
 
 @Composable
 private fun ProfilePictureWithAddon(
-    position: Int,
     profile: UserProfile,
     badgeTheme: BadgeTheme?,
     addon: ProfileAddon?,
@@ -507,7 +541,7 @@ private fun ProfilePictureWithAddon(
 
     when (addon) {
       null -> Unit
-      LeaderboardAddOns.crown -> {
+      crown -> {
         Icon(
             imageVector = addon.image,
             contentDescription = LeaderBoardScreenUILabels.CROWN_DESCRIPTION,
@@ -517,7 +551,7 @@ private fun ProfilePictureWithAddon(
                     .offset(y = ConstantLeaderboard.CrownOffsetY)
                     .size(addon.size))
       }
-      LeaderboardAddOns.cutiePatootie -> {
+      cutiePatootie -> {
         Icon(
             imageVector = addon.image,
             contentDescription = LeaderBoardScreenUILabels.CUTIE_PATOOTIE_DESCRIPTION,

@@ -275,7 +275,6 @@ class ProfileUiTests {
         ProfileState(
             userName = "Alice",
             userEmail = "alice@ex.com",
-            profileId = "ID123",
             arrivalDate = "01/01/2020",
             userSection = "Math")
     composeTestRule.setContent { ProfileInformation(state = state) }
@@ -284,7 +283,6 @@ class ProfileUiTests {
     composeTestRule.onNodeWithText("Information").assertIsDisplayed()
 
     composeTestRule.onNodeWithTag("profile_info_name").assertTextEquals("Alice")
-    composeTestRule.onNodeWithTag("profile_info_profile_id").assertTextEquals("ID123")
     composeTestRule.onNodeWithTag("profile_info_arrival_date").assertTextEquals("01/01/2020")
     composeTestRule.onNodeWithTag("profile_info_section").assertTextEquals("Math")
     composeTestRule.onNodeWithTag("profile_info_email").assertTextEquals("alice@ex.com")
@@ -313,7 +311,6 @@ class ProfileUiTests {
     composeTestRule.setContent { ProfileInformation(state = state, showSensitiveInfo = true) }
 
     composeTestRule.onNodeWithTag("profile_info_name").assertTextEquals("John Doe")
-    composeTestRule.onNodeWithTag("profile_info_profile_id").assertTextEquals("123")
     composeTestRule.onNodeWithTag("profile_info_arrival_date").assertTextEquals("01/01/2020")
     composeTestRule.onNodeWithTag("profile_info_section").assertTextEquals("Engineering")
     composeTestRule.onNodeWithTag("profile_info_email").assertTextEquals("john@example.com")
@@ -327,7 +324,6 @@ class ProfileUiTests {
             .copy(
                 userName = longText,
                 userEmail = longText,
-                profileId = longText,
                 arrivalDate = longText,
                 userSection = longText)
 
@@ -335,7 +331,6 @@ class ProfileUiTests {
 
     // Verify the full long text is set on each value node
     composeTestRule.onNodeWithTag("profile_info_name").assertTextEquals(longText)
-    composeTestRule.onNodeWithTag("profile_info_profile_id").assertTextEquals(longText)
     composeTestRule.onNodeWithTag("profile_info_arrival_date").assertTextEquals(longText)
     composeTestRule.onNodeWithTag("profile_info_section").assertTextEquals(longText)
     composeTestRule.onNodeWithTag("profile_info_email").assertTextEquals(longText)
