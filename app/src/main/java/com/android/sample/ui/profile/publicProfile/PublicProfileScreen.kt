@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedButton
@@ -26,7 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.model.profile.UserProfile
 import com.android.sample.ui.profile.PROFILE_OFFLINE_TEXT
@@ -40,7 +41,6 @@ import com.android.sample.ui.profile.composables.ProfileInformation
 import com.android.sample.ui.profile.composables.ProfileLoadingBuffer
 import com.android.sample.ui.profile.composables.ProfileStats
 import com.android.sample.ui.profile.composables.ProfileTopBar
-import com.android.sample.ui.theme.AppColors
 import com.android.sample.ui.theme.AppPalette
 import com.android.sample.ui.theme.appPalette
 
@@ -151,7 +151,10 @@ private fun PublicProfileScrollableContent(
 
 private const val UNKNOWN = "Unknown"
 private const val NONE = "None"
-private const val MAX_LENGTH = 25
+private const val MAX_LENGTH = 20
+private const val ONE_LINE = 1
+private const val BUTTON_WIDTH = 96
+private const val WEIGHT = 1f
 
 @Composable
 fun PublicProfileHeader(
@@ -163,7 +166,7 @@ fun PublicProfileHeader(
     uiState: PublicProfileUiState
 ) {
   val accent = palette.accent
-  val textColor = AppColors.WhiteColor
+  val textColor = palette.onAccent
   val maxNameLength = MAX_LENGTH
   val uiUtils = com.android.sample.ui.UiUtils()
 
@@ -183,8 +186,6 @@ fun PublicProfileHeader(
         NONE
       }
 
-  val displayName = uiUtils.ellipsizeWithMiddle(fullName, maxLength = maxNameLength)
-
   Card(
       modifier =
           modifier
@@ -202,19 +203,38 @@ fun PublicProfileHeader(
                     Modifier.size(ProfileDimens.ProfilePicture)
                         .testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_PROFILE_PICTURE))
             Spacer(modifier = Modifier.width(ProfileDimens.HeaderSpacer))
-            Column {
+
+            // Column takes remaining space so texts will ellipsize based on available width
+            Column(modifier = Modifier.weight(WEIGHT)) {
               Text(
-                  text = displayName,
+                  text = fullName,
                   style = MaterialTheme.typography.titleMedium,
                   color = textColor,
-                  modifier = Modifier.testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_NAME))
+                  modifier =
+                      Modifier.fillMaxWidth()
+                          .testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_NAME),
+                  maxLines = ONE_LINE,
+                  softWrap = false,
+                  overflow = TextOverflow.Ellipsis)
               Text(
-                  text = sectionLabel,
+                  text =
+                      if (profile?.email != null) {
+                        uiUtils.ellipsizeWithMiddle(
+                            profile.email, maxLength = maxNameLength, keepSuffixLength = 10)
+                      } else {
+                        UNKNOWN
+                      },
                   style = MaterialTheme.typography.bodyMedium,
                   color = textColor,
-                  modifier = Modifier.testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_EMAIL))
+                  modifier =
+                      Modifier.fillMaxWidth()
+                          .testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_EMAIL),
+                  maxLines = ONE_LINE,
+                  softWrap = false,
+                  overflow = TextOverflow.Ellipsis)
             }
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.width(ProfileDimens.HeaderSpacer))
+
             if (!uiState.offlineMode) {
               FollowButton(isFollowing = isFollowing, onToggle = onFollowToggle)
             }
@@ -231,9 +251,18 @@ fun FollowButton(isFollowing: Boolean, onToggle: () -> Unit) {
   val tag =
       if (isFollowing) PublicProfileTestTags.UNFOLLOW_BUTTON
       else PublicProfileTestTags.FOLLOW_BUTTON
-  ElevatedButton(onClick = onToggle, modifier = Modifier.testTag(tag)) {
-    Text(text = if (isFollowing) UNFOLLOW else FOLLOW)
-  }
+  ElevatedButton(
+      onClick = onToggle,
+      modifier = Modifier.testTag(tag),
+      colors =
+          ButtonDefaults.elevatedButtonColors(
+              containerColor = appPalette().onAccent, contentColor = appPalette().accent)) {
+        Text(
+            text = if (isFollowing) UNFOLLOW else FOLLOW,
+            maxLines = ONE_LINE,
+            softWrap = false,
+            overflow = TextOverflow.Ellipsis)
+      }
 }
 
 private const val ZERO = 0
@@ -289,10 +318,4 @@ fun mapUserProfileToProfileState(userProfile: UserProfile?): ProfileState {
           },
       isLoggingOut = false,
       isEditMode = false)
-}
-
-@Preview
-@Composable
-fun PublicProfileScreenPreview() {
-  PublicProfileScreen()
 }
