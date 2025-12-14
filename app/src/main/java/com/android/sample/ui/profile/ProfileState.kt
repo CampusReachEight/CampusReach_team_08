@@ -11,6 +11,7 @@ data class ProfileState(
     val helpReceived: Int = 0,
     val followers: Int = 0,
     val following: Int = 0,
+    val leaderboardPosition: Int? = null,
 
     // Information section
     val arrivalDate: String = "00/00/0000",

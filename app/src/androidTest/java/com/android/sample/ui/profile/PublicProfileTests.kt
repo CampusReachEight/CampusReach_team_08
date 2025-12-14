@@ -163,7 +163,7 @@ class PublicProfileTests {
     composeTestRule
         .onNodeWithTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_EMAIL)
         .assertIsDisplayed()
-        .assertTextContains("Computer Science")
+        .assertTextContains("jane.doe@fake.com")
 
     composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_STAT_TOP_KUDOS).assertTextContains("7")
     composeTestRule

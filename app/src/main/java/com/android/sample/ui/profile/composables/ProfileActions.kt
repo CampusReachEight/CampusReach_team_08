@@ -6,8 +6,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
+import androidx.compose.material.icons.automirrored.filled.PlaylistAddCheck
+import androidx.compose.material.icons.filled.FormatListBulleted
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.filled.PlaylistAddCheck
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -64,7 +68,7 @@ fun ProfileActions(
 
         // My request button - FIRST
         ActionItem(
-            icon = Icons.Default.Info,
+            icon = Icons.AutoMirrored.Filled.FormatListBulleted,
             title = TITLE_MY_REQUESTS,
             subtitle = SEE_AND_EDIT,
             tag = ProfileTestTags.PROFILE_ACTION_MY_REQUEST,
@@ -72,7 +76,7 @@ fun ProfileActions(
 
         // Accepted requests button - SECOND
         ActionItem(
-            icon = Icons.Default.Info,
+            icon = Icons.AutoMirrored.Filled.PlaylistAddCheck,
             title = "Accepted Requests",
             subtitle = "View requests you've accepted as a helper",
             tag = ProfileTestTags.PROFILE_ACTION_ACCEPTED_REQUESTS,

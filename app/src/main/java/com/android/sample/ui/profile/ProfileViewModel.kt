@@ -6,6 +6,7 @@ import com.android.sample.model.profile.UserProfile
 import com.android.sample.model.profile.UserProfileCache
 import com.android.sample.model.profile.UserProfileRepository
 import com.android.sample.model.profile.UserProfileRepositoryFirestore
+import com.android.sample.ui.leaderboard.LeaderboardPositionCalculator
 import com.android.sample.ui.navigation.NavigationActions
 import com.android.sample.ui.navigation.Screen
 import com.google.firebase.auth.FirebaseAuth
@@ -87,7 +88,11 @@ class ProfileViewModel(
       }
 
       loadedProfile = profile
-      mapProfileToState(profile)
+
+      // Calculate leaderboard position
+      val position = calculateLeaderboardPosition(profile.id)
+
+      mapProfileToState(profile, position)
     } catch (_: Exception) {
       setError("Failed to load profile")
     } finally {
@@ -95,7 +100,36 @@ class ProfileViewModel(
     }
   }
 
-  private fun mapProfileToState(profile: UserProfile) {
+  /**
+   * Calculates the leaderboard position for a given user ID. Attempts to load all profiles from
+   * repository, falls back to cache if offline.
+   *
+   * @param userId The user ID to get the position for
+   * @return The position (1-indexed) or null if unable to calculate
+   */
+  private suspend fun calculateLeaderboardPosition(userId: String): Int? {
+    return try {
+      // Try to load all profiles from repository
+      val allProfiles = repository.getAllUserProfiles()
+      val positions = LeaderboardPositionCalculator.calculatePositions(allProfiles)
+      positions[userId]
+    } catch (_: Exception) {
+      // Fall back to cache if repository fails (offline mode)
+      try {
+        val cachedProfiles = profileCache?.loadLeaderboard() ?: emptyList()
+        if (cachedProfiles.isNotEmpty()) {
+          val positions = LeaderboardPositionCalculator.calculatePositions(cachedProfiles)
+          positions[userId]
+        } else {
+          null
+        }
+      } catch (_: Exception) {
+        null
+      }
+    }
+  }
+
+  private fun mapProfileToState(profile: UserProfile, position: Int? = null) {
     val displayName =
         if (profile.lastName.isBlank()) profile.name else "${profile.name} ${profile.lastName}"
 
@@ -114,6 +148,7 @@ class ProfileViewModel(
           helpReceived = profile.helpReceived,
           followers = profile.followerCount,
           following = profile.followingCount,
+          leaderboardPosition = position,
           offlineMode = _state.value.offlineMode,
           arrivalDate = formatDate(profile.arrivalDate),
           userSection = sectionLabel,
@@ -204,6 +239,8 @@ class ProfileViewModel(
                 photo = current.photo,
                 kudos = current.kudos,
                 helpReceived = current.helpReceived,
+                followerCount = current.followerCount,
+                followingCount = current.followingCount,
                 section = userSection,
                 arrivalDate = current.arrivalDate)
 

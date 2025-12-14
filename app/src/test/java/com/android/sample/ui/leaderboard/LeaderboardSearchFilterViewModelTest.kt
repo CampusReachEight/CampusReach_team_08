@@ -188,7 +188,6 @@ class LeaderboardSearchFilterViewModelTest {
 
         assertEquals(profiles.size, vm.displayedProfiles.value.size)
         assertTrue(sectionFacet.selected.value.isEmpty())
-        assertEquals(
-            kudosFacet.def.minBound..kudosFacet.def.maxBound, kudosFacet.currentRange.value)
+        assertEquals(0..profiles.maxOf { it.kudos }, kudosFacet.currentRange.value)
       }
 }
