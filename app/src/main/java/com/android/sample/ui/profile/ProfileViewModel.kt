@@ -204,6 +204,8 @@ class ProfileViewModel(
                 photo = current.photo,
                 kudos = current.kudos,
                 helpReceived = current.helpReceived,
+                followerCount = current.followerCount,
+                followingCount = current.followingCount,
                 section = userSection,
                 arrivalDate = current.arrivalDate)
 
