@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
@@ -18,6 +19,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RangeSlider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -33,6 +35,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.android.sample.ui.getFilterAndSortButtonColors
+import com.android.sample.ui.getTextFieldColors
+import com.android.sample.ui.theme.appPalette
 
 /** Constants for RangeFilterUI dimensions. */
 object RangeFilterUIDimens {
@@ -90,14 +95,17 @@ fun <T> RangeFilterButton(
         rangeFacet.title
       }
 
-  OutlinedButton(onClick = onClick, modifier = modifier.testTag(rangeFacet.buttonTestTag)) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(RangeFilterUIDimens.FieldSpacing),
-        verticalAlignment = Alignment.CenterVertically) {
-          Text(label)
-          Icon(imageVector = Icons.Filled.ArrowDropDown, contentDescription = null)
-        }
-  }
+  OutlinedButton(
+      onClick = onClick,
+      modifier = modifier.testTag(rangeFacet.buttonTestTag),
+      colors = getFilterAndSortButtonColors()) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(RangeFilterUIDimens.FieldSpacing),
+            verticalAlignment = Alignment.CenterVertically) {
+              Text(label)
+              Icon(imageVector = Icons.Filled.ArrowDropDown, contentDescription = null)
+            }
+      }
 }
 
 /**
@@ -121,6 +129,7 @@ fun <T> RangeFilterPanel(rangeFacet: RangeFacet<T>, modifier: Modifier = Modifie
       shape = MaterialTheme.shapes.medium,
       tonalElevation = RangeFilterUIDimens.SurfaceTonalElevation,
       shadowElevation = RangeFilterUIDimens.SurfaceShadowElevation,
+      color = appPalette().surface,
       modifier = modifier.testTag(rangeFacet.panelTestTag)) {
         Column(modifier = Modifier.fillMaxWidth().padding(RangeFilterUIDimens.PanelPadding)) {
           // Title row with reset button
@@ -128,7 +137,10 @@ fun <T> RangeFilterPanel(rangeFacet: RangeFacet<T>, modifier: Modifier = Modifie
               modifier = Modifier.fillMaxWidth(),
               horizontalArrangement = Arrangement.SpaceBetween,
               verticalAlignment = Alignment.CenterVertically) {
-                Text(text = rangeFacet.title, style = MaterialTheme.typography.titleSmall)
+                Text(
+                    text = rangeFacet.title,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = appPalette().onSurface)
                 TextButton(
                     onClick = {
                       rangeFacet.reset()
@@ -136,7 +148,8 @@ fun <T> RangeFilterPanel(rangeFacet: RangeFacet<T>, modifier: Modifier = Modifie
                       maxText = maxBound.toString()
                     },
                     modifier =
-                        Modifier.testTag(RangeFilterTestTags.getResetButtonTag(rangeFacet.id))) {
+                        Modifier.testTag(RangeFilterTestTags.getResetButtonTag(rangeFacet.id)),
+                    colors = ButtonDefaults.textButtonColors(contentColor = appPalette().accent)) {
                       Text(RangeFilterUIText.ResetButtonLabel)
                     }
               }
@@ -164,7 +177,14 @@ fun <T> RangeFilterPanel(rangeFacet: RangeFacet<T>, modifier: Modifier = Modifie
                     modifier =
                         Modifier.fillMaxWidth()
                             .height(RangeFilterUIDimens.SliderHeight)
-                            .testTag(rangeFacet.sliderTestTag))
+                            .testTag(rangeFacet.sliderTestTag),
+                    colors =
+                        SliderDefaults.colors(
+                            thumbColor = appPalette().accent,
+                            activeTrackColor = appPalette().accent,
+                            inactiveTrackColor = appPalette().secondary,
+                            activeTickColor = appPalette().secondary,
+                            inactiveTickColor = appPalette().accent))
               }
 
           Spacer(modifier = Modifier.height(RangeFilterUIDimens.PanelVerticalSpacing))
@@ -185,12 +205,14 @@ fun <T> RangeFilterPanel(rangeFacet: RangeFacet<T>, modifier: Modifier = Modifie
                     singleLine = true,
                     modifier =
                         Modifier.width(RangeFilterUIDimens.FieldWidth)
-                            .testTag(rangeFacet.minFieldTestTag))
+                            .testTag(rangeFacet.minFieldTestTag),
+                    colors = getTextFieldColors())
 
                 Text(
                     text = RangeFilterUIText.ToLabel,
                     style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(horizontal = RangeFilterUIDimens.FieldSpacing))
+                    modifier = Modifier.padding(horizontal = RangeFilterUIDimens.FieldSpacing),
+                    color = appPalette().onSurface)
 
                 OutlinedTextField(
                     value = maxText,
@@ -203,7 +225,8 @@ fun <T> RangeFilterPanel(rangeFacet: RangeFacet<T>, modifier: Modifier = Modifie
                     singleLine = true,
                     modifier =
                         Modifier.width(RangeFilterUIDimens.FieldWidth)
-                            .testTag(rangeFacet.maxFieldTestTag))
+                            .testTag(rangeFacet.maxFieldTestTag),
+                    colors = getTextFieldColors())
               }
         }
       }
