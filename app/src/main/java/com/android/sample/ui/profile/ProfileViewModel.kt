@@ -21,36 +21,36 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-private const val UI_WAIT_TIME = 100L
-
 class ProfileViewModel(
     initialState: ProfileState = ProfileState.default(),
     private val fireBaseAuth: FirebaseAuth = FirebaseAuth.getInstance(),
     private val repository: UserProfileRepository =
         UserProfileRepositoryFirestore(FirebaseFirestore.getInstance()),
     private val onLogout: (() -> Unit)? = null,
-    private val attachAuthListener: Boolean = true, // NEW: allow tests to disable the auth listener
+    private val attachAuthListener: Boolean = true,
     private val profileCache: UserProfileCache? = null
 ) : ViewModel() {
   private val _state = MutableStateFlow(initialState)
   val state: StateFlow<ProfileState> = _state.asStateFlow()
 
   private var loadedProfile: UserProfile? = null
+  private var hasHandledInitialAuth = false
 
-  // Auth listener now respects current _state and will not trigger a load when tests set isLoading
-  // = true.
   private val authListener =
       FirebaseAuth.AuthStateListener { auth ->
-        // If UI (or tests) expect a loading state, avoid auto-triggering a load here.
-        if (_state.value.isLoading) return@AuthStateListener
         viewModelScope.launch { handleAuthUser(auth.currentUser) }
       }
 
   init {
     if (attachAuthListener) {
+      fireBaseAuth.addAuthStateListener(authListener)
+      // Trigger initial load immediately if user is already signed in
       viewModelScope.launch {
-        kotlinx.coroutines.delay(UI_WAIT_TIME)
-        fireBaseAuth.addAuthStateListener(authListener)
+        val currentUser = fireBaseAuth.currentUser
+        if (currentUser != null && !hasHandledInitialAuth) {
+          hasHandledInitialAuth = true
+          handleAuthUser(currentUser)
+        }
       }
     }
   }
