@@ -18,7 +18,7 @@ data class ProfileState(
     val userSection: String = "None",
 
     // UI States
-    val isLoading: Boolean = false,
+    val isLoading: Boolean = true,
     val errorMessage: String? = null,
     val isEditMode: Boolean = false, // If you plan to add edit functionality later
     val offlineMode: Boolean = false,
