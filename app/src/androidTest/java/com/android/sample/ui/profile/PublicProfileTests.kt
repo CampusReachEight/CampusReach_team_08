@@ -78,7 +78,13 @@ class PublicProfileTests {
   @Test
   fun followButton_direct_displaysLabel_and_invokesCallback() {
     var clicked = false
-    composeTestRule.setContent { FollowButton(isFollowing = false, onToggle = { clicked = true }) }
+    composeTestRule.setContent {
+      FollowButton(
+          isFollowing = false,
+          onToggle = { clicked = true },
+          isOperationInProgress = false // ADD THIS LINE
+          )
+    }
 
     composeTestRule.onNodeWithText("Follow").assertIsDisplayed()
     composeTestRule.onNodeWithText("Follow").performClick()
@@ -88,7 +94,11 @@ class PublicProfileTests {
 
   @Test
   fun followButton_direct_showsUnfollow_whenStartingFollowing() {
-    composeTestRule.setContent { FollowButton(isFollowing = true, onToggle = {}) }
+    composeTestRule.setContent {
+      FollowButton(
+          isFollowing = true, onToggle = {}, isOperationInProgress = false // ADD THIS LINE
+          )
+    }
     composeTestRule.onNodeWithText("Unfollow").assertIsDisplayed()
   }
 

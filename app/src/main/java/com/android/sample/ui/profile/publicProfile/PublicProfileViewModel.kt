@@ -16,7 +16,8 @@ data class PublicProfileUiState(
     val profile: UserProfile? = null,
     val error: String? = null,
     val isFollowing: Boolean = false,
-    val offlineMode: Boolean = false
+    val offlineMode: Boolean = false,
+    val isFollowOperationInProgress: Boolean = false
 )
 
 private const val ONE = 1
@@ -62,12 +63,14 @@ class PublicProfileViewModel(
   }
 
   fun toggleFollow(targetUserId: String) {
+
     viewModelScope.launch {
+      if (_uiState.value.isFollowOperationInProgress) return@launch
+      _uiState.value = _uiState.value.copy(isFollowOperationInProgress = true)
       try {
         val currentUserId = userProfileRepository.getCurrentUserId()
 
         if (currentUserId.isBlank()) {
-          _uiState.value = _uiState.value.copy(error = LOGGED_IN_ERROR)
           return@launch
         }
 
@@ -95,6 +98,8 @@ class PublicProfileViewModel(
         _uiState.value = _uiState.value.copy(error = e.message)
       } catch (e: Exception) {
         _uiState.value = _uiState.value.copy(error = "Failed to update follow status: ${e.message}")
+      } finally {
+        _uiState.value = _uiState.value.copy(isFollowOperationInProgress = false)
       }
     }
   }

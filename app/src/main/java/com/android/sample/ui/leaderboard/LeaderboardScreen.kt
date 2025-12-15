@@ -60,6 +60,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.model.profile.UserProfile
 import com.android.sample.model.profile.UserProfileCache
+import com.android.sample.ui.getFilterAndSortButtonColors
+import com.android.sample.ui.getTextFieldColors
 import com.android.sample.model.profile.UserProfileRepository
 import com.android.sample.ui.leaderboard.LeaderboardAddOns.crown
 import com.android.sample.ui.leaderboard.LeaderboardAddOns.cutiePatootie
@@ -241,7 +243,8 @@ private fun LeaderboardFilters(
                   modifier = Modifier.size(ConstantLeaderboard.SmallIndicatorSize),
                   strokeWidth = ConstantLeaderboard.SmallIndicatorStroke)
         }
-      })
+      },
+      colors = getTextFieldColors())
 
   Spacer(modifier = Modifier.height(ConstantLeaderboard.PaddingMedium))
 
@@ -254,7 +257,8 @@ private fun LeaderboardFilters(
         SortButton(
             current = sort,
             onSelect = { searchFilterViewModel.setSortCriteria(it) },
-            modifier = Modifier.height(ConstantLeaderboard.FilterButtonHeight))
+            modifier = Modifier.height(ConstantLeaderboard.FilterButtonHeight),
+        )
 
         facets.forEachIndexed { index, facet ->
           val selectedCount = selectedSets[index].value.size
@@ -265,7 +269,8 @@ private fun LeaderboardFilters(
                 openRangeId = null
                 openEnumId = if (openEnumId == facet.id) null else facet.id
               },
-              modifier = Modifier.height(ConstantLeaderboard.FilterButtonHeight))
+              modifier = Modifier.height(ConstantLeaderboard.FilterButtonHeight),
+          )
         }
 
         rangeFacets.forEach { rangeFacet ->
@@ -318,7 +323,8 @@ private fun SortButton(
         contentPadding =
             androidx.compose.foundation.layout.PaddingValues(
                 horizontal = ConstantLeaderboard.SortButtonPaddingHorizontal,
-                vertical = ConstantLeaderboard.SortButtonPaddingVertical)) {
+                vertical = ConstantLeaderboard.SortButtonPaddingVertical),
+        colors = getFilterAndSortButtonColors()) {
           Text(current.displayLabel())
           Spacer(Modifier.width(ConstantLeaderboard.FilterRowSpacingSmall))
           Icon(Icons.Filled.ArrowDropDown, contentDescription = null)
@@ -385,7 +391,7 @@ private fun LeaderboardCard(
   Card(
       shape = RoundedCornerShape(ConstantLeaderboard.CardCornerRadius),
       border = cardBorder,
-      colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+      colors = CardDefaults.cardColors(containerColor = appPalette().surface),
       modifier =
           Modifier.fillMaxWidth()
               .height(ConstantLeaderboard.CardHeight)
@@ -421,12 +427,14 @@ private fun LeaderboardCard(
                     fontWeight = FontWeight.SemiBold,
                     maxLines = ConstantLeaderboard.SingleLineMax,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.testTag(LeaderboardTestTags.CARD_NAME))
+                    modifier = Modifier.testTag(LeaderboardTestTags.CARD_NAME),
+                    color = appPalette().onSurface)
                 Text(
                     text = sectionLabel(profile.section),
                     style = MaterialTheme.typography.bodySmall,
                     color = appPalette().text.copy(alpha = ConstantLeaderboard.SecondaryTextAlpha),
-                    maxLines = ConstantLeaderboard.TwoLineMax,
+                    maxLines = ConstantLeaderboard.SingleLineMax,
+                    softWrap = true,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.testTag(LeaderboardTestTags.CARD_SECTION))
               }
@@ -503,7 +511,8 @@ private fun StatsColumn(label: String, value: Int, testTag: String) {
             text = value.toString(),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.testTag(testTag))
+            modifier = Modifier.testTag(testTag),
+            color = appPalette().onSurface)
       }
 }
 
