@@ -532,7 +532,6 @@ class ProfileUiTests {
   }
 
   @Test
-  @Ignore("not compatible anymore")
   fun profileScreen_loadingState_showsLoadingIndicator_and_disappearsWhenNotLoading() {
     val loadingState = ProfileState.loading()
     val vm = ProfileViewModel(loadingState)
