@@ -400,7 +400,7 @@ private fun MapContent(
           modifier = Modifier.align(Alignment.BottomEnd))
 
       ZoomLevelTestTag(cameraPositionState)
-      AutoZoomEffect(uiState, cameraPositionState, viewModel)
+      AutoZoomEffect(uiState, cameraPositionState)
     }
 
     MapFilter(
@@ -653,14 +653,9 @@ private fun ZoomLevelTestTag(cameraPositionState: CameraPositionState) {
  *
  * @param uiState Current UI state containing zoom target and flag
  * @param cameraPositionState Camera state for zoom animation
- * @param viewModel ViewModel to mark zoom as completed
  */
 @Composable
-private fun AutoZoomEffect(
-    uiState: MapUIState,
-    cameraPositionState: CameraPositionState,
-    viewModel: MapViewModel
-) {
+private fun AutoZoomEffect(uiState: MapUIState, cameraPositionState: CameraPositionState) {
   LaunchedEffect(uiState.triggerZoomOnCurrentLoc) {
     cameraPositionState.animate(
         update =
