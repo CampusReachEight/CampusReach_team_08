@@ -153,6 +153,7 @@ fun EditRequestScreen(
           })
   Scaffold(
       topBar = {
+        var isBackClicked by remember { mutableStateOf(false) }
         TopAppBar(
             title = {
               Text(
@@ -162,7 +163,11 @@ fun EditRequestScreen(
             },
             navigationIcon = {
               IconButton(
-                  onClick = onNavigateBack,
+                  onClick = {
+                    onNavigateBack()
+                    isBackClicked = true
+                  },
+                  enabled = !isBackClicked,
                   modifier = Modifier.testTag(NavigationTestTags.GO_BACK_BUTTON)) {
                     Icon(
                         Icons.Default.Close,
