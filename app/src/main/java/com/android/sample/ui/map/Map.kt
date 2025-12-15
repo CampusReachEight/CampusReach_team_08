@@ -649,7 +649,7 @@ private fun ZoomLevelTestTag(cameraPositionState: CameraPositionState) {
 
 /**
  * Automatically animates the camera to zoom to a target location when needed. Triggers when
- * uiState.needToZoom is true and marks zoom as completed afterward.
+ * uiState.triggerZoomOnCurrentLoc
  *
  * @param uiState Current UI state containing zoom target and flag
  * @param cameraPositionState Camera state for zoom animation
