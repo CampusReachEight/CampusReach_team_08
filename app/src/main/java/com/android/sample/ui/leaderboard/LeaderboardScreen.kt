@@ -60,9 +60,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.model.profile.UserProfile
 import com.android.sample.model.profile.UserProfileCache
+import com.android.sample.model.profile.UserProfileRepository
 import com.android.sample.ui.getFilterAndSortButtonColors
 import com.android.sample.ui.getTextFieldColors
-import com.android.sample.model.profile.UserProfileRepository
 import com.android.sample.ui.leaderboard.LeaderboardAddOns.crown
 import com.android.sample.ui.leaderboard.LeaderboardAddOns.cutiePatootie
 import com.android.sample.ui.leaderboard.LeaderboardBadgeThemes.CutieColor
