@@ -224,7 +224,8 @@ fun AcceptRequestScreen(
                                   label = AcceptRequestScreenLabels.DESCRIPTION,
                                   content = request.description,
                                   testTag = AcceptRequestScreenTestTags.REQUEST_DESCRIPTION,
-                                  isMarkdown = true)
+                                  isMarkdown = true,
+                                  contentBelowHeader = true)
 
                               // Tags
                               RequestDetailRow(
@@ -504,7 +505,8 @@ private fun RequestDetailRow(
     content: String,
     testTag: String,
     modifier: Modifier = Modifier,
-    isMarkdown: Boolean = false
+    isMarkdown: Boolean = false,
+    contentBelowHeader: Boolean = false
 ) {
   val context = LocalContext.current
   var showDialog by remember { mutableStateOf(false) }
@@ -528,58 +530,92 @@ private fun RequestDetailRow(
         dismissButton = { TextButton(onClick = { showDialog = false }) { Text("Cancel") } })
   }
 
-  Row(
-      modifier =
-          modifier
-              .fillMaxWidth()
-              .padding(
-                  vertical = AcceptRequestScreenConstants.ROW_VERTICAL_PADDING,
-                  horizontal = AcceptRequestScreenConstants.ROW_HORIZONTAL_PADDING)
-              .semantics(mergeDescendants = true) {}
-              .testTag(testTag),
-      verticalAlignment = Alignment.Top) {
-        Icon(
-            imageVector = icon,
-            contentDescription = label,
-            modifier =
-                Modifier.size(AcceptRequestScreenConstants.ICON_SIZE)
-                    .padding(top = AcceptRequestScreenConstants.ICON_TOP_PADDING),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant)
+  val contentComposable: @Composable () -> Unit = {
+    if (isMarkdown) {
+      Material3RichText {
+        Markdown(
+            content = content,
+            onLinkClicked = { url ->
+              if (UrlUtils.isValidHttpsUrl(url)) {
+                pendingUrl = url
+                showDialog = true
+              }
+            })
+      }
+    } else {
+      Text(
+          text = content,
+          style = MaterialTheme.typography.bodyMedium,
+          color =
+              MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                  alpha = AcceptRequestScreenConstants.SECONDARY_TEXT_ALPHA),
+          fontSize = AcceptRequestScreenConstants.SECTION_CONTENT_FONT_SIZE)
+    }
+  }
 
-        Spacer(modifier = Modifier.width(AcceptRequestScreenConstants.ICON_TEXT_SPACING))
-
-        Column(modifier = Modifier.weight(AcceptRequestScreenConstants.TEXT_COLUMN_WEIGHT)) {
-          Text(
-              text = label,
-              style = MaterialTheme.typography.titleSmall,
-              fontWeight = FontWeight.Medium,
-              color = MaterialTheme.colorScheme.onSurface,
-              fontSize = AcceptRequestScreenConstants.SECTION_TITLE_FONT_SIZE)
-
-          Spacer(modifier = Modifier.height(AcceptRequestScreenConstants.CONTENT_TOP_SPACING))
-
-          if (isMarkdown) {
-            Material3RichText {
-              Markdown(
-                  content = content,
-                  onLinkClicked = { url ->
-                    if (UrlUtils.isValidHttpsUrl(url)) {
-                      pendingUrl = url
-                      showDialog = true
-                    }
-                  })
-            }
-          } else {
+  if (contentBelowHeader) {
+    Column(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(
+                    vertical = AcceptRequestScreenConstants.ROW_VERTICAL_PADDING,
+                    horizontal = AcceptRequestScreenConstants.ROW_HORIZONTAL_PADDING)
+                .semantics(mergeDescendants = true) {}
+                .testTag(testTag)) {
+          Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = icon,
+                contentDescription = label,
+                modifier = Modifier.size(AcceptRequestScreenConstants.ICON_SIZE),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(modifier = Modifier.width(AcceptRequestScreenConstants.ICON_TEXT_SPACING))
             Text(
-                text = content,
-                style = MaterialTheme.typography.bodyMedium,
-                color =
-                    MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                        alpha = AcceptRequestScreenConstants.SECONDARY_TEXT_ALPHA),
-                fontSize = AcceptRequestScreenConstants.SECTION_CONTENT_FONT_SIZE)
+                text = label,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = AcceptRequestScreenConstants.SECTION_TITLE_FONT_SIZE)
+          }
+          Spacer(
+              modifier = Modifier.height(AcceptRequestScreenConstants.DESCRIPTION_BOTTOM_PADDING))
+          contentComposable()
+        }
+  } else {
+    Row(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(
+                    vertical = AcceptRequestScreenConstants.ROW_VERTICAL_PADDING,
+                    horizontal = AcceptRequestScreenConstants.ROW_HORIZONTAL_PADDING)
+                .semantics(mergeDescendants = true) {}
+                .testTag(testTag),
+        verticalAlignment = Alignment.Top) {
+          Icon(
+              imageVector = icon,
+              contentDescription = label,
+              modifier =
+                  Modifier.size(AcceptRequestScreenConstants.ICON_SIZE)
+                      .padding(top = AcceptRequestScreenConstants.ICON_TOP_PADDING),
+              tint = MaterialTheme.colorScheme.onSurfaceVariant)
+
+          Spacer(modifier = Modifier.width(AcceptRequestScreenConstants.ICON_TEXT_SPACING))
+
+          Column(modifier = Modifier.weight(AcceptRequestScreenConstants.TEXT_COLUMN_WEIGHT)) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = AcceptRequestScreenConstants.SECTION_TITLE_FONT_SIZE)
+
+            Spacer(modifier = Modifier.height(AcceptRequestScreenConstants.CONTENT_TOP_SPACING))
+
+            contentComposable()
           }
         }
-      }
+  }
 }
 
 /**
