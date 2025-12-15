@@ -42,6 +42,7 @@ import com.android.sample.ui.overview.AcceptRequestViewModel
 import com.android.sample.ui.overview.AcceptRequestViewModelFactory
 import com.android.sample.ui.profile.ProfileScreen
 import com.android.sample.ui.profile.ProfileViewModel
+import com.android.sample.ui.profile.ProfileViewModelFactory
 import com.android.sample.ui.profile.accepted_requests.AcceptedRequestsViewModel
 import com.android.sample.ui.profile.accepted_requests.AcceptedRequestsViewModelFactory
 import com.android.sample.ui.profile.follow.FollowListScreen
@@ -144,6 +145,19 @@ fun NavigationScreen(
               AcceptedRequestsViewModelFactory(
                   requestRepository = requestRepository, requestCache = requestCache))
 
+    val profileViewModel: ProfileViewModel =
+        viewModel(
+            factory =
+                ProfileViewModelFactory(
+                    userProfileRepository = userProfileRepository,
+                    profileCache = profileCache,
+                    onLogout = {
+                        isSignedIn = false
+                        navigationActions.navigateTo(Screen.Login)
+                    }
+                )
+        )
+
   NavHost(
       navController = navController,
       startDestination = startDestination,
@@ -232,15 +246,7 @@ fun NavigationScreen(
     navigation(startDestination = Screen.Profile.route, route = "profile") {
       composable(Screen.Profile.route) { navBackStackEntry ->
         ProfileScreen(
-            viewModel =
-                ProfileViewModel(
-                    profileCache = profileCache,
-                    onLogout = {
-                      isSignedIn = false
-                      navController.navigate(Screen.Login.route) {
-                        popUpTo(0) // Clears the back stack
-                      }
-                    }),
+            viewModel = profileViewModel,
             onBackClick = { navigationActions.goBack() },
             navigationActions = navigationActions)
       }

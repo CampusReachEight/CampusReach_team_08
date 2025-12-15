@@ -17,6 +17,7 @@ import com.android.sample.ui.profile.composables.ProfileLoadingBuffer
 import com.android.sample.ui.profile.composables.ProfileTopBar
 import com.android.sample.ui.profile.follow.FollowListType
 import com.android.sample.ui.theme.appPalette
+import com.google.firebase.auth.FirebaseAuth
 
 /**
  * Screen entry point for the Profile feature.
@@ -33,6 +34,13 @@ fun ProfileScreen(
     navigationActions: NavigationActions? = null
 ) {
   val state by viewModel.state.collectAsState()
+
+  // Debug logging
+  LaunchedEffect(state.isLoading) {
+    println("ProfileScreen - isLoading: ${state.isLoading}")
+  }
+
+  LaunchedEffect(Unit) { viewModel.loadUserProfile(FirebaseAuth.getInstance().currentUser) }
 
   Scaffold(
       modifier = Modifier.testTag(NavigationTestTags.PROFILE_SCREEN),

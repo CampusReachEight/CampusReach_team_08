@@ -10,7 +10,6 @@ import io.mockk.clearAllMocks
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.slot
 import java.util.Date
 import kotlin.test.DefaultAsserter.assertEquals
 import kotlin.test.DefaultAsserter.assertTrue
@@ -93,21 +92,6 @@ class ProfileViewModelTest {
     clearAllMocks()
   }
 
-  // ============ Helper Methods ============
-
-  /** Captures the auth listener and triggers it manually. */
-  private fun simulateAuthStateChange() {
-    val authListenerSlot = slot<FirebaseAuth.AuthStateListener>()
-    every { mockAuth.addAuthStateListener(capture(authListenerSlot)) } answers
-        {
-          // Trigger the listener immediately after capture
-          authListenerSlot.captured.onAuthStateChanged(mockAuth)
-        }
-
-    testDispatcher.scheduler.advanceUntilIdle()
-  }
-
-  // ============ Tests for Save Profile Changes ============
 
   @Test
   fun saveProfileChanges_preservesFollowerAndFollowingCounts() = runTest {
@@ -115,6 +99,7 @@ class ProfileViewModelTest {
     val capturedProfiles = mutableListOf<UserProfile>()
 
     coEvery { mockRepository.getUserProfile(CURRENT_USER_ID) } returns testProfile
+    coEvery { mockRepository.getAllUserProfiles() } returns listOf(testProfile)
     coEvery { mockRepository.updateUserProfile(any(), any()) } answers
         {
           capturedProfiles.add(arg(ONE))
@@ -122,10 +107,10 @@ class ProfileViewModelTest {
 
     viewModel =
         ProfileViewModel(
-            repository = mockRepository, fireBaseAuth = mockAuth, attachAuthListener = true)
+            repository = mockRepository, fireBaseAuth = mockAuth)
 
-    // Simulate auth state change to load profile
-    simulateAuthStateChange()
+    // Load profile with the mock user
+    viewModel.loadUserProfile(mockFirebaseUser)
     testDispatcher.scheduler.advanceUntilIdle()
 
     // When
