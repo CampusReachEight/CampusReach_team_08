@@ -59,6 +59,7 @@ object LightPalette : AppPalette {
       RequestType.HARDWARE -> Color(0xFF9B59B6) // Violet équilibré
       RequestType.LOST_AND_FOUND -> Color(0xFFE74C3C) // Rouge attention mais doux
       RequestType.OTHER -> Color(0xFF6C757D) // Gris neutre
+      RequestType.EVENT -> Color(0xFFE74C3C) // Rouge attention mais doux
     }
   }
 
@@ -72,6 +73,7 @@ object LightPalette : AppPalette {
       RequestType.HARDWARE -> Color(0xFFF3EAF8) // Violet très clair
       RequestType.LOST_AND_FOUND -> Color(0xFFFFE9E8) // Rouge très clair
       RequestType.OTHER -> Color(0xFFF5F6F7) // Gris très clair
+      RequestType.EVENT -> Color(0xFFFFE9E8) // Rouge très clair
     }
   }
 }
@@ -104,6 +106,7 @@ object DarkPalette : AppPalette {
       RequestType.HARDWARE -> Color(0xFFC48FD9) // Violet clair
       RequestType.LOST_AND_FOUND -> Color(0xFFFF6B6B) // Rouge clair (matching ErrorDark)
       RequestType.OTHER -> Color(0xFFADB5BD) // Gris clair
+      RequestType.EVENT -> Color(0xFFFF6B6B) // Rouge clair (matching ErrorDark)
     }
   }
 
@@ -117,6 +120,7 @@ object DarkPalette : AppPalette {
       RequestType.HARDWARE -> Color(0xFF3A1A44) // Violet foncé
       RequestType.LOST_AND_FOUND -> Color(0xFF3D1A1A) // Rouge foncé
       RequestType.OTHER -> Color(0xFF2E3238) // Gris foncé (proche de SecondaryDark)
+      RequestType.EVENT -> Color(0xFF3D1A1A) // Rouge foncé
     }
   }
 }
