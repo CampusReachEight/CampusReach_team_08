@@ -35,9 +35,6 @@ fun ProfileScreen(
 ) {
   val state by viewModel.state.collectAsState()
 
-  // Debug logging
-  LaunchedEffect(state.isLoading) { println("ProfileScreen - isLoading: ${state.isLoading}") }
-
   LaunchedEffect(Unit) { viewModel.loadUserProfile(FirebaseAuth.getInstance().currentUser) }
 
   Scaffold(
