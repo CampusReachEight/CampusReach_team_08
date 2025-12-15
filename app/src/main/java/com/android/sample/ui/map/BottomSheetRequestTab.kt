@@ -27,6 +27,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.model.request.Request
+import com.android.sample.model.request.displayString
 import com.android.sample.ui.navigation.NavigationActions
 import com.android.sample.ui.navigation.Screen
 import com.android.sample.ui.overview.toDisplayString
@@ -169,7 +170,7 @@ private fun RequestStatusChip(request: Request) {
       color = MaterialTheme.colorScheme.tertiaryContainer,
       modifier = Modifier.fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally)) {
         Text(
-            text = request.status.name,
+            text = request.status.displayString(),
             style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Medium,
             color = MaterialTheme.colorScheme.onTertiaryContainer,
