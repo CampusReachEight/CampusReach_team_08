@@ -294,9 +294,14 @@ private fun setupRequestFiltering(
  */
 @Composable
 private fun HandleErrorMessages(context: Context, errorMsg: String?, viewModel: MapViewModel) {
+  var currentToast by remember { mutableStateOf<Toast?>(null) }
+
   LaunchedEffect(errorMsg) {
     if (errorMsg != null) {
-      Toast.makeText(context, errorMsg, Toast.LENGTH_SHORT).show()
+      currentToast?.cancel()
+      currentToast = Toast.makeText(context, errorMsg, Toast.LENGTH_SHORT)
+      currentToast?.show()
+
       viewModel.clearErrorMsg()
     }
   }
