@@ -65,9 +65,7 @@ class ProfileUiTests {
             following = 15,
             arrivalDate = "15/02/2024",
             userSection = "Physics")
-    composeTestRule.setContent {
-      ProfileScreen(viewModel = ProfileViewModel(customState))
-    }
+    composeTestRule.setContent { ProfileScreen(viewModel = ProfileViewModel(customState)) }
 
     composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_HEADER).assertIsDisplayed()
     composeTestRule.onNodeWithTag(ProfileTestTags.PROFILE_STATS).assertIsDisplayed()
@@ -195,9 +193,7 @@ class ProfileUiTests {
   @Ignore("not compatible anymore")
   fun statGroupCard_displaysCorrectValues_inProfileScreen() {
     val state = ProfileState(kudosReceived = 99, helpReceived = 88, followers = 77, following = 66)
-    composeTestRule.setContent {
-      ProfileScreen(viewModel = ProfileViewModel(state))
-    }
+    composeTestRule.setContent { ProfileScreen(viewModel = ProfileViewModel(state)) }
     composeTestRule.onNodeWithText("99").assertIsDisplayed()
     composeTestRule.onNodeWithText("88").assertIsDisplayed()
     composeTestRule.onNodeWithText("77").assertIsDisplayed()

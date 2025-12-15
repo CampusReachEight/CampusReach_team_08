@@ -145,18 +145,16 @@ fun NavigationScreen(
               AcceptedRequestsViewModelFactory(
                   requestRepository = requestRepository, requestCache = requestCache))
 
-    val profileViewModel: ProfileViewModel =
-        viewModel(
-            factory =
-                ProfileViewModelFactory(
-                    userProfileRepository = userProfileRepository,
-                    profileCache = profileCache,
-                    onLogout = {
-                        isSignedIn = false
-                        navigationActions.navigateTo(Screen.Login)
-                    }
-                )
-        )
+  val profileViewModel: ProfileViewModel =
+      viewModel(
+          factory =
+              ProfileViewModelFactory(
+                  userProfileRepository = userProfileRepository,
+                  profileCache = profileCache,
+                  onLogout = {
+                    isSignedIn = false
+                    navigationActions.navigateTo(Screen.Login)
+                  }))
 
   NavHost(
       navController = navController,

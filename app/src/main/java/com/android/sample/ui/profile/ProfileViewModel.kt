@@ -33,44 +33,42 @@ class ProfileViewModel(
   val state: StateFlow<ProfileState> = _state.asStateFlow()
   private var loadedProfile: UserProfile? = null
 
-
-
   fun loadUserProfile(user: FirebaseUser?) {
     viewModelScope.launch {
-        if (user == null) {
-            loadedProfile = null
-            _state.value = ProfileState.empty().copy(isLoading = false)
-            return@launch
-        }
+      if (user == null) {
+        loadedProfile = null
+        _state.value = ProfileState.empty().copy(isLoading = false)
+        return@launch
+      }
 
-        setError(null)
+      setError(null)
 
+      try {
+        // Try load private profile (owner)
+        var profile: UserProfile
         try {
-            // Try load private profile (owner)
-            var profile: UserProfile
-            try {
-                profile = repository.getUserProfile(user.uid)
-                _state.update { it.copy(offlineMode = false) }
-            } catch (_: Exception) {
-                try {
-                    profile = profileCache!!.getProfileById(user.uid)
-                    _state.update { it.copy(offlineMode = true) }
-                } catch (_: Exception) {
-                    throw Exception("Profile not found in backend or cache")
-                }
-            }
-
-            loadedProfile = profile
-
-            // Calculate leaderboard position
-            val position = calculateLeaderboardPosition(profile.id)
-
-            mapProfileToState(profile, position)
+          profile = repository.getUserProfile(user.uid)
+          _state.update { it.copy(offlineMode = false) }
         } catch (_: Exception) {
-            setError("Failed to load profile")
-        } finally {
-            setLoading(false)
+          try {
+            profile = profileCache!!.getProfileById(user.uid)
+            _state.update { it.copy(offlineMode = true) }
+          } catch (_: Exception) {
+            throw Exception("Profile not found in backend or cache")
+          }
         }
+
+        loadedProfile = profile
+
+        // Calculate leaderboard position
+        val position = calculateLeaderboardPosition(profile.id)
+
+        mapProfileToState(profile, position)
+      } catch (_: Exception) {
+        setError("Failed to load profile")
+      } finally {
+        setLoading(false)
+      }
     }
   }
 
@@ -245,11 +243,16 @@ class ProfileViewModelFactory(
     private val userProfileRepository: UserProfileRepository,
     val initialState: ProfileState = ProfileState.default()
 ) : androidx.lifecycle.ViewModelProvider.Factory {
-    @Suppress("UNCHECKED_CAST")
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(ProfileViewModel::class.java)) {
-            return ProfileViewModel(onLogout = onLogout, profileCache = profileCache, repository = userProfileRepository, initialState = initialState) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
+  @Suppress("UNCHECKED_CAST")
+  override fun <T : ViewModel> create(modelClass: Class<T>): T {
+    if (modelClass.isAssignableFrom(ProfileViewModel::class.java)) {
+      return ProfileViewModel(
+          onLogout = onLogout,
+          profileCache = profileCache,
+          repository = userProfileRepository,
+          initialState = initialState)
+          as T
     }
+    throw IllegalArgumentException("Unknown ViewModel class")
+  }
 }

@@ -92,7 +92,6 @@ class ProfileViewModelTest {
     clearAllMocks()
   }
 
-
   @Test
   fun saveProfileChanges_preservesFollowerAndFollowingCounts() = runTest {
     // Given
@@ -105,9 +104,7 @@ class ProfileViewModelTest {
           capturedProfiles.add(arg(ONE))
         }
 
-    viewModel =
-        ProfileViewModel(
-            repository = mockRepository, fireBaseAuth = mockAuth)
+    viewModel = ProfileViewModel(repository = mockRepository, fireBaseAuth = mockAuth)
 
     // Load profile with the mock user
     viewModel.loadUserProfile(mockFirebaseUser)
