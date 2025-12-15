@@ -4,9 +4,12 @@ import android.Manifest
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
@@ -575,12 +578,14 @@ class EndToEndTests : BaseEmulatorTest() {
   }
 
   // check if you can accept a request and cancel it
+  @OptIn(ExperimentalTestApi::class)
   @Test
-  @Ignore("Flaky test on the CI")
   fun canAcceptRequest() {
     hadARequestWithOtherAccount()
     initialize(fourthName, fourthEmail)
 
+    composeTestRule.waitUntilAtLeastOneExists(
+        matcher = hasTestTag(RequestListTestTags.REQUEST_ITEM), timeoutMillis = UI_WAIT_TIMEOUT)
     composeTestRule
         .onNodeWithTag(RequestListTestTags.REQUEST_ITEM)
         .assertIsDisplayed()
@@ -599,6 +604,9 @@ class EndToEndTests : BaseEmulatorTest() {
         .assertTextContains("Accept", substring = true, ignoreCase = true)
         .performClick()
 
+    composeTestRule.waitForIdle()
+    composeTestRule.waitUntilAtLeastOneExists(
+        hasTestTag(AcceptRequestScreenTestTags.REQUEST_GO_BACK), timeoutMillis = UI_WAIT_TIMEOUT)
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_GO_BACK)
         .assertIsDisplayed()
@@ -617,6 +625,9 @@ class EndToEndTests : BaseEmulatorTest() {
         .assertIsDisplayed()
         .performClick()
 
+    composeTestRule.waitForIdle()
+    composeTestRule.waitUntilAtLeastOneExists(
+        hasText("Cancel", true, ignoreCase = true), UI_WAIT_TIMEOUT)
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)
         .assertTextContains("Cancel", substring = true, ignoreCase = true)
