@@ -1,5 +1,7 @@
 package com.android.sample.ui.overview
 
+import android.content.Intent
+import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -22,6 +24,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.*
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -33,6 +36,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -55,7 +59,10 @@ import com.android.sample.model.request.displayString
 import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.profile.ProfilePicture
 import com.android.sample.ui.theme.appPalette
+import com.android.sample.utils.UrlUtils
 import com.google.firebase.auth.FirebaseAuth
+import com.halilibo.richtext.markdown.Markdown
+import com.halilibo.richtext.ui.material3.Material3RichText
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -216,7 +223,8 @@ fun AcceptRequestScreen(
                                   icon = Icons.Outlined.ChatBubbleOutline,
                                   label = AcceptRequestScreenLabels.DESCRIPTION,
                                   content = request.description,
-                                  testTag = AcceptRequestScreenTestTags.REQUEST_DESCRIPTION)
+                                  testTag = AcceptRequestScreenTestTags.REQUEST_DESCRIPTION,
+                                  isMarkdown = true)
 
                               // Tags
                               RequestDetailRow(
@@ -495,8 +503,31 @@ private fun RequestDetailRow(
     label: String,
     content: String,
     testTag: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isMarkdown: Boolean = false
 ) {
+  val context = LocalContext.current
+  var showDialog by remember { mutableStateOf(false) }
+  var pendingUrl by remember { mutableStateOf<String?>(null) }
+
+  if (showDialog && pendingUrl != null) {
+    AlertDialog(
+        onDismissRequest = { showDialog = false },
+        title = { Text("External Link") },
+        text = { Text("Do you want to open this link in your browser?\n\n$pendingUrl") },
+        confirmButton = {
+          TextButton(
+              onClick = {
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(pendingUrl))
+                context.startActivity(intent)
+                showDialog = false
+              }) {
+                Text("Open")
+              }
+        },
+        dismissButton = { TextButton(onClick = { showDialog = false }) { Text("Cancel") } })
+  }
+
   Row(
       modifier =
           modifier
@@ -527,13 +558,26 @@ private fun RequestDetailRow(
 
           Spacer(modifier = Modifier.height(AcceptRequestScreenConstants.CONTENT_TOP_SPACING))
 
-          Text(
-              text = content,
-              style = MaterialTheme.typography.bodyMedium,
-              color =
-                  MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                      alpha = AcceptRequestScreenConstants.SECONDARY_TEXT_ALPHA),
-              fontSize = AcceptRequestScreenConstants.SECTION_CONTENT_FONT_SIZE)
+          if (isMarkdown) {
+            Material3RichText {
+              Markdown(
+                  content = content,
+                  onLinkClicked = { url ->
+                    if (UrlUtils.isValidHttpsUrl(url)) {
+                      pendingUrl = url
+                      showDialog = true
+                    }
+                  })
+            }
+          } else {
+            Text(
+                text = content,
+                style = MaterialTheme.typography.bodyMedium,
+                color =
+                    MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                        alpha = AcceptRequestScreenConstants.SECONDARY_TEXT_ALPHA),
+                fontSize = AcceptRequestScreenConstants.SECTION_CONTENT_FONT_SIZE)
+          }
         }
       }
 }
