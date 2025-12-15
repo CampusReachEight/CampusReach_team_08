@@ -35,6 +35,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
@@ -341,15 +342,12 @@ private fun MapContent(
 
   // Map UI settings
   val uiSettings = remember { MapUiSettings(zoomControlsEnabled = false) }
-  Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-    MapFilter(
-        searchFilterViewModel = searchFilterViewModel,
-        selectedOwnership = uiState.requestOwnership,
-        viewModel = viewModel,
-        modifier = Modifier.fillMaxWidth().wrapContentHeight())
+  Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+    var filterBarHeight by remember { mutableStateOf(ConstantMap.ZERO.dp) }
+    val density = LocalDensity.current
 
+    // Google Map
     Box(modifier = Modifier.fillMaxSize()) {
-      // Google Map
       MapWithMarkers(
           cameraPositionState = cameraPositionState,
           uiSettings = uiSettings,
@@ -360,20 +358,20 @@ private fun MapContent(
           currentLocation = uiState.currentLocation,
           isMapReady = isMapReady)
 
-      // Bottom Sheet for current request
+      // Bottom Sheet
       CurrentRequestBottomSheet(
           uiState = uiState,
           viewModel = viewModel,
           navigationActions = navigationActions,
           appPalette = appPalette,
-          modifier = Modifier.align(Alignment.BottomCenter))
+          modifier = Modifier.align(Alignment.BottomCenter).padding(top = filterBarHeight))
 
       // List of requests overlay
       ListOfRequest(
           uiState,
           viewModel,
           appPalette,
-          Modifier.align(Alignment.BottomCenter),
+          Modifier.align(Alignment.BottomCenter).padding(top = filterBarHeight),
           coroutineScope,
           cameraPositionState,
           navigationActions)
@@ -386,12 +384,16 @@ private fun MapContent(
           appPalette = appPalette,
           modifier = Modifier.align(Alignment.BottomEnd))
 
-      // Zoom level test tag
       ZoomLevelTestTag(cameraPositionState)
-
-      // Auto-zoom animation
       AutoZoomEffect(uiState, cameraPositionState, viewModel)
     }
+
+    MapFilter(
+        searchFilterViewModel = searchFilterViewModel,
+        selectedOwnership = uiState.requestOwnership,
+        viewModel = viewModel,
+        modifier = Modifier.fillMaxWidth().wrapContentHeight().align(Alignment.TopCenter),
+        onFilterBarHeightChanged = { height -> filterBarHeight = with(density) { height.toDp() } })
   }
 }
 
