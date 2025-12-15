@@ -47,7 +47,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 
@@ -225,7 +224,8 @@ class EndToEndTests : BaseEmulatorTest() {
 
     // requestType
     composeTestRule
-        .onNodeWithTag(EditRequestScreenTestTags.getTestTagForRequestType(type), useUnmergedTree = true)
+        .onNodeWithTag(
+            EditRequestScreenTestTags.getTestTagForRequestType(type), useUnmergedTree = true)
         .performScrollTo()
         .assertIsDisplayed()
         .performClick()
@@ -261,7 +261,10 @@ class EndToEndTests : BaseEmulatorTest() {
     // Wait for date picker dialog to appear
     composeTestRule.waitForIdle()
     composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
-      composeTestRule.onAllNodesWithText("OK", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+      composeTestRule
+          .onAllNodesWithText("OK", useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
     }
 
     // Click OK on date picker
@@ -270,7 +273,10 @@ class EndToEndTests : BaseEmulatorTest() {
     // Wait for time picker dialog to appear
     composeTestRule.waitForIdle()
     composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
-      composeTestRule.onAllNodesWithText("OK", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+      composeTestRule
+          .onAllNodesWithText("OK", useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
     }
 
     // Click OK on time picker
@@ -288,7 +294,10 @@ class EndToEndTests : BaseEmulatorTest() {
     // Wait for date picker dialog to appear
     composeTestRule.waitForIdle()
     composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
-      composeTestRule.onAllNodesWithText("OK", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+      composeTestRule
+          .onAllNodesWithText("OK", useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
     }
 
     // Click OK on date picker
@@ -297,7 +306,10 @@ class EndToEndTests : BaseEmulatorTest() {
     // Wait for time picker dialog to appear
     composeTestRule.waitForIdle()
     composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
-      composeTestRule.onAllNodesWithText("OK", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+      composeTestRule
+          .onAllNodesWithText("OK", useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
     }
 
     // Click OK on time picker
@@ -307,7 +319,8 @@ class EndToEndTests : BaseEmulatorTest() {
 
     // put a tag
     composeTestRule
-        .onNodeWithTag(EditRequestScreenTestTags.getTestTagForRequestTags(tags), useUnmergedTree = true)
+        .onNodeWithTag(
+            EditRequestScreenTestTags.getTestTagForRequestTags(tags), useUnmergedTree = true)
         .performScrollTo()
         .assertIsDisplayed()
         .performClick()
@@ -362,10 +375,9 @@ class EndToEndTests : BaseEmulatorTest() {
     }
 
     // My Requests
-      composeTestRule.waitUntilAtLeastOneExists(
-          matcher = hasTestTag(ProfileTestTags.PROFILE_ACTION_MY_REQUEST),
-          timeoutMillis = UI_WAIT_TIMEOUT
-      )
+    composeTestRule.waitUntilAtLeastOneExists(
+        matcher = hasTestTag(ProfileTestTags.PROFILE_ACTION_MY_REQUEST),
+        timeoutMillis = UI_WAIT_TIMEOUT)
     composeTestRule
         .onNodeWithTag(ProfileTestTags.PROFILE_ACTION_MY_REQUEST, useUnmergedTree = true)
         .assertIsDisplayed()
@@ -386,10 +398,9 @@ class EndToEndTests : BaseEmulatorTest() {
         .performClick()
 
     // Click Edit
-      composeTestRule.waitUntilAtLeastOneExists(
-          matcher = hasTestTag(AcceptRequestScreenTestTags.REQUEST_BUTTON),
-          timeoutMillis = UI_WAIT_TIMEOUT
-      )
+    composeTestRule.waitUntilAtLeastOneExists(
+        matcher = hasTestTag(AcceptRequestScreenTestTags.REQUEST_BUTTON),
+        timeoutMillis = UI_WAIT_TIMEOUT)
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON, useUnmergedTree = true)
         .performScrollTo()
@@ -488,7 +499,9 @@ class EndToEndTests : BaseEmulatorTest() {
     }
 
     composeTestRule.waitForIdle()
-    composeTestRule.onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON, useUnmergedTree = true).assertIsDisplayed()
+    composeTestRule
+        .onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON, useUnmergedTree = true)
+        .assertIsDisplayed()
   }
 
   // can add a request, and then edit it
@@ -501,10 +514,9 @@ class EndToEndTests : BaseEmulatorTest() {
     goAddRequest()
 
     // test if save with empty value put error message
-      composeTestRule.waitUntilAtLeastOneExists(
-            matcher = hasTestTag(EditRequestScreenTestTags.SAVE_BUTTON),
-            timeoutMillis = UI_WAIT_TIMEOUT
-      )
+    composeTestRule.waitUntilAtLeastOneExists(
+        matcher = hasTestTag(EditRequestScreenTestTags.SAVE_BUTTON),
+        timeoutMillis = UI_WAIT_TIMEOUT)
     composeTestRule
         .onNodeWithTag(EditRequestScreenTestTags.SAVE_BUTTON, useUnmergedTree = true)
         .performScrollTo()
@@ -533,10 +545,9 @@ class EndToEndTests : BaseEmulatorTest() {
     goToEditScreenFromMyRequests()
 
     // edit title
-      composeTestRule.waitUntilAtLeastOneExists(
-          matcher = hasTestTag(EditRequestScreenTestTags.INPUT_TITLE),
-          timeoutMillis = UI_WAIT_TIMEOUT
-      )
+    composeTestRule.waitUntilAtLeastOneExists(
+        matcher = hasTestTag(EditRequestScreenTestTags.INPUT_TITLE),
+        timeoutMillis = UI_WAIT_TIMEOUT)
     composeTestRule
         .onNodeWithTag(EditRequestScreenTestTags.INPUT_TITLE, useUnmergedTree = true)
         .assertIsDisplayed()
@@ -547,12 +558,10 @@ class EndToEndTests : BaseEmulatorTest() {
         .onNodeWithTag(EditRequestScreenTestTags.INPUT_TITLE, useUnmergedTree = true)
         .performTextInput(anotherTitle)
 
-
-      composeTestRule.waitUntilAtLeastOneExists(
-          matcher = hasTestTag(EditRequestScreenTestTags.SAVE_BUTTON),
-          timeoutMillis = UI_WAIT_TIMEOUT
-      )
-      composeTestRule.waitForIdle()
+    composeTestRule.waitUntilAtLeastOneExists(
+        matcher = hasTestTag(EditRequestScreenTestTags.SAVE_BUTTON),
+        timeoutMillis = UI_WAIT_TIMEOUT)
+    composeTestRule.waitForIdle()
     composeTestRule
         .onNodeWithTag(EditRequestScreenTestTags.SAVE_BUTTON, useUnmergedTree = true)
         .assertExists()
@@ -592,10 +601,11 @@ class EndToEndTests : BaseEmulatorTest() {
   fun canAccessMap() {
     initialize(secondName, secondEmail)
     composeTestRule.waitUntilAtLeastOneExists(
-        matcher = hasTestTag(NavigationTestTags.MAP_TAB),
-        timeoutMillis = UI_WAIT_TIMEOUT
-    )
-    composeTestRule.onNodeWithTag(NavigationTestTags.MAP_TAB, useUnmergedTree = true).assertIsDisplayed().performClick()
+        matcher = hasTestTag(NavigationTestTags.MAP_TAB), timeoutMillis = UI_WAIT_TIMEOUT)
+    composeTestRule
+        .onNodeWithTag(NavigationTestTags.MAP_TAB, useUnmergedTree = true)
+        .assertIsDisplayed()
+        .performClick()
 
     composeTestRule.waitForIdle()
     composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
@@ -638,13 +648,12 @@ class EndToEndTests : BaseEmulatorTest() {
           .isNotEmpty()
     }
 
-      composeTestRule.waitUntilAtLeastOneExists(
-          matcher = hasTestTag(AcceptRequestScreenTestTags.REQUEST_BUTTON), timeoutMillis = UI_WAIT_TIMEOUT
-      )
-      composeTestRule.waitUntilAtLeastOneExists(
-          matcher = hasText("Accept", true, ignoreCase = true), timeoutMillis = UI_WAIT_TIMEOUT
-      )
-      composeTestRule.waitForIdle()
+    composeTestRule.waitUntilAtLeastOneExists(
+        matcher = hasTestTag(AcceptRequestScreenTestTags.REQUEST_BUTTON),
+        timeoutMillis = UI_WAIT_TIMEOUT)
+    composeTestRule.waitUntilAtLeastOneExists(
+        matcher = hasText("Accept", true, ignoreCase = true), timeoutMillis = UI_WAIT_TIMEOUT)
+    composeTestRule.waitForIdle()
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON, useUnmergedTree = false)
         .assertTextContains("Accept", substring = true, ignoreCase = true)
@@ -726,9 +735,8 @@ class EndToEndTests : BaseEmulatorTest() {
     }
 
     // 3. Navigate to Profile
-      composeTestRule.waitUntilAtLeastOneExists(
-          matcher = hasTestTag(NavigationTestTags.PROFILE_BUTTON),
-          timeoutMillis = UI_WAIT_TIMEOUT)
+    composeTestRule.waitUntilAtLeastOneExists(
+        matcher = hasTestTag(NavigationTestTags.PROFILE_BUTTON), timeoutMillis = UI_WAIT_TIMEOUT)
 
     composeTestRule
         .onNodeWithTag(NavigationTestTags.PROFILE_BUTTON, useUnmergedTree = true)
@@ -744,10 +752,7 @@ class EndToEndTests : BaseEmulatorTest() {
     }
 
     // 4. Click My Request button
-      composeTestRule.waitForIdle()
-      composeTestRule.waitForIdle()
-      composeTestRule.waitForIdle()
-      composeTestRule.waitForIdle()
+    composeTestRule.waitForIdle()
     composeTestRule
         .onNodeWithTag(ProfileTestTags.PROFILE_ACTION_MY_REQUEST, useUnmergedTree = true)
         .assertExists()
@@ -793,7 +798,7 @@ class EndToEndTests : BaseEmulatorTest() {
         .assertExists()
         .performTextClearance()
 
-      composeTestRule.waitForIdle()
+    composeTestRule.waitForIdle()
 
     composeTestRule
         .onNodeWithTag(EditRequestScreenTestTags.INPUT_TITLE)
@@ -802,8 +807,7 @@ class EndToEndTests : BaseEmulatorTest() {
     composeTestRule.waitForIdle()
     composeTestRule.waitUntilAtLeastOneExists(
         matcher = hasTestTag(EditRequestScreenTestTags.SAVE_BUTTON),
-        timeoutMillis = UI_WAIT_TIMEOUT
-    )
+        timeoutMillis = UI_WAIT_TIMEOUT)
     composeTestRule
         .onNodeWithTag(EditRequestScreenTestTags.SAVE_BUTTON, useUnmergedTree = true)
         .performScrollTo()
@@ -844,6 +848,7 @@ class EndToEndTests : BaseEmulatorTest() {
     // 10. Logout (now we're on profile screen with logout button)
     composeTestRule
         .onNodeWithTag(ProfileTestTags.PROFILE_ACTION_LOG_OUT)
+        .performScrollTo()
         .assertIsDisplayed()
         .performClick()
 
@@ -883,10 +888,8 @@ class EndToEndTests : BaseEmulatorTest() {
     Thread.sleep(1500)
 
     // 2. Navigate to Profile
-      composeTestRule.waitUntilAtLeastOneExists(
-          matcher = hasTestTag(NavigationTestTags.PROFILE_BUTTON),
-          timeoutMillis = UI_WAIT_TIMEOUT
-      )
+    composeTestRule.waitUntilAtLeastOneExists(
+        matcher = hasTestTag(NavigationTestTags.PROFILE_BUTTON), timeoutMillis = UI_WAIT_TIMEOUT)
     composeTestRule
         .onNodeWithTag(NavigationTestTags.PROFILE_BUTTON)
         .assertIsDisplayed()
@@ -918,10 +921,9 @@ class EndToEndTests : BaseEmulatorTest() {
 
     // 4. Edit name
     val newName = "John Smith"
-      composeTestRule.waitUntilAtLeastOneExists(
-          matcher = hasTestTag(ProfileTestTags.EDIT_PROFILE_NAME_INPUT),
-          timeoutMillis = UI_WAIT_TIMEOUT
-      )
+    composeTestRule.waitUntilAtLeastOneExists(
+        matcher = hasTestTag(ProfileTestTags.EDIT_PROFILE_NAME_INPUT),
+        timeoutMillis = UI_WAIT_TIMEOUT)
     composeTestRule
         .onNodeWithTag(ProfileTestTags.EDIT_PROFILE_NAME_INPUT)
         .assertExists()
@@ -930,14 +932,9 @@ class EndToEndTests : BaseEmulatorTest() {
     composeTestRule.onNodeWithTag(ProfileTestTags.EDIT_PROFILE_NAME_INPUT).performTextInput(newName)
 
     // 5. Click section dropdown
-      composeTestRule.waitUntilAtLeastOneExists(
-          matcher = hasTestTag(ProfileTestTags.SECTION_DROPDOWN),
-          timeoutMillis = UI_WAIT_TIMEOUT
-      )
-    composeTestRule
-        .onNodeWithTag(ProfileTestTags.SECTION_DROPDOWN)
-        .assertExists()
-        .performClick()
+    composeTestRule.waitUntilAtLeastOneExists(
+        matcher = hasTestTag(ProfileTestTags.SECTION_DROPDOWN), timeoutMillis = UI_WAIT_TIMEOUT)
+    composeTestRule.onNodeWithTag(ProfileTestTags.SECTION_DROPDOWN).assertExists().performClick()
 
     composeTestRule.waitForIdle()
 
@@ -965,30 +962,25 @@ class EndToEndTests : BaseEmulatorTest() {
     composeTestRule.waitForIdle()
 
     // 9. Verify profile information is updated on screen
-      composeTestRule.waitUntilAtLeastOneExists(
-          matcher = hasTestTag(ProfileTestTags.PROFILE_HEADER_NAME),
-            timeoutMillis = UI_WAIT_TIMEOUT
-        )
+    composeTestRule.waitUntilAtLeastOneExists(
+        matcher = hasTestTag(ProfileTestTags.PROFILE_HEADER_NAME), timeoutMillis = UI_WAIT_TIMEOUT)
 
     composeTestRule
         .onNodeWithTag(ProfileTestTags.PROFILE_HEADER_NAME)
         .assertExists()
         .assertTextContains(newName, ignoreCase = false)
 
-      composeTestRule.waitUntilAtLeastOneExists(
-          matcher = hasTestTag(ProfileTestTags.PROFILE_INFO_SECTION),
-          timeoutMillis = UI_WAIT_TIMEOUT
-      )
+    composeTestRule.waitUntilAtLeastOneExists(
+        matcher = hasTestTag(ProfileTestTags.PROFILE_INFO_SECTION), timeoutMillis = UI_WAIT_TIMEOUT)
     composeTestRule
         .onNodeWithTag(ProfileTestTags.PROFILE_INFO_SECTION)
         .assertExists()
         .assertTextContains("Computer Science", ignoreCase = false)
 
     // 10. Logout
-      composeTestRule.waitUntilAtLeastOneExists(
-          matcher = hasTestTag(ProfileTestTags.PROFILE_ACTION_LOG_OUT),
-          timeoutMillis = UI_WAIT_TIMEOUT
-      )
+    composeTestRule.waitUntilAtLeastOneExists(
+        matcher = hasTestTag(ProfileTestTags.PROFILE_ACTION_LOG_OUT),
+        timeoutMillis = UI_WAIT_TIMEOUT)
     composeTestRule
         .onNodeWithTag(ProfileTestTags.PROFILE_ACTION_LOG_OUT)
         .assertExists()
@@ -1003,10 +995,9 @@ class EndToEndTests : BaseEmulatorTest() {
           .isNotEmpty()
     }
 
-      composeTestRule.waitUntilAtLeastOneExists(
-          matcher = hasTestTag(ProfileTestTags.LOG_OUT_DIALOG_CONFIRM),
-          timeoutMillis = UI_WAIT_TIMEOUT
-      )
+    composeTestRule.waitUntilAtLeastOneExists(
+        matcher = hasTestTag(ProfileTestTags.LOG_OUT_DIALOG_CONFIRM),
+        timeoutMillis = UI_WAIT_TIMEOUT)
     composeTestRule
         .onNodeWithTag(ProfileTestTags.LOG_OUT_DIALOG_CONFIRM)
         .assertExists()
@@ -1020,10 +1011,8 @@ class EndToEndTests : BaseEmulatorTest() {
           .isNotEmpty()
     }
 
-      composeTestRule.waitUntilAtLeastOneExists(
-          matcher = hasTestTag(SignInScreenTestTags.LOGIN_BUTTON),
-          timeoutMillis = UI_WAIT_TIMEOUT
-      )
+    composeTestRule.waitUntilAtLeastOneExists(
+        matcher = hasTestTag(SignInScreenTestTags.LOGIN_BUTTON), timeoutMillis = UI_WAIT_TIMEOUT)
     composeTestRule.onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON).assertIsDisplayed()
   }
 }
