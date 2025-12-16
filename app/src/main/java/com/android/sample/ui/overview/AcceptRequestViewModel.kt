@@ -211,7 +211,7 @@ class AcceptRequestViewModel(
 
 class AcceptRequestViewModelFactory(
     private val requestRepository: RequestRepository,
-    private val chatRepository: ChatRepository,                             // ← ADD
+    private val chatRepository: ChatRepository,
     private val userProfileRepository: UserProfileRepository?,
     private val requestCache: RequestCache
 ) : androidx.lifecycle.ViewModelProvider.Factory {
@@ -220,7 +220,7 @@ class AcceptRequestViewModelFactory(
             @Suppress("UNCHECKED_CAST")
             return AcceptRequestViewModel(
                 requestRepository = requestRepository,
-                chatRepository = chatRepository,                                  // ← ADD
+                chatRepository = chatRepository,
                 userProfileRepository = userProfileRepository,
                 requestCache = requestCache)
                     as T
