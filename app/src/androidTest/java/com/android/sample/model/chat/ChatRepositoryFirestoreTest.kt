@@ -889,4 +889,256 @@ class ChatRepositoryFirestoreTest : BaseEmulatorTest() {
     val messages = repository.getMessages(TEST_CHAT_ID_1)
     assertTrue(messages.isNotEmpty())
   }
+  // ==================== UPDATE CHAT PARTICIPANTS TESTS ====================
+
+  @Test
+  fun updateChatParticipants_success() = runTest {
+    createTestChat()
+
+    val newParticipants = listOf(currentUserId, "new-helper-1", "new-helper-2")
+
+    repository.updateChatParticipants(TEST_CHAT_ID_1, newParticipants)
+    delay(FIRESTORE_WRITE_DELAY_MS)
+
+    val updatedChat = repository.getChat(TEST_CHAT_ID_1)
+    assertEquals(3, updatedChat.participants.size)
+    assertTrue(updatedChat.participants.containsAll(newParticipants))
+  }
+
+  @Test
+  fun updateChatParticipants_failsWhenNotAuthenticated() = runTest {
+    Firebase.auth.signOut()
+
+    val exception =
+        assertThrows(IllegalStateException::class.java) {
+          runBlocking {
+            repository.updateChatParticipants(TEST_CHAT_ID_1, listOf("user1", "user2"))
+          }
+        }
+    assertExceptionContains(exception, "authenticated")
+  }
+
+  @Test
+  fun updateChatParticipants_failsWhenNotCreator() = runTest {
+    // Create chat as first user
+    signInUser("creator@test.com", "password")
+    val creatorId = auth.currentUser?.uid!!
+
+    repository.createChat(
+        TEST_CHAT_ID_1, TEST_TITLE_1, listOf(creatorId, "helper1"), creatorId, "OPEN")
+    delay(FIRESTORE_WRITE_DELAY_MS * 2)
+
+    // Try to update as non-creator
+    signInUser("helper@test.com", "password")
+    val helperId = auth.currentUser?.uid!!
+
+    val exception =
+        assertThrows(Exception::class.java) {
+          runBlocking {
+            repository.updateChatParticipants(TEST_CHAT_ID_1, listOf(creatorId, helperId))
+          }
+        }
+    assertExceptionContains(exception, "creator", "only", "failed")
+  }
+
+  @Test
+  fun updateChatParticipants_failsWhenChatNotFound() = runTest {
+    val exception =
+        assertThrows(Exception::class.java) {
+          runBlocking { repository.updateChatParticipants("non-existent", listOf(currentUserId)) }
+        }
+    assertExceptionContains(exception, "not found", "failed")
+  }
+
+  @Test
+  fun updateChatParticipants_canAddParticipants() = runTest {
+    val initialParticipants = listOf(currentUserId, "helper1")
+    createTestChat(participants = initialParticipants)
+
+    val updatedParticipants = listOf(currentUserId, "helper1", "helper2", "helper3")
+
+    repository.updateChatParticipants(TEST_CHAT_ID_1, updatedParticipants)
+    delay(FIRESTORE_WRITE_DELAY_MS)
+
+    val chat = repository.getChat(TEST_CHAT_ID_1)
+    assertEquals(4, chat.participants.size)
+    assertTrue(chat.participants.contains("helper2"))
+    assertTrue(chat.participants.contains("helper3"))
+  }
+
+  @Test
+  fun updateChatParticipants_canRemoveParticipants() = runTest {
+    val initialParticipants = listOf(currentUserId, "helper1", "helper2")
+    createTestChat(participants = initialParticipants)
+
+    val updatedParticipants = listOf(currentUserId, "helper1")
+
+    repository.updateChatParticipants(TEST_CHAT_ID_1, updatedParticipants)
+    delay(FIRESTORE_WRITE_DELAY_MS)
+
+    val chat = repository.getChat(TEST_CHAT_ID_1)
+    assertEquals(2, chat.participants.size)
+    assertFalse(chat.participants.contains("helper2"))
+  }
+  // ==================== REMOVE SELF FROM CHAT TESTS ====================
+
+  @Test
+  fun removeSelfFromChat_success() = runTest {
+    val participants = listOf(currentUserId, "helper1", "helper2")
+    createTestChat(participants = participants)
+
+    repository.removeSelfFromChat(TEST_CHAT_ID_1)
+    delay(FIRESTORE_WRITE_DELAY_MS)
+
+    // Verify user was removed by trying to access the chat
+    val exception =
+        assertThrows(Exception::class.java) {
+          runBlocking { repository.getMessages(TEST_CHAT_ID_1) }
+        }
+    assertExceptionContains(exception, "participant", "failed")
+  }
+
+  @Test
+  fun removeSelfFromChat_failsWhenNotAuthenticated() = runTest {
+    createTestChat()
+    Firebase.auth.signOut()
+
+    val exception =
+        assertThrows(IllegalStateException::class.java) {
+          runBlocking { repository.removeSelfFromChat(TEST_CHAT_ID_1) }
+        }
+    assertExceptionContains(exception, "authenticated")
+  }
+
+  @Test
+  fun removeSelfFromChat_failsWhenNotParticipant() = runTest {
+    // Create chat without current user
+    signInUser("creator@test.com", "password")
+    val creatorId = auth.currentUser?.uid!!
+    repository.createChat(
+        TEST_CHAT_ID_1, TEST_TITLE_1, listOf(creatorId, "other1"), creatorId, "OPEN")
+    delay(FIRESTORE_WRITE_DELAY_MS)
+
+    // Try to remove self as non-participant
+    signInUser("nonparticipant@test.com", "password")
+
+    val exception =
+        assertThrows(Exception::class.java) {
+          runBlocking { repository.removeSelfFromChat(TEST_CHAT_ID_1) }
+        }
+    assertExceptionContains(exception, "participant", "failed")
+  }
+
+  @Test
+  fun removeSelfFromChat_leavesOtherParticipants() = runTest {
+    // Sign in as creator first
+    signInUser("creator@test.com", "password")
+    val creatorId = auth.currentUser?.uid!!
+
+    // Sign in as helper who will leave
+    signInUser("helper@test.com", "password")
+    val helperId = auth.currentUser?.uid!!
+
+    // Sign back as creator to create the chat
+    signInUser("creator@test.com", "password")
+
+    repository.createChat(
+        TEST_CHAT_ID_1,
+        TEST_TITLE_1,
+        listOf(creatorId, helperId, "other-helper"),
+        creatorId,
+        "OPEN")
+    delay(FIRESTORE_WRITE_DELAY_MS * 2)
+
+    // Sign in as helper to remove themselves
+    signInUser("helper@test.com", "password")
+
+    // Remove self
+    repository.removeSelfFromChat(TEST_CHAT_ID_1)
+    delay(FIRESTORE_WRITE_DELAY_MS)
+
+    // Verify chat still exists for creator
+    signInUser("creator@test.com", "password")
+    val chat = repository.getChat(TEST_CHAT_ID_1)
+    assertEquals(2, chat.participants.size)
+    assertFalse(chat.participants.contains(helperId))
+    assertTrue(chat.participants.contains(creatorId))
+    assertTrue(chat.participants.contains("other-helper"))
+  }
+
+  @Test
+  fun removeSelfFromChat_allowsLastHelperToLeave() = runTest {
+    // Create chat with creator + one helper
+    signInUser("creator@test.com", "password")
+    val creatorId = auth.currentUser?.uid!!
+
+    signInUser() // Back to original user (helper)
+
+    repository.createChat(
+        TEST_CHAT_ID_1, TEST_TITLE_1, listOf(creatorId, currentUserId), creatorId, "OPEN")
+    delay(FIRESTORE_WRITE_DELAY_MS)
+
+    // Helper removes themselves
+    repository.removeSelfFromChat(TEST_CHAT_ID_1)
+    delay(FIRESTORE_WRITE_DELAY_MS)
+
+    // Chat should still exist with just creator
+    signInUser("creator@test.com", "password")
+    val chat = repository.getChat(TEST_CHAT_ID_1)
+    assertEquals(1, chat.participants.size)
+    assertEquals(creatorId, chat.participants[0])
+  }
+
+  @Test
+  fun deleteChat_success() = runTest {
+    val initialParticipants = listOf(currentUserId, "helper1", "helper2")
+    createTestChat(participants = initialParticipants)
+
+    repository.deleteChat(TEST_CHAT_ID_1)
+    delay(FIRESTORE_WRITE_DELAY_MS)
+
+    // Verify chat was deleted by trying to access it
+    val exception =
+        assertThrows(Exception::class.java) { runBlocking { repository.getChat(TEST_CHAT_ID_1) } }
+    assertExceptionContains(exception, "not found")
+  }
+
+  @Test
+  fun deleteChat_failsWhenNotCreator() = runTest {
+    val initialParticipants = listOf(currentUserId, "helper1", "helper2")
+    createTestChat(participants = initialParticipants)
+
+    // Sign in as a non-creator participant
+    signInUser("helper1@test.com", "password")
+
+    val exception =
+        assertThrows(Exception::class.java) {
+          runBlocking { repository.deleteChat(TEST_CHAT_ID_1) }
+        }
+    assertExceptionContains(exception, "Only the creator can delete the chat")
+  }
+
+  @Test
+  fun deleteChat_failsWhenNotAuthenticated() = runTest {
+    createTestChat()
+
+    Firebase.auth.signOut()
+
+    val exception =
+        assertThrows(IllegalStateException::class.java) {
+          runBlocking { repository.deleteChat(TEST_CHAT_ID_1) }
+        }
+    assertExceptionContains(exception, "authenticated")
+  }
+
+  @Test
+  fun deleteChat_failsWhenChatDoesNotExist() = runTest {
+    val nonExistentChatId = "nonExistentChatId"
+
+    val exception =
+        assertThrows(Exception::class.java) {
+          runBlocking { repository.deleteChat(nonExistentChatId) }
+        }
+    assertExceptionContains(exception, NOT_FOUND)
+  }
 }

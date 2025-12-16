@@ -3,6 +3,8 @@ package com.android.sample.ui.request.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.android.sample.model.chat.ChatRepository
+import com.android.sample.model.chat.ChatRepositoryProvider
 import com.android.sample.model.map.Location
 import com.android.sample.model.map.LocationProvider
 import com.android.sample.model.map.LocationRepository
@@ -33,7 +35,8 @@ private const val LOCATION_PERMISSION_REQUIRED =
 class EditRequestViewModel(
     private val requestRepository: RequestRepository = RequestRepositoryProvider.repository,
     private val locationRepository: LocationRepository,
-    private val locationProvider: LocationProvider
+    private val locationProvider: LocationProvider,
+    private val chatRepository: ChatRepository = ChatRepositoryProvider.repository
 ) : ViewModel() {
 
   // Date formatter for validation
@@ -88,6 +91,7 @@ class EditRequestViewModel(
 
       try {
         requestRepository.deleteRequest(requestId)
+        chatRepository.deleteChat(requestId)
         _uiState.update { it.copy(isDeleting = false, showDeleteConfirmation = false) }
         onSuccess()
       } catch (e: Exception) {
@@ -372,12 +376,15 @@ class EditRequestViewModel(
 class EditRequestViewModelFactory(
     private val requestRepository: RequestRepository = RequestRepositoryProvider.repository,
     private val locationRepository: LocationRepository,
-    private val locationProvider: LocationProvider
+    private val locationProvider: LocationProvider,
+    private val chatRepository: ChatRepository = ChatRepositoryProvider.repository
 ) : ViewModelProvider.Factory {
   @Suppress("UNCHECKED_CAST")
   override fun <T : ViewModel> create(modelClass: Class<T>): T {
     if (modelClass.isAssignableFrom(EditRequestViewModel::class.java)) {
-      return EditRequestViewModel(requestRepository, locationRepository, locationProvider) as T
+      return EditRequestViewModel(
+          requestRepository, locationRepository, locationProvider, chatRepository)
+          as T
     }
     throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
   }

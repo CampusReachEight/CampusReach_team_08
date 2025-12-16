@@ -3,6 +3,8 @@ package com.android.sample.ui.overview
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.android.sample.model.chat.ChatRepository
+import com.android.sample.model.chat.ChatRepositoryFirestore
 import com.android.sample.model.profile.UserProfileRepository
 import com.android.sample.model.request.Request
 import com.android.sample.model.request.RequestCache
@@ -29,6 +31,7 @@ data class AcceptRequestUIState(
 class AcceptRequestViewModel(
     private val requestRepository: RequestRepository =
         RequestRepositoryFirestore(Firebase.firestore),
+    private val chatRepository: ChatRepository = ChatRepositoryFirestore(Firebase.firestore),
     private val userProfileRepository: UserProfileRepository? = null,
     private val requestCache: RequestCache? = null
 ) : ViewModel() {
@@ -125,6 +128,11 @@ class AcceptRequestViewModel(
       try {
         _uiState.value = _uiState.value.copy(isLoading = true)
         requestRepository.cancelAcceptance(requestID)
+
+        // Sync chat participants (removes current user)
+        val updatedRequest = requestRepository.getRequest(requestID)
+        syncChatParticipants(updatedRequest)
+
         _uiState.value = _uiState.value.copy(accepted = false)
       } catch (e: Exception) {
         Log.e("AcceptRequestViewModel", "Failed to cancel request: ${e.message}", e)
@@ -146,6 +154,11 @@ class AcceptRequestViewModel(
       try {
         _uiState.value = _uiState.value.copy(isLoading = true)
         requestRepository.acceptRequest(requestID)
+
+        // Sync chat participants (adds current user)
+        val updatedRequest = requestRepository.getRequest(requestID)
+        syncChatParticipants(updatedRequest)
+
         _uiState.value = _uiState.value.copy(accepted = true)
       } catch (e: Exception) {
         Log.e("AcceptRequestViewModel", "Failed to accept request: ${e.message}", e)
@@ -156,10 +169,48 @@ class AcceptRequestViewModel(
       }
     }
   }
+  /**
+   * Syncs chat participants with request.people.
+   *
+   * Chat participants should always be: [creatorId] + request.people If chat doesn't exist, it will
+   * be created when first message is sent.
+   */
+  private suspend fun syncChatParticipants(request: Request) {
+    try {
+      val chatExists = chatRepository.chatExists(request.requestId)
+
+      if (!chatExists) {
+        return // Chat will be created when first message is sent
+      }
+
+      val currentUserId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
+      if (currentUserId == null) {
+        Log.e("AcceptRequestViewModel", "Cannot sync chat: no authenticated user")
+        return
+      }
+
+      val correctParticipants = listOf(request.creatorId) + request.people
+
+      if (request.creatorId == currentUserId) {
+        // Creator updates all participants
+        chatRepository.updateChatParticipants(request.requestId, correctParticipants)
+      } else if (!correctParticipants.contains(currentUserId)) {
+        // Non-creator removes themselves
+        chatRepository.removeSelfFromChat(request.requestId)
+      }
+      // else: User is still a participant, no change needed
+
+      // Update chat status
+      chatRepository.updateChatStatus(request.requestId, request.status.name)
+    } catch (e: Exception) {
+      Log.e("AcceptRequestViewModel", "Failed to sync chat: ${e.message}", e)
+    }
+  }
 }
 
 class AcceptRequestViewModelFactory(
     private val requestRepository: RequestRepository,
+    private val chatRepository: ChatRepository,
     private val userProfileRepository: UserProfileRepository?,
     private val requestCache: RequestCache
 ) : androidx.lifecycle.ViewModelProvider.Factory {
@@ -168,6 +219,7 @@ class AcceptRequestViewModelFactory(
       @Suppress("UNCHECKED_CAST")
       return AcceptRequestViewModel(
           requestRepository = requestRepository,
+          chatRepository = chatRepository,
           userProfileRepository = userProfileRepository,
           requestCache = requestCache)
           as T

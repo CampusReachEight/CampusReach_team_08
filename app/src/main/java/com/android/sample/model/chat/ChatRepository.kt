@@ -110,4 +110,16 @@ interface ChatRepository {
    * @return true if chat exists, false otherwise
    */
   suspend fun chatExists(requestId: String): Boolean
+
+  /** Updates the list of participants in a chat. */
+  suspend fun updateChatParticipants(chatId: String, participants: List<String>)
+
+  /**
+   * Removes the current user from chat participants. Any participant can remove themselves (used
+   * when canceling acceptance).
+   */
+  suspend fun removeSelfFromChat(chatId: String)
+
+  /** Deletes a chat and all its messages. Used when a request is deleted. */
+  suspend fun deleteChat(chatId: String)
 }
