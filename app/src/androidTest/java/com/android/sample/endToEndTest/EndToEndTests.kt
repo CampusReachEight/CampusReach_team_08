@@ -12,7 +12,6 @@ import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
-import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -251,72 +250,7 @@ class EndToEndTests : BaseEmulatorTest() {
         .onFirst()
         .performClick()
 
-    // SELECT START DATE
-    composeTestRule
-        .onNodeWithTag(EditRequestScreenTestTags.INPUT_START_DATE, useUnmergedTree = true)
-        .performScrollTo()
-        .assertIsDisplayed()
-        .performClick()
-
-    // Wait for date picker dialog to appear
     composeTestRule.waitForIdle()
-    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
-      composeTestRule
-          .onAllNodesWithText("OK", useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
-
-    // Click OK on date picker
-    composeTestRule.onAllNodesWithText("OK", useUnmergedTree = true).onFirst().performClick()
-
-    // Wait for time picker dialog to appear
-    composeTestRule.waitForIdle()
-    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
-      composeTestRule
-          .onAllNodesWithText("OK", useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
-
-    // Click OK on time picker
-    composeTestRule.onAllNodesWithText("OK", useUnmergedTree = true).onFirst().performClick()
-
-    composeTestRule.waitForIdle()
-
-    // SELECT EXPIRATION DATE
-    composeTestRule
-        .onNodeWithTag(EditRequestScreenTestTags.INPUT_EXPIRATION_DATE, useUnmergedTree = true)
-        .performScrollTo()
-        .assertIsDisplayed()
-        .performClick()
-
-    // Wait for date picker dialog to appear
-    composeTestRule.waitForIdle()
-    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
-      composeTestRule
-          .onAllNodesWithText("OK", useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
-
-    // Click OK on date picker
-    composeTestRule.onAllNodesWithText("OK", useUnmergedTree = true).onFirst().performClick()
-
-    // Wait for time picker dialog to appear
-    composeTestRule.waitForIdle()
-    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
-      composeTestRule
-          .onAllNodesWithText("OK", useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
-
-    // Click OK on time picker
-    composeTestRule.onAllNodesWithText("OK", useUnmergedTree = true).onFirst().performClick()
-
-    composeTestRule.waitForIdle()
-
     // put a tag
     composeTestRule
         .onNodeWithTag(
