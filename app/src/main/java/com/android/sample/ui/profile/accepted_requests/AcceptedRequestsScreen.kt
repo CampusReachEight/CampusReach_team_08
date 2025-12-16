@@ -1,4 +1,4 @@
-package com.android.sample.ui.request.accepted
+package com.android.sample.ui.profile.accepted_requests
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -25,10 +25,6 @@ import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.ui.navigation.NavigationActions
 import com.android.sample.ui.profile.ProfilePicture
-import com.android.sample.ui.profile.accepted_requests.AcceptedRequestsViewModel
-import com.android.sample.ui.profile.accepted_requests.AcceptedRequestsViewModelFactory
-import com.android.sample.ui.profile.accepted_requests.KudosStatus
-import com.android.sample.ui.profile.accepted_requests.RequestWithKudosStatus
 import com.android.sample.ui.request.ConstantRequestList
 import com.android.sample.ui.request.RequestListViewModel
 import com.android.sample.ui.request.TypeChip
@@ -138,7 +134,8 @@ fun AcceptedRequestsScreen(
               AcceptedRequestsList(
                   requests = uiState.requests,
                   requestListViewModel = requestListViewModel,
-                  onRequestClick = { selectedRequest = it })
+                  onRequestClick = { selectedRequest = it },
+                  navigationActions = navigationActions)
             }
           }
         }
@@ -148,7 +145,8 @@ fun AcceptedRequestsScreen(
           RequestDetailsDialog(
               requestWithStatus = requestWithStatus,
               requestListViewModel = requestListViewModel,
-              onDismiss = { selectedRequest = null })
+              onDismiss = { selectedRequest = null },
+              navigationActions = navigationActions)
         }
       }
 }
@@ -159,7 +157,8 @@ fun AcceptedRequestsScreen(
 private fun AcceptedRequestsList(
     requests: List<RequestWithKudosStatus>,
     requestListViewModel: RequestListViewModel,
-    onRequestClick: (RequestWithKudosStatus) -> Unit
+    onRequestClick: (RequestWithKudosStatus) -> Unit,
+    navigationActions: NavigationActions
 ) {
   LazyColumn(
       modifier =
@@ -170,7 +169,8 @@ private fun AcceptedRequestsList(
           AcceptedRequestItem(
               requestWithStatus = requests[index],
               requestListViewModel = requestListViewModel,
-              onClick = onRequestClick)
+              onClick = onRequestClick,
+              navigationActions = navigationActions)
         }
       }
 }
@@ -187,7 +187,8 @@ private const val WEIGHT_08 = 0.8f
 private fun AcceptedRequestItem(
     requestWithStatus: RequestWithKudosStatus,
     requestListViewModel: RequestListViewModel,
-    onClick: (RequestWithKudosStatus) -> Unit
+    onClick: (RequestWithKudosStatus) -> Unit,
+    navigationActions: NavigationActions
 ) {
   val request = requestWithStatus.request
 
@@ -211,6 +212,7 @@ private fun AcceptedRequestItem(
                     profileRepository = requestListViewModel.profileRepository,
                     profileId = request.creatorId,
                     onClick = {},
+                    navigationActions = navigationActions,
                     modifier =
                         Modifier.width(ConstantRequestList.RequestItemCreatorSectionSize)
                             .fillMaxHeight()
@@ -303,7 +305,8 @@ private fun KudosStatusBadge(kudosStatus: KudosStatus, modifier: Modifier = Modi
 private fun RequestDetailsDialog(
     requestWithStatus: RequestWithKudosStatus,
     requestListViewModel: RequestListViewModel,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    navigationActions: NavigationActions
 ) {
   val request = requestWithStatus.request
   val dateFormat = remember { SimpleDateFormat(DATE_FORMAT_PATTERN, Locale.getDefault()) }
@@ -360,7 +363,7 @@ private fun RequestDetailsDialog(
                       ProfilePicture(
                           profileRepository = requestListViewModel.profileRepository,
                           profileId = request.creatorId,
-                          onClick = {},
+                          navigationActions = navigationActions,
                           modifier = Modifier.size(BIG_MODIFIER),
                           withName = true)
                     }

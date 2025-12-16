@@ -54,7 +54,7 @@ fun CurrentProfileUI(
                   ProfilePicture(
                       profileRepository = mapViewModel.profileRepository,
                       profileId = profile.id,
-                      onClick = {},
+                      navigationActions = navigationActions,
                       modifier = Modifier.size(ConstantMap.REQUEST_ITEM_ICON_SIZE))
 
                   Text(

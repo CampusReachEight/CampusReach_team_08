@@ -172,7 +172,10 @@ fun MapScreen(
         TopNavigationBar(
             selectedTab = NavigationTab.Map,
             onProfileClick = {
-              navigationActions?.navigateTo(Screen.Profile("TODO"))
+              val currentUserId = viewModel.getCurrentUserID()
+              if (currentUserId.isNotBlank()) {
+                navigationActions?.navigateTo(Screen.Profile(currentUserId))
+              }
               viewModel.goOnAnotherScreen()
             },
             onZoomSettingsClick = { showZoomDialog = true })

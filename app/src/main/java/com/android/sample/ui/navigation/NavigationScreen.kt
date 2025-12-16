@@ -42,6 +42,7 @@ import com.android.sample.ui.overview.AcceptRequestViewModel
 import com.android.sample.ui.overview.AcceptRequestViewModelFactory
 import com.android.sample.ui.profile.ProfileScreen
 import com.android.sample.ui.profile.ProfileViewModel
+import com.android.sample.ui.profile.accepted_requests.AcceptedRequestsScreen
 import com.android.sample.ui.profile.accepted_requests.AcceptedRequestsViewModel
 import com.android.sample.ui.profile.accepted_requests.AcceptedRequestsViewModelFactory
 import com.android.sample.ui.profile.follow.FollowListScreen
@@ -52,7 +53,6 @@ import com.android.sample.ui.profile.publicProfile.PublicProfileViewModelFactory
 import com.android.sample.ui.request.RequestListScreen
 import com.android.sample.ui.request.RequestListViewModel
 import com.android.sample.ui.request.RequestListViewModelFactory
-import com.android.sample.ui.request.accepted.AcceptedRequestsScreen
 import com.android.sample.ui.request.edit.EditRequestScreen
 import com.android.sample.ui.request.edit.EditRequestViewModel
 import com.android.sample.ui.request.edit.EditRequestViewModelFactory

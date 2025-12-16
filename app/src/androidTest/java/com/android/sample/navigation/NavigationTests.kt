@@ -14,7 +14,7 @@ import com.android.sample.ui.navigation.NavigationActions
 import com.android.sample.ui.navigation.NavigationScreen
 import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.navigation.Screen
-import com.android.sample.ui.request.accepted.AcceptedRequestsTestTags
+import com.android.sample.ui.profile.accepted_requests.AcceptedRequestsTestTags
 import com.android.sample.utils.BaseEmulatorTest
 import kotlinx.coroutines.test.runTest
 import org.junit.After
