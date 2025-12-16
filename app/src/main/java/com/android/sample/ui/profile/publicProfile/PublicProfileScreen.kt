@@ -30,7 +30,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.model.profile.UserProfile
-import com.android.sample.ui.profile.PROFILE_OFFLINE_TEXT
 import com.android.sample.ui.profile.ProfileDimens
 import com.android.sample.ui.profile.ProfilePicture
 import com.android.sample.ui.profile.ProfileState
@@ -129,7 +128,7 @@ private fun PublicProfileScrollableContent(
 
     if (shownState.offlineMode) {
       Text(
-          PROFILE_OFFLINE_TEXT,
+          ConstantPublicProfile.PROFILE_OFFLINE_TEXT,
           color = appPalette().error,
           textAlign = TextAlign.Center,
           modifier = Modifier.fillMaxWidth())

@@ -10,6 +10,7 @@ object ConstantPublicProfile {
   const val ONE_LINE = 1
   const val BUTTON_WIDTH = 96
   const val WEIGHT = 1f
+  const val PROFILE_OFFLINE_TEXT = "You are currently offline"
 
   // Follow Button //
 
