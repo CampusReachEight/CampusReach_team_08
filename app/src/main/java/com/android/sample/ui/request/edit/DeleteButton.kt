@@ -1,6 +1,5 @@
 package com.android.sample.ui.request.edit
 
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -13,14 +12,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import com.android.sample.R
 import com.android.sample.ui.theme.AppPalette
 import com.android.sample.ui.theme.appPalette
-
-// Constants extracted to avoid magic numbers and repeated modifiers.
-private val deleteProgressIndicatorSize = 24.dp
-private val fullWidthModifier = Modifier.fillMaxWidth()
 
 // Test tags for UI testing
 const val DELETE_BUTTON_TEST_TAG = "delete_button"
@@ -46,7 +40,7 @@ fun DeleteButton(
   // Button uses the error color to indicate destructive action.
   Button(
       onClick = onDeleteClick,
-      modifier = fullWidthModifier.testTag(DELETE_BUTTON_TEST_TAG),
+      modifier = ConstantRequestEdit.fullWidthModifier.testTag(DELETE_BUTTON_TEST_TAG),
       enabled = !isDeleting,
       colors =
           ButtonDefaults.buttonColors(
@@ -55,7 +49,7 @@ fun DeleteButton(
           // Show a small progress indicator inside the button while deleting.
           CircularProgressIndicator(
               modifier =
-                  Modifier.size(deleteProgressIndicatorSize)
+                  Modifier.size(ConstantRequestEdit.deleteProgressIndicatorSize)
                       .testTag(DELETE_PROGRESS_INDICATOR_TEST_TAG),
               color = MaterialTheme.colorScheme.onError)
         } else {

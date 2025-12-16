@@ -20,7 +20,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.R
@@ -39,12 +38,6 @@ import java.text.SimpleDateFormat
 import java.util.*
 import java.util.Calendar
 import okhttp3.OkHttpClient
-
-private val SCREEN_CONTENT_PADDING = 16.dp
-private val CARD_CONTENT_PADDING = 12.dp
-private val SPACING = 8.dp
-private val CIRCULAR_PROGRESS_INDICATOR = 20.dp
-private val SAVE_BUTTON_PADDING = 24.dp
 
 /** Test tags for UI elements in EditRequestScreen. */
 object EditRequestScreenTestTags {
@@ -194,9 +187,9 @@ fun EditRequestContent(
       modifier =
           Modifier.fillMaxSize()
               .padding(paddingValues)
-              .padding(SCREEN_CONTENT_PADDING)
+              .padding(ConstantRequestEdit.SCREEN_CONTENT_PADDING)
               .verticalScroll(rememberScrollState()),
-      verticalArrangement = Arrangement.spacedBy(SCREEN_CONTENT_PADDING)) {
+      verticalArrangement = Arrangement.spacedBy(ConstantRequestEdit.SCREEN_CONTENT_PADDING)) {
         ErrorMessageCard(uiState.errorMessage, actions.onClearError)
         SuccessMessageCard(
             uiState.validationState.showSuccessMessage,
@@ -229,7 +222,7 @@ fun EditRequestContent(
               if (uiState.isSearchingLocation) {
                 CircularProgressIndicator(
                     modifier =
-                        Modifier.size(CIRCULAR_PROGRESS_INDICATOR)
+                        Modifier.size(ConstantRequestEdit.CIRCULAR_PROGRESS_INDICATOR)
                             .testTag(EditRequestScreenTestTags.LOCATION_LOADING_SPINNER))
               } else {
                 Text(stringResource(R.string.use_current_location_button))
@@ -249,7 +242,7 @@ fun EditRequestContent(
             onClearSearch = actions.onClearLocationSearch,
             modifier =
                 Modifier.fillMaxWidth().testTag(EditRequestScreenTestTags.INPUT_LOCATION_NAME))
-        Spacer(modifier = Modifier.height(SCREEN_CONTENT_PADDING))
+        Spacer(modifier = Modifier.height(ConstantRequestEdit.SCREEN_CONTENT_PADDING))
         StartDateField(
             dateString = dateFormat.format(uiState.startTimeStamp),
             isLoading = uiState.isLoading,
@@ -261,7 +254,7 @@ fun EditRequestContent(
             onClick = { pickerState.showExpirationDatePicker = true })
         TagsSection(
             tags = uiState.tags, isLoading = uiState.isLoading, onTagsChange = actions.onTagsChange)
-        Spacer(modifier = Modifier.height(SPACING))
+        Spacer(modifier = Modifier.height(ConstantRequestEdit.SPACING))
         SaveButton(
             isEditMode = uiState.isEditMode, isLoading = uiState.isLoading, onSave = actions.onSave)
         if (uiState.isEditMode) {
@@ -311,7 +304,7 @@ private fun ErrorMessageCard(
         colors = CardDefaults.cardColors(containerColor = palette.errorContainer),
         modifier = Modifier.fillMaxWidth()) {
           Row(
-              modifier = Modifier.fillMaxWidth().padding(CARD_CONTENT_PADDING),
+              modifier = Modifier.fillMaxWidth().padding(ConstantRequestEdit.CARD_CONTENT_PADDING),
               horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(
                     text = error,
@@ -336,7 +329,7 @@ private fun SuccessMessageCard(
         colors = CardDefaults.cardColors(containerColor = palette.primary),
         modifier = Modifier.fillMaxWidth()) {
           Row(
-              modifier = Modifier.fillMaxWidth().padding(CARD_CONTENT_PADDING),
+              modifier = Modifier.fillMaxWidth().padding(ConstantRequestEdit.CARD_CONTENT_PADDING),
               horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(
                     text =
@@ -548,7 +541,8 @@ private fun SaveButton(isEditMode: Boolean, isLoading: Boolean, onSave: () -> Un
               containerColor = appPalette().accent, contentColor = appPalette().onAccent)) {
         if (isLoading) {
           CircularProgressIndicator(
-              modifier = Modifier.size(SAVE_BUTTON_PADDING), color = appPalette().accent)
+              modifier = Modifier.size(ConstantRequestEdit.SAVE_BUTTON_PADDING),
+              color = appPalette().accent)
         } else {
           Text(
               stringResource(
@@ -584,7 +578,8 @@ fun RequestTypeChipGroup(
     enabled: Boolean = true
 ) {
   FlowRow(
-      horizontalArrangement = Arrangement.spacedBy(SPACING), modifier = Modifier.fillMaxWidth()) {
+      horizontalArrangement = Arrangement.spacedBy(ConstantRequestEdit.SPACING),
+      modifier = Modifier.fillMaxWidth()) {
         RequestType.entries.forEach { type ->
           FilterChip(
               selected = selectedTypes.contains(type),
@@ -613,8 +608,8 @@ fun TagsChipGroup(
     enabled: Boolean = true
 ) {
   FlowRow(
-      horizontalArrangement = Arrangement.spacedBy(SPACING),
-      verticalArrangement = Arrangement.spacedBy(SPACING),
+      horizontalArrangement = Arrangement.spacedBy(ConstantRequestEdit.SPACING),
+      verticalArrangement = Arrangement.spacedBy(ConstantRequestEdit.SPACING),
       modifier = Modifier.fillMaxWidth()) {
         Tags.entries.forEach { tag ->
           FilterChip(
