@@ -81,6 +81,13 @@ class ChatRepositoryFirestore(private val db: FirebaseFirestore) : ChatRepositor
         "Network unavailable: cannot retrieve messages from server"
     private const val CANNOT_RETRIEVE_MESSAGES =
         "Cannot retrieve messages: data from cache (network unavailable)"
+
+    private const val USER_NOT_AUTHORIZED_TO_DELETE_CHAT =
+        "User is not authorized to delete this chat"
+    private const val NETWORK_UNAVAILABLE_CANNOT_DELETE_CHAT =
+        "Network unavailable: cannot delete chat from server"
+    private const val FAILED_TO_DELETE_CHAT_WITH_ID = "Failed to delete chat with ID"
+    private const val ONLY_CREATOR_CAN_DELETE_CHAT = "Only the creator can delete the chat"
   }
 
   private val chatsCollectionRef = db.collection(CHATS_COLLECTION_PATH)
@@ -335,6 +342,22 @@ class ChatRepositoryFirestore(private val db: FirebaseFirestore) : ChatRepositor
         throw IllegalStateException(NETWORK_UNAVAILABLE_CANNOT_UPDATE_PARTICIPANTS, e)
       }
       throw Exception("$FAILED_TO_UPDATE_PARTICIPANTS $chatId: ${e.message}", e)
+    }
+  }
+
+  override suspend fun deleteChat(chatId: String) {
+    val currentUserId = Firebase.auth.currentUser?.uid ?: notAuthenticated()
+
+    try {
+      val chat = getChat(chatId)
+      check(chat.creatorId == currentUserId) { ONLY_CREATOR_CAN_DELETE_CHAT }
+
+      chatsCollectionRef.document(chatId).delete().await()
+    } catch (e: FirebaseFirestoreException) {
+      if (e.code == FirebaseFirestoreException.Code.UNAVAILABLE) {
+        throw IllegalStateException(NETWORK_UNAVAILABLE_CANNOT_DELETE_CHAT, e)
+      }
+      throw Exception("$FAILED_TO_DELETE_CHAT_WITH_ID $chatId: ${e.message}", e)
     }
   }
 }

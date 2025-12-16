@@ -1088,4 +1088,57 @@ class ChatRepositoryFirestoreTest : BaseEmulatorTest() {
     assertEquals(1, chat.participants.size)
     assertEquals(creatorId, chat.participants[0])
   }
+
+  @Test
+  fun deleteChat_success() = runTest {
+    val initialParticipants = listOf(currentUserId, "helper1", "helper2")
+    createTestChat(participants = initialParticipants)
+
+    repository.deleteChat(TEST_CHAT_ID_1)
+    delay(FIRESTORE_WRITE_DELAY_MS)
+
+    // Verify chat was deleted by trying to access it
+    val exception =
+        assertThrows(Exception::class.java) { runBlocking { repository.getChat(TEST_CHAT_ID_1) } }
+    assertExceptionContains(exception, "not found")
+  }
+
+  @Test
+  fun deleteChat_failsWhenNotCreator() = runTest {
+    val initialParticipants = listOf(currentUserId, "helper1", "helper2")
+    createTestChat(participants = initialParticipants)
+
+    // Sign in as a non-creator participant
+    signInUser("helper1@test.com", "password")
+
+    val exception =
+        assertThrows(Exception::class.java) {
+          runBlocking { repository.deleteChat(TEST_CHAT_ID_1) }
+        }
+    assertExceptionContains(exception, "Only the creator can delete the chat")
+  }
+
+  @Test
+  fun deleteChat_failsWhenNotAuthenticated() = runTest {
+    createTestChat()
+
+    Firebase.auth.signOut()
+
+    val exception =
+        assertThrows(IllegalStateException::class.java) {
+          runBlocking { repository.deleteChat(TEST_CHAT_ID_1) }
+        }
+    assertExceptionContains(exception, "authenticated")
+  }
+
+  @Test
+  fun deleteChat_failsWhenChatDoesNotExist() = runTest {
+    val nonExistentChatId = "nonExistentChatId"
+
+    val exception =
+        assertThrows(Exception::class.java) {
+          runBlocking { repository.deleteChat(nonExistentChatId) }
+        }
+    assertExceptionContains(exception, NOT_FOUND)
+  }
 }
