@@ -31,8 +31,7 @@ data class AcceptRequestUIState(
 class AcceptRequestViewModel(
     private val requestRepository: RequestRepository =
         RequestRepositoryFirestore(Firebase.firestore),
-    private val chatRepository: ChatRepository =
-        ChatRepositoryFirestore(Firebase.firestore),
+    private val chatRepository: ChatRepository = ChatRepositoryFirestore(Firebase.firestore),
     private val userProfileRepository: UserProfileRepository? = null,
     private val requestCache: RequestCache? = null
 ) : ViewModel() {
@@ -125,24 +124,24 @@ class AcceptRequestViewModel(
    * @param requestID the id of the request to cancel
    */
   fun cancelAcceptanceToRequest(requestID: String) {
-      viewModelScope.launch {
-          try {
-              _uiState.value = _uiState.value.copy(isLoading = true)
-              requestRepository.cancelAcceptance(requestID)
+    viewModelScope.launch {
+      try {
+        _uiState.value = _uiState.value.copy(isLoading = true)
+        requestRepository.cancelAcceptance(requestID)
 
-              // Sync chat participants (removes current user)
-              val updatedRequest = requestRepository.getRequest(requestID)
-              syncChatParticipants(updatedRequest)
+        // Sync chat participants (removes current user)
+        val updatedRequest = requestRepository.getRequest(requestID)
+        syncChatParticipants(updatedRequest)
 
-              _uiState.value = _uiState.value.copy(accepted = false)
-          } catch (e: Exception) {
-              Log.e("AcceptRequestViewModel", "Failed to cancel request: ${e.message}", e)
-              setErrorMsg("Failed to cancel acceptance to request: ${e.message}")
-              loadRequest(requestID)
-          } finally {
-              _uiState.value = _uiState.value.copy(isLoading = false)
-          }
+        _uiState.value = _uiState.value.copy(accepted = false)
+      } catch (e: Exception) {
+        Log.e("AcceptRequestViewModel", "Failed to cancel request: ${e.message}", e)
+        setErrorMsg("Failed to cancel acceptance to request: ${e.message}")
+        loadRequest(requestID)
+      } finally {
+        _uiState.value = _uiState.value.copy(isLoading = false)
       }
+    }
   }
 
   /**
@@ -151,62 +150,62 @@ class AcceptRequestViewModel(
    * @param requestID the id of the request to accept
    */
   fun acceptRequest(requestID: String) {
-      viewModelScope.launch {
-          try {
-              _uiState.value = _uiState.value.copy(isLoading = true)
-              requestRepository.acceptRequest(requestID)
+    viewModelScope.launch {
+      try {
+        _uiState.value = _uiState.value.copy(isLoading = true)
+        requestRepository.acceptRequest(requestID)
 
-              // Sync chat participants (adds current user)
-              val updatedRequest = requestRepository.getRequest(requestID)
-              syncChatParticipants(updatedRequest)
+        // Sync chat participants (adds current user)
+        val updatedRequest = requestRepository.getRequest(requestID)
+        syncChatParticipants(updatedRequest)
 
-              _uiState.value = _uiState.value.copy(accepted = true)
-          } catch (e: Exception) {
-              Log.e("AcceptRequestViewModel", "Failed to accept request: ${e.message}", e)
-              setErrorMsg("Failed to accept request: ${e.message}")
-              loadRequest(requestID)
-          } finally {
-              _uiState.value = _uiState.value.copy(isLoading = false)
-          }
+        _uiState.value = _uiState.value.copy(accepted = true)
+      } catch (e: Exception) {
+        Log.e("AcceptRequestViewModel", "Failed to accept request: ${e.message}", e)
+        setErrorMsg("Failed to accept request: ${e.message}")
+        loadRequest(requestID)
+      } finally {
+        _uiState.value = _uiState.value.copy(isLoading = false)
       }
-  }
-    /**
-     * Syncs chat participants with request.people.
-     *
-     * Chat participants should always be: [creatorId] + request.people
-     * If chat doesn't exist, it will be created when first message is sent.
-     */
-    private suspend fun syncChatParticipants(request: Request) {
-        try {
-            val chatExists = chatRepository.chatExists(request.requestId)
-
-            if (!chatExists) {
-                return // Chat will be created when first message is sent
-            }
-
-            val currentUserId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
-            if (currentUserId == null) {
-                Log.e("AcceptRequestViewModel", "Cannot sync chat: no authenticated user")
-                return
-            }
-
-            val correctParticipants = listOf(request.creatorId) + request.people
-
-            if (request.creatorId == currentUserId) {
-                // Creator updates all participants
-                chatRepository.updateChatParticipants(request.requestId, correctParticipants)
-            } else if (!correctParticipants.contains(currentUserId)) {
-                // Non-creator removes themselves
-                chatRepository.removeSelfFromChat(request.requestId)
-            }
-            // else: User is still a participant, no change needed
-
-            // Update chat status
-            chatRepository.updateChatStatus(request.requestId, request.status.name)
-        } catch (e: Exception) {
-            Log.e("AcceptRequestViewModel", "Failed to sync chat: ${e.message}", e)
-        }
     }
+  }
+  /**
+   * Syncs chat participants with request.people.
+   *
+   * Chat participants should always be: [creatorId] + request.people If chat doesn't exist, it will
+   * be created when first message is sent.
+   */
+  private suspend fun syncChatParticipants(request: Request) {
+    try {
+      val chatExists = chatRepository.chatExists(request.requestId)
+
+      if (!chatExists) {
+        return // Chat will be created when first message is sent
+      }
+
+      val currentUserId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
+      if (currentUserId == null) {
+        Log.e("AcceptRequestViewModel", "Cannot sync chat: no authenticated user")
+        return
+      }
+
+      val correctParticipants = listOf(request.creatorId) + request.people
+
+      if (request.creatorId == currentUserId) {
+        // Creator updates all participants
+        chatRepository.updateChatParticipants(request.requestId, correctParticipants)
+      } else if (!correctParticipants.contains(currentUserId)) {
+        // Non-creator removes themselves
+        chatRepository.removeSelfFromChat(request.requestId)
+      }
+      // else: User is still a participant, no change needed
+
+      // Update chat status
+      chatRepository.updateChatStatus(request.requestId, request.status.name)
+    } catch (e: Exception) {
+      Log.e("AcceptRequestViewModel", "Failed to sync chat: ${e.message}", e)
+    }
+  }
 }
 
 class AcceptRequestViewModelFactory(
@@ -215,18 +214,18 @@ class AcceptRequestViewModelFactory(
     private val userProfileRepository: UserProfileRepository?,
     private val requestCache: RequestCache
 ) : androidx.lifecycle.ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(AcceptRequestViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return AcceptRequestViewModel(
-                requestRepository = requestRepository,
-                chatRepository = chatRepository,
-                userProfileRepository = userProfileRepository,
-                requestCache = requestCache)
-                    as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
+  override fun <T : ViewModel> create(modelClass: Class<T>): T {
+    if (modelClass.isAssignableFrom(AcceptRequestViewModel::class.java)) {
+      @Suppress("UNCHECKED_CAST")
+      return AcceptRequestViewModel(
+          requestRepository = requestRepository,
+          chatRepository = chatRepository,
+          userProfileRepository = userProfileRepository,
+          requestCache = requestCache)
+          as T
     }
+    throw IllegalArgumentException("Unknown ViewModel class")
+  }
   /**
    * FOR TESTING ONLY - Manually sets offline mode state This method is used exclusively in UI tests
    * to simulate offline scenarios
