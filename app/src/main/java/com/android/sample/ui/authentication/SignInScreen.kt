@@ -9,7 +9,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -130,8 +129,7 @@ fun SignInScreen(
         Image(
             painter = painterResource(R.drawable.campusreach_logo),
             contentDescription = "App Logo",
-            modifier = Modifier.size(UiDimens.IconLarge).testTag(SignInScreenTestTags.APP_LOGO),
-            colorFilter = ColorFilter.tint(appPalette().accent))
+            modifier = Modifier.size(UiDimens.IconLarge).testTag(SignInScreenTestTags.APP_LOGO))
 
         // Welcome title
         Text(
