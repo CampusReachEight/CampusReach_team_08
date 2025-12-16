@@ -184,12 +184,9 @@ class AcceptRequestViewModel(
       }
 
       val correctParticipants = listOf(request.creatorId) + request.people
-
-      // Check if chat exists
       val chatExists = chatRepository.chatExists(request.requestId)
 
       if (!chatExists) {
-        // Create the chat with the correct participants
         chatRepository.createChat(
             requestId = request.requestId,
             requestTitle = request.title,
@@ -197,45 +194,44 @@ class AcceptRequestViewModel(
             creatorId = request.creatorId,
             requestStatus = request.status.name)
       } else {
-        // Update chat participants and status
         if (request.creatorId == currentUserId) {
-          // Creator updates all participants
           chatRepository.updateChatParticipants(request.requestId, correctParticipants)
-        } else if (!correctParticipants.contains(currentUserId)) {
-          // Non-creator removes themselves
-          chatRepository.removeSelfFromChat(request.requestId)
+        } else {
+          if (correctParticipants.contains(currentUserId)) {
+            chatRepository.addSelfToChat(request.requestId)
+          } else {
+            chatRepository.removeSelfFromChat(request.requestId)
+          }
         }
-        // else: User is still a participant, no change needed
-      }
 
-      // Update chat status
-      chatRepository.updateChatStatus(request.requestId, request.status.name)
+        chatRepository.updateChatStatus(request.requestId, request.status.name)
+      }
     } catch (e: Exception) {
       Log.e("AcceptRequestViewModel", "Failed to sync chat: ${e.message}", e)
     }
   }
-}
 
-class AcceptRequestViewModelFactory(
-    private val requestRepository: RequestRepository,
-    private val chatRepository: ChatRepository,
-    private val userProfileRepository: UserProfileRepository?,
-    private val requestCache: RequestCache
-) : androidx.lifecycle.ViewModelProvider.Factory {
-  override fun <T : ViewModel> create(modelClass: Class<T>): T {
-    if (modelClass.isAssignableFrom(AcceptRequestViewModel::class.java)) {
-      @Suppress("UNCHECKED_CAST")
-      return AcceptRequestViewModel(
-          requestRepository = requestRepository,
-          chatRepository = chatRepository,
-          userProfileRepository = userProfileRepository,
-          requestCache = requestCache)
-          as T
+  class AcceptRequestViewModelFactory(
+      private val requestRepository: RequestRepository,
+      private val chatRepository: ChatRepository,
+      private val userProfileRepository: UserProfileRepository?,
+      private val requestCache: RequestCache
+  ) : androidx.lifecycle.ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+      if (modelClass.isAssignableFrom(AcceptRequestViewModel::class.java)) {
+        @Suppress("UNCHECKED_CAST")
+        return AcceptRequestViewModel(
+            requestRepository = requestRepository,
+            chatRepository = chatRepository,
+            userProfileRepository = userProfileRepository,
+            requestCache = requestCache)
+            as T
+      }
+      throw IllegalArgumentException("Unknown ViewModel class")
     }
-    throw IllegalArgumentException("Unknown ViewModel class")
+    /**
+     * FOR TESTING ONLY - Manually sets offline mode state This method is used exclusively in UI
+     * tests to simulate offline scenarios
+     */
   }
-  /**
-   * FOR TESTING ONLY - Manually sets offline mode state This method is used exclusively in UI tests
-   * to simulate offline scenarios
-   */
 }

@@ -46,7 +46,6 @@ import com.android.sample.ui.map.MapViewModel
 import com.android.sample.ui.map.MapViewModelFactory
 import com.android.sample.ui.overview.AcceptRequestScreen
 import com.android.sample.ui.overview.AcceptRequestViewModel
-import com.android.sample.ui.overview.AcceptRequestViewModelFactory
 import com.android.sample.ui.profile.ProfileScreen
 import com.android.sample.ui.profile.ProfileViewModel
 import com.android.sample.ui.profile.accepted_requests.AcceptedRequestsScreen
@@ -141,7 +140,7 @@ fun NavigationScreen(
   val acceptRequestViewModel: AcceptRequestViewModel =
       viewModel(
           factory =
-              AcceptRequestViewModelFactory(
+              AcceptRequestViewModel.AcceptRequestViewModelFactory(
                   requestRepository = requestRepository,
                   userProfileRepository = UserProfileRepositoryFirestore(Firebase.firestore),
                   requestCache = requestCache,

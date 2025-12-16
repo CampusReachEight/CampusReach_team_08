@@ -122,6 +122,40 @@ class ChatViewModel(
     }
   }
 
+  fun loadMoreMessages() {
+    val chatId = currentChatId ?: return
+    val currentMessages = _uiState.value.messages
+
+    if (currentMessages.isEmpty()) {
+      return
+    }
+
+    _uiState.update { it.copy(isLoadingMore = true) }
+
+    viewModelScope.launch {
+      try {
+        // Get the timestamp of the oldest message
+        val oldestMessage = currentMessages.first()
+        val beforeTimestamp = oldestMessage.timestamp
+
+        // Load more messages
+        val moreMessages = chatRepository.getMessages(chatId, 10, beforeTimestamp)
+
+        _uiState.update { state ->
+          state.copy(
+              messages = (moreMessages + state.messages).distinctBy { it.messageId },
+              isLoadingMore = false)
+        }
+      } catch (e: Exception) {
+        _uiState.update { it.copy(isLoadingMore = false) }
+        val friendly =
+            e.message?.takeIf { it.isNotBlank() }
+                ?: "Failed to load more messages. Please try again."
+        _uiState.update { it.copy(errorMessage = friendly) }
+      }
+    }
+  }
+
   /**
    * Sends a new message to the current chat.
    *
@@ -181,7 +215,7 @@ class ChatViewModel(
   }
 }
 
-private const val UNKNOWN_VIEW_MODEL_ERROR = "Unknown ViewModel class"
+const val UNKNOWN_VIEW_MODEL_ERROR = "Unknown ViewModel class"
 
 /**
  * Factory for creating [ChatViewModel] instances with custom dependencies.
