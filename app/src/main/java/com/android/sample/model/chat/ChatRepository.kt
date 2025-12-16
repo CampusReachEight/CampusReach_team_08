@@ -113,4 +113,10 @@ interface ChatRepository {
 
   /** Updates the list of participants in a chat. */
   suspend fun updateChatParticipants(chatId: String, participants: List<String>)
+
+  /**
+   * Removes the current user from chat participants. Any participant can remove themselves (used
+   * when canceling acceptance).
+   */
+  suspend fun removeSelfFromChat(chatId: String)
 }
