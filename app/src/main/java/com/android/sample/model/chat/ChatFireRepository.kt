@@ -1,5 +1,6 @@
 package com.android.sample.model.chat
 
+import com.google.firebase.Timestamp
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreException
@@ -14,6 +15,7 @@ import kotlinx.coroutines.tasks.await
 
 const val CHATS_COLLECTION_PATH = "chats"
 const val MESSAGES_SUBCOLLECTION_PATH = "messages"
+const val DEFAULT_MESSAGE_LIMIT = 50
 
 /**
  * Firestore implementation of the ChatRepository interface.
@@ -23,6 +25,11 @@ const val MESSAGES_SUBCOLLECTION_PATH = "messages"
  * Firestore structure:
  * - chats/{chatId} - Chat metadata documents
  * - chats/{chatId}/messages/{messageId} - Message subcollection
+ *
+ * OPTIMIZATION NOTES:
+ * - Uses pagination for message loading (default 50 messages)
+ * - Real-time listener only listens for NEW messages, not all messages
+ * - Uses Source.DEFAULT to leverage Firestore cache when possible
  */
 class ChatRepositoryFirestore(private val db: FirebaseFirestore) : ChatRepository {
 
@@ -63,12 +70,9 @@ class ChatRepositoryFirestore(private val db: FirebaseFirestore) : ChatRepositor
 
       // Verify the chat was created
       val createdChat = chatsCollectionRef.document(requestId).get(Source.SERVER).await()
-      if (!createdChat.exists()) {
-        throw Exception("Failed to verify chat creation for ID $requestId")
-      }
-      if (createdChat.metadata.isFromCache) {
-        throw IllegalStateException(
-            "Cannot verify chat creation: data from cache (network unavailable)")
+      check(createdChat.exists()) { "Failed to verify chat creation for ID $requestId" }
+      check(!createdChat.metadata.isFromCache) {
+        "Cannot verify chat creation: data from cache (network unavailable)"
       }
     } catch (e: FirebaseFirestoreException) {
       if (e.code == FirebaseFirestoreException.Code.UNAVAILABLE) {
@@ -86,11 +90,8 @@ class ChatRepositoryFirestore(private val db: FirebaseFirestore) : ChatRepositor
 
   override suspend fun getChat(chatId: String): Chat {
     return try {
-      val snapshot = chatsCollectionRef.document(chatId).get(Source.SERVER).await()
-
-      if (snapshot.metadata.isFromCache) {
-        throw IllegalStateException("Cannot retrieve chat: data from cache (network unavailable)")
-      }
+      // OPTIMIZATION: Use Source.DEFAULT to leverage cache
+      val snapshot = chatsCollectionRef.document(chatId).get(Source.DEFAULT).await()
 
       snapshot.data?.let { Chat.fromMap(it) }
           ?: throw NoSuchElementException("Chat with ID $chatId not found")
@@ -99,8 +100,6 @@ class ChatRepositoryFirestore(private val db: FirebaseFirestore) : ChatRepositor
         throw IllegalStateException("Network unavailable: cannot retrieve chat from server", e)
       }
       throw Exception("Failed to retrieve chat with ID $chatId: ${e.message}", e)
-    } catch (e: IllegalStateException) {
-      throw e
     } catch (e: NoSuchElementException) {
       throw e
     } catch (e: Exception) {
@@ -112,12 +111,12 @@ class ChatRepositoryFirestore(private val db: FirebaseFirestore) : ChatRepositor
     Firebase.auth.currentUser?.uid ?: notAuthenticated()
 
     return try {
+      // OPTIMIZATION: Use Source.DEFAULT to leverage cache
       val snapshot =
-          chatsCollectionRef.whereArrayContains("participants", userId).get(Source.SERVER).await()
+          chatsCollectionRef.whereArrayContains("participants", userId).get(Source.DEFAULT).await()
 
-      if (snapshot.metadata.isFromCache) {
-        throw IllegalStateException(
-            "Cannot retrieve user chats: data from cache (network unavailable)")
+      check(!snapshot.metadata.isFromCache) {
+        "Cannot retrieve user chats: data from cache (network unavailable)"
       }
 
       snapshot.documents
@@ -128,8 +127,6 @@ class ChatRepositoryFirestore(private val db: FirebaseFirestore) : ChatRepositor
         throw IllegalStateException("Network unavailable: cannot retrieve chats from server", e)
       }
       throw Exception("Failed to retrieve chats for user $userId: ${e.message}", e)
-    } catch (e: IllegalStateException) {
-      throw e
     } catch (e: Exception) {
       throw Exception("Failed to retrieve chats for user $userId", e)
     }
@@ -152,9 +149,7 @@ class ChatRepositoryFirestore(private val db: FirebaseFirestore) : ChatRepositor
     try {
       // Verify chat exists and user is a participant
       val chat = getChat(chatId)
-      if (!chat.participants.contains(currentUserId)) {
-        notAuthorized()
-      }
+      check(chat.participants.contains(currentUserId)) { "User is not a participant in this chat" }
 
       val messageId = Message.generateMessageId()
       val timestamp = Date()
@@ -180,9 +175,7 @@ class ChatRepositoryFirestore(private val db: FirebaseFirestore) : ChatRepositor
       chatsCollectionRef
           .document(chatId)
           .update(
-              mapOf(
-                  "lastMessage" to text.trim(),
-                  "lastMessageTimestamp" to com.google.firebase.Timestamp(timestamp)))
+              mapOf("lastMessage" to text.trim(), "lastMessageTimestamp" to Timestamp(timestamp)))
           .await()
     } catch (e: FirebaseFirestoreException) {
       if (e.code == FirebaseFirestoreException.Code.UNAVAILABLE) {
@@ -200,30 +193,48 @@ class ChatRepositoryFirestore(private val db: FirebaseFirestore) : ChatRepositor
     }
   }
 
-  override suspend fun getMessages(chatId: String): List<Message> {
+  /**
+   * Retrieves messages with pagination support.
+   *
+   * OPTIMIZATION: Limits number of messages loaded to reduce Firebase reads.
+   * - Query orders by timestamp descending to get most recent first
+   * - Results are reversed to return oldest-to-newest for UI display
+   * - Use beforeTimestamp for pagination ("Load More" functionality)
+   */
+  override suspend fun getMessages(
+      chatId: String,
+      limit: Int,
+      beforeTimestamp: Date?
+  ): List<Message> {
     val currentUserId = Firebase.auth.currentUser?.uid ?: notAuthenticated()
 
     return try {
       // Verify user is a participant
       val chat = getChat(chatId)
-      if (!chat.participants.contains(currentUserId)) {
-        notAuthorized()
-      }
+      check(chat.participants.contains(currentUserId)) { "User is not a participant in this chat" }
 
-      val snapshot =
+      // Build query with pagination
+      var query =
           chatsCollectionRef
               .document(chatId)
               .collection(MESSAGES_SUBCOLLECTION_PATH)
-              .orderBy("timestamp", Query.Direction.ASCENDING) // Oldest first
-              .get(Source.SERVER)
-              .await()
+              .orderBy("timestamp", Query.Direction.DESCENDING)
+              .limit(limit.toLong())
 
-      if (snapshot.metadata.isFromCache) {
-        throw IllegalStateException(
-            "Cannot retrieve messages: data from cache (network unavailable)")
+      // Add pagination cursor if provided
+      if (beforeTimestamp != null) {
+        query = query.whereLessThan("timestamp", Timestamp(beforeTimestamp))
       }
 
-      snapshot.documents.mapNotNull { doc -> doc.data?.let { Message.fromMap(it) } }
+      // OPTIMIZATION: Use Source.DEFAULT to leverage cache
+      val snapshot = query.get(Source.DEFAULT).await()
+
+      check(!snapshot.metadata.isFromCache) {
+        "Cannot retrieve messages: data from cache (network unavailable)"
+      }
+
+      // Reverse to get oldest-to-newest order
+      snapshot.documents.mapNotNull { doc -> doc.data?.let { Message.fromMap(it) } }.reversed()
     } catch (e: FirebaseFirestoreException) {
       if (e.code == FirebaseFirestoreException.Code.UNAVAILABLE) {
         throw IllegalStateException("Network unavailable: cannot retrieve messages from server", e)
@@ -240,35 +251,46 @@ class ChatRepositoryFirestore(private val db: FirebaseFirestore) : ChatRepositor
     }
   }
 
-  override fun listenToMessages(chatId: String): Flow<List<Message>> = callbackFlow {
-    val currentUserId = Firebase.auth.currentUser?.uid
-    if (currentUserId == null) {
-      close(IllegalStateException("No authenticated user"))
-      return@callbackFlow
-    }
+  /**
+   * Listens only to NEW messages after the specified timestamp.
+   *
+   * OPTIMIZATION: This is dramatically more efficient than listening to all messages.
+   * - Only queries messages with timestamp > sinceTimestamp
+   * - Avoids re-reading existing messages on every new message
+   * - Reduces reads by ~99% compared to listening to all messages
+   */
+  override fun listenToNewMessages(chatId: String, sinceTimestamp: Date): Flow<List<Message>> =
+      callbackFlow {
+        val currentUserId = Firebase.auth.currentUser?.uid
+        if (currentUserId == null) {
+          close(IllegalStateException("No authenticated user"))
+          return@callbackFlow
+        }
 
-    // Note: We're not verifying participant status here for performance
-    // The security rules on Firestore should handle access control
-    val listenerRegistration =
-        chatsCollectionRef
-            .document(chatId)
-            .collection(MESSAGES_SUBCOLLECTION_PATH)
-            .orderBy("timestamp", Query.Direction.ASCENDING)
-            .addSnapshotListener { snapshot, error ->
-              if (error != null) {
-                close(error)
-                return@addSnapshotListener
-              }
+        // Listen only for messages AFTER sinceTimestamp
+        val listenerRegistration =
+            chatsCollectionRef
+                .document(chatId)
+                .collection(MESSAGES_SUBCOLLECTION_PATH)
+                .whereGreaterThan("timestamp", Timestamp(sinceTimestamp))
+                .orderBy("timestamp", Query.Direction.ASCENDING)
+                .addSnapshotListener { snapshot, error ->
+                  if (error != null) {
+                    close(error)
+                    return@addSnapshotListener
+                  }
 
-              if (snapshot != null) {
-                val messages =
-                    snapshot.documents.mapNotNull { doc -> doc.data?.let { Message.fromMap(it) } }
-                trySend(messages)
-              }
-            }
+                  if (snapshot != null && !snapshot.isEmpty) {
+                    val newMessages =
+                        snapshot.documents.mapNotNull { doc ->
+                          doc.data?.let { Message.fromMap(it) }
+                        }
+                    trySend(newMessages)
+                  }
+                }
 
-    awaitClose { listenerRegistration.remove() }
-  }
+        awaitClose { listenerRegistration.remove() }
+      }
 
   override suspend fun updateChatStatus(chatId: String, newStatus: String) {
     val currentUserId = Firebase.auth.currentUser?.uid ?: notAuthenticated()
@@ -276,9 +298,7 @@ class ChatRepositoryFirestore(private val db: FirebaseFirestore) : ChatRepositor
     try {
       // Verify chat exists and user is a participant
       val chat = getChat(chatId)
-      if (!chat.participants.contains(currentUserId)) {
-        notAuthorized()
-      }
+      check(chat.participants.contains(currentUserId)) { "User is not a participant in this chat" }
 
       chatsCollectionRef.document(chatId).update("requestStatus", newStatus).await()
     } catch (e: FirebaseFirestoreException) {
@@ -299,7 +319,7 @@ class ChatRepositoryFirestore(private val db: FirebaseFirestore) : ChatRepositor
 
   override suspend fun chatExists(requestId: String): Boolean {
     return try {
-      val snapshot = chatsCollectionRef.document(requestId).get(Source.SERVER).await()
+      val snapshot = chatsCollectionRef.document(requestId).get(Source.DEFAULT).await()
       snapshot.exists()
     } catch (e: Exception) {
       false

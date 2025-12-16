@@ -1,5 +1,6 @@
 package com.android.sample.model.chat
 
+import java.util.Date
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -57,21 +58,42 @@ interface ChatRepository {
   suspend fun sendMessage(chatId: String, senderId: String, senderName: String, text: String)
 
   /**
-   * Retrieves all messages for a specific chat, ordered by timestamp (oldest first).
+   * Retrieves messages for a specific chat with pagination support. Messages are ordered by
+   * timestamp (newest first for pagination, but returned oldest first).
+   *
+   * OPTIMIZATION: Use pagination to reduce Firebase reads.
+   * - Initial load: getMessages(chatId, limit = 50) → 50 reads instead of 1000+
+   * - Load more: getMessages(chatId, limit = 50, beforeTimestamp = oldestMessageDate)
    *
    * @param chatId The ID of the chat
-   * @return List of messages
+   * @param limit Maximum number of messages to retrieve (default: 50)
+   * @param beforeTimestamp Load messages older than this timestamp (for pagination)
+   * @return List of messages (ordered oldest to newest)
    */
-  suspend fun getMessages(chatId: String): List<Message>
+  suspend fun getMessages(
+      chatId: String,
+      limit: Int = DEFAULT_MESSAGE_LIMIT,
+      beforeTimestamp: Date? = null
+  ): List<Message>
 
   /**
-   * Returns a Flow that emits real-time updates for messages in a chat. This enables live message
-   * synchronization.
+   * Returns a Flow that emits only NEW messages after the specified timestamp. This is more
+   * efficient than listening to all messages.
+   *
+   * OPTIMIZATION: Listen only to new messages to reduce Firebase reads.
+   * - Old way: 100 existing messages + 1 new = 101 reads per user
+   * - New way: 1 new message = 1 read per user
+   *
+   * Usage:
+   * 1. Load initial messages with getMessages(chatId, limit = 50)
+   * 2. Get timestamp of last message
+   * 3. Listen for new messages: listenToNewMessages(chatId, lastTimestamp)
    *
    * @param chatId The ID of the chat
-   * @return Flow of message lists (updates in real-time)
+   * @param sinceTimestamp Only listen for messages after this timestamp
+   * @return Flow of new messages (emits only new messages as they arrive)
    */
-  fun listenToMessages(chatId: String): Flow<List<Message>>
+  fun listenToNewMessages(chatId: String, sinceTimestamp: Date): Flow<List<Message>>
 
   /**
    * Updates the chat metadata when the request status changes.
