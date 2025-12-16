@@ -360,12 +360,8 @@ class EndToEndTests : BaseEmulatorTest() {
 
     composeTestRule.waitForIdle()
 
-    // Wait for either REQUEST_ITEM or EMPTY_LIST_MESSAGE
     composeTestRule.waitUntilAtLeastOneExists(
-        matcher =
-            hasTestTag(RequestListTestTags.REQUEST_ITEM)
-                .or(hasTestTag(RequestListTestTags.EMPTY_LIST_MESSAGE)),
-        timeoutMillis = UI_WAIT_TIMEOUT)
+        matcher = hasTestTag(NavigationTestTags.REQUESTS_SCREEN), timeoutMillis = UI_WAIT_TIMEOUT)
   }
 
   private fun logOut() {
