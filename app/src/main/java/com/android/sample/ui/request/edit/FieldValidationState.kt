@@ -6,6 +6,12 @@ data class FieldValidationState(
     val showDescriptionError: Boolean = false,
     val showRequestTypeError: Boolean = false,
     val showLocationNameError: Boolean = false,
-    val showDateOrderError: Boolean = false,
+    val dateOrderError: DateOrderError = DateOrderError.None,
     val showSuccessMessage: Boolean = false
 )
+
+sealed class DateOrderError {
+    object None : DateOrderError()
+    object ExpirationBeforeStart : DateOrderError()
+    object ExpirationBeforeNow : DateOrderError()
+}

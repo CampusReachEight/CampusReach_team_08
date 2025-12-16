@@ -29,6 +29,7 @@
     <string name="expiration_date_field_label">Expiration Date and Time</string>
     <string name="date_format_error">Invalid format (must be %s)</string>
     <string name="date_order_error">Expiration date must be after start date</string>
+    <string name="expiration_before_now_error">Expiration date must be in the future</string>
     <string name="tags_label">Tags (Optional)</string>
     <string name="success_message_edit">Request updated successfully!</string>
     <string name="success_message_create">Request created successfully!</string>
