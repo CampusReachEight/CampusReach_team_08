@@ -184,12 +184,9 @@ class AcceptRequestViewModel(
       }
 
       val correctParticipants = listOf(request.creatorId) + request.people
-
-      // Check if chat exists
       val chatExists = chatRepository.chatExists(request.requestId)
 
       if (!chatExists) {
-        // Create the chat with the correct participants
         chatRepository.createChat(
             requestId = request.requestId,
             requestTitle = request.title,
@@ -197,22 +194,16 @@ class AcceptRequestViewModel(
             creatorId = request.creatorId,
             requestStatus = request.status.name)
       } else {
-        // Update chat participants and status
         if (request.creatorId == currentUserId) {
-          // Creator updates all participants
           chatRepository.updateChatParticipants(request.requestId, correctParticipants)
         } else {
-          // Non-creator adds or removes themselves
           if (correctParticipants.contains(currentUserId)) {
-            // Should be a participant - add self if not already
             chatRepository.addSelfToChat(request.requestId)
           } else {
-            // Should not be a participant - remove self
             chatRepository.removeSelfFromChat(request.requestId)
           }
         }
 
-        // Update chat status (moved outside the if-else)
         chatRepository.updateChatStatus(request.requestId, request.status.name)
       }
     } catch (e: Exception) {
