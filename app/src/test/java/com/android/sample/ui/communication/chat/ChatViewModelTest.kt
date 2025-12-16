@@ -160,7 +160,7 @@ class ChatViewModelTest {
 
     coEvery { chatRepository.getChat(CHAT_ID) } returns chat
     coEvery { profileRepository.getUserProfile(CURRENT_USER_ID) } returns userProfile
-    coEvery { chatRepository.listenToMessages(CHAT_ID) } returns flowOf(messages)
+    coEvery { chatRepository.listenToNewMessages(CHAT_ID, any()) } returns flowOf(messages)
   }
 
   /** Initializes ViewModel with a chat and waits for completion. */
@@ -193,6 +193,9 @@ class ChatViewModelTest {
 
     // When
     initializeViewModel()
+
+    // Ensure coroutines are executed
+    testDispatcher.scheduler.advanceUntilIdle()
 
     // Then
     assertUiState(expectedMessageCount = EXPECTED_THREE_MESSAGES, expectedIsLoading = false)
@@ -326,7 +329,7 @@ class ChatViewModelTest {
     val userProfile = createTestUserProfile()
     coEvery { chatRepository.getChat(CHAT_ID) } returns chat
     coEvery { profileRepository.getUserProfile(CURRENT_USER_ID) } returns userProfile
-    coEvery { chatRepository.listenToMessages(CHAT_ID) } returns flowOf(emptyList())
+    coEvery { chatRepository.listenToNewMessages(CHAT_ID, Date()) } returns flowOf(emptyList())
 
     // When
     initializeViewModel()
@@ -348,7 +351,7 @@ class ChatViewModelTest {
 
     coEvery { chatRepository.getChat(CHAT_ID) } returns chat
     coEvery { profileRepository.getUserProfile(CURRENT_USER_ID) } returns userProfile
-    coEvery { chatRepository.listenToMessages(CHAT_ID) } returns
+    coEvery { chatRepository.listenToNewMessages(CHAT_ID, any()) } returns
         flowOf(initialMessages, updatedMessages)
 
     // When
