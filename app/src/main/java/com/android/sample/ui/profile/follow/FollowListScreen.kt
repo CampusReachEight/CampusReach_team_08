@@ -31,21 +31,6 @@ object FollowListTestTags {
   const val FOLLOW_LIST_ERROR = "followListError"
 }
 
-private val PADDING_16 = 16.dp
-private val PADDING_8 = 8.dp
-
-private const val NOT_FOLLOWING_ANYONE = "Not following anyone yet"
-
-private const val ERROR_OCCURED = "An error occurred"
-
-private const val NO_FOLLOERS_YET = "No followers yet"
-
-private const val BACK = "Back"
-
-private const val FOLLOWERS = "Followers"
-
-private const val FOLLOWING = "Following"
-
 /**
  * Screen displaying a list of users (either followers or following). Clicking on a user navigates
  * to their public profile.
@@ -71,12 +56,14 @@ fun FollowListScreen(
         TopAppBar(
             title = {
               Text(
-                  text = if (listType == FollowListType.FOLLOWERS) FOLLOWERS else FOLLOWING,
+                  text =
+                      if (listType == FollowListType.FOLLOWERS) ConstantFollowList.FOLLOWERS
+                      else ConstantFollowList.FOLLOWING,
                   modifier = Modifier.testTag(FollowListTestTags.FOLLOW_LIST_TITLE))
             },
             navigationIcon = {
               IconButton(onClick = onBackClick) {
-                Icon(Icons.Default.ArrowBack, contentDescription = BACK)
+                Icon(Icons.Default.ArrowBack, contentDescription = ConstantFollowList.BACK)
               }
             },
             colors =
@@ -94,19 +81,19 @@ fun FollowListScreen(
             }
             state.errorMessage != null -> {
               Text(
-                  text = state.errorMessage ?: ERROR_OCCURED,
+                  text = state.errorMessage ?: ConstantFollowList.ERROR_OCCURED,
                   color = appPalette().error,
                   textAlign = TextAlign.Center,
                   modifier =
                       Modifier.align(Alignment.Center)
-                          .padding(PADDING_16)
+                          .padding(ConstantFollowList.PADDING_16)
                           .testTag(FollowListTestTags.FOLLOW_LIST_ERROR))
             }
             state.users.isEmpty() -> {
               Text(
                   text =
-                      if (listType == FollowListType.FOLLOWERS) NO_FOLLOERS_YET
-                      else NOT_FOLLOWING_ANYONE,
+                      if (listType == FollowListType.FOLLOWERS) ConstantFollowList.NO_FOLLOWERS_YET
+                      else ConstantFollowList.NOT_FOLLOWING_ANYONE,
                   textAlign = TextAlign.Center,
                   modifier =
                       Modifier.align(Alignment.Center)
@@ -115,8 +102,8 @@ fun FollowListScreen(
             else -> {
               LazyColumn(
                   modifier = Modifier.fillMaxSize().testTag(FollowListTestTags.FOLLOW_LIST),
-                  contentPadding = PaddingValues(PADDING_16),
-                  verticalArrangement = Arrangement.spacedBy(PADDING_8)) {
+                  contentPadding = PaddingValues(ConstantFollowList.PADDING_16),
+                  verticalArrangement = Arrangement.spacedBy(ConstantFollowList.PADDING_8)) {
                     items(state.users.size) { index ->
                       val user = state.users[index]
                       FollowListItem(
