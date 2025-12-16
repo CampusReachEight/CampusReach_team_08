@@ -198,7 +198,7 @@ class MapOtherViewModelTest {
 
       advanceUntilIdle()
 
-      assertTrue(viewModel.uiState.value.needToZoom)
+      assertTrue(viewModel.uiState.value.triggerZoomOnCurrentLoc)
       assertEquals(request1, viewModel.uiState.value.currentRequest)
     }
   }
@@ -239,7 +239,7 @@ class MapOtherViewModelTest {
     viewModel.zoomOnRequest(list)
 
     assertEquals(initialState, viewModel.uiState.value)
-    assertFalse(viewModel.uiState.value.needToZoom)
+    assertFalse(viewModel.uiState.value.triggerZoomOnCurrentLoc)
   }
 
   @Test
@@ -261,7 +261,7 @@ class MapOtherViewModelTest {
     viewModel.zoomOnRequest(list)
 
     assertEquals(initialTarget, viewModel.uiState.value.target)
-    assertFalse(viewModel.uiState.value.needToZoom)
+    assertFalse(viewModel.uiState.value.triggerZoomOnCurrentLoc)
   }
 
   @Test
@@ -271,7 +271,7 @@ class MapOtherViewModelTest {
 
     val expectedTarget = LatLng(request1.location.latitude, request1.location.longitude)
     assertEquals(expectedTarget, viewModel.uiState.value.target)
-    assertTrue(viewModel.uiState.value.needToZoom)
+    assertTrue(viewModel.uiState.value.triggerZoomOnCurrentLoc)
   }
 
   @Test
@@ -282,7 +282,7 @@ class MapOtherViewModelTest {
     val expectedTarget =
         LatLng(MapViewModel.EPFL_LOCATION.latitude, MapViewModel.EPFL_LOCATION.longitude)
     assertEquals(expectedTarget, viewModel.uiState.value.target)
-    assertTrue(viewModel.uiState.value.needToZoom)
+    assertTrue(viewModel.uiState.value.triggerZoomOnCurrentLoc)
   }
 
   @Test
@@ -294,7 +294,7 @@ class MapOtherViewModelTest {
 
     val expectedTarget = LatLng(request1.location.latitude, request1.location.longitude)
     assertEquals(expectedTarget, viewModel.uiState.value.target)
-    assertTrue(viewModel.uiState.value.needToZoom)
+    assertTrue(viewModel.uiState.value.triggerZoomOnCurrentLoc)
     assertFalse(viewModel.uiState.value.wasOnAnotherScreen)
   }
 

@@ -130,7 +130,7 @@ fun MapScreen(
   var showZoomDialog by remember { mutableStateOf(false) }
 
   var isMapReady by remember { mutableStateOf(false) }
-  var isFirstTime by remember { mutableStateOf(requestId != null) }
+  var isFirstTime by remember { mutableStateOf(true) }
 
   // Refresh UI on start
   LaunchedEffect(Unit) { viewModel.refreshUIState(requestId) }
@@ -153,7 +153,8 @@ fun MapScreen(
           uiState.request,
           isFirstTime = isFirstTime,
           notFirstTime = { isFirstTime = false },
-          hasTriedToGetLocation = uiState.hasTriedToGetLocation)
+          hasTriedToGetLocation = uiState.hasTriedToGetLocation,
+          currentLocation = uiState.currentLocation)
 
   // Setup permissions
   SetupLocationPermissions(context, viewModel)
@@ -253,7 +254,8 @@ private fun setupRequestFiltering(
     allRequests: List<Request>,
     isFirstTime: Boolean,
     notFirstTime: () -> Unit,
-    hasTriedToGetLocation: Boolean
+    hasTriedToGetLocation: Boolean,
+    currentLocation: LatLng?
 ): List<Request> {
   val finalFilteredRequests =
       remember(displayedRequests, requestOwnership, currentUserId) {
@@ -268,7 +270,15 @@ private fun setupRequestFiltering(
       return@LaunchedEffect
     }
     if (hasTriedToGetLocation) {
-      viewModel.zoomOnRequest(finalFilteredRequests)
+      val noResultWithFilters = finalFilteredRequests.isEmpty() && allRequests.isNotEmpty()
+      if (noResultWithFilters) {
+        viewModel.setErrorMsg(ConstantMap.ERROR_MESSAGE_NO_REQUEST_WITH_FILTERS)
+        if (currentLocation != null) {
+          viewModel.zoomOnRequest(finalFilteredRequests)
+        }
+      } else {
+        viewModel.zoomOnRequest(finalFilteredRequests)
+      }
     }
   }
 
@@ -284,9 +294,14 @@ private fun setupRequestFiltering(
  */
 @Composable
 private fun HandleErrorMessages(context: Context, errorMsg: String?, viewModel: MapViewModel) {
+  var currentToast by remember { mutableStateOf<Toast?>(null) }
+
   LaunchedEffect(errorMsg) {
     if (errorMsg != null) {
-      Toast.makeText(context, errorMsg, Toast.LENGTH_SHORT).show()
+      currentToast?.cancel()
+      currentToast = Toast.makeText(context, errorMsg, Toast.LENGTH_SHORT)
+      currentToast?.show()
+
       viewModel.clearErrorMsg()
     }
   }
@@ -385,7 +400,7 @@ private fun MapContent(
           modifier = Modifier.align(Alignment.BottomEnd))
 
       ZoomLevelTestTag(cameraPositionState)
-      AutoZoomEffect(uiState, cameraPositionState, viewModel)
+      AutoZoomEffect(uiState, cameraPositionState)
     }
 
     MapFilter(
@@ -544,12 +559,22 @@ private fun MapMarker(
 @Composable
 private fun CurrentLocationMarker(location: LatLng) {
 
+  var isInfoWindowShown by remember { mutableStateOf(false) }
+
   Marker(
       state = MarkerState(position = location),
       icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN),
       title = ConstantMap.YOUR_LOCATION,
       snippet = ConstantMap.YOU_ARE_HERE,
-      onClick = { true })
+      onClick = {
+        isInfoWindowShown = !isInfoWindowShown
+        if (isInfoWindowShown) {
+          it.showInfoWindow()
+        } else {
+          it.hideInfoWindow()
+        }
+        true
+      })
 }
 
 /**
@@ -624,27 +649,19 @@ private fun ZoomLevelTestTag(cameraPositionState: CameraPositionState) {
 
 /**
  * Automatically animates the camera to zoom to a target location when needed. Triggers when
- * uiState.needToZoom is true and marks zoom as completed afterward.
+ * uiState.triggerZoomOnCurrentLoc
  *
  * @param uiState Current UI state containing zoom target and flag
  * @param cameraPositionState Camera state for zoom animation
- * @param viewModel ViewModel to mark zoom as completed
  */
 @Composable
-private fun AutoZoomEffect(
-    uiState: MapUIState,
-    cameraPositionState: CameraPositionState,
-    viewModel: MapViewModel
-) {
-  LaunchedEffect(uiState.needToZoom) {
-    if (uiState.needToZoom) {
-      cameraPositionState.animate(
-          update =
-              CameraUpdateFactory.newLatLngZoom(
-                  uiState.target, calculateZoomLevel(uiState.request.size)),
-          durationMs = ConstantMap.VERY_LONG_DURATION_ANIMATION)
-      viewModel.zoomCompleted()
-    }
+private fun AutoZoomEffect(uiState: MapUIState, cameraPositionState: CameraPositionState) {
+  LaunchedEffect(uiState.triggerZoomOnCurrentLoc) {
+    cameraPositionState.animate(
+        update =
+            CameraUpdateFactory.newLatLngZoom(
+                uiState.target, calculateZoomLevel(uiState.request.size)),
+        durationMs = ConstantMap.VERY_LONG_DURATION_ANIMATION)
   }
 }
 

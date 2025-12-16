@@ -32,6 +32,8 @@ object ConstantMap {
 
   const val AUTO_ZOOM_SETTINGS = "Auto-Zoom Settings"
 
+  const val ERROR_MESSAGE_NO_REQUEST_WITH_FILTERS = "There is no request with these filters"
+
   // ======================
   // General / reusable
   // ======================
@@ -123,7 +125,7 @@ object ConstantMap {
   const val MAX_ZOOM_SIX = 17
   const val MAX_ZOOM_SEVEN = 20
 
-  const val ZOOM_LEVEL_WORLD = 300000.0
+  const val ZOOM_LEVEL_WORLD = 350000.0
   const val ZOOM_LEVEL_WL = 70000.0
   const val ZOOM_LEVEL_LAND = 40000.0
   const val ZOOM_LEVEL_REGION = 10000.0
@@ -134,14 +136,14 @@ object ConstantMap {
   const val ZOOM_DIVIDE = 5.0
   const val ZOOM_LEVEL_TWO = 2
 
-  const val CURR_ZOOM_LEVEL_WORLD = 100000.0
-  const val CURR_ZOOM_LEVEL_WL = 40000.0
-  const val CURR_ZOOM_LEVEL_LAND = 20000.0
-  const val CURR_ZOOM_LEVEL_REGION = 5000.0
-  const val CURR_ZOOM_LEVEL_CITY = 1000.0
-  const val CURR_ZOOM_LEVEL_MID = 200.0
-  const val CURR_ZOOM_LEVEL_STREET_BIG = 35.0
-  const val CURR_ZOOM_LEVEL_STREET_SMALL = 15.0
+  const val CURR_ZOOM_LEVEL_WORLD = 225000.0
+  const val CURR_ZOOM_LEVEL_WL = 55000.0
+  const val CURR_ZOOM_LEVEL_LAND = 30000.0
+  const val CURR_ZOOM_LEVEL_REGION = 7000.0
+  const val CURR_ZOOM_LEVEL_CITY = 2000.0
+  const val CURR_ZOOM_LEVEL_MID = 300.0
+  const val CURR_ZOOM_LEVEL_STREET_BIG = 50.0
+  const val CURR_ZOOM_LEVEL_STREET_SMALL = 20.0
   const val CURR_ZOOM_DIVIDE = 5.0
 
   // ======================

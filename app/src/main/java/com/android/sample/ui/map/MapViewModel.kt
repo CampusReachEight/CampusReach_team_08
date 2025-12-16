@@ -39,7 +39,7 @@ data class MapUIState(
     val currentProfile: UserProfile? = null,
     val currentListRequest: List<Request>? = null,
     val requestOwnership: RequestOwnership = RequestOwnership.ALL,
-    val needToZoom: Boolean = false,
+    val triggerZoomOnCurrentLoc: Boolean = false,
     val isLoadingLocation: Boolean = false,
     val currentLocation: LatLng? = null,
     val zoomPreference: MapZoomPreference = MapZoomPreference.NEAREST_REQUEST,
@@ -84,7 +84,7 @@ class MapViewModel(
    *
    * @param errorMsg The error message to display.
    */
-  private fun setErrorMsg(errorMsg: String) {
+  fun setErrorMsg(errorMsg: String) {
     _uiState.value = _uiState.value.copy(errorMsg = errorMsg)
   }
 
@@ -191,7 +191,9 @@ class MapViewModel(
             LatLng(
                 _uiState.value.currentRequest!!.location.latitude,
                 _uiState.value.currentRequest!!.location.longitude)
-        _uiState.value = _uiState.value.copy(target = loc, needToZoom = true)
+        _uiState.value =
+            _uiState.value.copy(
+                target = loc, triggerZoomOnCurrentLoc = !_uiState.value.triggerZoomOnCurrentLoc)
       }
       return true
     }
@@ -226,7 +228,7 @@ class MapViewModel(
                 target = target,
                 currentRequest = request,
                 currentListRequest = null,
-                needToZoom = true)
+                triggerZoomOnCurrentLoc = !_uiState.value.triggerZoomOnCurrentLoc)
 
         updateCurrentProfile(request.creatorId)
         isHisRequest(request)
@@ -263,7 +265,8 @@ class MapViewModel(
       }
       _uiState.value =
           _uiState.value.copy(
-              target = LatLng(location.latitude, location.longitude), needToZoom = true)
+              target = LatLng(location.latitude, location.longitude),
+              triggerZoomOnCurrentLoc = !_uiState.value.triggerZoomOnCurrentLoc)
     } else {
       comeBackFromAnotherScreen()
     }
@@ -287,11 +290,6 @@ class MapViewModel(
     } else {
       findClosestRequest(_uiState.value.currentLocation, requests)
     }
-  }
-
-  /** Set the needToZoom to false */
-  fun zoomCompleted() {
-    _uiState.value = _uiState.value.copy(needToZoom = false)
   }
 
   /** Update the filter of the request */
@@ -343,7 +341,7 @@ class MapViewModel(
             _uiState.update {
               it.copy(
                   target = locLatLng,
-                  needToZoom = true,
+                  triggerZoomOnCurrentLoc = !_uiState.value.triggerZoomOnCurrentLoc,
                   isLoadingLocation = false,
                   currentLocation = locLatLng,
                   hasTriedToGetLocation = true)
@@ -423,7 +421,7 @@ class MapViewModel(
                     currentRequest = updatedCurrent,
                     isOwner = _uiState.value.isOwner,
                     target = location,
-                    needToZoom = true,
+                    triggerZoomOnCurrentLoc = !_uiState.value.triggerZoomOnCurrentLoc,
                     offlineMode = false)
           }
         }
