@@ -184,7 +184,12 @@ class EndToEndTests : BaseEmulatorTest() {
   }
 
   // go to the screen AddRequest
+  @OptIn(ExperimentalTestApi::class)
   private fun goAddRequest() {
+    composeTestRule.waitUntilAtLeastOneExists(
+        matcher = hasTestTag(RequestListTestTags.REQUEST_ADD_BUTTON),
+        timeoutMillis = UI_WAIT_TIMEOUT)
+
     composeTestRule
         .onNodeWithTag(RequestListTestTags.REQUEST_ADD_BUTTON, useUnmergedTree = true)
         .assertIsDisplayed()
@@ -200,6 +205,7 @@ class EndToEndTests : BaseEmulatorTest() {
   }
 
   // fill all the element of a request and save it
+  @OptIn(ExperimentalTestApi::class)
   private fun addElementOfRequest(
       title: String = titles,
       description: String = descriptions,
@@ -208,6 +214,9 @@ class EndToEndTests : BaseEmulatorTest() {
       tags: Tags = Tags.GROUP_WORK
   ) {
     // title
+    composeTestRule.waitUntilAtLeastOneExists(
+        matcher = hasTestTag(EditRequestScreenTestTags.INPUT_TITLE),
+        timeoutMillis = UI_WAIT_TIMEOUT)
     composeTestRule
         .onNodeWithTag(EditRequestScreenTestTags.INPUT_TITLE, useUnmergedTree = true)
         .performScrollTo()
@@ -215,6 +224,9 @@ class EndToEndTests : BaseEmulatorTest() {
         .performTextInput(title)
 
     // description
+    composeTestRule.waitUntilAtLeastOneExists(
+        matcher = hasTestTag(EditRequestScreenTestTags.INPUT_DESCRIPTION),
+        timeoutMillis = UI_WAIT_TIMEOUT)
     composeTestRule
         .onNodeWithTag(EditRequestScreenTestTags.INPUT_DESCRIPTION, useUnmergedTree = true)
         .performScrollTo()
@@ -222,6 +234,9 @@ class EndToEndTests : BaseEmulatorTest() {
         .performTextInput(description)
 
     // requestType
+    composeTestRule.waitUntilAtLeastOneExists(
+        matcher = hasTestTag(EditRequestScreenTestTags.getTestTagForRequestType(type)),
+        timeoutMillis = UI_WAIT_TIMEOUT)
     composeTestRule
         .onNodeWithTag(
             EditRequestScreenTestTags.getTestTagForRequestType(type), useUnmergedTree = true)
@@ -230,6 +245,9 @@ class EndToEndTests : BaseEmulatorTest() {
         .performClick()
 
     // location input
+    composeTestRule.waitUntilAtLeastOneExists(
+        matcher = hasTestTag(LocationSearchFieldTestTags.InputLocationName),
+        timeoutMillis = UI_WAIT_TIMEOUT)
     composeTestRule
         .onNodeWithTag(LocationSearchFieldTestTags.InputLocationName, useUnmergedTree = true)
         .performScrollTo()
@@ -252,6 +270,9 @@ class EndToEndTests : BaseEmulatorTest() {
 
     composeTestRule.waitForIdle()
     // put a tag
+    composeTestRule.waitUntilAtLeastOneExists(
+        matcher = hasTestTag(EditRequestScreenTestTags.getTestTagForRequestTags(tags)),
+        timeoutMillis = UI_WAIT_TIMEOUT)
     composeTestRule
         .onNodeWithTag(
             EditRequestScreenTestTags.getTestTagForRequestTags(tags), useUnmergedTree = true)
@@ -260,6 +281,9 @@ class EndToEndTests : BaseEmulatorTest() {
         .performClick()
 
     // save
+    composeTestRule.waitUntilAtLeastOneExists(
+        matcher = hasTestTag(EditRequestScreenTestTags.SAVE_BUTTON),
+        timeoutMillis = UI_WAIT_TIMEOUT)
     composeTestRule
         .onNodeWithTag(EditRequestScreenTestTags.SAVE_BUTTON, useUnmergedTree = true)
         .performScrollTo()
@@ -269,13 +293,19 @@ class EndToEndTests : BaseEmulatorTest() {
 
   // Go to editScreen (not for adding a request, but for editing it)
   // , and check the element is displayed
+  @OptIn(ExperimentalTestApi::class)
   private fun goToEditScreen() {
+    composeTestRule.waitUntilAtLeastOneExists(
+        matcher = hasTestTag(RequestListTestTags.REQUEST_ITEM), timeoutMillis = UI_WAIT_TIMEOUT)
     composeTestRule
         .onNodeWithTag(RequestListTestTags.REQUEST_ITEM, useUnmergedTree = true)
         .assertIsDisplayed()
         .performClick()
 
     // Scroll, assert edit button is displayed and click on it
+    composeTestRule.waitUntilAtLeastOneExists(
+        matcher = hasTestTag(AcceptRequestScreenTestTags.REQUEST_BUTTON),
+        timeoutMillis = UI_WAIT_TIMEOUT)
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON, useUnmergedTree = true)
         .performScrollTo()
@@ -295,6 +325,8 @@ class EndToEndTests : BaseEmulatorTest() {
   @OptIn(ExperimentalTestApi::class)
   private fun goToEditScreenFromMyRequests() {
     // Profile screen
+    composeTestRule.waitUntilAtLeastOneExists(
+        matcher = hasTestTag(NavigationTestTags.PROFILE_BUTTON), timeoutMillis = UI_WAIT_TIMEOUT)
     composeTestRule
         .onNodeWithTag(NavigationTestTags.PROFILE_BUTTON, useUnmergedTree = true)
         .assertIsDisplayed()
@@ -326,6 +358,8 @@ class EndToEndTests : BaseEmulatorTest() {
     }
 
     // Open first item
+    composeTestRule.waitUntilAtLeastOneExists(
+        matcher = hasTestTag(RequestListTestTags.REQUEST_ITEM), timeoutMillis = UI_WAIT_TIMEOUT)
     composeTestRule
         .onNodeWithTag(RequestListTestTags.REQUEST_ITEM, useUnmergedTree = true)
         .assertIsDisplayed()
@@ -1023,5 +1057,109 @@ class EndToEndTests : BaseEmulatorTest() {
 
     composeTestRule.waitUntilAtLeastOneExists(
         matcher = hasTestTag(MapTestTags.DRAG_DOWN_MENU), timeoutMillis = UI_WAIT_TIMEOUT)
+  }
+
+  @Test
+  fun goAddRequestTest() {
+    val testName = "12345"
+    val testEmail = "editprofile@example.com"
+    initialize(testName, testEmail)
+
+    goAddRequest()
+  }
+
+  @OptIn(ExperimentalTestApi::class)
+  @Test
+  fun addElementOfRequestTest() {
+    val testName = "12346"
+    val testEmail = "addelement@example.com"
+    initialize(testName, testEmail)
+
+    goAddRequest()
+    addElementOfRequest()
+
+    composeTestRule.waitForIdle()
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule
+          .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM, useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+  }
+
+  @OptIn(ExperimentalTestApi::class)
+  @Test
+  fun goToEditScreenTest() {
+    val testName = "12347"
+    val testEmail = "gotoedit@example.com"
+    initialize(testName, testEmail)
+
+    goAddRequest()
+    addElementOfRequest()
+
+    composeTestRule.waitUntilAtLeastOneExists(
+        matcher = hasTestTag(RequestListTestTags.REQUEST_ITEM), timeoutMillis = UI_WAIT_TIMEOUT)
+
+    goToEditScreen()
+  }
+
+  @OptIn(ExperimentalTestApi::class)
+  @Test
+  fun goToEditScreenFromMyRequestsTest() {
+    val testName = "12348"
+    val testEmail = "editmyrequests@example.com"
+    initialize(testName, testEmail)
+
+    goAddRequest()
+    addElementOfRequest()
+
+    composeTestRule.waitForIdle()
+    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule
+          .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM, useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    goToEditScreenFromMyRequests()
+  }
+
+  @Test
+  fun logInTest() {
+    val testName = "12349"
+    val testEmail = "logintest@example.com"
+    initialize(testName, testEmail)
+
+    // initialize appelle déjà logIn(), on vérifie qu'on est bien connecté
+    composeTestRule
+        .onNodeWithTag(RequestListTestTags.REQUEST_ADD_BUTTON, useUnmergedTree = true)
+        .assertIsDisplayed()
+  }
+
+  @OptIn(ExperimentalTestApi::class)
+  @Test
+  fun logOutTest() {
+    val testName = "12350"
+    val testEmail = "logouttest@example.com"
+    initialize(testName, testEmail)
+
+    logOut()
+  }
+
+  @OptIn(ExperimentalTestApi::class)
+  @Test
+  fun hadARequestWithOtherAccountTest() {
+    hadARequestWithOtherAccount()
+
+    val testName = "12351"
+    val testEmail = "otheraccount@example.com"
+    initialize(testName, testEmail)
+
+    composeTestRule.waitUntilAtLeastOneExists(
+        matcher = hasTestTag(RequestListTestTags.REQUEST_ITEM), timeoutMillis = UI_WAIT_TIMEOUT)
+
+    composeTestRule
+        .onNodeWithTag(RequestListTestTags.REQUEST_ITEM, useUnmergedTree = true)
+        .assertIsDisplayed()
   }
 }
