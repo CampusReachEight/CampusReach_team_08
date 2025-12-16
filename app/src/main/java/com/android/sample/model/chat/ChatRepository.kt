@@ -122,4 +122,7 @@ interface ChatRepository {
 
   /** Deletes a chat and all its messages. Used when a request is deleted. */
   suspend fun deleteChat(chatId: String)
+
+  /** Adds the current user to chat participants. Used when accepting a request. */
+  suspend fun addSelfToChat(chatId: String)
 }
