@@ -68,13 +68,21 @@ class ChatViewModel(
         // Load current user's profile for sender name
         val userProfile = profileRepository.getUserProfile(currentUserId)
 
+        // Load all messages
+        val messages = chatRepository.getMessages(chatId, 30, null)
+
         _uiState.update {
           it.copy(
-              chat = chat, currentUserProfile = userProfile, isLoading = false, errorMessage = null)
+              chat = chat,
+              currentUserProfile = userProfile,
+              messages = messages,
+              isLoading = false,
+              errorMessage = null)
         }
 
         // Start listening to messages in real-time
-        listenToNewMessages(chatId, Date())
+        val lastTimestamp = messages.lastOrNull()?.timestamp ?: Date()
+        listenToNewMessages(chatId, lastTimestamp)
       } catch (e: Exception) {
         val friendly =
             e.message?.takeIf { it.isNotBlank() } ?: "Failed to load chat. Please try again."
