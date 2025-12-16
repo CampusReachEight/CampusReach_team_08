@@ -19,6 +19,7 @@ import com.android.sample.model.request.RequestRepository
 import com.android.sample.model.request.RequestRepositoryFirestore
 import com.android.sample.model.request.RequestStatus
 import com.android.sample.model.request.RequestType
+import com.android.sample.model.request.displayString
 import com.android.sample.ui.map.ConstantMap
 import com.android.sample.ui.map.MapScreen
 import com.android.sample.ui.map.MapSettingsTestTags
@@ -292,7 +293,7 @@ class MapWithCurrentLocationTest : BaseEmulatorTest() {
         .onNodeWithTag(MapTestTags.REQUEST_STATUS)
         .performScrollTo()
         .assertIsDisplayed()
-        .assertTextContains(request1.status.name)
+        .assertTextContains(request1.status.displayString())
 
     composeTestRule
         .onNodeWithTag(MapTestTags.REQUEST_LOCATION_NAME)
