@@ -41,7 +41,6 @@ import com.android.sample.utils.FakeJwtGenerator
 import com.android.sample.utils.FirebaseEmulator
 import com.android.sample.utils.UI_WAIT_TIMEOUT
 import java.util.Date
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
@@ -87,10 +86,7 @@ class EndToEndTests : BaseEmulatorTest() {
     db = FirebaseEmulator.firestore
     auth = FirebaseEmulator.auth
 
-    runTest {
-      FirebaseEmulator.clearAuthEmulator()
-      delay(500)
-    }
+    runTest { FirebaseEmulator.clearAuthEmulator() }
 
     titles = "title"
     descriptions = "description"
@@ -115,11 +111,9 @@ class EndToEndTests : BaseEmulatorTest() {
   override fun tearDown() {
     try {
       composeTestRule.waitForIdle()
-      Thread.sleep(500)
     } catch (_: Exception) {}
 
     super.tearDown()
-    Thread.sleep(1000)
   }
 
   // initialize all you want for an end to end test
@@ -132,7 +126,6 @@ class EndToEndTests : BaseEmulatorTest() {
     composeTestRule.setContent { AppNavigation(credentialManager = fakeCredentialManager) }
 
     composeTestRule.waitForIdle()
-    Thread.sleep(1000)
     logIn()
   }
 
@@ -357,6 +350,9 @@ class EndToEndTests : BaseEmulatorTest() {
 
   // log in and check if you are in RequestList
   private fun logIn() {
+    composeTestRule.waitUntilAtLeastOneExists(
+        matcher = hasTestTag(SignInScreenTestTags.LOGIN_BUTTON), timeoutMillis = UI_WAIT_TIMEOUT)
+
     composeTestRule
         .onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON, useUnmergedTree = true)
         .assertIsDisplayed()
@@ -721,7 +717,6 @@ class EndToEndTests : BaseEmulatorTest() {
     val testEmail = "editprofile@example.com"
     initialize(testName, testEmail)
     composeTestRule.waitForIdle()
-    Thread.sleep(1500)
 
     // 2. Navigate to Profile
     composeTestRule.waitUntilAtLeastOneExists(
@@ -780,9 +775,6 @@ class EndToEndTests : BaseEmulatorTest() {
         .performClick()
 
     // 8. Wait for dialog to close and profile to update
-    composeTestRule.waitForIdle()
-    Thread.sleep(1000) // Wait for dialog to close
-
     composeTestRule.waitForIdle()
 
     // 9. Verify profile information is updated on screen
