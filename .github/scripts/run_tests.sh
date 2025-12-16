@@ -29,7 +29,7 @@ echo ""
 echo ">> [2/2] Running Android Tests..."
 
 set +e  # Temporarily disable exit on error
-./gradlew createDebugCoverageReport --build-cache --configuration-cache
+./gradlew createDebugCoverageReport --parallel --build-cache --configuration-cache
 ANDROID_EXIT_CODE=$?
 set -e  # Re-enable exit on error
 
