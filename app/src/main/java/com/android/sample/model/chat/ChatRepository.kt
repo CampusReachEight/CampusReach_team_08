@@ -119,4 +119,7 @@ interface ChatRepository {
    * when canceling acceptance).
    */
   suspend fun removeSelfFromChat(chatId: String)
+
+  /** Deletes a chat and all its messages. Used when a request is deleted. */
+  suspend fun deleteChat(chatId: String)
 }
