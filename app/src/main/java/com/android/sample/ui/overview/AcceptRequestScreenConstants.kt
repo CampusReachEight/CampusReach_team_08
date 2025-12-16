@@ -57,6 +57,6 @@ object AcceptRequestScreenConstants {
 
   val VOLUNTEER_ROW_HEIGHT = 65.dp
   val VOLUNTEER_ROW_SPACING = 15.dp
-}
 
-// Avatar text
+  val DESCRIPTION_BOTTOM_PADDING = 8.dp
+}
