@@ -1,6 +1,9 @@
 package com.android.sample.ui.request
 
 import android.annotation.SuppressLint
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -16,6 +19,7 @@ import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -288,6 +292,18 @@ fun RequestListItem(
         else -> null
       }
 
+  // Scale animation for appearance
+  var targetScale by remember { mutableStateOf(ConstantRequestList.RequestItemInitialSizeRatio) }
+
+  LaunchedEffect(Unit) { targetScale = 1f }
+
+  val scale by
+      animateFloatAsState(
+          targetValue = targetScale,
+          animationSpec =
+              spring(
+                  dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMedium))
+
   Card(
       modifier =
           modifier
@@ -295,7 +311,8 @@ fun RequestListItem(
               .fillMaxWidth()
               .height(ConstantRequestList.RequestItemHeight)
               .clickable(onClick = { onClick(request) })
-              .testTag(RequestListTestTags.REQUEST_ITEM),
+              .testTag(RequestListTestTags.REQUEST_ITEM)
+              .graphicsLayer(scaleX = scale, scaleY = scale),
       colors =
           CardDefaults.cardColors(
               containerColor = appPalette().surface, contentColor = appPalette().onSurface)) {
