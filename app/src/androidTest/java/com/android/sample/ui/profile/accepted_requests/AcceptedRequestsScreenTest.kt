@@ -12,8 +12,6 @@ import com.android.sample.model.request.RequestType
 import com.android.sample.model.request.Tags
 import com.android.sample.ui.navigation.NavigationActions
 import com.android.sample.ui.request.RequestListViewModel
-import com.android.sample.ui.request.accepted.AcceptedRequestsScreen
-import com.android.sample.ui.request.accepted.AcceptedRequestsTestTags
 import com.android.sample.utils.BaseEmulatorTest
 import java.util.Date
 import kotlinx.coroutines.delay
@@ -22,6 +20,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 
 @RunWith(AndroidJUnit4::class)
 class AcceptedRequestsScreenTest : BaseEmulatorTest() {

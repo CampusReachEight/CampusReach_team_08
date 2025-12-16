@@ -17,6 +17,8 @@ import com.android.sample.ui.leaderboard.LeaderboardSearchFilterViewModel
 import com.android.sample.ui.leaderboard.LeaderboardSort
 import com.android.sample.ui.leaderboard.LeaderboardTestTags
 import com.android.sample.ui.leaderboard.LeaderboardViewModel
+import com.android.sample.ui.navigation.NavigationActions
+import com.android.sample.ui.navigation.Screen
 import com.android.sample.ui.profile.UserSections
 import com.android.sample.ui.utils.RangeFilterTestTags
 import java.util.Date
@@ -24,6 +26,8 @@ import java.util.UUID
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.Mockito.mock
+import org.mockito.kotlin.verify
 
 @RunWith(AndroidJUnit4::class)
 class LeaderboardScreenTest {
@@ -299,5 +303,111 @@ class LeaderboardScreenTest {
 
     // After sort change, list remains populated with same items.
     waitForCards(expected = profiles.size)
+  }
+
+  @Test
+  fun leaderboardCard_isDisplayed_andClickable() {
+    val mockNavigationActions = mock(NavigationActions::class.java)
+    val repo = FakeUserProfileRepository(profiles)
+    val leaderboardViewModel = LeaderboardViewModel(profileRepository = repo, verboseLogging = true)
+    val filterViewModel = LeaderboardSearchFilterViewModel()
+
+    composeTestRule.setContent {
+      LeaderboardScreen(
+          leaderboardViewModel = leaderboardViewModel,
+          searchFilterViewModel = filterViewModel,
+          navigationActions = mockNavigationActions)
+    }
+
+    composeTestRule.runOnIdle {
+      leaderboardViewModel.setProfiles(profiles)
+      filterViewModel.initializeWithProfiles(profiles)
+    }
+
+    composeTestRule.waitForIdle()
+    Thread.sleep(1000)
+
+    waitForCards(expected = profiles.size)
+
+    // Verify profile pictures exist (should be 3, one for each card)
+    composeTestRule
+        .onAllNodesWithTag(LeaderboardTestTags.CARD_PROFILE_PICTURE, useUnmergedTree = true)
+        .assertCountEquals(3)
+  }
+
+  @Test
+  fun profilePicture_navigatesToPublicProfile_whenClicked() {
+    val mockNavigationActions = mock(NavigationActions::class.java)
+    val repo = FakeUserProfileRepository(profiles)
+    val leaderboardViewModel = LeaderboardViewModel(profileRepository = repo, verboseLogging = true)
+    val filterViewModel = LeaderboardSearchFilterViewModel()
+
+    composeTestRule.setContent {
+      LeaderboardScreen(
+          leaderboardViewModel = leaderboardViewModel,
+          searchFilterViewModel = filterViewModel,
+          navigationActions = mockNavigationActions)
+    }
+
+    composeTestRule.runOnIdle {
+      leaderboardViewModel.setProfiles(profiles)
+      filterViewModel.initializeWithProfiles(profiles)
+    }
+
+    composeTestRule.waitForIdle()
+    Thread.sleep(1000)
+
+    waitForCards(expected = profiles.size)
+
+    // Wait a bit for profile pictures to attempt loading
+    Thread.sleep(500)
+    composeTestRule.waitForIdle()
+
+    // Try to click the first profile picture (or its loading/default state)
+    val profilePictureNodes =
+        composeTestRule
+            .onAllNodesWithTag(
+                com.android.sample.ui.profile.ProfilePictureTestTags.PROFILE_PICTURE,
+                useUnmergedTree = true)
+            .fetchSemanticsNodes()
+    val defaultPictureNodes =
+        composeTestRule
+            .onAllNodesWithTag(
+                com.android.sample.ui.profile.ProfilePictureTestTags.PROFILE_PICTURE_DEFAULT,
+                useUnmergedTree = true)
+            .fetchSemanticsNodes()
+    val loadingPictureNodes =
+        composeTestRule
+            .onAllNodesWithTag(
+                com.android.sample.ui.profile.ProfilePictureTestTags.PROFILE_PICTURE_LOADING,
+                useUnmergedTree = true)
+            .fetchSemanticsNodes()
+
+    // Click whichever state the profile picture is in
+    when {
+      profilePictureNodes.isNotEmpty() ->
+          composeTestRule
+              .onAllNodesWithTag(
+                  com.android.sample.ui.profile.ProfilePictureTestTags.PROFILE_PICTURE,
+                  useUnmergedTree = true)[0]
+              .performClick()
+      defaultPictureNodes.isNotEmpty() ->
+          composeTestRule
+              .onAllNodesWithTag(
+                  com.android.sample.ui.profile.ProfilePictureTestTags.PROFILE_PICTURE_DEFAULT,
+                  useUnmergedTree = true)[0]
+              .performClick()
+      loadingPictureNodes.isNotEmpty() ->
+          composeTestRule
+              .onAllNodesWithTag(
+                  com.android.sample.ui.profile.ProfilePictureTestTags.PROFILE_PICTURE_LOADING,
+                  useUnmergedTree = true)[0]
+              .performClick()
+    }
+
+    composeTestRule.waitForIdle()
+
+    // Verify navigation to public profile was called with first profile's ID
+    verify(mockNavigationActions).navigateTo(Screen.PublicProfile("u1"))
   }
 }

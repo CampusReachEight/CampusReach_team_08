@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
+import com.android.sample.ui.getFilterAndSortButtonColors
 import com.android.sample.ui.getTextFieldColors
 import com.android.sample.ui.theme.appPalette
 import com.android.sample.ui.utils.EnumFilterButtonSimple
@@ -131,7 +132,8 @@ internal fun SortCriteriaButton(
     FilledTonalButton(
         onClick = { expanded = true },
         modifier = Modifier.testTag(RequestSearchFilterTestTags.SORT_BUTTON),
-        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)) {
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+        colors = getFilterAndSortButtonColors()) {
           Text(labelOf(current))
           Spacer(Modifier.width(4.dp))
           Icon(Icons.Filled.ArrowDropDown, contentDescription = null)
