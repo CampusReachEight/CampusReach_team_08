@@ -177,12 +177,6 @@ class AcceptRequestViewModel(
    */
   private suspend fun syncChatParticipants(request: Request) {
     try {
-      val chatExists = chatRepository.chatExists(request.requestId)
-
-      if (!chatExists) {
-        return // Chat will be created when first message is sent
-      }
-
       val currentUserId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
       if (currentUserId == null) {
         Log.e("AcceptRequestViewModel", "Cannot sync chat: no authenticated user")
@@ -191,14 +185,28 @@ class AcceptRequestViewModel(
 
       val correctParticipants = listOf(request.creatorId) + request.people
 
-      if (request.creatorId == currentUserId) {
-        // Creator updates all participants
-        chatRepository.updateChatParticipants(request.requestId, correctParticipants)
-      } else if (!correctParticipants.contains(currentUserId)) {
-        // Non-creator removes themselves
-        chatRepository.removeSelfFromChat(request.requestId)
+      // Check if chat exists
+      val chatExists = chatRepository.chatExists(request.requestId)
+
+      if (!chatExists) {
+        // Create the chat with the correct participants
+        chatRepository.createChat(
+            requestId = request.requestId,
+            requestTitle = request.title,
+            participants = correctParticipants,
+            creatorId = request.creatorId,
+            requestStatus = request.status.name)
+      } else {
+        // Update chat participants and status
+        if (request.creatorId == currentUserId) {
+          // Creator updates all participants
+          chatRepository.updateChatParticipants(request.requestId, correctParticipants)
+        } else if (!correctParticipants.contains(currentUserId)) {
+          // Non-creator removes themselves
+          chatRepository.removeSelfFromChat(request.requestId)
+        }
+        // else: User is still a participant, no change needed
       }
-      // else: User is still a participant, no change needed
 
       // Update chat status
       chatRepository.updateChatStatus(request.requestId, request.status.name)
