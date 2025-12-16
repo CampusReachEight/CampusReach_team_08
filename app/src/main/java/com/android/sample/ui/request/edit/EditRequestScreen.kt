@@ -599,7 +599,14 @@ fun RequestTypeChipGroup(
               },
               label = { Text(type.name.replace("_", " ")) },
               enabled = enabled,
-              modifier = Modifier.testTag(EditRequestScreenTestTags.getTestTagForRequestType(type)))
+              modifier = Modifier.testTag(EditRequestScreenTestTags.getTestTagForRequestType(type)),
+              colors =
+                  FilterChipDefaults.filterChipColors(
+                      selectedContainerColor = appPalette().accent,
+                      selectedLabelColor = appPalette().onAccent,
+                      selectedLeadingIconColor = appPalette().onAccent,
+                      containerColor = appPalette().transparent,
+                      labelColor = appPalette().onSurface))
         }
       }
 }
@@ -630,7 +637,14 @@ fun TagsChipGroup(
               },
               label = { Text(tag.name.replace("_", " ")) },
               enabled = enabled,
-              modifier = Modifier.testTag(EditRequestScreenTestTags.getTestTagForRequestTags(tag)))
+              modifier = Modifier.testTag(EditRequestScreenTestTags.getTestTagForRequestTags(tag)),
+              colors =
+                  FilterChipDefaults.filterChipColors(
+                      selectedContainerColor = appPalette().accent,
+                      selectedLabelColor = appPalette().onAccent,
+                      selectedLeadingIconColor = appPalette().onAccent,
+                      containerColor = appPalette().transparent,
+                      labelColor = appPalette().onSurface))
         }
       }
 }
