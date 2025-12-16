@@ -315,4 +315,26 @@ class ChatRepositoryFirestore(private val db: FirebaseFirestore) : ChatRepositor
       throw Exception("$FAILED_TO_UPDATE_PARTICIPANTS $chatId: ${e.message}", e)
     }
   }
+  /**
+   * Removes the current user from chat participants. Any participant can remove themselves (used
+   * when canceling acceptance).
+   */
+  override suspend fun removeSelfFromChat(chatId: String) {
+    val currentUserId = Firebase.auth.currentUser?.uid ?: notAuthenticated()
+
+    try {
+      val chat = getChat(chatId)
+      check(chat.participants.contains(currentUserId)) { USER_IS_NOT_A_PARTICIPANT_IN_THIS_CHAT }
+
+      // Remove current user from participants
+      val updatedParticipants = chat.participants.filter { it != currentUserId }
+
+      chatsCollectionRef.document(chatId).update(PARTICIPANTS, updatedParticipants).await()
+    } catch (e: FirebaseFirestoreException) {
+      if (e.code == FirebaseFirestoreException.Code.UNAVAILABLE) {
+        throw IllegalStateException(NETWORK_UNAVAILABLE_CANNOT_UPDATE_PARTICIPANTS, e)
+      }
+      throw Exception("$FAILED_TO_UPDATE_PARTICIPANTS $chatId: ${e.message}", e)
+    }
+  }
 }
