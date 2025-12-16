@@ -133,7 +133,6 @@ class EndToEndTests : BaseEmulatorTest() {
 
     composeTestRule.waitForIdle()
     Thread.sleep(1000)
-
     logIn()
   }
 
@@ -196,12 +195,10 @@ class EndToEndTests : BaseEmulatorTest() {
         .performClick()
 
     composeTestRule.waitForIdle()
-    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
-      composeTestRule
-          .onAllNodesWithTag(EditRequestScreenTestTags.INPUT_TITLE, useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
+
+    composeTestRule.waitUntilAtLeastOneExists(
+        matcher = hasTestTag(EditRequestScreenTestTags.INPUT_TITLE),
+        timeoutMillis = UI_WAIT_TIMEOUT)
   }
 
   // fill all the element of a request and save it
