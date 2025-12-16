@@ -237,5 +237,6 @@ data class ChatUiState(
     val messageInput: String = "",
     val isLoading: Boolean = false,
     val isSendingMessage: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val isLoadingMore: Boolean = false
 )

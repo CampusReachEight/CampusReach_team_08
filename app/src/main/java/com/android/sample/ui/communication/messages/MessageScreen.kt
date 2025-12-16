@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.android.sample.ui.communication.chat.ChatListItem
 import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.theme.UiDimens
 import com.android.sample.ui.theme.appPalette

@@ -1,4 +1,4 @@
-package com.android.sample.ui.communication.messages
+package com.android.sample.ui.communication.chat
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
