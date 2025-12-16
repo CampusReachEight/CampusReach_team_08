@@ -20,9 +20,6 @@ data class PublicProfileUiState(
     val isFollowOperationInProgress: Boolean = false
 )
 
-private const val ONE = 1
-private const val LOGGED_IN_ERROR = "You must be logged in to follow users"
-
 class PublicProfileViewModel(
     val userProfileRepository: UserProfileRepository,
     val profileCache: UserProfileCache? = null
@@ -83,14 +80,16 @@ class PublicProfileViewModel(
               _uiState.value.copy(
                   isFollowing = false,
                   profile =
-                      currentProfile?.copy(followerCount = currentProfile.followerCount - ONE))
+                      currentProfile?.copy(
+                          followerCount = currentProfile.followerCount - ConstantPublicProfile.ONE))
         } else {
           userProfileRepository.followUser(currentUserId, targetUserId)
           _uiState.value =
               _uiState.value.copy(
                   isFollowing = true,
                   profile =
-                      currentProfile?.copy(followerCount = currentProfile.followerCount + ONE))
+                      currentProfile?.copy(
+                          followerCount = currentProfile.followerCount + ConstantPublicProfile.ONE))
         }
       } catch (e: IllegalArgumentException) {
         _uiState.value = _uiState.value.copy(error = e.message)
