@@ -232,19 +232,19 @@ class EditRequestViewModel(
    * @param date New start date
    */
   fun updateStartTimeStamp(date: Date) {
-      _uiState.update { state ->
-          val currentDate = Date()
-          val dateOrderError = when {
-              state.expirationTime <= date -> DateOrderError.ExpirationBeforeStart
-              state.expirationTime <= currentDate -> DateOrderError.ExpirationBeforeNow
-              else -> DateOrderError.None
+    _uiState.update { state ->
+      val currentDate = Date()
+      val dateOrderError =
+          when {
+            state.expirationTime <= date -> DateOrderError.ExpirationBeforeStart
+            state.expirationTime <= currentDate -> DateOrderError.ExpirationBeforeNow
+            else -> DateOrderError.None
           }
 
-          state.copy(
-              startTimeStamp = date,
-              validationState = state.validationState.copy(dateOrderError = dateOrderError)
-          )
-      }
+      state.copy(
+          startTimeStamp = date,
+          validationState = state.validationState.copy(dateOrderError = dateOrderError))
+    }
   }
 
   /**
@@ -253,19 +253,19 @@ class EditRequestViewModel(
    * @param date New expiration date
    */
   fun updateExpirationTime(date: Date) {
-      _uiState.update { state ->
-          val currentDate = Date()
-          val dateOrderError = when {
-              date <= state.startTimeStamp -> DateOrderError.ExpirationBeforeStart
-              date <= currentDate -> DateOrderError.ExpirationBeforeNow
-              else -> DateOrderError.None
+    _uiState.update { state ->
+      val currentDate = Date()
+      val dateOrderError =
+          when {
+            date <= state.startTimeStamp -> DateOrderError.ExpirationBeforeStart
+            date <= currentDate -> DateOrderError.ExpirationBeforeNow
+            else -> DateOrderError.None
           }
 
-          state.copy(
-              expirationTime = date,
-              validationState = state.validationState.copy(dateOrderError = dateOrderError)
-          )
-      }
+      state.copy(
+          expirationTime = date,
+          validationState = state.validationState.copy(dateOrderError = dateOrderError))
+    }
   }
 
   fun updateTags(tags: List<Tags>) {

@@ -185,7 +185,9 @@ class EditRequestViewModelTest {
     viewModel.updateStartTimeStamp(startDate)
     viewModel.updateExpirationTime(expirationDate)
 
-      assertEquals(DateOrderError.ExpirationBeforeStart ,viewModel.uiState.value.validationState.dateOrderError)
+    assertEquals(
+        DateOrderError.ExpirationBeforeStart,
+        viewModel.uiState.value.validationState.dateOrderError)
   }
 
   @Test
@@ -196,7 +198,7 @@ class EditRequestViewModelTest {
     viewModel.updateStartTimeStamp(startDate)
     viewModel.updateExpirationTime(expirationDate)
 
-    assertEquals(DateOrderError.None ,viewModel.uiState.value.validationState.dateOrderError)
+    assertEquals(DateOrderError.None, viewModel.uiState.value.validationState.dateOrderError)
   }
 
   @Test
@@ -748,7 +750,9 @@ class EditRequestViewModelTest {
     viewModel.updateStartTimeStamp(startDate)
     testDispatcher.scheduler.advanceUntilIdle()
 
-    assertEquals(DateOrderError.ExpirationBeforeStart ,viewModel.uiState.value.validationState.dateOrderError)
+    assertEquals(
+        DateOrderError.ExpirationBeforeStart,
+        viewModel.uiState.value.validationState.dateOrderError)
   }
 
   @Test
@@ -760,7 +764,9 @@ class EditRequestViewModelTest {
     viewModel.updateExpirationTime(expirationDate)
     testDispatcher.scheduler.advanceUntilIdle()
 
-    assertEquals(DateOrderError.ExpirationBeforeStart ,viewModel.uiState.value.validationState.dateOrderError)
+    assertEquals(
+        DateOrderError.ExpirationBeforeStart,
+        viewModel.uiState.value.validationState.dateOrderError)
   }
 
   @Test
@@ -772,19 +778,19 @@ class EditRequestViewModelTest {
     viewModel.updateExpirationTime(expirationDate)
     testDispatcher.scheduler.advanceUntilIdle()
 
-    assertEquals(DateOrderError.None ,viewModel.uiState.value.validationState.dateOrderError)
+    assertEquals(DateOrderError.None, viewModel.uiState.value.validationState.dateOrderError)
   }
-
 
   @Test
   fun updateExpirationTime_afterStart_Error_ExpirationTime_After_Now() {
-    val startDate = Date(1672531200000L)      // 2023
-    val expirationDate = Date(1704067200000L) //2024
+    val startDate = Date(1672531200000L) // 2023
+    val expirationDate = Date(1704067200000L) // 2024
 
     viewModel.updateStartTimeStamp(startDate)
     viewModel.updateExpirationTime(expirationDate)
     testDispatcher.scheduler.advanceUntilIdle()
 
-    assertEquals(DateOrderError.ExpirationBeforeNow ,viewModel.uiState.value.validationState.dateOrderError)
+    assertEquals(
+        DateOrderError.ExpirationBeforeNow, viewModel.uiState.value.validationState.dateOrderError)
   }
 }

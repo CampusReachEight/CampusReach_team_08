@@ -11,7 +11,9 @@ data class FieldValidationState(
 )
 
 sealed class DateOrderError {
-    object None : DateOrderError()
-    object ExpirationBeforeStart : DateOrderError()
-    object ExpirationBeforeNow : DateOrderError()
+  object None : DateOrderError()
+
+  object ExpirationBeforeStart : DateOrderError()
+
+  object ExpirationBeforeNow : DateOrderError()
 }

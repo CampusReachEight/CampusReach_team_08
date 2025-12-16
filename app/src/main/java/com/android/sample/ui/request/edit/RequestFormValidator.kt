@@ -21,12 +21,13 @@ class RequestFormValidator(
     val isLocationValid = location != null
     val isLocationNameValid = locationName.isNotBlank()
 
-      val currentDate = Date()
-      val dateOrderError = when {
+    val currentDate = Date()
+    val dateOrderError =
+        when {
           expirationTime <= startTimeStamp -> DateOrderError.ExpirationBeforeStart
           expirationTime <= currentDate -> DateOrderError.ExpirationBeforeNow
           else -> DateOrderError.None
-      }
+        }
 
     return FieldValidationState(
         showTitleError = !isTitleValid,
@@ -42,6 +43,6 @@ class RequestFormValidator(
         !state.showDescriptionError &&
         !state.showRequestTypeError &&
         !state.showLocationNameError &&
-            state.dateOrderError == DateOrderError.None
+        state.dateOrderError == DateOrderError.None
   }
 }

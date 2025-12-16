@@ -112,7 +112,7 @@ class FieldValidationStateBuilder {
   private var showLocationError = false
   private var showStartDateError = false
   private var showExpirationDateError = false
-    private var dateOrderError : DateOrderError = DateOrderError.None
+  private var dateOrderError: DateOrderError = DateOrderError.None
   private var showSuccessMessage = false
 
   fun withTitleError() = apply { this.showTitleError = true }
@@ -129,9 +129,9 @@ class FieldValidationStateBuilder {
 
   fun withExpirationDateError() = apply { this.showExpirationDateError = true }
 
-    fun withDateOrderError(error: DateOrderError = DateOrderError.ExpirationBeforeStart) = apply {
-        this.dateOrderError = error
-    }
+  fun withDateOrderError(error: DateOrderError = DateOrderError.ExpirationBeforeStart) = apply {
+    this.dateOrderError = error
+  }
 
   fun withSuccessMessage() = apply { this.showSuccessMessage = true }
 
@@ -152,7 +152,7 @@ open class EditRequestScreenTestBase {
   protected val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
   protected val currentDate = Date()
   protected val futureDate = Date(System.currentTimeMillis() + 86400000)
-    protected val errorMessageDateInFuture = "Expiration date must be in the future"
+  protected val errorMessageDateInFuture = "Expiration date must be in the future"
 
   protected fun createTestViewModel(): EditRequestViewModel {
     val mockRequestRepo = mock<RequestRepository>()
@@ -1137,27 +1137,26 @@ class EditRequestScreenTests : EditRequestScreenTestBase() {
     composeTestRule.setContent {
       TestEditRequestContentWithStaticState(
           uiState =
-              EditRequestUiState(validationState = FieldValidationState(
-                  dateOrderError = DateOrderError.ExpirationBeforeStart
-              )))
+              EditRequestUiState(
+                  validationState =
+                      FieldValidationState(dateOrderError = DateOrderError.ExpirationBeforeStart)))
     }
 
     assertErrorMessage("Expiration date must be after start date")
   }
 
-    @Test
-    fun expirationDateField_beforeCurrentDate_displaysCurrentDateError() {
-        composeTestRule.setContent {
-            TestEditRequestContentWithStaticState(
-                uiState =
-                    EditRequestUiState(
-                        validationState = FieldValidationState(
-                            dateOrderError = DateOrderError.ExpirationBeforeNow
-                        )))
-        }
-
-        assertErrorMessage(errorMessageDateInFuture)
+  @Test
+  fun expirationDateField_beforeCurrentDate_displaysCurrentDateError() {
+    composeTestRule.setContent {
+      TestEditRequestContentWithStaticState(
+          uiState =
+              EditRequestUiState(
+                  validationState =
+                      FieldValidationState(dateOrderError = DateOrderError.ExpirationBeforeNow)))
     }
+
+    assertErrorMessage(errorMessageDateInFuture)
+  }
 
   // ========== PERMISSION AND LOCATION TESTS (UI-based) ==========
 
@@ -1457,7 +1456,7 @@ class EditRequestScreenTests : EditRequestScreenTestBase() {
     viewModel.updateExpirationTime(currentDate)
     waitForUI()
 
-      assert(viewModel.uiState.value.validationState.dateOrderError != DateOrderError.None)
+    assert(viewModel.uiState.value.validationState.dateOrderError != DateOrderError.None)
   }
 
   @Test

@@ -562,11 +562,12 @@ private fun ExpirationDateField(
     isLoading: Boolean,
     onClick: () -> Unit
 ) {
-    val errorMessage = when (dateOrderError) {
+  val errorMessage =
+      when (dateOrderError) {
         DateOrderError.None -> null
         DateOrderError.ExpirationBeforeStart -> stringResource(R.string.date_order_error)
         DateOrderError.ExpirationBeforeNow -> stringResource(R.string.expiration_before_now_error)
-    }
+      }
 
   Box {
     OutlinedTextField(
