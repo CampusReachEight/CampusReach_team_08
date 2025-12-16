@@ -33,6 +33,12 @@ import com.android.sample.model.request.RequestRepositoryFirestore
 import com.android.sample.ui.authentication.SignInScreen
 import com.android.sample.ui.authentication.SignInViewModel
 import com.android.sample.ui.authentication.SignInViewModelFactory
+import com.android.sample.ui.communication.chat.ChatScreen
+import com.android.sample.ui.communication.chat.ChatViewModel
+import com.android.sample.ui.communication.chat.ChatViewModelFactory
+import com.android.sample.ui.communication.messages.MessagesScreen
+import com.android.sample.ui.communication.messages.MessagesViewModel
+import com.android.sample.ui.communication.messages.MessagesViewModelFactory
 import com.android.sample.ui.leaderboard.LeaderboardScreen
 import com.android.sample.ui.map.MapScreen
 import com.android.sample.ui.map.MapViewModel
@@ -228,6 +234,48 @@ fun NavigationScreen(
         LeaderboardScreen(navigationActions = navigationActions)
       }
     }
+
+      navigation(startDestination = Screen.Messages.route, route = "messages") {
+          composable(Screen.Messages.route) {
+              val messagesViewModel: MessagesViewModel = viewModel(factory = MessagesViewModelFactory())
+              Scaffold(
+                  topBar = {
+                      TopNavigationBar(
+                          selectedTab = NavigationTab.Messages,
+                          onProfileClick = {
+                              FirebaseAuth.getInstance().currentUser?.uid?.let { userId ->
+                                  navigationActions.navigateTo(Screen.Profile(userId))
+                              }
+                          },
+                          navigationActions = navigationActions)
+                  },
+                  bottomBar = {
+                      BottomNavigationMenu(
+                          selectedNavigationTab = NavigationTab.Messages,
+                          navigationActions = navigationActions)
+                  }
+              ) { paddingValues ->
+                  MessagesScreen(
+                      onChatClick = { chatId -> navigationActions.navigateTo(Screen.Chat(chatId)) },
+                      viewModel = messagesViewModel,
+                      modifier = Modifier.padding(paddingValues))
+              }
+          }
+
+          composable(
+              route = Screen.Chat.route,
+              arguments = listOf(navArgument(Screen.Chat.ARG_CHAT_ID) { type = NavType.StringType })) {
+                  backStackEntry ->
+              val chatId = backStackEntry.arguments?.getString(Screen.Chat.ARG_CHAT_ID)
+              chatId?.let { id ->
+                  val chatViewModel: ChatViewModel = viewModel(factory = ChatViewModelFactory())
+                  ChatScreen(
+                      chatId = id,
+                      onBackClick = { navigationActions.goBack() },
+                      viewModel = chatViewModel)
+              }
+          }
+      }
 
     navigation(startDestination = Screen.Profile.route, route = "profile") {
       composable(Screen.Profile.route) { navBackStackEntry ->
