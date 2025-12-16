@@ -21,6 +21,10 @@ import com.android.sample.ui.theme.appPalette
 import java.util.Date
 import org.jetbrains.annotations.VisibleForTesting
 
+// Extracted magic values/constants for this file
+private const val DIALOG_OK_TEXT = "OK"
+private const val DIALOG_CANCEL_TEXT = "Cancel"
+
 private fun colorSchemeFromPalette(palette: AppPalette, base: ColorScheme): ColorScheme {
   return base.copy(
       primary = palette.accent,
@@ -57,10 +61,10 @@ internal fun MaterialDatePickerDialog(
               onClick = {
                 datePickerState.selectedDateMillis?.let { millis -> onDateSelected(Date(millis)) }
               }) {
-                Text("OK")
+                Text(DIALOG_OK_TEXT)
               }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(DIALOG_CANCEL_TEXT) } },
         colors =
             DatePickerDefaults.colors(
                 containerColor = palette.surface,
@@ -69,23 +73,23 @@ internal fun MaterialDatePickerDialog(
                 weekdayContentColor = palette.onSurface,
                 navigationContentColor = palette.onSurface,
                 yearContentColor = palette.onSurface,
-                disabledYearContentColor = palette.onSurface.copy(alpha = 0.38f),
+                disabledYearContentColor = palette.onSurface,
                 currentYearContentColor = palette.accent,
                 selectedYearContentColor = palette.onAccent,
-                disabledSelectedYearContentColor = palette.onSurface.copy(alpha = 0.38f),
+                disabledSelectedYearContentColor = palette.onSurface,
                 selectedYearContainerColor = palette.accent,
-                disabledSelectedYearContainerColor = palette.onSurface.copy(alpha = 0.12f),
+                disabledSelectedYearContainerColor = palette.onSurface,
                 dayContentColor = palette.onSurface,
-                disabledDayContentColor = palette.onSurface.copy(alpha = 0.38f),
+                disabledDayContentColor = palette.onSurface,
                 selectedDayContentColor = palette.onAccent,
-                disabledSelectedDayContentColor = palette.onSurface.copy(alpha = 0.38f),
+                disabledSelectedDayContentColor = palette.onSurface,
                 selectedDayContainerColor = palette.accent,
-                disabledSelectedDayContainerColor = palette.onSurface.copy(alpha = 0.12f),
+                disabledSelectedDayContainerColor = palette.onSurface,
                 todayContentColor = palette.accent,
                 todayDateBorderColor = palette.accent,
                 dayInSelectionRangeContentColor = palette.onAccent,
-                dayInSelectionRangeContainerColor = palette.accent.copy(alpha = 0.12f),
-                dividerColor = palette.onSurface.copy(alpha = 0.12f),
+                dayInSelectionRangeContainerColor = palette.accent,
+                dividerColor = palette.onSurface,
                 dateTextFieldColors = getTextFieldColors())) {
           DatePicker(state = datePickerState)
         }
@@ -109,10 +113,10 @@ internal fun MaterialTimePickerDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
           TextButton(onClick = { onTimeSelected(timePickerState.hour, timePickerState.minute) }) {
-            Text("OK")
+            Text(DIALOG_OK_TEXT)
           }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(DIALOG_CANCEL_TEXT) } },
         text = {
           TimePicker(
               state = timePickerState,
