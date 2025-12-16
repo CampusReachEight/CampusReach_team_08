@@ -16,6 +16,7 @@ import com.android.sample.R
 import com.android.sample.model.map.EMPTY_LOCATION
 import com.android.sample.model.map.Location
 import com.android.sample.model.map.isValid
+import com.android.sample.ui.getTextFieldColors
 import com.android.sample.ui.theme.LocationSearchFieldDimensions
 import com.android.sample.ui.theme.appPalette
 
@@ -63,6 +64,8 @@ fun LocationSearchField(
     onClearSearch: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+  val palette = appPalette()
+
   // Controls visibility of the dropdown menu
   var showDropdown by remember { mutableStateOf(false) }
   Column(modifier = modifier) {
@@ -70,6 +73,7 @@ fun LocationSearchField(
     Text(
         text = stringResource(R.string.location_field_label),
         style = MaterialTheme.typography.labelLarge,
+        color = palette.onSurface,
         modifier = Modifier.padding(bottom = LocationSearchFieldDimensions.LabelBottomPadding))
 
     // Container for search field and dropdown
@@ -77,6 +81,7 @@ fun LocationSearchField(
       // Location input field
       OutlinedTextField(
           value = locationName,
+          colors = getTextFieldColors(),
           onValueChange = { newValue ->
             onLocationNameChange(newValue) // Update input value
             onSearchQueryChange(newValue) // Trigger search
@@ -90,7 +95,7 @@ fun LocationSearchField(
             if (isError) {
               Text(
                   text = errorMessage,
-                  color = MaterialTheme.colorScheme.error,
+                  color = palette.error,
                   modifier = Modifier.testTag(LocationSearchFieldTestTags.ErrorMessage))
             }
           },
@@ -99,6 +104,7 @@ fun LocationSearchField(
             when {
               isSearching -> {
                 CircularProgressIndicator(
+                    color = palette.accent,
                     modifier =
                         Modifier.size(LocationSearchFieldDimensions.IconSize)
                             .testTag(LocationSearchFieldTestTags.LoadingIndicator),
@@ -149,7 +155,7 @@ fun LocationSearchField(
                               "Lat: ${searchLocation.latitude}, " +
                                   "Lng: ${searchLocation.longitude}",
                           style = MaterialTheme.typography.bodySmall,
-                          color = MaterialTheme.colorScheme.onSurfaceVariant)
+                          color = palette.onSurface)
                     }
                   },
                   onClick = {

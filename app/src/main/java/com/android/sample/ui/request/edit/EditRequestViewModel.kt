@@ -18,6 +18,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -41,6 +42,9 @@ class EditRequestViewModel(
 
   // Date formatter for validation
   private val dateFormat = SimpleDateFormat(DateFormats.DATE_TIME_FORMAT, Locale.getDefault())
+
+  // Debounce job for description updates
+  private var descriptionUpdateJob: Job? = null
 
   // Current request being edited (null for create mode)
   private val _currentRequest = MutableStateFlow<Request?>(null)
@@ -173,11 +177,23 @@ class EditRequestViewModel(
    * @param value New description
    */
   fun updateDescription(value: String) {
+    // Cancel previous job if active
+    descriptionUpdateJob?.cancel()
+
+    // Update immediately for UI responsiveness
     _uiState.update { state ->
       state.copy(
           description = value,
           validationState = state.validationState.copy(showDescriptionError = value.isBlank()))
     }
+
+    // Debounce heavy operations if any (currently none, but good practice for markdown parsing if
+    // we move it here)
+    descriptionUpdateJob =
+        viewModelScope.launch {
+          delay(300) // Debounce time
+          // Future: Parse markdown here if needed to offload from UI
+        }
   }
 
   /**

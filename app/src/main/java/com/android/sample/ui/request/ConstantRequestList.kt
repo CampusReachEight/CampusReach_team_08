@@ -26,6 +26,8 @@ object ConstantRequestList {
   val RequestItemCreatorSectionSize = 65.dp
   val RequestItemInnerPadding = 8.dp
   val RequestItemProfileHeightPadding = 5.dp
+  val RequestItemInitialSizeRatio = 0.5f
+
   val TypeChipTextPadding = 4.dp
   val TypeChipTextSize = 12.sp
   val TypeChipTextSizeFactor = 0.6f // used for text auto-sizing inside chip
