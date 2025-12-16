@@ -13,8 +13,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 
-const val CHATS_COLLECTION_PATH = "chats"
-const val MESSAGES_SUBCOLLECTION_PATH = "messages"
 const val DEFAULT_MESSAGE_LIMIT = 50
 
 /**
@@ -32,13 +30,86 @@ const val DEFAULT_MESSAGE_LIMIT = 50
  * - Uses Source.DEFAULT to leverage Firestore cache when possible
  */
 class ChatRepositoryFirestore(private val db: FirebaseFirestore) : ChatRepository {
+  companion object {
+    const val CHATS_COLLECTION_PATH = "chats"
+    const val MESSAGES_SUBCOLLECTION_PATH = "messages"
+
+    private const val FAILED_TO_UPDATE_STATUS_FOR_CHAT = "Failed to update status for chat"
+
+    private const val FAILED_TO_RETRIEVE_CHATS_FOR_USER = "Failed to retrieve chats for user"
+
+    private const val NO_AUTHENTICATED_USER = "No authenticated user"
+
+    private const val USER_IS_NOT_A_PARTICIPANT_IN_THIS_CHAT =
+        "User is not a participant in this chat"
+
+    private const val CURRENT_USER_PARTICIPANT_OR_CREATOR =
+        "Current user must be the creator or a participant"
+
+    private const val CHAT_CREATED = "Chat created"
+
+    private const val FAILED_TO_VERIFY_CHAT = "Failed to verify chat creation for ID"
+
+    private const val CANNOT_VERIFY_CHAT_CREATION =
+        "Cannot verify chat creation: data from cache (network unavailable)"
+
+    private const val NETWORK_UNAVAILABLE_CANNOT_CREATE_CHAT =
+        "Network unavailable: cannot create chat on server"
+
+    private const val FAILED_TO_CREATE_CHAT_FOR_REQUEST = "Failed to create chat for request"
+
+    private const val CHAT_WITH_ID = "Chat with ID"
+
+    private const val NOT_FOUND = "not found"
+
+    private const val NETWORK_UNAVAILABLE = "Network unavailable: cannot retrieve chat from server"
+
+    private const val FAILED_TO_RETRIEVE_CHAT_WITH_ID = "Failed to retrieve chat with ID"
+
+    private const val CANNOT_RETRIEVE_USER_CHATS =
+        "Cannot retrieve user chats: data from cache (network unavailable)"
+
+    private const val PARTICIPANTS = "participants"
+
+    private const val NETWORK_UNAVAILABLE_CANNOT_RETRIEVE_CHATS_FROM_SERVER =
+        "Network unavailable: cannot retrieve chats from server"
+
+    private const val CAN_ONLY_SEND_MESSAGES_AS_CURRENT_USER =
+        "Can only send messages as the current user"
+
+    private const val MESSAGE_TEXT_CANNOT_BE_EMPTY = "Message text cannot be empty"
+
+    private const val LAST_MESSAGE = "lastMessage"
+
+    private const val LASTMESSAGE_TIMESTAMP = "lastMessageTimestamp"
+
+    private const val NETWORK_UNAVAILABLE_CANNOT_SEND_MESSAGE =
+        "Network unavailable: cannot send message to server"
+
+    private const val FAILED_TO_SEND_MESSAGE_TO_CHAT = "Failed to send message to chat"
+
+    private const val TIMESTAMP = "timestamp"
+
+    private const val REQUESTSTATUS = "requestStatus"
+
+    private const val NETWORK_UNAVAILABLE_CANNOT_UPDATE_CHAT_STATUS =
+        "Network unavailable: cannot update chat status on server"
+
+    private const val FAILED_TO_RETRIEVE_MESSAGES_FOR_CHAT = "Failed to retrieve messages for chat"
+
+    private const val CANNOT_RETRIEVE_CHAT_FROM_SERVER =
+        "Network unavailable: cannot retrieve messages from server"
+
+    private const val CANNOT_RETRIEVE_MESSAGES =
+        "Cannot retrieve messages: data from cache (network unavailable)"
+  }
 
   private val chatsCollectionRef = db.collection(CHATS_COLLECTION_PATH)
 
-  private fun notAuthenticated(): Nothing = throw IllegalStateException("No authenticated user")
+  private fun notAuthenticated(): Nothing = throw IllegalStateException(NO_AUTHENTICATED_USER)
 
   private fun notAuthorized(): Nothing =
-      throw IllegalArgumentException("User is not a participant in this chat")
+      throw IllegalArgumentException(USER_IS_NOT_A_PARTICIPANT_IN_THIS_CHAT)
 
   override suspend fun createChat(
       requestId: String,
@@ -51,7 +122,7 @@ class ChatRepositoryFirestore(private val db: FirebaseFirestore) : ChatRepositor
 
     // Verify current user is either creator or participant
     require(currentUserId == creatorId || participants.contains(currentUserId)) {
-      "Current user must be the creator or a participant"
+      CURRENT_USER_PARTICIPANT_OR_CREATOR
     }
 
     try {
@@ -62,7 +133,7 @@ class ChatRepositoryFirestore(private val db: FirebaseFirestore) : ChatRepositor
               requestTitle = requestTitle,
               participants = participants,
               creatorId = creatorId,
-              lastMessage = "Chat created",
+              lastMessage = CHAT_CREATED,
               lastMessageTimestamp = Date(),
               requestStatus = requestStatus)
 
@@ -70,21 +141,19 @@ class ChatRepositoryFirestore(private val db: FirebaseFirestore) : ChatRepositor
 
       // Verify the chat was created
       val createdChat = chatsCollectionRef.document(requestId).get(Source.SERVER).await()
-      check(createdChat.exists()) { "Failed to verify chat creation for ID $requestId" }
-      check(!createdChat.metadata.isFromCache) {
-        "Cannot verify chat creation: data from cache (network unavailable)"
-      }
+      check(createdChat.exists()) { "$FAILED_TO_VERIFY_CHAT $requestId" }
+      check(!createdChat.metadata.isFromCache) { CANNOT_VERIFY_CHAT_CREATION }
     } catch (e: FirebaseFirestoreException) {
       if (e.code == FirebaseFirestoreException.Code.UNAVAILABLE) {
-        throw IllegalStateException("Network unavailable: cannot create chat on server", e)
+        throw IllegalStateException(NETWORK_UNAVAILABLE_CANNOT_CREATE_CHAT, e)
       }
-      throw Exception("Failed to create chat for request $requestId: ${e.message}", e)
+      throw Exception("$FAILED_TO_CREATE_CHAT_FOR_REQUEST $requestId: ${e.message}", e)
     } catch (e: IllegalStateException) {
       throw e
     } catch (e: IllegalArgumentException) {
       throw e
     } catch (e: Exception) {
-      throw Exception("Failed to create chat for request $requestId", e)
+      throw Exception("$FAILED_TO_CREATE_CHAT_FOR_REQUEST $requestId", e)
     }
   }
 
@@ -94,16 +163,16 @@ class ChatRepositoryFirestore(private val db: FirebaseFirestore) : ChatRepositor
       val snapshot = chatsCollectionRef.document(chatId).get(Source.DEFAULT).await()
 
       snapshot.data?.let { Chat.fromMap(it) }
-          ?: throw NoSuchElementException("Chat with ID $chatId not found")
+          ?: throw NoSuchElementException("$CHAT_WITH_ID $chatId $NOT_FOUND")
     } catch (e: FirebaseFirestoreException) {
       if (e.code == FirebaseFirestoreException.Code.UNAVAILABLE) {
-        throw IllegalStateException("Network unavailable: cannot retrieve chat from server", e)
+        throw IllegalStateException(NETWORK_UNAVAILABLE, e)
       }
-      throw Exception("Failed to retrieve chat with ID $chatId: ${e.message}", e)
+      throw Exception("$FAILED_TO_RETRIEVE_CHAT_WITH_ID $chatId: ${e.message}", e)
     } catch (e: NoSuchElementException) {
       throw e
     } catch (e: Exception) {
-      throw Exception("Failed to retrieve chat with ID $chatId", e)
+      throw Exception("$FAILED_TO_RETRIEVE_CHAT_WITH_ID $chatId", e)
     }
   }
 
@@ -113,22 +182,20 @@ class ChatRepositoryFirestore(private val db: FirebaseFirestore) : ChatRepositor
     return try {
       // OPTIMIZATION: Use Source.DEFAULT to leverage cache
       val snapshot =
-          chatsCollectionRef.whereArrayContains("participants", userId).get(Source.DEFAULT).await()
+          chatsCollectionRef.whereArrayContains(PARTICIPANTS, userId).get(Source.DEFAULT).await()
 
-      check(!snapshot.metadata.isFromCache) {
-        "Cannot retrieve user chats: data from cache (network unavailable)"
-      }
+      check(!snapshot.metadata.isFromCache) { CANNOT_RETRIEVE_USER_CHATS }
 
       snapshot.documents
           .mapNotNull { doc -> doc.data?.let { Chat.fromMap(it) } }
           .sortedByDescending { it.lastMessageTimestamp } // Most recent first
     } catch (e: FirebaseFirestoreException) {
       if (e.code == FirebaseFirestoreException.Code.UNAVAILABLE) {
-        throw IllegalStateException("Network unavailable: cannot retrieve chats from server", e)
+        throw IllegalStateException(NETWORK_UNAVAILABLE_CANNOT_RETRIEVE_CHATS_FROM_SERVER, e)
       }
-      throw Exception("Failed to retrieve chats for user $userId: ${e.message}", e)
+      throw Exception("$FAILED_TO_RETRIEVE_CHATS_FOR_USER $userId: ${e.message}", e)
     } catch (e: Exception) {
-      throw Exception("Failed to retrieve chats for user $userId", e)
+      throw Exception("$FAILED_TO_RETRIEVE_CHATS_FOR_USER $userId", e)
     }
   }
 
@@ -141,15 +208,15 @@ class ChatRepositoryFirestore(private val db: FirebaseFirestore) : ChatRepositor
     val currentUserId = Firebase.auth.currentUser?.uid ?: notAuthenticated()
 
     // Verify sender is current user
-    require(senderId == currentUserId) { "Can only send messages as the current user" }
+    require(senderId == currentUserId) { CAN_ONLY_SEND_MESSAGES_AS_CURRENT_USER }
 
     // Verify text is not empty
-    require(text.isNotBlank()) { "Message text cannot be empty" }
+    require(text.isNotBlank()) { MESSAGE_TEXT_CANNOT_BE_EMPTY }
 
     try {
       // Verify chat exists and user is a participant
       val chat = getChat(chatId)
-      check(chat.participants.contains(currentUserId)) { "User is not a participant in this chat" }
+      check(chat.participants.contains(currentUserId)) { USER_IS_NOT_A_PARTICIPANT_IN_THIS_CHAT }
 
       val messageId = Message.generateMessageId()
       val timestamp = Date()
@@ -174,14 +241,13 @@ class ChatRepositoryFirestore(private val db: FirebaseFirestore) : ChatRepositor
       // Update chat metadata with last message info
       chatsCollectionRef
           .document(chatId)
-          .update(
-              mapOf("lastMessage" to text.trim(), "lastMessageTimestamp" to Timestamp(timestamp)))
+          .update(mapOf(LAST_MESSAGE to text.trim(), LASTMESSAGE_TIMESTAMP to Timestamp(timestamp)))
           .await()
     } catch (e: FirebaseFirestoreException) {
       if (e.code == FirebaseFirestoreException.Code.UNAVAILABLE) {
-        throw IllegalStateException("Network unavailable: cannot send message to server", e)
+        throw IllegalStateException(NETWORK_UNAVAILABLE_CANNOT_SEND_MESSAGE, e)
       }
-      throw Exception("Failed to send message to chat $chatId: ${e.message}", e)
+      throw Exception("$FAILED_TO_SEND_MESSAGE_TO_CHAT $chatId: ${e.message}", e)
     } catch (e: IllegalStateException) {
       throw e
     } catch (e: IllegalArgumentException) {
@@ -189,7 +255,7 @@ class ChatRepositoryFirestore(private val db: FirebaseFirestore) : ChatRepositor
     } catch (e: NoSuchElementException) {
       throw e
     } catch (e: Exception) {
-      throw Exception("Failed to send message to chat $chatId", e)
+      throw Exception("$FAILED_TO_SEND_MESSAGE_TO_CHAT $chatId", e)
     }
   }
 
@@ -211,35 +277,33 @@ class ChatRepositoryFirestore(private val db: FirebaseFirestore) : ChatRepositor
     return try {
       // Verify user is a participant
       val chat = getChat(chatId)
-      check(chat.participants.contains(currentUserId)) { "User is not a participant in this chat" }
+      check(chat.participants.contains(currentUserId)) { USER_IS_NOT_A_PARTICIPANT_IN_THIS_CHAT }
 
       // Build query with pagination
       var query =
           chatsCollectionRef
               .document(chatId)
               .collection(MESSAGES_SUBCOLLECTION_PATH)
-              .orderBy("timestamp", Query.Direction.DESCENDING)
+              .orderBy(TIMESTAMP, Query.Direction.DESCENDING)
               .limit(limit.toLong())
 
       // Add pagination cursor if provided
       if (beforeTimestamp != null) {
-        query = query.whereLessThan("timestamp", Timestamp(beforeTimestamp))
+        query = query.whereLessThan(TIMESTAMP, Timestamp(beforeTimestamp))
       }
 
       // OPTIMIZATION: Use Source.DEFAULT to leverage cache
       val snapshot = query.get(Source.DEFAULT).await()
 
-      check(!snapshot.metadata.isFromCache) {
-        "Cannot retrieve messages: data from cache (network unavailable)"
-      }
+      check(!snapshot.metadata.isFromCache) { CANNOT_RETRIEVE_MESSAGES }
 
       // Reverse to get oldest-to-newest order
       snapshot.documents.mapNotNull { doc -> doc.data?.let { Message.fromMap(it) } }.reversed()
     } catch (e: FirebaseFirestoreException) {
       if (e.code == FirebaseFirestoreException.Code.UNAVAILABLE) {
-        throw IllegalStateException("Network unavailable: cannot retrieve messages from server", e)
+        throw IllegalStateException(CANNOT_RETRIEVE_CHAT_FROM_SERVER, e)
       }
-      throw Exception("Failed to retrieve messages for chat $chatId: ${e.message}", e)
+      throw Exception("$FAILED_TO_RETRIEVE_MESSAGES_FOR_CHAT $chatId: ${e.message}", e)
     } catch (e: IllegalStateException) {
       throw e
     } catch (e: IllegalArgumentException) {
@@ -247,7 +311,7 @@ class ChatRepositoryFirestore(private val db: FirebaseFirestore) : ChatRepositor
     } catch (e: NoSuchElementException) {
       throw e
     } catch (e: Exception) {
-      throw Exception("Failed to retrieve messages for chat $chatId", e)
+      throw Exception("$FAILED_TO_RETRIEVE_MESSAGES_FOR_CHAT $chatId", e)
     }
   }
 
@@ -263,7 +327,7 @@ class ChatRepositoryFirestore(private val db: FirebaseFirestore) : ChatRepositor
       callbackFlow {
         val currentUserId = Firebase.auth.currentUser?.uid
         if (currentUserId == null) {
-          close(IllegalStateException("No authenticated user"))
+          close(IllegalStateException(NO_AUTHENTICATED_USER))
           return@callbackFlow
         }
 
@@ -272,8 +336,8 @@ class ChatRepositoryFirestore(private val db: FirebaseFirestore) : ChatRepositor
             chatsCollectionRef
                 .document(chatId)
                 .collection(MESSAGES_SUBCOLLECTION_PATH)
-                .whereGreaterThan("timestamp", Timestamp(sinceTimestamp))
-                .orderBy("timestamp", Query.Direction.ASCENDING)
+                .whereGreaterThan(TIMESTAMP, Timestamp(sinceTimestamp))
+                .orderBy(TIMESTAMP, Query.Direction.ASCENDING)
                 .addSnapshotListener { snapshot, error ->
                   if (error != null) {
                     close(error)
@@ -298,14 +362,14 @@ class ChatRepositoryFirestore(private val db: FirebaseFirestore) : ChatRepositor
     try {
       // Verify chat exists and user is a participant
       val chat = getChat(chatId)
-      check(chat.participants.contains(currentUserId)) { "User is not a participant in this chat" }
+      check(chat.participants.contains(currentUserId)) { USER_IS_NOT_A_PARTICIPANT_IN_THIS_CHAT }
 
-      chatsCollectionRef.document(chatId).update("requestStatus", newStatus).await()
+      chatsCollectionRef.document(chatId).update(REQUESTSTATUS, newStatus).await()
     } catch (e: FirebaseFirestoreException) {
       if (e.code == FirebaseFirestoreException.Code.UNAVAILABLE) {
-        throw IllegalStateException("Network unavailable: cannot update chat status on server", e)
+        throw IllegalStateException(NETWORK_UNAVAILABLE_CANNOT_UPDATE_CHAT_STATUS, e)
       }
-      throw Exception("Failed to update status for chat $chatId: ${e.message}", e)
+      throw Exception("$FAILED_TO_UPDATE_STATUS_FOR_CHAT $chatId: ${e.message}", e)
     } catch (e: IllegalStateException) {
       throw e
     } catch (e: IllegalArgumentException) {
@@ -313,7 +377,7 @@ class ChatRepositoryFirestore(private val db: FirebaseFirestore) : ChatRepositor
     } catch (e: NoSuchElementException) {
       throw e
     } catch (e: Exception) {
-      throw Exception("Failed to update status for chat $chatId", e)
+      throw Exception("$FAILED_TO_UPDATE_STATUS_FOR_CHAT $chatId", e)
     }
   }
 
