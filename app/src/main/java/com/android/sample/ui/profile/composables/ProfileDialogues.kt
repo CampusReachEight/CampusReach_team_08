@@ -1,5 +1,6 @@
 package com.android.sample.ui.profile.composables
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -31,9 +33,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.android.sample.ui.getFilterAndSortButtonColors
 import com.android.sample.ui.getTextFieldColors
 import com.android.sample.ui.profile.ProfileTestTags
 import com.android.sample.ui.profile.UserSections
@@ -46,27 +48,34 @@ fun LogoutDialog(visible: Boolean, onConfirm: () -> Unit, onDismiss: () -> Unit)
   if (!visible) return
 
   AlertDialog(
-      modifier = Modifier.testTag(ProfileTestTags.LOG_OUT_DIALOG),
+      modifier = Modifier.testTag(ProfileTestTags.LOG_OUT_DIALOG).background(appPalette().surface),
       onDismissRequest = onDismiss,
+      containerColor = appPalette().surface,
       title = {
-        Text(text = "Log out", modifier = Modifier.testTag(ProfileTestTags.LOG_OUT_DIALOG_TITLE))
+        Text(
+            text = "Log out",
+            modifier = Modifier.testTag(ProfileTestTags.LOG_OUT_DIALOG_TITLE),
+            color = appPalette().onSurface)
       },
       text = {
         Text(
             text = "Are you sure you want to log out?",
-            modifier = Modifier.testTag(ProfileTestTags.LOG_OUT_DIALOG_MESSAGE))
+            modifier = Modifier.testTag(ProfileTestTags.LOG_OUT_DIALOG_MESSAGE),
+            color = appPalette().onSurface)
       },
       confirmButton = {
         TextButton(
             onClick = onConfirm,
-            modifier = Modifier.testTag(ProfileTestTags.LOG_OUT_DIALOG_CONFIRM)) {
+            modifier = Modifier.testTag(ProfileTestTags.LOG_OUT_DIALOG_CONFIRM),
+            colors = getFilterAndSortButtonColors()) {
               Text("Log out")
             }
       },
       dismissButton = {
         TextButton(
             onClick = onDismiss,
-            modifier = Modifier.testTag(ProfileTestTags.LOG_OUT_DIALOG_CANCEL)) {
+            modifier = Modifier.testTag(ProfileTestTags.LOG_OUT_DIALOG_CANCEL),
+            colors = ButtonDefaults.textButtonColors(contentColor = appPalette().accent)) {
               Text("Cancel")
             }
       })
@@ -273,15 +282,4 @@ fun SectionDropDown(
           }
     }
   }
-}
-
-@Preview(showBackground = true, name = "EditProfileDialog Preview")
-@Composable
-fun EditProfileDialogPreview() {
-  EditProfileDialog(
-      visible = true,
-      initialName = "Alice",
-      initialSection = "Computer Science",
-      onSave = { _, _ -> },
-      onCancel = {})
 }
