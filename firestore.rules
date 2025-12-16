@@ -78,5 +78,31 @@ service cloud.firestore {
       // Read: Allow any user to read requests
       allow read: if true;
     }
+    // ==================== CHAT RULES ====================
+    match /chats/{chatId} {
+      // Create: User must be authenticated and in the participants list
+      allow create: if request.auth != null;
+
+      // Read: User must be authenticated
+      allow read: if request.auth != null;
+
+      // Update: User must be authenticated
+      allow update: if request.auth != null;
+
+      // Delete: User must be authenticated
+      allow delete: if request.auth != null;
+
+      // Messages subcollection
+      match /messages/{messageId} {
+        // Read messages: User must be authenticated
+        allow read: if request.auth != null;
+
+        // Create message: User must be authenticated
+        allow create: if request.auth != null;
+
+        // Update/Delete: Not allowed (messages are immutable)
+        allow update, delete: if false;
+      }
+    }
   }
 }
