@@ -627,4 +627,96 @@ class ChatViewModelTest {
     // Then
     coVerify(exactly = 0) { chatRepository.getChat(any()) }
   }
+
+  @Test
+  fun loadMoreMessages_prependsOlderMessages_successfully() = runTest {
+    // Given
+    val chat = createTestChat()
+    val userProfile = createTestUserProfile()
+
+    val newestMessages =
+        listOf(
+            createTestMessage(MESSAGE_ID_2, MESSAGE_TEXT_2, timeOffsetMs = TIME_OFFSET_1_MIN),
+            createTestMessage(MESSAGE_ID_3, MESSAGE_TEXT_3, timeOffsetMs = TIME_OFFSET_2_MIN))
+
+    val olderMessages =
+        listOf(createTestMessage(MESSAGE_ID_1, MESSAGE_TEXT_1, timeOffsetMs = TIME_OFFSET_3_MIN))
+
+    coEvery { chatRepository.getChat(CHAT_ID) } returns chat
+    coEvery { profileRepository.getUserProfile(CURRENT_USER_ID) } returns userProfile
+    coEvery { chatRepository.getMessages(CHAT_ID, 30, null) } returns newestMessages
+    coEvery { chatRepository.getMessages(CHAT_ID, 10, any()) } returns olderMessages
+    coEvery { chatRepository.listenToNewMessages(CHAT_ID, any()) } returns flowOf(emptyList())
+
+    initializeViewModel()
+
+    // When
+    viewModel.loadMoreMessages()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Then
+    val messages = viewModel.uiState.value.messages
+    assertEquals(3, messages.size)
+    assertEquals(MESSAGE_TEXT_1, messages.first().text) // oldest first
+  }
+
+  @Test
+  fun loadMoreMessages_setsLoadingStateDuringFetch() = runTest {
+    // Given
+    setupSuccessfulInitialization()
+    initializeViewModel()
+
+    coEvery { chatRepository.getMessages(CHAT_ID, 10, any()) } returns emptyList()
+
+    // When
+    viewModel.loadMoreMessages()
+
+    // Then (immediate)
+    assertTrue(viewModel.uiState.value.isLoadingMore)
+
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Then (after completion)
+    assertFalse(viewModel.uiState.value.isLoadingMore)
+  }
+
+  @Test
+  fun loadMoreMessages_doesNothing_whenNoMessages() = runTest {
+    // Given
+    val chat = createTestChat()
+    val userProfile = createTestUserProfile()
+
+    coEvery { chatRepository.getChat(CHAT_ID) } returns chat
+    coEvery { profileRepository.getUserProfile(CURRENT_USER_ID) } returns userProfile
+    coEvery { chatRepository.getMessages(CHAT_ID, 30, null) } returns emptyList()
+    coEvery { chatRepository.listenToNewMessages(CHAT_ID, any()) } returns flowOf(emptyList())
+
+    initializeViewModel()
+
+    // When
+    viewModel.loadMoreMessages()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Then
+    coVerify(exactly = 0) { chatRepository.getMessages(CHAT_ID, 10, any()) }
+  }
+
+  @Test
+  fun loadMoreMessages_handlesError_setsErrorMessage() = runTest {
+    // Given
+    setupSuccessfulInitialization()
+    initializeViewModel()
+
+    val errorMessage = "Network error"
+    coEvery { chatRepository.getMessages(CHAT_ID, 10, any()) } throws Exception(errorMessage)
+
+    // When
+    viewModel.loadMoreMessages()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Then
+    val state = viewModel.uiState.value
+    assertFalse(state.isLoadingMore)
+    assertEquals(errorMessage, state.errorMessage)
+  }
 }
