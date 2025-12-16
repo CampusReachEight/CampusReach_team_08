@@ -473,185 +473,199 @@ class EndToEndTests : BaseEmulatorTest() {
   @OptIn(ExperimentalTestApi::class)
   @Test
   fun addRequestAndCanEdit() {
+    try {
+      initialize(firstName, firstEmail)
 
-    initialize(firstName, firstEmail)
+      goAddRequest()
 
-    goAddRequest()
-
-    // test if save with empty value put error message
-    composeTestRule.waitUntilAtLeastOneExists(
-        matcher = hasTestTag(EditRequestScreenTestTags.SAVE_BUTTON),
-        timeoutMillis = UI_WAIT_TIMEOUT)
-    composeTestRule
-        .onNodeWithTag(EditRequestScreenTestTags.SAVE_BUTTON, useUnmergedTree = true)
-        .performScrollTo()
-        .assertIsDisplayed()
-        .performClick()
-
-    composeTestRule.waitForIdle()
-    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      // test if save with empty value put error message
+      composeTestRule.waitUntilAtLeastOneExists(
+          matcher = hasTestTag(EditRequestScreenTestTags.SAVE_BUTTON),
+          timeoutMillis = UI_WAIT_TIMEOUT)
       composeTestRule
-          .onAllNodesWithTag(EditRequestScreenTestTags.ERROR_MESSAGE, useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
+          .onNodeWithTag(EditRequestScreenTestTags.SAVE_BUTTON, useUnmergedTree = true)
+          .performScrollTo()
+          .assertIsDisplayed()
+          .performClick()
 
-    addElementOfRequest()
+      composeTestRule.waitForIdle()
+      composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+        composeTestRule
+            .onAllNodesWithTag(EditRequestScreenTestTags.ERROR_MESSAGE, useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      }
 
-    composeTestRule.waitForIdle()
-    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      addElementOfRequest()
+
+      composeTestRule.waitForIdle()
+      composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+        composeTestRule
+            .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM, useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      }
+
+      // Go to edit through Profile > My Requests to ensure we edit our own item
+      goToEditScreenFromMyRequests()
+
+      // edit title
+      composeTestRule.waitUntilAtLeastOneExists(
+          matcher = hasTestTag(EditRequestScreenTestTags.INPUT_TITLE),
+          timeoutMillis = UI_WAIT_TIMEOUT)
       composeTestRule
-          .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM, useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
+          .onNodeWithTag(EditRequestScreenTestTags.INPUT_TITLE, useUnmergedTree = true)
+          .assertIsDisplayed()
+          .performScrollTo()
+          .performTextClearance()
 
-    // Go to edit through Profile > My Requests to ensure we edit our own item
-    goToEditScreenFromMyRequests()
-
-    // edit title
-    composeTestRule.waitUntilAtLeastOneExists(
-        matcher = hasTestTag(EditRequestScreenTestTags.INPUT_TITLE),
-        timeoutMillis = UI_WAIT_TIMEOUT)
-    composeTestRule
-        .onNodeWithTag(EditRequestScreenTestTags.INPUT_TITLE, useUnmergedTree = true)
-        .assertIsDisplayed()
-        .performScrollTo()
-        .performTextClearance()
-
-    composeTestRule
-        .onNodeWithTag(EditRequestScreenTestTags.INPUT_TITLE, useUnmergedTree = true)
-        .performTextInput(anotherTitle)
-
-    composeTestRule.waitUntilAtLeastOneExists(
-        matcher = hasTestTag(EditRequestScreenTestTags.SAVE_BUTTON),
-        timeoutMillis = UI_WAIT_TIMEOUT)
-    composeTestRule.waitForIdle()
-    composeTestRule
-        .onNodeWithTag(EditRequestScreenTestTags.SAVE_BUTTON, useUnmergedTree = true)
-        .assertExists()
-        .performScrollTo()
-        .performClick()
-
-    composeTestRule.waitForIdle()
-
-    // After save, we are on the view-only details screen; go back to My Requests
-    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
       composeTestRule
-          .onAllNodesWithTag(AcceptRequestScreenTestTags.REQUEST_GO_BACK, useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
+          .onNodeWithTag(EditRequestScreenTestTags.INPUT_TITLE, useUnmergedTree = true)
+          .performTextInput(anotherTitle)
 
-    composeTestRule
-        .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_GO_BACK, useUnmergedTree = true)
-        .assertExists()
-        .performClick()
-
-    // check that the title is the one modified in My Requests list
-    composeTestRule.waitForIdle()
-    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule.waitUntilAtLeastOneExists(
+          matcher = hasTestTag(EditRequestScreenTestTags.SAVE_BUTTON),
+          timeoutMillis = UI_WAIT_TIMEOUT)
+      composeTestRule.waitForIdle()
       composeTestRule
-          .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM, useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
+          .onNodeWithTag(EditRequestScreenTestTags.SAVE_BUTTON, useUnmergedTree = true)
+          .assertExists()
+          .performScrollTo()
+          .performClick()
 
-    composeTestRule.onNodeWithText(anotherTitle).assertIsDisplayed()
+      composeTestRule.waitForIdle()
+
+      // After save, we are on the view-only details screen; go back to My Requests
+      composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+        composeTestRule
+            .onAllNodesWithTag(AcceptRequestScreenTestTags.REQUEST_GO_BACK, useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      }
+
+      composeTestRule
+          .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_GO_BACK, useUnmergedTree = true)
+          .assertExists()
+          .performClick()
+
+      // check that the title is the one modified in My Requests list
+      composeTestRule.waitForIdle()
+      composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+        composeTestRule
+            .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM, useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      }
+
+      composeTestRule.onNodeWithText(anotherTitle).assertIsDisplayed()
+    } catch (e: Exception) {
+      throw Exception(e.printStackTrace().toString(), e)
+    }
   }
 
   // can log in and go to Map
   @OptIn(ExperimentalTestApi::class)
   @Test
   fun canAccessMap() {
-    initialize(secondName, secondEmail)
-    composeTestRule.waitUntilAtLeastOneExists(
-        matcher = hasTestTag(NavigationTestTags.MAP_TAB), timeoutMillis = UI_WAIT_TIMEOUT)
-    composeTestRule
-        .onNodeWithTag(NavigationTestTags.MAP_TAB, useUnmergedTree = true)
-        .assertIsDisplayed()
-        .performClick()
-
-    composeTestRule.waitForIdle()
-    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+    try {
+      initialize(secondName, secondEmail)
+      composeTestRule.waitUntilAtLeastOneExists(
+          matcher = hasTestTag(NavigationTestTags.MAP_TAB), timeoutMillis = UI_WAIT_TIMEOUT)
       composeTestRule
-          .onAllNodesWithTag(MapTestTags.GOOGLE_MAP_SCREEN, useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
+          .onNodeWithTag(NavigationTestTags.MAP_TAB, useUnmergedTree = true)
+          .assertIsDisplayed()
+          .performClick()
+
+      composeTestRule.waitForIdle()
+      composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+        composeTestRule
+            .onAllNodesWithTag(MapTestTags.GOOGLE_MAP_SCREEN, useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      }
+    } catch (e: Exception) {
+      throw Exception(e.printStackTrace().toString(), e)
     }
   }
 
   // check if you can log in, and then go to profile and disconnect
   @Test
   fun canLogInAndThenDisconnect() {
+    try {
+      initialize(thirdName, thirdEmail)
+      composeTestRule.waitForIdle()
 
-    initialize(thirdName, thirdEmail)
-    composeTestRule.waitForIdle()
-
-    logOut()
+      logOut()
+    } catch (e: Exception) {
+      throw Exception(e.printStackTrace().toString(), e)
+    }
   }
 
   // check if you can accept a request and cancel it
   @OptIn(ExperimentalTestApi::class)
   @Test
   fun canAcceptRequest() {
-    hadARequestWithOtherAccount()
-    initialize(fourthName, fourthEmail)
+    try {
+      hadARequestWithOtherAccount()
+      initialize(fourthName, fourthEmail)
 
-    composeTestRule.waitUntilAtLeastOneExists(
-        matcher = hasTestTag(RequestListTestTags.REQUEST_ITEM), timeoutMillis = UI_WAIT_TIMEOUT)
-    composeTestRule
-        .onNodeWithTag(RequestListTestTags.REQUEST_ITEM, useUnmergedTree = true)
-        .assertIsDisplayed()
-        .performClick()
-
-    composeTestRule.waitForIdle()
-    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule.waitUntilAtLeastOneExists(
+          matcher = hasTestTag(RequestListTestTags.REQUEST_ITEM), timeoutMillis = UI_WAIT_TIMEOUT)
       composeTestRule
-          .onAllNodesWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON, useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
+          .onNodeWithTag(RequestListTestTags.REQUEST_ITEM, useUnmergedTree = true)
+          .assertIsDisplayed()
+          .performClick()
 
-    composeTestRule.waitUntilAtLeastOneExists(
-        matcher = hasTestTag(AcceptRequestScreenTestTags.REQUEST_BUTTON),
-        timeoutMillis = UI_WAIT_TIMEOUT)
-    composeTestRule.waitUntilAtLeastOneExists(
-        matcher = hasText("Accept", true, ignoreCase = true), timeoutMillis = UI_WAIT_TIMEOUT)
-    composeTestRule.waitForIdle()
-    composeTestRule
-        .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON, useUnmergedTree = false)
-        .assertTextContains("Accept", substring = true, ignoreCase = true)
-        .performClick()
+      composeTestRule.waitForIdle()
+      composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+        composeTestRule
+            .onAllNodesWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON, useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      }
 
-    composeTestRule.waitForIdle()
-    composeTestRule.waitUntilAtLeastOneExists(
-        hasTestTag(AcceptRequestScreenTestTags.REQUEST_GO_BACK), timeoutMillis = UI_WAIT_TIMEOUT)
-    composeTestRule
-        .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_GO_BACK, useUnmergedTree = true)
-        .assertIsDisplayed()
-        .performClick()
-
-    composeTestRule.waitForIdle()
-    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule.waitUntilAtLeastOneExists(
+          matcher = hasTestTag(AcceptRequestScreenTestTags.REQUEST_BUTTON),
+          timeoutMillis = UI_WAIT_TIMEOUT)
+      composeTestRule.waitUntilAtLeastOneExists(
+          matcher = hasText("Accept", true, ignoreCase = true), timeoutMillis = UI_WAIT_TIMEOUT)
+      composeTestRule.waitForIdle()
       composeTestRule
-          .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM, useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
+          .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON, useUnmergedTree = false)
+          .assertTextContains("Accept", substring = true, ignoreCase = true)
+          .performClick()
+
+      composeTestRule.waitForIdle()
+      composeTestRule.waitUntilAtLeastOneExists(
+          hasTestTag(AcceptRequestScreenTestTags.REQUEST_GO_BACK), timeoutMillis = UI_WAIT_TIMEOUT)
+      composeTestRule
+          .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_GO_BACK, useUnmergedTree = true)
+          .assertIsDisplayed()
+          .performClick()
+
+      composeTestRule.waitForIdle()
+      composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+        composeTestRule
+            .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM, useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      }
+
+      composeTestRule
+          .onNodeWithTag(RequestListTestTags.REQUEST_ITEM, useUnmergedTree = true)
+          .assertIsDisplayed()
+          .performClick()
+
+      composeTestRule.waitForIdle()
+      composeTestRule.waitUntilAtLeastOneExists(
+          hasText("Cancel", true, ignoreCase = true), UI_WAIT_TIMEOUT)
+      composeTestRule
+          .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)
+          .assertTextContains("Cancel", substring = true, ignoreCase = true)
+          .performClick()
+    } catch (e: Exception) {
+      throw Exception(e.printStackTrace().toString(), e)
     }
-
-    composeTestRule
-        .onNodeWithTag(RequestListTestTags.REQUEST_ITEM, useUnmergedTree = true)
-        .assertIsDisplayed()
-        .performClick()
-
-    composeTestRule.waitForIdle()
-    composeTestRule.waitUntilAtLeastOneExists(
-        hasText("Cancel", true, ignoreCase = true), UI_WAIT_TIMEOUT)
-    composeTestRule
-        .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)
-        .assertTextContains("Cancel", substring = true, ignoreCase = true)
-        .performClick()
   }
   /**
    * @Test fun canCreateAndDeleteRequest() { val sixthName = "92847" val sixthEmail =
@@ -682,481 +696,528 @@ class EndToEndTests : BaseEmulatorTest() {
   @OptIn(ExperimentalTestApi::class)
   @Test
   fun canCreateRequestGoToProfileViewMyRequestsEditAndLogout() {
-    // 1. Sign in
-    val testName = "78901"
-    val testEmail = "myrequest@example.com"
-    initialize(testName, testEmail)
+    try {
+      // 1. Sign in
+      val testName = "78901"
+      val testEmail = "myrequest@example.com"
+      initialize(testName, testEmail)
 
-    // 2. Create request
-    goAddRequest()
-    addElementOfRequest()
+      // 2. Create request
+      goAddRequest()
+      addElementOfRequest()
 
-    composeTestRule.waitForIdle()
-    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule.waitForIdle()
+      composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+        composeTestRule
+            .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM, useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      }
+
+      // 3. Navigate to Profile
+      composeTestRule.waitUntilAtLeastOneExists(
+          matcher = hasTestTag(NavigationTestTags.PROFILE_BUTTON), timeoutMillis = UI_WAIT_TIMEOUT)
+
       composeTestRule
-          .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM, useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
+          .onNodeWithTag(NavigationTestTags.PROFILE_BUTTON, useUnmergedTree = true)
+          .assertExists()
+          .performClick()
 
-    // 3. Navigate to Profile
-    composeTestRule.waitUntilAtLeastOneExists(
-        matcher = hasTestTag(NavigationTestTags.PROFILE_BUTTON), timeoutMillis = UI_WAIT_TIMEOUT)
+      composeTestRule.waitForIdle()
+      composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+        composeTestRule
+            .onAllNodesWithTag(ProfileTestTags.PROFILE_ACTION_MY_REQUEST, useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      }
 
-    composeTestRule
-        .onNodeWithTag(NavigationTestTags.PROFILE_BUTTON, useUnmergedTree = true)
-        .assertExists()
-        .performClick()
-
-    composeTestRule.waitForIdle()
-    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      // 4. Click My Request button
+      composeTestRule.waitForIdle()
       composeTestRule
-          .onAllNodesWithTag(ProfileTestTags.PROFILE_ACTION_MY_REQUEST, useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
+          .onNodeWithTag(ProfileTestTags.PROFILE_ACTION_MY_REQUEST, useUnmergedTree = true)
+          .assertExists()
+          .performClick()
 
-    // 4. Click My Request button
-    composeTestRule.waitForIdle()
-    composeTestRule
-        .onNodeWithTag(ProfileTestTags.PROFILE_ACTION_MY_REQUEST, useUnmergedTree = true)
-        .assertExists()
-        .performClick()
+      composeTestRule.waitForIdle()
+      composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+        composeTestRule
+            .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM, useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      }
 
-    composeTestRule.waitForIdle()
-    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      // 5. Click request item to edit
       composeTestRule
-          .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM, useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
+          .onNodeWithTag(RequestListTestTags.REQUEST_ITEM, useUnmergedTree = true)
+          .assertExists()
+          .performClick()
 
-    // 5. Click request item to edit
-    composeTestRule
-        .onNodeWithTag(RequestListTestTags.REQUEST_ITEM, useUnmergedTree = true)
-        .assertExists()
-        .performClick()
+      composeTestRule.waitForIdle()
 
-    composeTestRule.waitForIdle()
-
-    composeTestRule.waitUntilAtLeastOneExists(
-        matcher = hasTestTag(AcceptRequestScreenTestTags.REQUEST_BUTTON),
-        timeoutMillis = UI_WAIT_TIMEOUT)
-    composeTestRule
-        .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON, useUnmergedTree = true)
-        .performScrollTo()
-        .assertExists()
-        .performClick()
-
-    composeTestRule.waitForIdle()
-    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule.waitUntilAtLeastOneExists(
+          matcher = hasTestTag(AcceptRequestScreenTestTags.REQUEST_BUTTON),
+          timeoutMillis = UI_WAIT_TIMEOUT)
       composeTestRule
-          .onAllNodesWithTag(EditRequestScreenTestTags.INPUT_TITLE, useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
+          .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON, useUnmergedTree = true)
+          .performScrollTo()
+          .assertExists()
+          .performClick()
 
-    // 6. Edit the title
-    composeTestRule
-        .onNodeWithTag(EditRequestScreenTestTags.INPUT_TITLE, useUnmergedTree = true)
-        .performScrollTo()
-        .assertExists()
-        .performTextClearance()
+      composeTestRule.waitForIdle()
+      composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+        composeTestRule
+            .onAllNodesWithTag(EditRequestScreenTestTags.INPUT_TITLE, useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      }
 
-    composeTestRule.waitForIdle()
-
-    composeTestRule
-        .onNodeWithTag(EditRequestScreenTestTags.INPUT_TITLE)
-        .performTextInput(anotherTitle)
-
-    composeTestRule.waitForIdle()
-    composeTestRule.waitUntilAtLeastOneExists(
-        matcher = hasTestTag(EditRequestScreenTestTags.SAVE_BUTTON),
-        timeoutMillis = UI_WAIT_TIMEOUT)
-    composeTestRule
-        .onNodeWithTag(EditRequestScreenTestTags.SAVE_BUTTON, useUnmergedTree = true)
-        .performScrollTo()
-        .assertExists()
-        .performClick()
-
-    // We are now on a view-only request details screen
-
-    composeTestRule.waitForIdle()
-
-    Espresso.pressBack()
-
-    composeTestRule.waitForIdle()
-
-    // 7. Wait for return to My Requests screen
-    composeTestRule.waitForIdle()
-    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      // 6. Edit the title
       composeTestRule
-          .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
+          .onNodeWithTag(EditRequestScreenTestTags.INPUT_TITLE, useUnmergedTree = true)
+          .performScrollTo()
+          .assertExists()
+          .performTextClearance()
 
-    // 8. Verify edited title is displayed
-    composeTestRule.onNodeWithText(anotherTitle).assertIsDisplayed()
+      composeTestRule.waitForIdle()
 
-    // 9. Press back to return to Profile screen
-    Espresso.pressBack()
-
-    composeTestRule.waitForIdle()
-    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
       composeTestRule
-          .onAllNodesWithTag(ProfileTestTags.PROFILE_ACTION_LOG_OUT)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
+          .onNodeWithTag(EditRequestScreenTestTags.INPUT_TITLE)
+          .performTextInput(anotherTitle)
 
-    // 10. Logout (now we're on profile screen with logout button)
-    composeTestRule
-        .onNodeWithTag(ProfileTestTags.PROFILE_ACTION_LOG_OUT)
-        .performScrollTo()
-        .assertIsDisplayed()
-        .performClick()
-
-    composeTestRule.waitForIdle()
-    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule.waitForIdle()
+      composeTestRule.waitUntilAtLeastOneExists(
+          matcher = hasTestTag(EditRequestScreenTestTags.SAVE_BUTTON),
+          timeoutMillis = UI_WAIT_TIMEOUT)
       composeTestRule
-          .onAllNodesWithTag(ProfileTestTags.LOG_OUT_DIALOG)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
+          .onNodeWithTag(EditRequestScreenTestTags.SAVE_BUTTON, useUnmergedTree = true)
+          .performScrollTo()
+          .assertExists()
+          .performClick()
 
-    composeTestRule
-        .onNodeWithTag(ProfileTestTags.LOG_OUT_DIALOG_CONFIRM)
-        .assertIsDisplayed()
-        .performClick()
+      // We are now on a view-only request details screen
 
-    composeTestRule.waitForIdle()
-    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule.waitForIdle()
+
+      Espresso.pressBack()
+
+      composeTestRule.waitForIdle()
+
+      // 7. Wait for return to My Requests screen
+      composeTestRule.waitForIdle()
+      composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+        composeTestRule
+            .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      }
+
+      // 8. Verify edited title is displayed
+      composeTestRule.onNodeWithText(anotherTitle).assertIsDisplayed()
+
+      // 9. Press back to return to Profile screen
+      Espresso.pressBack()
+
+      composeTestRule.waitForIdle()
+      composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+        composeTestRule
+            .onAllNodesWithTag(ProfileTestTags.PROFILE_ACTION_LOG_OUT)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      }
+
+      // 10. Logout (now we're on profile screen with logout button)
       composeTestRule
-          .onAllNodesWithTag(SignInScreenTestTags.LOGIN_BUTTON)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
+          .onNodeWithTag(ProfileTestTags.PROFILE_ACTION_LOG_OUT)
+          .performScrollTo()
+          .assertIsDisplayed()
+          .performClick()
 
-    composeTestRule.onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON).assertIsDisplayed()
+      composeTestRule.waitForIdle()
+      composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+        composeTestRule
+            .onAllNodesWithTag(ProfileTestTags.LOG_OUT_DIALOG)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      }
+
+      composeTestRule
+          .onNodeWithTag(ProfileTestTags.LOG_OUT_DIALOG_CONFIRM)
+          .assertIsDisplayed()
+          .performClick()
+
+      composeTestRule.waitForIdle()
+      composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+        composeTestRule
+            .onAllNodesWithTag(SignInScreenTestTags.LOGIN_BUTTON)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      }
+
+      composeTestRule.onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON).assertIsDisplayed()
+    } catch (e: Exception) {
+      throw Exception(e.printStackTrace().toString(), e)
+    }
   }
 
   @OptIn(ExperimentalTestApi::class)
   @Test
   fun canLoginGoToProfileEditProfileAndLogout() {
+    try {
+      // 1. Sign in
+      val testName = "12345"
+      val testEmail = "editprofile@example.com"
+      initialize(testName, testEmail)
+      composeTestRule.waitForIdle()
+      Thread.sleep(1500)
 
-    // 1. Sign in
-    val testName = "12345"
-    val testEmail = "editprofile@example.com"
-    initialize(testName, testEmail)
-    composeTestRule.waitForIdle()
-    Thread.sleep(1500)
-
-    // 2. Navigate to Profile
-    composeTestRule.waitUntilAtLeastOneExists(
-        matcher = hasTestTag(NavigationTestTags.PROFILE_BUTTON), timeoutMillis = UI_WAIT_TIMEOUT)
-    composeTestRule
-        .onNodeWithTag(NavigationTestTags.PROFILE_BUTTON)
-        .assertIsDisplayed()
-        .performClick()
-
-    composeTestRule.waitForIdle()
-
-    // 3. Click Edit Profile button - wait for it to be clickable
-    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      // 2. Navigate to Profile
+      composeTestRule.waitUntilAtLeastOneExists(
+          matcher = hasTestTag(NavigationTestTags.PROFILE_BUTTON), timeoutMillis = UI_WAIT_TIMEOUT)
       composeTestRule
-          .onAllNodesWithTag(ProfileTestTags.PROFILE_HEADER_EDIT_BUTTON, useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
+          .onNodeWithTag(NavigationTestTags.PROFILE_BUTTON)
+          .assertIsDisplayed()
+          .performClick()
 
-    composeTestRule.waitForIdle()
+      composeTestRule.waitForIdle()
 
-    composeTestRule
-        .onNodeWithTag(ProfileTestTags.PROFILE_HEADER_EDIT_BUTTON, useUnmergedTree = true)
-        .performClick()
+      // 3. Click Edit Profile button - wait for it to be clickable
+      composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+        composeTestRule
+            .onAllNodesWithTag(ProfileTestTags.PROFILE_HEADER_EDIT_BUTTON, useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      }
 
-    composeTestRule.waitForIdle()
-    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule.waitForIdle()
+
       composeTestRule
-          .onAllNodesWithTag(ProfileTestTags.EDIT_PROFILE_DIALOG)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
+          .onNodeWithTag(ProfileTestTags.PROFILE_HEADER_EDIT_BUTTON, useUnmergedTree = true)
+          .performClick()
 
-    // 4. Edit name
-    val newName = "John Smith"
-    composeTestRule.waitUntilAtLeastOneExists(
-        matcher = hasTestTag(ProfileTestTags.EDIT_PROFILE_NAME_INPUT),
-        timeoutMillis = UI_WAIT_TIMEOUT)
-    composeTestRule
-        .onNodeWithTag(ProfileTestTags.EDIT_PROFILE_NAME_INPUT)
-        .assertExists()
-        .performTextClearance()
+      composeTestRule.waitForIdle()
+      composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+        composeTestRule
+            .onAllNodesWithTag(ProfileTestTags.EDIT_PROFILE_DIALOG)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      }
 
-    composeTestRule.onNodeWithTag(ProfileTestTags.EDIT_PROFILE_NAME_INPUT).performTextInput(newName)
-
-    // 5. Click section dropdown
-    composeTestRule.waitUntilAtLeastOneExists(
-        matcher = hasTestTag(ProfileTestTags.SECTION_DROPDOWN), timeoutMillis = UI_WAIT_TIMEOUT)
-    composeTestRule.onNodeWithTag(ProfileTestTags.SECTION_DROPDOWN).assertExists().performClick()
-
-    composeTestRule.waitForIdle()
-
-    // 6. Select Computer Science
-    val sectionTag = ProfileTestTags.SECTION_OPTION_PREFIX + "Computer_Science"
-    composeTestRule.onNodeWithTag(sectionTag).assertExists().performClick()
-
-    composeTestRule.waitForIdle()
-
-    // 7. Save changes
-    composeTestRule
-        .onNodeWithTag(ProfileTestTags.EDIT_PROFILE_DIALOG_SAVE_BUTTON)
-        .assertExists()
-        .performClick()
-
-    // 8. Wait for dialog to close and profile to update
-    composeTestRule.waitForIdle()
-    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      // 4. Edit name
+      val newName = "John Smith"
+      composeTestRule.waitUntilAtLeastOneExists(
+          matcher = hasTestTag(ProfileTestTags.EDIT_PROFILE_NAME_INPUT),
+          timeoutMillis = UI_WAIT_TIMEOUT)
       composeTestRule
-          .onAllNodesWithTag(ProfileTestTags.EDIT_PROFILE_DIALOG)
-          .fetchSemanticsNodes()
-          .isEmpty()
-    }
+          .onNodeWithTag(ProfileTestTags.EDIT_PROFILE_NAME_INPUT)
+          .assertExists()
+          .performTextClearance()
 
-    composeTestRule.waitForIdle()
-
-    // 9. Verify profile information is updated on screen
-    composeTestRule.waitUntilAtLeastOneExists(
-        matcher = hasTestTag(ProfileTestTags.PROFILE_HEADER_NAME), timeoutMillis = UI_WAIT_TIMEOUT)
-
-    composeTestRule
-        .onNodeWithTag(ProfileTestTags.PROFILE_HEADER_NAME)
-        .assertExists()
-        .assertTextContains(newName, ignoreCase = false)
-
-    composeTestRule.waitUntilAtLeastOneExists(
-        matcher = hasTestTag(ProfileTestTags.PROFILE_INFO_SECTION), timeoutMillis = UI_WAIT_TIMEOUT)
-    composeTestRule
-        .onNodeWithTag(ProfileTestTags.PROFILE_INFO_SECTION)
-        .assertExists()
-        .assertTextContains("Computer Science", ignoreCase = false)
-
-    // 10. Logout
-    composeTestRule.waitUntilAtLeastOneExists(
-        matcher = hasTestTag(ProfileTestTags.PROFILE_ACTION_LOG_OUT),
-        timeoutMillis = UI_WAIT_TIMEOUT)
-    composeTestRule
-        .onNodeWithTag(ProfileTestTags.PROFILE_ACTION_LOG_OUT)
-        .assertExists()
-        .performScrollTo()
-        .performClick()
-
-    composeTestRule.waitForIdle()
-    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
       composeTestRule
-          .onAllNodesWithTag(ProfileTestTags.LOG_OUT_DIALOG)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
+          .onNodeWithTag(ProfileTestTags.EDIT_PROFILE_NAME_INPUT)
+          .performTextInput(newName)
 
-    composeTestRule.waitUntilAtLeastOneExists(
-        matcher = hasTestTag(ProfileTestTags.LOG_OUT_DIALOG_CONFIRM),
-        timeoutMillis = UI_WAIT_TIMEOUT)
-    composeTestRule
-        .onNodeWithTag(ProfileTestTags.LOG_OUT_DIALOG_CONFIRM)
-        .assertExists()
-        .performClick()
+      // 5. Click section dropdown
+      composeTestRule.waitUntilAtLeastOneExists(
+          matcher = hasTestTag(ProfileTestTags.SECTION_DROPDOWN), timeoutMillis = UI_WAIT_TIMEOUT)
+      composeTestRule.onNodeWithTag(ProfileTestTags.SECTION_DROPDOWN).assertExists().performClick()
 
-    composeTestRule.waitForIdle()
-    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+      composeTestRule.waitForIdle()
+
+      // 6. Select Computer Science
+      val sectionTag = ProfileTestTags.SECTION_OPTION_PREFIX + "Computer_Science"
+      composeTestRule.onNodeWithTag(sectionTag).assertExists().performClick()
+
+      composeTestRule.waitForIdle()
+
+      // 7. Save changes
       composeTestRule
-          .onAllNodesWithTag(SignInScreenTestTags.LOGIN_BUTTON)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
+          .onNodeWithTag(ProfileTestTags.EDIT_PROFILE_DIALOG_SAVE_BUTTON)
+          .assertExists()
+          .performClick()
 
-    composeTestRule.waitUntilAtLeastOneExists(
-        matcher = hasTestTag(SignInScreenTestTags.LOGIN_BUTTON), timeoutMillis = UI_WAIT_TIMEOUT)
-    composeTestRule.onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON).assertIsDisplayed()
+      // 8. Wait for dialog to close and profile to update
+      composeTestRule.waitForIdle()
+      composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+        composeTestRule
+            .onAllNodesWithTag(ProfileTestTags.EDIT_PROFILE_DIALOG)
+            .fetchSemanticsNodes()
+            .isEmpty()
+      }
+
+      composeTestRule.waitForIdle()
+
+      // 9. Verify profile information is updated on screen
+      composeTestRule.waitUntilAtLeastOneExists(
+          matcher = hasTestTag(ProfileTestTags.PROFILE_HEADER_NAME),
+          timeoutMillis = UI_WAIT_TIMEOUT)
+
+      composeTestRule
+          .onNodeWithTag(ProfileTestTags.PROFILE_HEADER_NAME)
+          .assertExists()
+          .assertTextContains(newName, ignoreCase = false)
+
+      composeTestRule.waitUntilAtLeastOneExists(
+          matcher = hasTestTag(ProfileTestTags.PROFILE_INFO_SECTION),
+          timeoutMillis = UI_WAIT_TIMEOUT)
+      composeTestRule
+          .onNodeWithTag(ProfileTestTags.PROFILE_INFO_SECTION)
+          .assertExists()
+          .assertTextContains("Computer Science", ignoreCase = false)
+
+      // 10. Logout
+      composeTestRule.waitUntilAtLeastOneExists(
+          matcher = hasTestTag(ProfileTestTags.PROFILE_ACTION_LOG_OUT),
+          timeoutMillis = UI_WAIT_TIMEOUT)
+      composeTestRule
+          .onNodeWithTag(ProfileTestTags.PROFILE_ACTION_LOG_OUT)
+          .assertExists()
+          .performScrollTo()
+          .performClick()
+
+      composeTestRule.waitForIdle()
+      composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+        composeTestRule
+            .onAllNodesWithTag(ProfileTestTags.LOG_OUT_DIALOG)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      }
+
+      composeTestRule.waitUntilAtLeastOneExists(
+          matcher = hasTestTag(ProfileTestTags.LOG_OUT_DIALOG_CONFIRM),
+          timeoutMillis = UI_WAIT_TIMEOUT)
+      composeTestRule
+          .onNodeWithTag(ProfileTestTags.LOG_OUT_DIALOG_CONFIRM)
+          .assertExists()
+          .performClick()
+
+      composeTestRule.waitForIdle()
+      composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+        composeTestRule
+            .onAllNodesWithTag(SignInScreenTestTags.LOGIN_BUTTON)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      }
+
+      composeTestRule.waitUntilAtLeastOneExists(
+          matcher = hasTestTag(SignInScreenTestTags.LOGIN_BUTTON), timeoutMillis = UI_WAIT_TIMEOUT)
+      composeTestRule.onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON).assertIsDisplayed()
+    } catch (e: Exception) {
+      throw Exception(e.printStackTrace().toString(), e)
+    }
   }
 
   @OptIn(ExperimentalTestApi::class)
   @Test
   fun userCanGoBack() {
-    hadARequestWithOtherAccount()
+    try {
+      hadARequestWithOtherAccount()
 
-    val testName = "12345"
-    val testEmail = "editprofile@example.com"
-    initialize(testName, testEmail)
-    composeTestRule.waitForIdle()
+      val testName = "12345"
+      val testEmail = "editprofile@example.com"
+      initialize(testName, testEmail)
+      composeTestRule.waitForIdle()
 
-    goAddRequest()
+      goAddRequest()
 
-    composeTestRule.waitUntilAtLeastOneExists(
-        matcher = hasTestTag(NavigationTestTags.GO_BACK_BUTTON), timeoutMillis = UI_WAIT_TIMEOUT)
+      composeTestRule.waitUntilAtLeastOneExists(
+          matcher = hasTestTag(NavigationTestTags.GO_BACK_BUTTON), timeoutMillis = UI_WAIT_TIMEOUT)
 
-    composeTestRule.onNodeWithTag(NavigationTestTags.GO_BACK_BUTTON).assertExists().performClick()
+      composeTestRule.onNodeWithTag(NavigationTestTags.GO_BACK_BUTTON).assertExists().performClick()
 
-    composeTestRule.waitForIdle()
+      composeTestRule.waitForIdle()
 
-    composeTestRule.waitUntilAtLeastOneExists(
-        matcher = hasTestTag(RequestListTestTags.REQUEST_ITEM), timeoutMillis = UI_WAIT_TIMEOUT)
+      composeTestRule.waitUntilAtLeastOneExists(
+          matcher = hasTestTag(RequestListTestTags.REQUEST_ITEM), timeoutMillis = UI_WAIT_TIMEOUT)
 
-    composeTestRule.onNodeWithTag(RequestListTestTags.REQUEST_ITEM).assertExists().performClick()
+      composeTestRule.onNodeWithTag(RequestListTestTags.REQUEST_ITEM).assertExists().performClick()
 
-    composeTestRule.waitForIdle()
+      composeTestRule.waitForIdle()
 
-    composeTestRule.waitUntilAtLeastOneExists(
-        matcher = hasTestTag(AcceptRequestScreenTestTags.REQUEST_GO_BACK),
-        timeoutMillis = UI_WAIT_TIMEOUT)
+      composeTestRule.waitUntilAtLeastOneExists(
+          matcher = hasTestTag(AcceptRequestScreenTestTags.REQUEST_GO_BACK),
+          timeoutMillis = UI_WAIT_TIMEOUT)
 
-    composeTestRule
-        .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_GO_BACK)
-        .assertExists()
-        .performClick()
+      composeTestRule
+          .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_GO_BACK)
+          .assertExists()
+          .performClick()
 
-    composeTestRule.waitForIdle()
+      composeTestRule.waitForIdle()
 
-    composeTestRule.waitUntilAtLeastOneExists(
-        matcher = hasTestTag(NavigationTestTags.REQUESTS_SCREEN), timeoutMillis = UI_WAIT_TIMEOUT)
+      composeTestRule.waitUntilAtLeastOneExists(
+          matcher = hasTestTag(NavigationTestTags.REQUESTS_SCREEN), timeoutMillis = UI_WAIT_TIMEOUT)
+    } catch (e: Exception) {
+      throw Exception(e.printStackTrace().toString(), e)
+    }
   }
 
   @OptIn(ExperimentalTestApi::class)
   @Test
   fun userCanSeeSpecificRequestOnMap() {
-    hadARequestWithOtherAccount()
+    try {
+      hadARequestWithOtherAccount()
 
-    val testName = "12345"
-    val testEmail = "editprofile@example.com"
-    initialize(testName, testEmail)
-    composeTestRule.waitForIdle()
+      val testName = "12345"
+      val testEmail = "editprofile@example.com"
+      initialize(testName, testEmail)
+      composeTestRule.waitForIdle()
 
-    composeTestRule.waitForIdle()
+      composeTestRule.waitForIdle()
 
-    composeTestRule.waitUntilAtLeastOneExists(
-        matcher = hasTestTag(RequestListTestTags.REQUEST_ITEM), timeoutMillis = UI_WAIT_TIMEOUT)
+      composeTestRule.waitUntilAtLeastOneExists(
+          matcher = hasTestTag(RequestListTestTags.REQUEST_ITEM), timeoutMillis = UI_WAIT_TIMEOUT)
 
-    composeTestRule.onNodeWithTag(RequestListTestTags.REQUEST_ITEM).assertExists().performClick()
+      composeTestRule.onNodeWithTag(RequestListTestTags.REQUEST_ITEM).assertExists().performClick()
 
-    composeTestRule.waitForIdle()
+      composeTestRule.waitForIdle()
 
-    composeTestRule.waitUntilAtLeastOneExists(
-        matcher = hasTestTag(AcceptRequestScreenTestTags.NAVIGATE_TO_MAP),
-        timeoutMillis = UI_WAIT_TIMEOUT)
-    composeTestRule
-        .onNodeWithTag(AcceptRequestScreenTestTags.NAVIGATE_TO_MAP)
-        .assertExists()
-        .performScrollTo()
-        .performClick()
+      composeTestRule.waitUntilAtLeastOneExists(
+          matcher = hasTestTag(AcceptRequestScreenTestTags.NAVIGATE_TO_MAP),
+          timeoutMillis = UI_WAIT_TIMEOUT)
+      composeTestRule
+          .onNodeWithTag(AcceptRequestScreenTestTags.NAVIGATE_TO_MAP)
+          .assertExists()
+          .performScrollTo()
+          .performClick()
 
-    composeTestRule.waitForIdle()
+      composeTestRule.waitForIdle()
 
-    composeTestRule.waitUntilAtLeastOneExists(
-        matcher = hasTestTag(MapTestTags.DRAG_DOWN_MENU), timeoutMillis = UI_WAIT_TIMEOUT)
+      composeTestRule.waitUntilAtLeastOneExists(
+          matcher = hasTestTag(MapTestTags.DRAG_DOWN_MENU), timeoutMillis = UI_WAIT_TIMEOUT)
+    } catch (e: Exception) {
+      throw Exception(e.printStackTrace().toString(), e)
+    }
   }
 
   @Test
   fun goAddRequestTest() {
-    val testName = "12345"
-    val testEmail = "editprofile@example.com"
-    initialize(testName, testEmail)
+    try {
+      val testName = "12345"
+      val testEmail = "editprofile@example.com"
+      initialize(testName, testEmail)
 
-    goAddRequest()
+      goAddRequest()
+    } catch (e: Exception) {
+      throw Exception(e.printStackTrace().toString())
+    }
   }
 
   @OptIn(ExperimentalTestApi::class)
   @Test
   fun addElementOfRequestTest() {
-    val testName = "12346"
-    val testEmail = "addelement@example.com"
-    initialize(testName, testEmail)
+    try {
+      val testName = "12346"
+      val testEmail = "addelement@example.com"
+      initialize(testName, testEmail)
 
-    goAddRequest()
-    addElementOfRequest()
+      goAddRequest()
+      addElementOfRequest()
 
-    composeTestRule.waitForIdle()
-    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
-      composeTestRule
-          .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM, useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
+      composeTestRule.waitForIdle()
+      composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+        composeTestRule
+            .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM, useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      }
+    } catch (e: Exception) {
+      throw Exception(e.printStackTrace().toString(), e)
     }
   }
 
   @OptIn(ExperimentalTestApi::class)
   @Test
   fun goToEditScreenTest() {
-    val testName = "12347"
-    val testEmail = "gotoedit@example.com"
-    initialize(testName, testEmail)
+    try {
+      val testName = "12347"
+      val testEmail = "gotoedit@example.com"
+      initialize(testName, testEmail)
 
-    goAddRequest()
-    addElementOfRequest()
+      goAddRequest()
+      addElementOfRequest()
 
-    composeTestRule.waitUntilAtLeastOneExists(
-        matcher = hasTestTag(RequestListTestTags.REQUEST_ITEM), timeoutMillis = UI_WAIT_TIMEOUT)
+      composeTestRule.waitUntilAtLeastOneExists(
+          matcher = hasTestTag(RequestListTestTags.REQUEST_ITEM), timeoutMillis = UI_WAIT_TIMEOUT)
 
-    goToEditScreen()
+      goToEditScreen()
+    } catch (e: Exception) {
+      throw Exception(e.printStackTrace().toString(), e)
+    }
   }
 
   @OptIn(ExperimentalTestApi::class)
   @Test
   fun goToEditScreenFromMyRequestsTest() {
-    val testName = "12348"
-    val testEmail = "editmyrequests@example.com"
-    initialize(testName, testEmail)
+    try {
+      val testName = "12348"
+      val testEmail = "editmyrequests@example.com"
+      initialize(testName, testEmail)
 
-    goAddRequest()
-    addElementOfRequest()
+      goAddRequest()
+      addElementOfRequest()
 
-    composeTestRule.waitForIdle()
-    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
-      composeTestRule
-          .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM, useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
+      composeTestRule.waitForIdle()
+      composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
+        composeTestRule
+            .onAllNodesWithTag(RequestListTestTags.REQUEST_ITEM, useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      }
+
+      goToEditScreenFromMyRequests()
+    } catch (e: Exception) {
+      throw Exception(e.printStackTrace().toString(), e)
     }
-
-    goToEditScreenFromMyRequests()
   }
 
   @Test
   fun logInTest() {
-    val testName = "12349"
-    val testEmail = "logintest@example.com"
-    initialize(testName, testEmail)
+    try {
+      val testName = "12349"
+      val testEmail = "logintest@example.com"
+      initialize(testName, testEmail)
 
-    // initialize appelle déjà logIn(), on vérifie qu'on est bien connecté
-    composeTestRule
-        .onNodeWithTag(RequestListTestTags.REQUEST_ADD_BUTTON, useUnmergedTree = true)
-        .assertIsDisplayed()
+      // initialize appelle déjà logIn(), on vérifie qu'on est bien connecté
+      composeTestRule
+          .onNodeWithTag(RequestListTestTags.REQUEST_ADD_BUTTON, useUnmergedTree = true)
+          .assertIsDisplayed()
+    } catch (e: Exception) {
+      throw Exception(e.printStackTrace().toString(), e)
+    }
   }
 
   @OptIn(ExperimentalTestApi::class)
   @Test
   fun logOutTest() {
-    val testName = "12350"
-    val testEmail = "logouttest@example.com"
-    initialize(testName, testEmail)
+    try {
+      val testName = "12350"
+      val testEmail = "logouttest@example.com"
+      initialize(testName, testEmail)
 
-    logOut()
+      logOut()
+    } catch (e: Exception) {
+      throw Exception(e.printStackTrace().toString(), e)
+    }
   }
 
   @OptIn(ExperimentalTestApi::class)
   @Test
   fun hadARequestWithOtherAccountTest() {
-    hadARequestWithOtherAccount()
+    try {
+      hadARequestWithOtherAccount()
 
-    val testName = "12351"
-    val testEmail = "otheraccount@example.com"
-    initialize(testName, testEmail)
+      val testName = "12351"
+      val testEmail = "otheraccount@example.com"
+      initialize(testName, testEmail)
 
-    composeTestRule.waitUntilAtLeastOneExists(
-        matcher = hasTestTag(RequestListTestTags.REQUEST_ITEM), timeoutMillis = UI_WAIT_TIMEOUT)
+      composeTestRule.waitUntilAtLeastOneExists(
+          matcher = hasTestTag(RequestListTestTags.REQUEST_ITEM), timeoutMillis = UI_WAIT_TIMEOUT)
 
-    composeTestRule
-        .onNodeWithTag(RequestListTestTags.REQUEST_ITEM, useUnmergedTree = true)
-        .assertIsDisplayed()
+      composeTestRule
+          .onNodeWithTag(RequestListTestTags.REQUEST_ITEM, useUnmergedTree = true)
+          .assertIsDisplayed()
+    } catch (e: Exception) {
+      throw Exception(e.printStackTrace().toString(), e)
+    }
   }
 }
