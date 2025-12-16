@@ -236,6 +236,22 @@ jobs:
           disable-animations: true
           script: .github/scripts/run_tests.sh
 
+      # Print test failures details
+      - name: Print Test Failures
+        if: failure()
+        run: |
+          echo "=== UNIT TEST FAILURES ==="
+          if [ -d "app/build/reports/tests/testDebugUnitTest" ]; then
+            find app/build/reports/tests/testDebugUnitTest -name "*.html" -exec cat {} \; 2>/dev/null || true
+          fi
+          echo ""
+          echo "=== ANDROID TEST FAILURES ==="
+          if [ -d "app/build/outputs/androidTest-results/connected" ]; then
+            cat app/build/outputs/androidTest-results/connected/*.xml 2>/dev/null || true
+          fi
+          echo ""
+          echo "=== LOGCAT OUTPUT ==="
+          adb logcat -d *:E 2>/dev/null | tail -500 || true
 
       # Upload Coverage (Merged from Unit + Android automatically by the script running both)
       - name: Upload Run Coverage
