@@ -41,6 +41,8 @@ class ChatRepositoryFirestoreTest : BaseEmulatorTest() {
   private lateinit var repository: ChatRepositoryFirestore
 
   companion object {
+    const val CHATS_COLLECTION_PATH = "chats"
+    const val MESSAGES_SUBCOLLECTION_PATH = "messages"
     private const val FIRESTORE_WRITE_DELAY_MS: Long = 1000L
     private const val TEST_CHAT_ID_1 = "test-chat-1"
     private const val TEST_CHAT_ID_2 = "test-chat-2"
