@@ -15,6 +15,13 @@ import kotlinx.coroutines.tasks.await
 
 const val DEFAULT_MESSAGE_LIMIT = 50
 
+private const val ONLY_CREATOR_CAN_UPDATE = "Only creator can update participants"
+
+private const val NETWORK_UNAVAILABLE_CANNOT_UPDATE_PARTICIPANTS =
+    "Network unavailable: cannot update participants"
+
+private const val FAILED_TO_UPDATE_PARTICIPANTS = "Failed to update participants for chat"
+
 /**
  * Firestore implementation of the ChatRepository interface.
  *
@@ -286,6 +293,26 @@ class ChatRepositoryFirestore(private val db: FirebaseFirestore) : ChatRepositor
       snapshot.exists()
     } catch (e: Exception) {
       false
+    }
+  }
+
+  /**
+   * Updates the participants of a chat. Only the creator of the chat is allowed to update the
+   * participants.
+   */
+  override suspend fun updateChatParticipants(chatId: String, participants: List<String>) {
+    val currentUserId = Firebase.auth.currentUser?.uid ?: notAuthenticated()
+
+    try {
+      val chat = getChat(chatId)
+      check(chat.creatorId == currentUserId) { ONLY_CREATOR_CAN_UPDATE }
+
+      chatsCollectionRef.document(chatId).update(PARTICIPANTS, participants).await()
+    } catch (e: FirebaseFirestoreException) {
+      if (e.code == FirebaseFirestoreException.Code.UNAVAILABLE) {
+        throw IllegalStateException(NETWORK_UNAVAILABLE_CANNOT_UPDATE_PARTICIPANTS, e)
+      }
+      throw Exception("$FAILED_TO_UPDATE_PARTICIPANTS $chatId: ${e.message}", e)
     }
   }
 }

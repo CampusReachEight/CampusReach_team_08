@@ -110,4 +110,7 @@ interface ChatRepository {
    * @return true if chat exists, false otherwise
    */
   suspend fun chatExists(requestId: String): Boolean
+
+  /** Updates the list of participants in a chat. */
+  suspend fun updateChatParticipants(chatId: String, participants: List<String>)
 }
