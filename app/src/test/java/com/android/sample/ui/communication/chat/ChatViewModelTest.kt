@@ -1,5 +1,6 @@
 package com.android.sample.ui.communication.chat
 
+import androidx.lifecycle.ViewModel
 import com.android.sample.model.chat.Chat
 import com.android.sample.model.chat.ChatRepository
 import com.android.sample.model.chat.Message
@@ -12,6 +13,7 @@ import io.mockk.*
 import java.util.Date
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -718,5 +720,69 @@ class ChatViewModelTest {
     val state = viewModel.uiState.value
     assertFalse(state.isLoadingMore)
     assertEquals(errorMessage, state.errorMessage)
+  }
+
+  @Test
+  fun listenToNewMessages_handlesFlowError_setsErrorMessage() = runTest {
+    // Given
+    val chat = createTestChat()
+    val userProfile = createTestUserProfile()
+    val errorMessage = "Connection lost"
+
+    coEvery { chatRepository.getChat(CHAT_ID) } returns chat
+    coEvery { profileRepository.getUserProfile(CURRENT_USER_ID) } returns userProfile
+    coEvery { chatRepository.getMessages(CHAT_ID, 30, null) } returns emptyList()
+    coEvery { chatRepository.listenToNewMessages(CHAT_ID, any()) } returns
+        flow { throw Exception(errorMessage) }
+
+    // When
+    initializeViewModel()
+
+    // Then
+    assertEquals("Should have error message", errorMessage, viewModel.uiState.value.errorMessage)
+  }
+
+  @Test
+  fun listenToNewMessages_handlesFlowErrorWithBlankMessage_usesFriendlyMessage() = runTest {
+    // Given
+    val chat = createTestChat()
+    val userProfile = createTestUserProfile()
+
+    coEvery { chatRepository.getChat(CHAT_ID) } returns chat
+    coEvery { profileRepository.getUserProfile(CURRENT_USER_ID) } returns userProfile
+    coEvery { chatRepository.getMessages(CHAT_ID, 30, null) } returns emptyList()
+    coEvery { chatRepository.listenToNewMessages(CHAT_ID, any()) } returns
+        flow { throw Exception("   ") }
+
+    // When
+    initializeViewModel()
+
+    // Then
+    val errorMessage = viewModel.uiState.value.errorMessage
+    assertNotNull("Should have error message", errorMessage)
+    assertTrue(
+        "Should use friendly error message",
+        errorMessage?.contains("Failed to load messages") == true)
+  }
+
+  @Test
+  fun factory_throwsException_forUnknownViewModelClass() {
+    // Given
+    val factory =
+        ChatViewModelFactory(
+            chatRepository = chatRepository,
+            profileRepository = profileRepository,
+            firebaseAuth = firebaseAuth)
+
+    // Create a dummy ViewModel class that's not ChatViewModel
+    class DummyViewModel : ViewModel()
+
+    // When/Then
+    val exception =
+        assertThrows(IllegalArgumentException::class.java) {
+          factory.create(DummyViewModel::class.java)
+        }
+
+    assertEquals(UNKNOWN_VIEW_MODEL_ERROR, exception.message)
   }
 }

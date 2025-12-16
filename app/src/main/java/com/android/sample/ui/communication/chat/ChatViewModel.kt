@@ -215,7 +215,7 @@ class ChatViewModel(
   }
 }
 
-private const val UNKNOWN_VIEW_MODEL_ERROR = "Unknown ViewModel class"
+const val UNKNOWN_VIEW_MODEL_ERROR = "Unknown ViewModel class"
 
 /**
  * Factory for creating [ChatViewModel] instances with custom dependencies.
