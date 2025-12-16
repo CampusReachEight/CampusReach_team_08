@@ -20,6 +20,7 @@ import com.android.sample.resources.C
 import com.android.sample.ui.navigation.NavigationActions
 import com.android.sample.ui.navigation.NavigationScreen
 import com.android.sample.ui.theme.SampleAppTheme
+import com.android.sample.ui.theme.SynchronizedShimmerProvider
 import com.google.firebase.firestore.FirebaseFirestoreSettings
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
@@ -34,8 +35,11 @@ class MainActivity : ComponentActivity() {
 
     setContent {
       SampleAppTheme {
-        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-          AppNavigation()
+        // provide a synchronized shimmer effect across the app with: shimmerBrush()
+        SynchronizedShimmerProvider {
+          Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            AppNavigation()
+          }
         }
       }
     }

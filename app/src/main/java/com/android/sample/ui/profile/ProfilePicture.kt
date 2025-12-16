@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
@@ -32,15 +34,16 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import com.android.sample.model.profile.UserProfile
 import com.android.sample.model.profile.UserProfileRepository
 import com.android.sample.model.profile.UserProfileRepositoryFirestore
 import com.android.sample.ui.navigation.NavigationActions
 import com.android.sample.ui.navigation.Screen
 import com.android.sample.ui.request.ConstantRequestList
-import com.android.sample.ui.theme.AppColors.SecondaryDark
 import com.android.sample.ui.theme.AppColors.WhiteColor
 import com.android.sample.ui.theme.appPalette
+import com.android.sample.ui.theme.shimmerBrush
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
 import java.net.URL
@@ -178,7 +181,7 @@ fun ProfilePicture(
             Box(
                 modifier =
                     Modifier.fillMaxSize()
-                        .background(SecondaryDark.copy(alpha = 0.3f))
+                        .background(shimmerBrush())
                         .testTag(ProfilePictureTestTags.PROFILE_PICTURE_LOADING),
             )
             return@Surface
@@ -207,19 +210,28 @@ fun ProfilePicture(
               Modifier.fillMaxSize().testTag(ProfilePictureTestTags.PROFILE_PICTURE))
         }
 
-        if (withName && name.isNotBlank()) {
-          Text(
-              text = name,
-              fontSize = ConstantRequestList.RequestItemNameFontSize,
-              lineHeight = ConstantRequestList.RequestItemNameFontSize,
-              maxLines = 1,
-              overflow = TextOverflow.Ellipsis,
-              textAlign = TextAlign.Center,
-              color = appPalette().text.copy(alpha = 0.8f),
-              modifier =
-                  Modifier.wrapContentHeight()
-                      .padding(top = ConstantRequestList.RequestItemNameTopPadding)
-                      .testTag(ProfilePictureTestTags.PROFILE_PICTURE_NAME))
+        if (withName) {
+          if (loading) {
+            Box(
+                modifier =
+                    Modifier.fillMaxWidth(0.7f)
+                        .height(ConstantRequestList.RequestItemNameFontSize.value.dp)
+                        .padding(top = ConstantRequestList.RequestItemNameTopPadding)
+                        .background(shimmerBrush(), shape = CircleShape))
+          } else if (name.isNotBlank()) {
+            Text(
+                text = name,
+                fontSize = ConstantRequestList.RequestItemNameFontSize,
+                lineHeight = ConstantRequestList.RequestItemNameFontSize,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center,
+                color = appPalette().text.copy(alpha = 0.8f),
+                modifier =
+                    Modifier.wrapContentHeight()
+                        .padding(top = ConstantRequestList.RequestItemNameTopPadding)
+                        .testTag(ProfilePictureTestTags.PROFILE_PICTURE_NAME))
+          }
         }
       }
 }

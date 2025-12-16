@@ -215,6 +215,7 @@ enum class RequestType {
   SPORT,
   HARDWARE,
   LOST_AND_FOUND,
+  EVENT,
   OTHER;
 
   companion object {
