@@ -5,6 +5,24 @@ import com.google.firebase.Timestamp
 import java.util.Date
 import kotlinx.serialization.Serializable
 
+private const val CHAT_ID = "chatId"
+
+private const val REQUEST_ID = "requestId"
+
+private const val REQUEST_TITLE = "requestTitle"
+
+private const val PARTICIPANTS = "participants"
+
+private const val CREATOR_ID = "creatorId"
+
+private const val LAST_MESSAGE = "lastMessage"
+
+private const val LAST_MESSAGE_TIMESTAMP = "lastMessageTimestamp"
+
+private const val REQUEST_STATUS = "requestStatus"
+
+private const val OPEN = "OPEN"
+
 /**
  * Data class representing chat metadata (not individual messages).
  *
@@ -39,26 +57,26 @@ data class Chat(
     /** Deserializes a Chat from Firestore document data. */
     fun fromMap(data: Map<String, Any?>): Chat {
       return Chat(
-          chatId = data["chatId"] as String,
-          requestId = data["requestId"] as String,
-          requestTitle = data["requestTitle"] as String,
-          participants = (data["participants"] as List<*>).map { it as String },
-          creatorId = data["creatorId"] as String,
-          lastMessage = data["lastMessage"] as? String ?: "",
-          lastMessageTimestamp = (data["lastMessageTimestamp"] as? Timestamp)?.toDate() ?: Date(),
-          requestStatus = data["requestStatus"] as? String ?: "OPEN")
+          chatId = data[CHAT_ID] as String,
+          requestId = data[REQUEST_ID] as String,
+          requestTitle = data[REQUEST_TITLE] as String,
+          participants = (data[PARTICIPANTS] as List<*>).map { it as String },
+          creatorId = data[CREATOR_ID] as String,
+          lastMessage = data[LAST_MESSAGE] as? String ?: "",
+          lastMessageTimestamp = (data[LAST_MESSAGE_TIMESTAMP] as? Timestamp)?.toDate() ?: Date(),
+          requestStatus = data[REQUEST_STATUS] as? String ?: OPEN)
     }
   }
 
   /** Serializes the Chat to a Firestore-compatible map. */
   fun toMap(): Map<String, Any?> =
       mapOf(
-          "chatId" to chatId,
-          "requestId" to requestId,
-          "requestTitle" to requestTitle,
-          "participants" to participants,
-          "creatorId" to creatorId,
-          "lastMessage" to lastMessage,
-          "lastMessageTimestamp" to Timestamp(lastMessageTimestamp),
-          "requestStatus" to requestStatus)
+          CHAT_ID to chatId,
+          REQUEST_ID to requestId,
+          REQUEST_TITLE to requestTitle,
+          PARTICIPANTS to participants,
+          CREATOR_ID to creatorId,
+          LAST_MESSAGE to lastMessage,
+          LAST_MESSAGE_TIMESTAMP to Timestamp(lastMessageTimestamp),
+          REQUEST_STATUS to requestStatus)
 }
