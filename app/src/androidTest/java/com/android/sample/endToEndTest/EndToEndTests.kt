@@ -949,4 +949,79 @@ class EndToEndTests : BaseEmulatorTest() {
         matcher = hasTestTag(SignInScreenTestTags.LOGIN_BUTTON), timeoutMillis = UI_WAIT_TIMEOUT)
     composeTestRule.onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON).assertIsDisplayed()
   }
+
+  @OptIn(ExperimentalTestApi::class)
+  @Test
+  fun userCanGoBack() {
+    hadARequestWithOtherAccount()
+
+    val testName = "12345"
+    val testEmail = "editprofile@example.com"
+    initialize(testName, testEmail)
+    composeTestRule.waitForIdle()
+
+    goAddRequest()
+
+    composeTestRule.waitUntilAtLeastOneExists(
+        matcher = hasTestTag(NavigationTestTags.GO_BACK_BUTTON), timeoutMillis = UI_WAIT_TIMEOUT)
+
+    composeTestRule.onNodeWithTag(NavigationTestTags.GO_BACK_BUTTON).assertExists().performClick()
+
+    composeTestRule.waitForIdle()
+
+    composeTestRule.waitUntilAtLeastOneExists(
+        matcher = hasTestTag(RequestListTestTags.REQUEST_ITEM), timeoutMillis = UI_WAIT_TIMEOUT)
+
+    composeTestRule.onNodeWithTag(RequestListTestTags.REQUEST_ITEM).assertExists().performClick()
+
+    composeTestRule.waitForIdle()
+
+    composeTestRule.waitUntilAtLeastOneExists(
+        matcher = hasTestTag(AcceptRequestScreenTestTags.REQUEST_GO_BACK),
+        timeoutMillis = UI_WAIT_TIMEOUT)
+
+    composeTestRule
+        .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_GO_BACK)
+        .assertExists()
+        .performClick()
+
+    composeTestRule.waitForIdle()
+
+    composeTestRule.waitUntilAtLeastOneExists(
+        matcher = hasTestTag(NavigationTestTags.REQUESTS_SCREEN), timeoutMillis = UI_WAIT_TIMEOUT)
+  }
+
+  @OptIn(ExperimentalTestApi::class)
+  @Test
+  fun userCanSeeSpecificRequestOnMap() {
+    hadARequestWithOtherAccount()
+
+    val testName = "12345"
+    val testEmail = "editprofile@example.com"
+    initialize(testName, testEmail)
+    composeTestRule.waitForIdle()
+
+    composeTestRule.waitForIdle()
+
+    composeTestRule.waitUntilAtLeastOneExists(
+        matcher = hasTestTag(RequestListTestTags.REQUEST_ITEM), timeoutMillis = UI_WAIT_TIMEOUT)
+
+    composeTestRule.onNodeWithTag(RequestListTestTags.REQUEST_ITEM).assertExists().performClick()
+
+    composeTestRule.waitForIdle()
+
+    composeTestRule.waitUntilAtLeastOneExists(
+        matcher = hasTestTag(AcceptRequestScreenTestTags.NAVIGATE_TO_MAP),
+        timeoutMillis = UI_WAIT_TIMEOUT)
+    composeTestRule
+        .onNodeWithTag(AcceptRequestScreenTestTags.NAVIGATE_TO_MAP)
+        .assertExists()
+        .performScrollTo()
+        .performClick()
+
+    composeTestRule.waitForIdle()
+
+    composeTestRule.waitUntilAtLeastOneExists(
+        matcher = hasTestTag(MapTestTags.DRAG_DOWN_MENU), timeoutMillis = UI_WAIT_TIMEOUT)
+  }
 }
