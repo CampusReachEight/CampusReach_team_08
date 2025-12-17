@@ -66,10 +66,12 @@ private object ChatScreenConstants {
 }
 
 private const val WEIGHT = 1f
-private const val DECREASE = 1
+private const val DECREMENT = 1
 private const val MAX_LINES = 3
 
 private const val ZERO = 0
+
+private const val DELAY = 100L
 
 /**
  * Chat conversation screen.
@@ -101,11 +103,13 @@ fun ChatScreen(
 
   // Initialize chat when screen is created
   LaunchedEffect(chatId) { viewModel.initializeChat(chatId) }
-
-  // Auto-scroll to bottom when new messages arrive
   LaunchedEffect(uiState.messages.size) {
+    android.util.Log.d(
+        "ChatScreen", "=== AUTO-SCROLL TRIGGERED: ${uiState.messages.size} messages ===")
+
     if (uiState.messages.isNotEmpty()) {
-      listState.animateScrollToItem(uiState.messages.size - DECREASE)
+      kotlinx.coroutines.delay(DELAY) // Small delay to let layout settle
+      listState.scrollToItem(uiState.messages.size - DECREMENT)
     }
   }
 
@@ -113,11 +117,17 @@ fun ChatScreen(
   val shouldLoadMore by remember {
     derivedStateOf {
       val firstVisibleItemIndex = listState.firstVisibleItemIndex
-      firstVisibleItemIndex == ZERO && !uiState.isLoadingMore && uiState.messages.isNotEmpty()
+      val isAtTop = firstVisibleItemIndex == 0
+      val hasMessages = uiState.messages.isNotEmpty()
+      val notCurrentlyLoading = !uiState.isLoadingMore && !uiState.isLoading
+      val canLoadMore = uiState.hasMoreMessages
+
+      isAtTop && hasMessages && notCurrentlyLoading && canLoadMore
     }
   }
 
   LaunchedEffect(shouldLoadMore) {
+    android.util.Log.d("ChatScreen", "Should load more: $shouldLoadMore")
     if (shouldLoadMore) {
       viewModel.loadMoreMessages()
     }

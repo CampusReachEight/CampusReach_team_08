@@ -95,7 +95,6 @@ fun MessageBubble(
       modifier = modifier.fillMaxWidth(),
       verticalAlignment = Alignment.Top,
       horizontalArrangement = if (isOwnMessage) Arrangement.End else Arrangement.Start) {
-        // Profile picture (only for other's messages)
         if (!isOwnMessage) {
           Box(
               modifier =

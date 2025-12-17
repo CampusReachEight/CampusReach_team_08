@@ -4,11 +4,17 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.sample.model.chat.ChatRepositoryFirestore
+import com.android.sample.model.map.Location
+import com.android.sample.model.request.Request
+import com.android.sample.model.request.RequestRepositoryFirestore
+import com.android.sample.model.request.RequestStatus
+import com.android.sample.model.request.RequestType
 import com.android.sample.ui.communication.messages.MessagesScreen
 import com.android.sample.ui.communication.messages.MessagesViewModel
 import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.theme.SampleAppTheme
 import com.android.sample.utils.BaseEmulatorTest
+import java.util.Date
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Rule
@@ -21,6 +27,8 @@ class MessagesScreenTest : BaseEmulatorTest() {
   @get:Rule val composeTestRule = createComposeRule()
 
   private lateinit var chatRepository: ChatRepositoryFirestore
+  private lateinit var requestRepository: RequestRepositoryFirestore
+
   private var clickedChatId: String? = null
 
   private companion object {
@@ -46,6 +54,7 @@ class MessagesScreenTest : BaseEmulatorTest() {
   override fun setUp() {
     super.setUp()
     chatRepository = ChatRepositoryFirestore(db)
+    requestRepository = RequestRepositoryFirestore(db) // ADD THIS
     clickedChatId = null
   }
 
@@ -54,13 +63,35 @@ class MessagesScreenTest : BaseEmulatorTest() {
       SampleAppTheme {
         MessagesScreen(
             onChatClick = { chatId -> clickedChatId = chatId },
-            viewModel = MessagesViewModel(chatRepository = chatRepository, firebaseAuth = auth))
+            viewModel =
+                MessagesViewModel(
+                    chatRepository = chatRepository,
+                    requestRepository = requestRepository, // ADD THIS
+                    firebaseAuth = auth))
       }
     }
   }
 
   private fun createTestChatBlocking(chatId: String, title: String) {
     runBlocking {
+      // Create the request first
+      val request =
+          com.android.sample.model.request.Request(
+              requestId = chatId,
+              title = title,
+              description = "Test description",
+              requestType = listOf(com.android.sample.model.request.RequestType.STUDYING),
+              location = com.android.sample.model.map.Location(0.0, 0.0, "Test"),
+              locationName = "Test Location",
+              status = com.android.sample.model.request.RequestStatus.OPEN,
+              startTimeStamp = java.util.Date(),
+              expirationTime = java.util.Date(System.currentTimeMillis() + 86400000),
+              people = listOf(currentUserId),
+              tags = emptyList(),
+              creatorId = currentUserId)
+      requestRepository.addRequest(request)
+
+      // Then create the chat
       chatRepository.createChat(
           requestId = chatId,
           requestTitle = title,
@@ -222,9 +253,8 @@ class MessagesScreenTest : BaseEmulatorTest() {
             viewModel =
                 MessagesViewModel(
                     chatRepository = chatRepository,
-                    firebaseAuth =
-                        auth // This will work, but error testing is hard with real Firebase
-                    ))
+                    requestRepository = requestRepository, // ADD THIS
+                    firebaseAuth = auth))
       }
     }
     composeTestRule.onNodeWithTag(NavigationTestTags.MESSAGES_SCREEN).assertExists()

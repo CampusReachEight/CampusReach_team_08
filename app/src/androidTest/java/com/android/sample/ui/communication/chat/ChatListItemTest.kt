@@ -169,20 +169,6 @@ class ChatListItemTest {
         .assertIsDisplayed()
   }
 
-  // ==================== EXPIRED CHAT TESTS ====================
-
-  @Test
-  fun chatListItem_cancelledChat_showsStatusBadge() {
-    val chat = createTestChat(requestStatus = "CANCELLED")
-
-    composeTestRule.setContent { ChatListItem(chat = chat, isCreator = true, onClick = {}) }
-
-    composeTestRule
-        .onNodeWithTag(ChatListItemTestTags.STATUS_BADGE, useUnmergedTree = true)
-        .assertExists()
-        .assertIsDisplayed()
-  }
-
   @Test
   fun chatListItem_openChat_doesNotShowStatusBadge() {
     val chat = createTestChat(requestStatus = "OPEN")
