@@ -379,10 +379,10 @@ class EndToEndTests : BaseEmulatorTest() {
     composeTestRule.waitForIdle()
 
     composeTestRule.waitUntilAtLeastOneExists(
-        matcher = hasTestTag(NavigationTestTags.REQUESTS_SCREEN), timeoutMillis = UI_WAIT_TIMEOUT)
+        matcher = hasText("Reach Out"), timeoutMillis = UI_WAIT_TIMEOUT)
 
     composeTestRule
-        .onNodeWithTag(NavigationTestTags.REQUESTS_SCREEN, useUnmergedTree = true)
+        .onNodeWithText("Reach Out", useUnmergedTree = true)
         .assertIsDisplayed()
   }
 
