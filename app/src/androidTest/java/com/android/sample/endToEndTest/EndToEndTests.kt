@@ -603,7 +603,7 @@ class EndToEndTests : BaseEmulatorTest() {
   fun canCreateRequestGoToProfileViewMyRequestsEditAndLogout() {
     runBlocking {
       // 1. Sign in
-      val testName = "78901"
+      val testName = "43546437"
       val testEmail = "myrequest@example.com"
       initialize(testName, testEmail)
 
@@ -740,7 +740,7 @@ class EndToEndTests : BaseEmulatorTest() {
   fun canLoginGoToProfileEditProfileAndLogout() {
     runBlocking {
       // 1. Sign in
-      val testName = "12345"
+      val testName = "12368933"
       val testEmail = "editprofile@example.com"
       initialize(testName, testEmail)
       composeTestRule.waitForIdle()
@@ -860,7 +860,7 @@ class EndToEndTests : BaseEmulatorTest() {
     runBlocking {
       hadARequestWithOtherAccount()
 
-      val testName = "12345"
+      val testName = "092890490823"
       val testEmail = "editprofile@example.com"
       initialize(testName, testEmail)
       composeTestRule.waitForIdle()
@@ -902,7 +902,7 @@ class EndToEndTests : BaseEmulatorTest() {
     runBlocking {
       hadARequestWithOtherAccount()
 
-      val testName = "12345"
+      val testName = "9012789890453777"
       val testEmail = "editprofile@example.com"
       initialize(testName, testEmail)
       composeTestRule.waitForIdle()
@@ -933,7 +933,7 @@ class EndToEndTests : BaseEmulatorTest() {
   @Test
   fun goAddRequestTest() {
     runBlocking {
-      val testName = "12345"
+      val testName = "109iju9iw98"
       val testEmail = "editprofile@example.com"
       initialize(testName, testEmail)
 
@@ -944,7 +944,7 @@ class EndToEndTests : BaseEmulatorTest() {
   @Test
   fun addElementOfRequestTest() {
     runBlocking {
-      val testName = "12346"
+      val testName = "dw9uiahj94"
       val testEmail = "addelement@example.com"
       initialize(testName, testEmail)
 
@@ -960,7 +960,7 @@ class EndToEndTests : BaseEmulatorTest() {
   @Test
   fun goToEditScreenTest() {
     runBlocking {
-      val testName = "12347"
+      val testName = "wjd89u8d233"
       val testEmail = "gotoedit@example.com"
       initialize(testName, testEmail)
 
@@ -977,7 +977,7 @@ class EndToEndTests : BaseEmulatorTest() {
   @Test
   fun goToEditScreenFromMyRequestsTest() {
     runBlocking {
-      val testName = "12348"
+      val testName = "3428uj4u423"
       val testEmail = "editmyrequests@example.com"
       initialize(testName, testEmail)
 
@@ -995,7 +995,7 @@ class EndToEndTests : BaseEmulatorTest() {
   @Test
   fun logInTest() {
     runBlocking {
-      val testName = "12349"
+      val testName = "dw0iajdudu8d231deds"
       val testEmail = "logintest@example.com"
       initialize(testName, testEmail)
 
@@ -1009,7 +1009,7 @@ class EndToEndTests : BaseEmulatorTest() {
   @Test
   fun logOutTest() {
     runBlocking {
-      val testName = "12350"
+      val testName = "dadknvibzu8nbbbb"
       val testEmail = "logouttest@example.com"
       initialize(testName, testEmail)
 
@@ -1022,7 +1022,7 @@ class EndToEndTests : BaseEmulatorTest() {
     runBlocking {
       hadARequestWithOtherAccount()
 
-      val testName = "12351"
+      val testName = "19h31jdjjdjdjd"
       val testEmail = "otheraccount@example.com"
       initialize(testName, testEmail)
 
