@@ -42,16 +42,6 @@ import java.util.*
 import java.util.Calendar
 import okhttp3.OkHttpClient
 
-private val SCREEN_CONTENT_PADDING = 16.dp
-private val CARD_CONTENT_PADDING = 12.dp
-private val SPACING = 8.dp
-private val CIRCULAR_PROGRESS_INDICATOR = 20.dp
-private val SAVE_BUTTON_PADDING = 24.dp
-
-private val MAX_TITLE_LENGTH = 120
-
-private val MAX_DESCRIPTION_LENGTH = 2000
-
 /** Test tags for UI elements in EditRequestScreen. */
 object EditRequestScreenTestTags {
   const val INPUT_TITLE = "inputTitle"
@@ -200,9 +190,9 @@ fun EditRequestContent(
       modifier =
           Modifier.fillMaxSize()
               .padding(paddingValues)
-              .padding(SCREEN_CONTENT_PADDING)
+              .padding(ConstantRequestEdit.SCREEN_CONTENT_PADDING)
               .verticalScroll(rememberScrollState()),
-      verticalArrangement = Arrangement.spacedBy(SCREEN_CONTENT_PADDING)) {
+      verticalArrangement = Arrangement.spacedBy(ConstantRequestEdit.SCREEN_CONTENT_PADDING)) {
         ErrorMessageCard(uiState.errorMessage, actions.onClearError)
         SuccessMessageCard(
             uiState.validationState.showSuccessMessage,
@@ -235,7 +225,7 @@ fun EditRequestContent(
               if (uiState.isSearchingLocation) {
                 CircularProgressIndicator(
                     modifier =
-                        Modifier.size(CIRCULAR_PROGRESS_INDICATOR)
+                        Modifier.size(ConstantRequestEdit.CIRCULAR_PROGRESS_INDICATOR)
                             .testTag(EditRequestScreenTestTags.LOCATION_LOADING_SPINNER))
               } else {
                 Text(stringResource(R.string.use_current_location_button))
@@ -255,7 +245,7 @@ fun EditRequestContent(
             onClearSearch = actions.onClearLocationSearch,
             modifier =
                 Modifier.fillMaxWidth().testTag(EditRequestScreenTestTags.INPUT_LOCATION_NAME))
-        Spacer(modifier = Modifier.height(SCREEN_CONTENT_PADDING))
+        Spacer(modifier = Modifier.height(ConstantRequestEdit.SCREEN_CONTENT_PADDING))
         StartDateField(
             dateString = dateFormat.format(uiState.startTimeStamp),
             isLoading = uiState.isLoading,
@@ -267,7 +257,7 @@ fun EditRequestContent(
             onClick = { pickerState.showExpirationDatePicker = true })
         TagsSection(
             tags = uiState.tags, isLoading = uiState.isLoading, onTagsChange = actions.onTagsChange)
-        Spacer(modifier = Modifier.height(SPACING))
+        Spacer(modifier = Modifier.height(ConstantRequestEdit.SPACING))
         SaveButton(
             isEditMode = uiState.isEditMode, isLoading = uiState.isLoading, onSave = actions.onSave)
         if (uiState.isEditMode) {
@@ -317,7 +307,7 @@ private fun ErrorMessageCard(
         colors = CardDefaults.cardColors(containerColor = palette.errorContainer),
         modifier = Modifier.fillMaxWidth()) {
           Row(
-              modifier = Modifier.fillMaxWidth().padding(CARD_CONTENT_PADDING),
+              modifier = Modifier.fillMaxWidth().padding(ConstantRequestEdit.CARD_CONTENT_PADDING),
               horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(
                     text = error,
@@ -342,7 +332,7 @@ private fun SuccessMessageCard(
         colors = CardDefaults.cardColors(containerColor = palette.primary),
         modifier = Modifier.fillMaxWidth()) {
           Row(
-              modifier = Modifier.fillMaxWidth().padding(CARD_CONTENT_PADDING),
+              modifier = Modifier.fillMaxWidth().padding(ConstantRequestEdit.CARD_CONTENT_PADDING),
               horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(
                     text =
@@ -369,7 +359,7 @@ private fun TitleField(
   OutlinedTextField(
       value = title,
       onValueChange = {
-        if (it.length <= MAX_TITLE_LENGTH) {
+        if (it.length <= ConstantRequestEdit.MAX_TITLE_LENGTH) {
           onTitleChange(it)
         }
       },
@@ -387,10 +377,10 @@ private fun TitleField(
             Spacer(modifier = Modifier.width(0.dp))
           }
           Text(
-              text = "${title.length}/$MAX_TITLE_LENGTH",
+              text = "${title.length}/$ConstantRequestEdit.MAX_TITLE_LENGTH",
               style = MaterialTheme.typography.bodySmall,
               color =
-                  if (title.length >= MAX_TITLE_LENGTH) appPalette().error
+                  if (title.length >= ConstantRequestEdit.MAX_TITLE_LENGTH) appPalette().error
                   else MaterialTheme.colorScheme.onSurfaceVariant)
         }
       },
@@ -410,7 +400,7 @@ private fun DescriptionField(
     OutlinedTextField(
         value = description,
         onValueChange = {
-          if (it.length <= MAX_DESCRIPTION_LENGTH) {
+          if (it.length <= ConstantRequestEdit.MAX_DESCRIPTION_LENGTH) {
             onDescriptionChange(it)
           }
         },
@@ -430,10 +420,11 @@ private fun DescriptionField(
                   Spacer(modifier = Modifier.width(0.dp))
                 }
                 Text(
-                    text = "${description.length}/$MAX_DESCRIPTION_LENGTH",
+                    text = "${description.length}/$ConstantRequestEdit.MAX_DESCRIPTION_LENGTH",
                     style = MaterialTheme.typography.bodySmall,
                     color =
-                        if (description.length >= MAX_DESCRIPTION_LENGTH) appPalette().error
+                        if (description.length >= ConstantRequestEdit.MAX_DESCRIPTION_LENGTH)
+                            appPalette().error
                         else MaterialTheme.colorScheme.onSurfaceVariant)
               }
         },
@@ -610,7 +601,8 @@ private fun SaveButton(isEditMode: Boolean, isLoading: Boolean, onSave: () -> Un
               containerColor = appPalette().accent, contentColor = appPalette().onAccent)) {
         if (isLoading) {
           CircularProgressIndicator(
-              modifier = Modifier.size(SAVE_BUTTON_PADDING), color = appPalette().accent)
+              modifier = Modifier.size(ConstantRequestEdit.SAVE_BUTTON_PADDING),
+              color = appPalette().accent)
         } else {
           Text(
               stringResource(
@@ -646,7 +638,8 @@ fun RequestTypeChipGroup(
     enabled: Boolean = true
 ) {
   FlowRow(
-      horizontalArrangement = Arrangement.spacedBy(SPACING), modifier = Modifier.fillMaxWidth()) {
+      horizontalArrangement = Arrangement.spacedBy(ConstantRequestEdit.SPACING),
+      modifier = Modifier.fillMaxWidth()) {
         RequestType.entries.forEach { type ->
           FilterChip(
               selected = selectedTypes.contains(type),
@@ -682,8 +675,8 @@ fun TagsChipGroup(
     enabled: Boolean = true
 ) {
   FlowRow(
-      horizontalArrangement = Arrangement.spacedBy(SPACING),
-      verticalArrangement = Arrangement.spacedBy(SPACING),
+      horizontalArrangement = Arrangement.spacedBy(ConstantRequestEdit.SPACING),
+      verticalArrangement = Arrangement.spacedBy(ConstantRequestEdit.SPACING),
       modifier = Modifier.fillMaxWidth()) {
         Tags.entries.forEach { tag ->
           FilterChip(

@@ -19,8 +19,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.ui.navigation.NavigationActions
@@ -31,41 +29,6 @@ import com.android.sample.ui.request.TypeChip
 import com.android.sample.ui.theme.appPalette
 import java.text.SimpleDateFormat
 import java.util.*
-
-// ============ Constants ============
-
-private const val SCREEN_TITLE = "Accepted Requests"
-private const val BACK_BUTTON_DESCRIPTION = "Back"
-private const val EMPTY_MESSAGE = "You haven't accepted any requests yet"
-private const val ERROR_DIALOG_TITLE = "Error"
-private const val ERROR_DIALOG_BUTTON = "OK"
-private const val DIALOG_CLOSE_BUTTON = "Close"
-
-private val SHADOW_SIZE = 4.dp
-private val BADGE_SIZE = 12.dp
-private val BADGE_ICON_SIZE = 16.dp
-private val DIALOG_PADDING = 24.dp
-private val DIALOG_SPACING = 16.dp
-private val DIALOG_SMALL_SPACING = 8.dp
-private val DIALOG_MAX_WIDTH = 400.dp
-private val BIG_MODIFIER = 40.dp
-private val FONT_SIZE_14 = 14.sp
-private const val ALPHA_6 = 0.6f
-private const val ALPHA_7 = 0.7f
-private const val WEIGHT = 1f
-
-private const val KUDOS_RECEIVED_TEXT = "✓ Kudos Received"
-private const val KUDOS_NOT_RECEIVED_TEXT = "✗ No Kudos"
-private const val KUDOS_PENDING_TEXT = "⏳ Pending"
-
-private const val LABEL_LOCATION = "Location:"
-private const val LABEL_START_TIME = "Start Time:"
-private const val LABEL_EXPIRATION = "Expiration:"
-private const val LABEL_HELPERS = "People Accepted:"
-
-private const val LABEL_CREATOR = "Creator:"
-
-private const val DATE_FORMAT_PATTERN = "MMM dd, yyyy HH:mm"
 
 // ============ Test Tags ============
 
@@ -104,12 +67,12 @@ fun AcceptedRequestsScreen(
       containerColor = appPalette().background,
       topBar = {
         TopAppBar(
-            title = { Text(SCREEN_TITLE) },
+            title = { Text(ConstantAcceptedRequest.SCREEN_TITLE) },
             navigationIcon = {
               IconButton(onClick = { navigationActions.goBack() }) {
                 Icon(
                     imageVector = Icons.Default.ArrowBack,
-                    contentDescription = BACK_BUTTON_DESCRIPTION)
+                    contentDescription = ConstantAcceptedRequest.BACK_BUTTON_DESCRIPTION)
               }
             })
       }) { paddingValues ->
@@ -224,7 +187,7 @@ private fun AcceptedRequestItem(
                 Spacer(Modifier.width(ConstantRequestList.RowSpacing))
 
                 // Title and description
-                Column(modifier = Modifier.weight(WEIGHT)) {
+                Column(modifier = Modifier.weight(ConstantAcceptedRequest.WEIGHT)) {
                   Text(
                       text = request.title,
                       maxLines = ONE,
@@ -259,7 +222,9 @@ private fun AcceptedRequestItem(
           // Kudos status badge (top-right corner)
           KudosStatusBadge(
               kudosStatus = requestWithStatus.kudosStatus,
-              modifier = Modifier.align(Alignment.TopEnd).padding(DIALOG_SMALL_SPACING))
+              modifier =
+                  Modifier.align(Alignment.TopEnd)
+                      .padding(ConstantAcceptedRequest.DIALOG_SMALL_SPACING))
         }
       }
 }
@@ -282,11 +247,11 @@ private fun KudosStatusBadge(kudosStatus: KudosStatus, modifier: Modifier = Modi
       }
 
   Surface(
-      modifier = modifier.size(BADGE_SIZE),
+      modifier = modifier.size(ConstantAcceptedRequest.BADGE_SIZE),
       shape = CircleShape,
       color = color,
-      shadowElevation = SHADOW_SIZE,
-      tonalElevation = SHADOW_SIZE) {
+      shadowElevation = ConstantAcceptedRequest.SHADOW_SIZE,
+      tonalElevation = ConstantAcceptedRequest.SHADOW_SIZE) {
         Box(
             modifier = Modifier.fillMaxSize().testTag(AcceptedRequestsTestTags.KUDOS_BADGE),
             contentAlignment = Alignment.Center) {
@@ -294,7 +259,7 @@ private fun KudosStatusBadge(kudosStatus: KudosStatus, modifier: Modifier = Modi
                   imageVector = icon,
                   contentDescription = null,
                   tint = Color.White,
-                  modifier = Modifier.size(BADGE_ICON_SIZE))
+                  modifier = Modifier.size(ConstantAcceptedRequest.BADGE_ICON_SIZE))
             }
       }
 }
@@ -309,20 +274,22 @@ private fun RequestDetailsDialog(
     navigationActions: NavigationActions
 ) {
   val request = requestWithStatus.request
-  val dateFormat = remember { SimpleDateFormat(DATE_FORMAT_PATTERN, Locale.getDefault()) }
+  val dateFormat = remember {
+    SimpleDateFormat(ConstantAcceptedRequest.DATE_FORMAT_PATTERN, Locale.getDefault())
+  }
 
   Dialog(onDismissRequest = onDismiss) {
     Surface(
         modifier =
-            Modifier.widthIn(max = DIALOG_MAX_WIDTH)
+            Modifier.widthIn(max = ConstantAcceptedRequest.DIALOG_MAX_WIDTH)
                 .testTag(AcceptedRequestsTestTags.REQUEST_DIALOG),
         shape = MaterialTheme.shapes.large,
         color = appPalette().surface,
-        tonalElevation = DIALOG_SPACING) {
+        tonalElevation = ConstantAcceptedRequest.DIALOG_SPACING) {
           Column(
               modifier =
                   Modifier.fillMaxWidth()
-                      .padding(DIALOG_PADDING)
+                      .padding(ConstantAcceptedRequest.DIALOG_PADDING)
                       .background(color = appPalette().surface)) {
                 // Header with close button
                 Row(
@@ -333,42 +300,44 @@ private fun RequestDetailsDialog(
                           text = request.title,
                           style = MaterialTheme.typography.headlineSmall,
                           fontWeight = FontWeight.Bold,
-                          modifier = Modifier.weight(WEIGHT))
+                          modifier = Modifier.weight(ConstantAcceptedRequest.WEIGHT))
                       IconButton(
                           onClick = onDismiss,
                           modifier =
                               Modifier.testTag(AcceptedRequestsTestTags.DIALOG_CLOSE_BUTTON)) {
                             Icon(
                                 imageVector = Icons.Default.Close,
-                                contentDescription = DIALOG_CLOSE_BUTTON)
+                                contentDescription = ConstantAcceptedRequest.DIALOG_CLOSE_BUTTON)
                           }
                     }
 
-                Spacer(modifier = Modifier.height(DIALOG_SPACING))
+                Spacer(modifier = Modifier.height(ConstantAcceptedRequest.DIALOG_SPACING))
 
                 // Kudos status
                 KudosStatusChip(kudosStatus = requestWithStatus.kudosStatus)
 
-                Spacer(modifier = Modifier.height(DIALOG_SPACING))
+                Spacer(modifier = Modifier.height(ConstantAcceptedRequest.DIALOG_SPACING))
 
                 // Creator info
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth()) {
                       Text(
-                          text = LABEL_CREATOR,
+                          text = ConstantAcceptedRequest.LABEL_CREATOR,
                           fontWeight = FontWeight.SemiBold,
-                          fontSize = FONT_SIZE_14)
-                      Spacer(modifier = Modifier.width(DIALOG_SMALL_SPACING))
+                          fontSize = ConstantAcceptedRequest.FONT_SIZE_14)
+                      Spacer(
+                          modifier = Modifier.width(ConstantAcceptedRequest.DIALOG_SMALL_SPACING))
                       ProfilePicture(
                           profileRepository = requestListViewModel.profileRepository,
                           profileId = request.creatorId,
+                          onClick = {},
+                          modifier = Modifier.size(ConstantAcceptedRequest.BIG_MODIFIER),
                           navigationActions = navigationActions,
-                          modifier = Modifier.size(BIG_MODIFIER),
                           withName = true)
                     }
 
-                Spacer(modifier = Modifier.height(DIALOG_SPACING))
+                Spacer(modifier = Modifier.height(ConstantAcceptedRequest.DIALOG_SMALL_SPACING))
 
                 // Description
                 Text(
@@ -376,38 +345,45 @@ private fun RequestDetailsDialog(
                     style = MaterialTheme.typography.bodyMedium,
                     color = appPalette().text.copy(alpha = WEIGHT_08))
 
-                Spacer(modifier = Modifier.height(DIALOG_SPACING))
+                Spacer(modifier = Modifier.height(ConstantAcceptedRequest.DIALOG_SPACING))
 
                 // Request types
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(DIALOG_SMALL_SPACING)) {
-                  items(request.requestType.size) { index ->
-                    TypeChip(requestType = request.requestType[index])
-                  }
-                }
+                LazyRow(
+                    horizontalArrangement =
+                        Arrangement.spacedBy(ConstantAcceptedRequest.DIALOG_SMALL_SPACING)) {
+                      items(request.requestType.size) { index ->
+                        TypeChip(requestType = request.requestType[index])
+                      }
+                    }
 
-                Spacer(modifier = Modifier.height(DIALOG_SPACING))
+                Spacer(modifier = Modifier.height(ConstantAcceptedRequest.DIALOG_SPACING))
 
                 // Location
-                DialogInfoRow(label = LABEL_LOCATION, value = request.locationName)
+                DialogInfoRow(
+                    label = ConstantAcceptedRequest.LABEL_LOCATION, value = request.locationName)
 
-                Spacer(modifier = Modifier.height(DIALOG_SMALL_SPACING))
+                Spacer(modifier = Modifier.height(ConstantAcceptedRequest.DIALOG_SMALL_SPACING))
 
                 // Start time
                 DialogInfoRow(
-                    label = LABEL_START_TIME, value = dateFormat.format(request.startTimeStamp))
+                    label = ConstantAcceptedRequest.LABEL_START_TIME,
+                    value = dateFormat.format(request.startTimeStamp))
 
-                Spacer(modifier = Modifier.height(DIALOG_SMALL_SPACING))
+                Spacer(modifier = Modifier.height(ConstantAcceptedRequest.DIALOG_SMALL_SPACING))
 
                 // Expiration time
                 DialogInfoRow(
-                    label = LABEL_EXPIRATION, value = dateFormat.format(request.expirationTime))
+                    label = ConstantAcceptedRequest.LABEL_EXPIRATION,
+                    value = dateFormat.format(request.expirationTime))
 
-                Spacer(modifier = Modifier.height(DIALOG_SMALL_SPACING))
+                Spacer(modifier = Modifier.height(ConstantAcceptedRequest.DIALOG_SMALL_SPACING))
 
                 // Number of people who accepted
-                DialogInfoRow(label = LABEL_HELPERS, value = request.people.size.toString())
+                DialogInfoRow(
+                    label = ConstantAcceptedRequest.LABEL_HELPERS,
+                    value = request.people.size.toString())
 
-                Spacer(modifier = Modifier.height(DIALOG_SPACING))
+                Spacer(modifier = Modifier.height(ConstantAcceptedRequest.DIALOG_SPACING))
 
                 // Close button
                 Button(
@@ -417,7 +393,7 @@ private fun RequestDetailsDialog(
                         ButtonDefaults.buttonColors(
                             containerColor = appPalette().accent,
                             contentColor = appPalette().onAccent)) {
-                      Text(DIALOG_CLOSE_BUTTON)
+                      Text(ConstantAcceptedRequest.DIALOG_CLOSE_BUTTON)
                     }
               }
         }
@@ -442,9 +418,12 @@ private const val LIGHT_WHITE = 0xFFF5F5F5
 private fun KudosStatusChip(kudosStatus: KudosStatus) {
   val (text, color, backgroundColor) =
       when (kudosStatus) {
-        KudosStatus.RECEIVED -> Triple(KUDOS_RECEIVED_TEXT, Color(GREEN), Color(WHITE))
-        KudosStatus.NOT_RECEIVED -> Triple(KUDOS_NOT_RECEIVED_TEXT, Color(RED), Color(GREY_WHITE))
-        KudosStatus.PENDING -> Triple(KUDOS_PENDING_TEXT, Color(BLACK), Color(LIGHT_WHITE))
+        KudosStatus.RECEIVED ->
+            Triple(ConstantAcceptedRequest.KUDOS_RECEIVED_TEXT, Color(GREEN), Color(WHITE))
+        KudosStatus.NOT_RECEIVED ->
+            Triple(ConstantAcceptedRequest.KUDOS_NOT_RECEIVED_TEXT, Color(RED), Color(GREY_WHITE))
+        KudosStatus.PENDING ->
+            Triple(ConstantAcceptedRequest.KUDOS_PENDING_TEXT, Color(BLACK), Color(LIGHT_WHITE))
       }
 
   Surface(
@@ -455,8 +434,11 @@ private fun KudosStatusChip(kudosStatus: KudosStatus) {
             text = text,
             color = color,
             fontWeight = FontWeight.Medium,
-            fontSize = FONT_SIZE_14,
-            modifier = Modifier.padding(horizontal = BADGE_SIZE, vertical = DIALOG_SMALL_SPACING))
+            fontSize = ConstantAcceptedRequest.FONT_SIZE_14,
+            modifier =
+                Modifier.padding(
+                    horizontal = ConstantAcceptedRequest.BADGE_SIZE,
+                    vertical = ConstantAcceptedRequest.DIALOG_SMALL_SPACING))
       }
 }
 
@@ -466,9 +448,9 @@ private fun DialogInfoRow(label: String, value: String) {
     Text(
         text = label,
         fontWeight = FontWeight.SemiBold,
-        fontSize = FONT_SIZE_14,
-        color = appPalette().text.copy(alpha = ALPHA_7))
-    Text(text = value, fontSize = FONT_SIZE_14)
+        fontSize = ConstantAcceptedRequest.FONT_SIZE_14,
+        color = appPalette().text.copy(alpha = ConstantAcceptedRequest.ALPHA_7))
+    Text(text = value, fontSize = ConstantAcceptedRequest.FONT_SIZE_14)
   }
 }
 
@@ -478,10 +460,10 @@ private fun EmptyState() {
       modifier = Modifier.fillMaxSize().testTag(AcceptedRequestsTestTags.EMPTY_MESSAGE),
       contentAlignment = Alignment.Center) {
         Text(
-            text = EMPTY_MESSAGE,
+            text = ConstantAcceptedRequest.EMPTY_MESSAGE,
             textAlign = TextAlign.Center,
             style = MaterialTheme.typography.bodyLarge,
-            color = appPalette().text.copy(alpha = ALPHA_6))
+            color = appPalette().text.copy(alpha = ConstantAcceptedRequest.ALPHA_6))
       }
 }
 
@@ -489,9 +471,11 @@ private fun EmptyState() {
 private fun ErrorDialog(message: String, onDismiss: () -> Unit) {
   AlertDialog(
       onDismissRequest = onDismiss,
-      title = { Text(ERROR_DIALOG_TITLE) },
+      title = { Text(ConstantAcceptedRequest.ERROR_DIALOG_TITLE) },
       text = {
         Text(text = message, modifier = Modifier.testTag(AcceptedRequestsTestTags.ERROR_DIALOG))
       },
-      confirmButton = { TextButton(onClick = onDismiss) { Text(ERROR_DIALOG_BUTTON) } })
+      confirmButton = {
+        TextButton(onClick = onDismiss) { Text(ConstantAcceptedRequest.ERROR_DIALOG_BUTTON) }
+      })
 }

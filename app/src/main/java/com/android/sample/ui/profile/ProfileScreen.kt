@@ -24,8 +24,6 @@ import com.google.firebase.auth.FirebaseAuth
  * - Sub-components are small, focused composables for readability and easier testing.
  * - Keeps behavior identical to previous implementation while improving maintainability.
  */
-const val PROFILE_OFFLINE_TEXT = "You are currently offline"
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
@@ -48,7 +46,7 @@ fun ProfileScreen(
               Column {
                 if (state.offlineMode) {
                   Text(
-                      PROFILE_OFFLINE_TEXT,
+                      ConstantProfile.PROFILE_OFFLINE_TEXT,
                       color = appPalette().error,
                       textAlign = TextAlign.Center,
                       modifier = Modifier.fillMaxWidth())

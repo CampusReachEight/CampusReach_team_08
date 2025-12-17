@@ -30,7 +30,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.model.profile.UserProfile
-import com.android.sample.ui.profile.PROFILE_OFFLINE_TEXT
 import com.android.sample.ui.profile.ProfileDimens
 import com.android.sample.ui.profile.ProfilePicture
 import com.android.sample.ui.profile.ProfileState
@@ -129,7 +128,7 @@ private fun PublicProfileScrollableContent(
 
     if (shownState.offlineMode) {
       Text(
-          PROFILE_OFFLINE_TEXT,
+          ConstantPublicProfile.PROFILE_OFFLINE_TEXT,
           color = appPalette().error,
           textAlign = TextAlign.Center,
           modifier = Modifier.fillMaxWidth())
@@ -149,13 +148,6 @@ private fun PublicProfileScrollableContent(
   }
 }
 
-private const val UNKNOWN = "Unknown"
-private const val NONE = "None"
-private const val MAX_LENGTH = 20
-private const val ONE_LINE = 1
-private const val BUTTON_WIDTH = 96
-private const val WEIGHT = 1f
-
 @Composable
 fun PublicProfileHeader(
     profile: UserProfile?,
@@ -167,14 +159,23 @@ fun PublicProfileHeader(
 ) {
   val accent = palette.accent
   val textColor = palette.onAccent
-  val maxNameLength = MAX_LENGTH
+  val maxNameLength = ConstantPublicProfile.MAX_LENGTH
   val uiUtils = com.android.sample.ui.UiUtils()
 
   val fullName =
       when {
-        profile == null -> UNKNOWN
+        profile == null -> ConstantPublicProfile.UNKNOWN
         profile.lastName.isBlank() -> profile.name
         else -> "${profile.name} ${profile.lastName}"
+      }
+
+  val sectionLabel =
+      try {
+        UserSections.entries
+            .firstOrNull { it.name.equals(profile?.section.toString(), ignoreCase = true) }
+            ?.label ?: profile?.section.toString()
+      } catch (e: Exception) {
+        ConstantPublicProfile.NONE
       }
 
   Card(
@@ -196,7 +197,7 @@ fun PublicProfileHeader(
             Spacer(modifier = Modifier.width(ProfileDimens.HeaderSpacer))
 
             // Column takes remaining space so texts will ellipsize based on available width
-            Column(modifier = Modifier.weight(WEIGHT)) {
+            Column(modifier = Modifier.weight(ConstantPublicProfile.WEIGHT)) {
               Text(
                   text = fullName,
                   style = MaterialTheme.typography.titleMedium,
@@ -204,7 +205,7 @@ fun PublicProfileHeader(
                   modifier =
                       Modifier.fillMaxWidth()
                           .testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_NAME),
-                  maxLines = ONE_LINE,
+                  maxLines = ConstantPublicProfile.ONE_LINE,
                   softWrap = false,
                   overflow = TextOverflow.Ellipsis)
               Text(
@@ -213,14 +214,14 @@ fun PublicProfileHeader(
                         uiUtils.ellipsizeWithMiddle(
                             profile.email, maxLength = maxNameLength, keepSuffixLength = 10)
                       } else {
-                        UNKNOWN
+                        ConstantPublicProfile.UNKNOWN
                       },
                   style = MaterialTheme.typography.bodyMedium,
                   color = textColor,
                   modifier =
                       Modifier.fillMaxWidth()
                           .testTag(PublicProfileTestTags.PUBLIC_PROFILE_HEADER_EMAIL),
-                  maxLines = ONE_LINE,
+                  maxLines = ConstantPublicProfile.ONE_LINE,
                   softWrap = false,
                   overflow = TextOverflow.Ellipsis)
             }
@@ -237,9 +238,6 @@ fun PublicProfileHeader(
       }
 }
 
-private const val UNFOLLOW = "Unfollow"
-private const val FOLLOW = "Follow"
-
 @Composable
 fun FollowButton(isFollowing: Boolean, onToggle: () -> Unit, isOperationInProgress: Boolean) {
   val tag =
@@ -253,27 +251,25 @@ fun FollowButton(isFollowing: Boolean, onToggle: () -> Unit, isOperationInProgre
           ButtonDefaults.elevatedButtonColors(
               containerColor = appPalette().onAccent, contentColor = appPalette().accent)) {
         Text(
-            text = if (isFollowing) UNFOLLOW else FOLLOW,
-            maxLines = ONE_LINE,
+            text =
+                if (isFollowing) ConstantPublicProfile.UNFOLLOW else ConstantPublicProfile.FOLLOW,
+            maxLines = ConstantPublicProfile.ONE_LINE,
             softWrap = false,
             overflow = TextOverflow.Ellipsis)
       }
 }
 
-private const val ZERO = 0
-private const val FORMAT = "dd/MM/yyyy"
-
 fun mapUserProfileToProfileState(userProfile: UserProfile?): ProfileState {
   if (userProfile == null) {
     return ProfileState(
         isLoading = false,
-        userName = UNKNOWN,
-        userSection = NONE,
+        userName = ConstantPublicProfile.UNKNOWN,
+        userSection = ConstantPublicProfile.NONE,
         profilePictureUrl = null,
-        kudosReceived = ZERO,
-        helpReceived = ZERO,
-        followers = ZERO,
-        following = ZERO,
+        kudosReceived = ConstantPublicProfile.ZERO,
+        helpReceived = ConstantPublicProfile.ZERO,
+        followers = ConstantPublicProfile.ZERO,
+        following = ConstantPublicProfile.ZERO,
         isLoggingOut = false,
         isEditMode = false)
   }
@@ -291,7 +287,7 @@ fun mapUserProfileToProfileState(userProfile: UserProfile?): ProfileState {
             .firstOrNull { it.name.equals(userProfile.section.toString(), ignoreCase = true) }
             ?.label ?: userProfile.section.toString()
       } catch (e: Exception) {
-        NONE
+        ConstantPublicProfile.NONE
       }
 
   return ProfileState(
@@ -306,7 +302,7 @@ fun mapUserProfileToProfileState(userProfile: UserProfile?): ProfileState {
       arrivalDate =
           try {
             java.text
-                .SimpleDateFormat(FORMAT, java.util.Locale.getDefault())
+                .SimpleDateFormat(ConstantPublicProfile.FORMAT, java.util.Locale.getDefault())
                 .format(userProfile.arrivalDate)
           } catch (e: Exception) {
             ""

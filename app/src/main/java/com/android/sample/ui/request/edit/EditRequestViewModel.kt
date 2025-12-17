@@ -26,9 +26,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-private const val LOCATION_PERMISSION_REQUIRED =
-    "Location permission is required to use current location"
-
 /**
  * ViewModel for the EditRequest screen. Handles both creating new requests and editing existing
  * ones.
@@ -374,7 +371,9 @@ class EditRequestViewModel(
   /** Set location permission error message */
   fun setLocationPermissionError() {
     _uiState.update {
-      it.copy(errorMessage = LOCATION_PERMISSION_REQUIRED, isSearchingLocation = false)
+      it.copy(
+          errorMessage = ConstantRequestEdit.LOCATION_PERMISSION_REQUIRED,
+          isSearchingLocation = false)
     }
   }
 
