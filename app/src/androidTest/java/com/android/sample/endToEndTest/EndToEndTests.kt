@@ -109,11 +109,8 @@ class EndToEndTests : BaseEmulatorTest() {
 
   @After
   override fun tearDown() {
-    try {
-      composeTestRule.waitForIdle()
-    } catch (_: Exception) {}
-
     super.tearDown()
+    composeTestRule.activityRule.scenario.close()
   }
 
   // initialize all you want for an end to end test
@@ -360,8 +357,8 @@ class EndToEndTests : BaseEmulatorTest() {
 
     composeTestRule.waitForIdle()
 
-    /*composeTestRule.waitUntilAtLeastOneExists(
-    matcher = hasTestTag(NavigationTestTags.REQUESTS_SCREEN), timeoutMillis = UI_WAIT_TIMEOUT)*/
+    composeTestRule.waitUntilAtLeastOneExists(
+        matcher = hasTestTag(NavigationTestTags.REQUESTS_SCREEN), timeoutMillis = UI_WAIT_TIMEOUT)
   }
 
   private fun logOut() {
