@@ -27,76 +27,48 @@ class ProfileViewModel(
     private val repository: UserProfileRepository =
         UserProfileRepositoryFirestore(FirebaseFirestore.getInstance()),
     private val onLogout: (() -> Unit)? = null,
-    private val attachAuthListener: Boolean = true,
     private val profileCache: UserProfileCache? = null
 ) : ViewModel() {
   private val _state = MutableStateFlow(initialState)
   val state: StateFlow<ProfileState> = _state.asStateFlow()
-
   private var loadedProfile: UserProfile? = null
-  private var hasHandledInitialAuth = false
 
-  private val authListener =
-      FirebaseAuth.AuthStateListener { auth ->
-        viewModelScope.launch { handleAuthUser(auth.currentUser) }
+  fun loadUserProfile(user: FirebaseUser?) {
+    viewModelScope.launch {
+      if (user == null) {
+        loadedProfile = null
+        _state.value = ProfileState.empty().copy(isLoading = false)
+        return@launch
       }
 
-  init {
-    if (attachAuthListener) {
-      fireBaseAuth.addAuthStateListener(authListener)
-      // Trigger initial load immediately if user is already signed in
-      viewModelScope.launch {
-        val currentUser = fireBaseAuth.currentUser
-        if (currentUser != null && !hasHandledInitialAuth) {
-          hasHandledInitialAuth = true
-          handleAuthUser(currentUser)
-        }
-      }
-    }
-  }
+      setError(null)
 
-  override fun onCleared() {
-    super.onCleared()
-    if (attachAuthListener) {
-      fireBaseAuth.removeAuthStateListener(authListener)
-    }
-  }
-
-  private suspend fun handleAuthUser(user: FirebaseUser?) {
-    if (user == null) {
-      loadedProfile = null
-      _state.value = ProfileState.empty()
-      return
-    }
-
-    setLoading(true)
-    setError(null)
-
-    try {
-      // Try load private profile (owner)
-      var profile: UserProfile
       try {
-        profile = repository.getUserProfile(user.uid)
-        _state.update { it.copy(offlineMode = false) }
-      } catch (_: Exception) {
+        // Try load private profile (owner)
+        var profile: UserProfile
         try {
-          profile = profileCache!!.getProfileById(user.uid)
-          _state.update { it.copy(offlineMode = true) }
+          profile = repository.getUserProfile(user.uid)
+          _state.update { it.copy(offlineMode = false) }
         } catch (_: Exception) {
-          throw Exception("Profile not found in backend or cache")
+          try {
+            profile = profileCache!!.getProfileById(user.uid)
+            _state.update { it.copy(offlineMode = true) }
+          } catch (_: Exception) {
+            throw Exception("Profile not found in backend or cache")
+          }
         }
+
+        loadedProfile = profile
+
+        // Calculate leaderboard position
+        val position = calculateLeaderboardPosition(profile.id)
+
+        mapProfileToState(profile, position)
+      } catch (_: Exception) {
+        setError("Failed to load profile")
+      } finally {
+        setLoading(false)
       }
-
-      loadedProfile = profile
-
-      // Calculate leaderboard position
-      val position = calculateLeaderboardPosition(profile.id)
-
-      mapProfileToState(profile, position)
-    } catch (_: Exception) {
-      setError("Failed to load profile")
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -262,5 +234,25 @@ class ProfileViewModel(
 
   fun onAcceptedRequestsClick(navigationActions: NavigationActions?) {
     navigationActions?.navigateTo(Screen.AcceptedRequests)
+  }
+}
+
+class ProfileViewModelFactory(
+    private val onLogout: (() -> Unit)? = null,
+    private val profileCache: UserProfileCache? = null,
+    private val userProfileRepository: UserProfileRepository,
+    val initialState: ProfileState = ProfileState.default()
+) : androidx.lifecycle.ViewModelProvider.Factory {
+  @Suppress("UNCHECKED_CAST")
+  override fun <T : ViewModel> create(modelClass: Class<T>): T {
+    if (modelClass.isAssignableFrom(ProfileViewModel::class.java)) {
+      return ProfileViewModel(
+          onLogout = onLogout,
+          profileCache = profileCache,
+          repository = userProfileRepository,
+          initialState = initialState)
+          as T
+    }
+    throw IllegalArgumentException("Unknown ViewModel class")
   }
 }

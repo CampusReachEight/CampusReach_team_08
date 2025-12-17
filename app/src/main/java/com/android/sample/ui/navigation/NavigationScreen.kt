@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -42,6 +43,7 @@ import com.android.sample.ui.overview.AcceptRequestScreen
 import com.android.sample.ui.overview.AcceptRequestViewModel
 import com.android.sample.ui.profile.ProfileScreen
 import com.android.sample.ui.profile.ProfileViewModel
+import com.android.sample.ui.profile.ProfileViewModelFactory
 import com.android.sample.ui.profile.accepted_requests.AcceptedRequestsScreen
 import com.android.sample.ui.profile.accepted_requests.AcceptedRequestsViewModel
 import com.android.sample.ui.profile.accepted_requests.AcceptedRequestsViewModelFactory
@@ -82,6 +84,12 @@ fun NavigationScreen(
   val user = FirebaseAuth.getInstance().currentUser
   var isSignedIn by rememberSaveable { mutableStateOf(user != null) }
   val startDestination = if (!isSignedIn) "login" else "requests"
+
+  LaunchedEffect(isSignedIn) {
+    if (isSignedIn) {
+      navigationActions.navigateTo(Screen.Requests)
+    }
+  }
 
   // repositories
   val requestRepository = RequestRepositoryFirestore(Firebase.firestore)
@@ -145,6 +153,17 @@ fun NavigationScreen(
           factory =
               AcceptedRequestsViewModelFactory(
                   requestRepository = requestRepository, requestCache = requestCache))
+
+  val profileViewModel: ProfileViewModel =
+      viewModel(
+          factory =
+              ProfileViewModelFactory(
+                  userProfileRepository = userProfileRepository,
+                  profileCache = profileCache,
+                  onLogout = {
+                    isSignedIn = false
+                    navigationActions.navigateTo(Screen.Login)
+                  }))
 
   NavHost(
       navController = navController,
@@ -234,15 +253,7 @@ fun NavigationScreen(
     navigation(startDestination = Screen.Profile.route, route = "profile") {
       composable(Screen.Profile.route) { navBackStackEntry ->
         ProfileScreen(
-            viewModel =
-                ProfileViewModel(
-                    profileCache = profileCache,
-                    onLogout = {
-                      isSignedIn = false
-                      navController.navigate(Screen.Login.route) {
-                        popUpTo(0) // Clears the back stack
-                      }
-                    }),
+            viewModel = profileViewModel,
             onBackClick = { navigationActions.goBack() },
             navigationActions = navigationActions)
       }
