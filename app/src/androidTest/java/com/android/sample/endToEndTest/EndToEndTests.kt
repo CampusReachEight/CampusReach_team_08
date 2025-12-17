@@ -378,10 +378,6 @@ class EndToEndTests : BaseEmulatorTest() {
 
     composeTestRule.waitForIdle()
 
-    composeTestRule.waitUntilAtLeastOneExists(
-        matcher = hasTestTag(NavigationTestTags.REQUESTS_SCREEN),
-        timeoutMillis = UI_WAIT_TIMEOUT * 3)
-
     composeTestRule.onNodeWithTag(NavigationTestTags.REQUESTS_SCREEN).assertIsDisplayed()
   }
 
