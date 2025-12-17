@@ -2,6 +2,9 @@ package com.android.sample.ui.communication.messages
 
 import com.android.sample.model.chat.Chat
 import com.android.sample.model.chat.ChatRepository
+import com.android.sample.model.request.Request
+import com.android.sample.model.request.RequestRepositoryFirestore
+import com.android.sample.model.request.RequestStatus
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import io.mockk.*
@@ -56,10 +59,20 @@ class MessagesViewModelTest {
   private lateinit var firebaseAuth: FirebaseAuth
   private lateinit var firebaseUser: FirebaseUser
   private lateinit var viewModel: MessagesViewModel
-
+  private lateinit var requestRepository: RequestRepositoryFirestore
   private val testDispatcher = StandardTestDispatcher()
 
   // ============ Test Lifecycle ============
+  /** Creates a mock request with the given status. */
+  private fun mockRequest(requestId: String, status: RequestStatus): Request {
+    return mockk {
+      every { this@mockk.requestId } returns requestId
+      every { this@mockk.status } returns status
+      every { viewStatus } returns status
+      every { this@mockk.title } returns "Test Request"
+      every { expirationTime } returns Date(System.currentTimeMillis() + 86400000L) // Future date
+    }
+  }
 
   @Before
   fun setUp() {
@@ -68,7 +81,7 @@ class MessagesViewModelTest {
     chatRepository = mockk(relaxed = true)
     firebaseAuth = mockk(relaxed = true)
     firebaseUser = mockk(relaxed = true)
-
+    requestRepository = mockk(relaxed = true)
     // Mock Firebase Auth
     every { firebaseAuth.currentUser } returns firebaseUser
     every { firebaseUser.uid } returns CURRENT_USER_ID
@@ -146,7 +159,7 @@ class MessagesViewModelTest {
 
   /** Initializes ViewModel and waits for initial load to complete. */
   private suspend fun initializeViewModel() {
-    viewModel = MessagesViewModel(chatRepository, firebaseAuth)
+    viewModel = MessagesViewModel(chatRepository, requestRepository, firebaseAuth)
     testDispatcher.scheduler.advanceUntilIdle()
   }
 
@@ -202,7 +215,7 @@ class MessagesViewModelTest {
     coEvery { chatRepository.getUserChats(CURRENT_USER_ID) } returns chats
 
     // When
-    viewModel = MessagesViewModel(chatRepository, firebaseAuth)
+    viewModel = MessagesViewModel(chatRepository, requestRepository, firebaseAuth)
 
     // Then - Initially loading
     assertTrue("Should be loading initially", viewModel.uiState.value.isLoading)
@@ -487,5 +500,65 @@ class MessagesViewModelTest {
     assertEquals("Request title should match", REQUEST_TITLE_1, loadedChat.requestTitle)
     assertEquals("Last message should match", LAST_MESSAGE_1, loadedChat.lastMessage)
     assertEquals("Creator ID should match", CURRENT_USER_ID, loadedChat.creatorId)
+  }
+
+  @Test
+  fun loadChats_filtersOutExpiredRequests() = runTest {
+    // Given
+    val activeChat = createChatAsCreator(CHAT_ID_1)
+    val expiredChat = createChatAsCreator(CHAT_ID_2)
+
+    coEvery { chatRepository.getUserChats(CURRENT_USER_ID) } returns listOf(activeChat, expiredChat)
+
+    // Mock: First request is active, second is expired
+    coEvery { requestRepository.getRequest(CHAT_ID_1) } returns
+        mockRequest(CHAT_ID_1, RequestStatus.OPEN)
+    coEvery { requestRepository.getRequest(CHAT_ID_2) } returns
+        mockRequest(CHAT_ID_2, RequestStatus.COMPLETED)
+
+    // When
+    initializeViewModel()
+
+    // Then
+    assertUiState(
+        expectedChatCount = EXPECTED_ONE_CHAT, // Only active chat shown
+        expectedIsLoading = false)
+  }
+
+  @Test
+  fun loadChats_filtersOutCancelledRequests() = runTest {
+    // Given
+    val activeChat = createChatAsCreator(CHAT_ID_1)
+    val cancelledChat = createChatAsCreator(CHAT_ID_2)
+
+    coEvery { chatRepository.getUserChats(CURRENT_USER_ID) } returns
+        listOf(activeChat, cancelledChat)
+
+    coEvery { requestRepository.getRequest(CHAT_ID_1) } returns
+        mockRequest(CHAT_ID_1, RequestStatus.OPEN)
+    coEvery { requestRepository.getRequest(CHAT_ID_2) } returns
+        mockRequest(CHAT_ID_2, RequestStatus.CANCELLED)
+
+    // When
+    initializeViewModel()
+
+    // Then
+    assertUiState(expectedChatCount = EXPECTED_ONE_CHAT, expectedIsLoading = false)
+  }
+
+  @Test
+  fun loadChats_excludesChatWhenRequestNotFound() = runTest {
+    // Given
+    val chat = createChatAsCreator()
+    coEvery { chatRepository.getUserChats(CURRENT_USER_ID) } returns listOf(chat)
+
+    // Request doesn't exist - throw exception
+    coEvery { requestRepository.getRequest(CHAT_ID_1) } throws Exception("Request not found")
+
+    // When
+    initializeViewModel()
+
+    // Then
+    assertUiState(expectedChatCount = EXPECTED_ZERO_CHATS, expectedIsLoading = false)
   }
 }

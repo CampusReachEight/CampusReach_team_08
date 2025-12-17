@@ -83,6 +83,8 @@ class ChatViewModel(
         // Start listening to messages in real-time
         val lastTimestamp = messages.lastOrNull()?.timestamp ?: Date()
         listenToNewMessages(chatId, lastTimestamp)
+
+        // Start listening to chat metadata changes (status, etc.)
       } catch (e: Exception) {
         val friendly =
             e.message?.takeIf { it.isNotBlank() } ?: "Failed to load chat. Please try again."
@@ -213,6 +215,8 @@ class ChatViewModel(
   fun refresh() {
     currentChatId?.let { initializeChat(it) }
   }
+
+  fun getProfileRepository(): UserProfileRepository = profileRepository
 }
 
 const val UNKNOWN_VIEW_MODEL_ERROR = "Unknown ViewModel class"

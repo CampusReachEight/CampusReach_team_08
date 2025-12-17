@@ -24,7 +24,6 @@ import com.android.sample.ui.theme.UiDimens
 import com.android.sample.ui.theme.appPalette
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
-import java.text.SimpleDateFormat
 import java.util.*
 
 // Test Tags
@@ -97,7 +96,6 @@ fun MessageBubble(
       verticalAlignment = Alignment.Top,
       horizontalArrangement = if (isOwnMessage) Arrangement.End else Arrangement.Start) {
         // Profile picture (only for other's messages)
-        // Profile picture (only for other's messages)
         if (!isOwnMessage) {
           Box(
               modifier =
@@ -118,64 +116,53 @@ fun MessageBubble(
                     withName = false)
               }
         }
-      }
 
-  // Message bubble container
-  Box(
-      modifier =
-          Modifier.fillMaxWidth(maxWidthFraction)
-              .wrapContentWidth(if (isOwnMessage) Alignment.End else Alignment.Start)) {
-        Column(
+        // Message bubble container
+        Box(
             modifier =
-                Modifier.clip(
-                        RoundedCornerShape(
-                            topStart =
-                                if (isOwnMessage) MessageBubbleDimens.NO_PADDING.dp
-                                else MessageBubbleDimens.BubbleCornerRadius.dp,
-                            topEnd = MessageBubbleDimens.BubbleCornerRadius.dp,
-                            bottomStart = MessageBubbleDimens.BubbleCornerRadius.dp,
-                            bottomEnd =
-                                if (isOwnMessage) MessageBubbleDimens.NO_PADDING.dp
-                                else MessageBubbleDimens.BubbleCornerRadius.dp))
-                    .background(bubbleColor)
-                    .padding(MessageBubbleDimens.BubblePadding.dp)
-                    .testTag(MessageBubbleTestTags.BUBBLE),
-            verticalArrangement = Arrangement.spacedBy(UiDimens.SpacingXs)) {
-              // Sender Name (only for other's messages)
-              if (!isOwnMessage) {
-                Text(
-                    text = message.senderName,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = textColor.copy(alpha = MessageBubbleConstants.SENDER_NAME_ALPHA),
-                    modifier = Modifier.testTag(MessageBubbleTestTags.SENDER_NAME))
-              }
-
-              // Message Text
-              Text(
-                  text = message.text,
-                  style = MaterialTheme.typography.bodyMedium,
-                  color = textColor,
-                  modifier = Modifier.testTag(MessageBubbleTestTags.MESSAGE_TEXT))
-
-              // Timestamp
-              Text(
-                  text = formatTimestamp(message.timestamp),
-                  style = MaterialTheme.typography.labelSmall,
-                  color = textColor.copy(alpha = MessageBubbleConstants.TIMESTAMP_ALPHA),
+                Modifier.fillMaxWidth(maxWidthFraction)
+                    .wrapContentWidth(if (isOwnMessage) Alignment.End else Alignment.Start)) {
+              Column(
                   modifier =
-                      Modifier.align(if (isOwnMessage) Alignment.End else Alignment.Start)
-                          .testTag(MessageBubbleTestTags.TIMESTAMP))
+                      Modifier.clip(
+                              RoundedCornerShape(
+                                  topStart =
+                                      if (isOwnMessage) MessageBubbleDimens.NO_PADDING.dp
+                                      else MessageBubbleDimens.BubbleCornerRadius.dp,
+                                  topEnd = MessageBubbleDimens.BubbleCornerRadius.dp,
+                                  bottomStart = MessageBubbleDimens.BubbleCornerRadius.dp,
+                                  bottomEnd =
+                                      if (isOwnMessage) MessageBubbleDimens.NO_PADDING.dp
+                                      else MessageBubbleDimens.BubbleCornerRadius.dp))
+                          .background(bubbleColor)
+                          .padding(MessageBubbleDimens.BubblePadding.dp)
+                          .testTag(MessageBubbleTestTags.BUBBLE),
+                  verticalArrangement = Arrangement.spacedBy(UiDimens.SpacingXs)) {
+                    // Sender Name (only for other's messages)
+                    if (!isOwnMessage) {
+                      Text(
+                          text = message.senderName,
+                          style = MaterialTheme.typography.labelSmall,
+                          color = textColor.copy(alpha = MessageBubbleConstants.SENDER_NAME_ALPHA),
+                          modifier = Modifier.testTag(MessageBubbleTestTags.SENDER_NAME))
+                    }
+
+                    // Message Text
+                    Text(
+                        text = message.text,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = textColor,
+                        modifier = Modifier.testTag(MessageBubbleTestTags.MESSAGE_TEXT))
+
+                    // Timestamp
+                    Text(
+                        text = formatTimestamp(message.timestamp),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = textColor.copy(alpha = MessageBubbleConstants.TIMESTAMP_ALPHA),
+                        modifier =
+                            Modifier.align(if (isOwnMessage) Alignment.End else Alignment.Start)
+                                .testTag(MessageBubbleTestTags.TIMESTAMP))
+                  }
             }
       }
-}
-
-/**
- * Formats a timestamp to a time string.
- *
- * @param date The date to format
- * @return Formatted string (e.g., "14:30")
- */
-private fun formatTimestamp(date: Date): String {
-  val formatter = SimpleDateFormat(MessageBubbleConstants.TIMESTAMP_PATTERN, Locale.getDefault())
-  return formatter.format(date)
 }

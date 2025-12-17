@@ -156,14 +156,11 @@ class ChatScreenTest : BaseEmulatorTest() {
    *
    * @param expectReadOnly If true, waits for read-only message bar; otherwise waits for input bar
    */
-  private fun waitForChatToLoad(expectReadOnly: Boolean = false) {
-    val tagToWaitFor = if (expectReadOnly) READ_ONLY_MESSAGE_TAG else MESSAGE_INPUT_TAG
-
+  private fun waitForChatToLoad() {
     composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
-      composeTestRule.onAllNodesWithTag(tagToWaitFor).fetchSemanticsNodes().isNotEmpty()
+      composeTestRule.onAllNodesWithTag(MESSAGE_INPUT_TAG).fetchSemanticsNodes().isNotEmpty()
     }
   }
-
   /** Waits for the chat title to appear in the UI. */
   private fun waitForChatTitle() {
     composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
@@ -347,54 +344,9 @@ class ChatScreenTest : BaseEmulatorTest() {
   fun chatScreen_openChat_showsMessageInput() {
     createTestChatBlocking(STATUS_OPEN)
     setContent()
-    waitForChatToLoad(expectReadOnly = false)
+    waitForChatToLoad()
 
     composeTestRule.onNodeWithTag(MESSAGE_INPUT_TAG).assertExists().assertIsDisplayed()
-  }
-
-  @Test
-  fun chatScreen_completedChat_showsCorrectReadOnlyMessage() {
-    createTestChatBlocking(STATUS_COMPLETED)
-    setContent()
-    waitForChatToLoad(expectReadOnly = true)
-
-    composeTestRule.onNodeWithTag(READ_ONLY_MESSAGE_TAG).assertExists().assertIsDisplayed()
-  }
-
-  @Test
-  fun chatScreen_expiredChat_showsCorrectReadOnlyMessage() {
-    createTestChatBlocking(STATUS_EXPIRED)
-    setContent()
-    waitForChatToLoad(expectReadOnly = true)
-
-    composeTestRule.onNodeWithTag(READ_ONLY_MESSAGE_TAG).assertExists().assertIsDisplayed()
-  }
-
-  @Test
-  fun chatScreen_cancelledChat_showsCorrectReadOnlyMessage() {
-    createTestChatBlocking(STATUS_CANCELLED)
-    setContent()
-    waitForChatToLoad(expectReadOnly = true)
-
-    composeTestRule.onNodeWithTag(READ_ONLY_MESSAGE_TAG).assertExists().assertIsDisplayed()
-  }
-
-  @Test
-  fun chatScreen_completedChat_hidesMessageInput() {
-    createTestChatBlocking(STATUS_COMPLETED)
-    setContent()
-    waitForChatToLoad(expectReadOnly = true)
-
-    composeTestRule.onNodeWithTag(MESSAGE_INPUT_TAG).assertDoesNotExist()
-  }
-
-  @Test
-  fun chatScreen_cancelledChat_hidesSendButton() {
-    createTestChatBlocking(STATUS_CANCELLED)
-    setContent()
-    waitForChatToLoad(expectReadOnly = true)
-
-    composeTestRule.onNodeWithTag(SEND_BUTTON_TAG).assertDoesNotExist()
   }
 
   // ==================== LOADING INDICATOR TESTS ====================

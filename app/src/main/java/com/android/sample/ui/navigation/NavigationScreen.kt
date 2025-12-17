@@ -204,7 +204,8 @@ fun NavigationScreen(
                       ValidateRequestViewModelFactory(
                           requestId = id,
                           requestRepository = requestRepository,
-                          userProfileRepository = userProfileRepository))
+                          userProfileRepository = userProfileRepository,
+                          chatRepository = chatRepository))
           ValidateRequestScreen(
               state = validateRequestViewModel.state,
               userProfileRepository = userProfileRepository,

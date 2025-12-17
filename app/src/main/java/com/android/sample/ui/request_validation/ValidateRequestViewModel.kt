@@ -6,6 +6,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.android.sample.model.chat.ChatRepository
 import com.android.sample.model.profile.UserProfile
 import com.android.sample.model.profile.UserProfileRepository
 import com.android.sample.model.request.CloseRequestUseCase
@@ -78,7 +79,8 @@ private const val FAILED_TO_CLOSE_REQUEST_ERROR = "Failed to close request:"
 class ValidateRequestViewModel(
     private val requestId: String,
     private val requestRepository: RequestRepository,
-    private val userProfileRepository: UserProfileRepository
+    private val userProfileRepository: UserProfileRepository,
+    private val chatRepository: ChatRepository
 ) : ViewModel() {
 
   var state by mutableStateOf<ValidationState>(ValidationState.Loading)
@@ -212,6 +214,7 @@ class ValidateRequestViewModel(
   }
 
   /** Confirms and executes the request closure with kudos awards. */
+  /** Confirms and executes the request closure with kudos awards. */
   fun confirmAndClose() {
     val currentState = state
     if (currentState !is ValidationState.Confirming) return
@@ -223,13 +226,18 @@ class ValidateRequestViewModel(
         // Extract selected helper IDs
         val selectedHelperIds = currentState.selectedHelpers.map { it.id }
 
-        // NEW: Use the use case instead of calling repository directly
+        // Use the use case to close request and award kudos
         when (val result = closeRequestUseCase.execute(requestId, selectedHelperIds)) {
           is com.android.sample.model.request.CloseRequestResult.Success -> {
+            try {
+              chatRepository.deleteChat(requestId)
+            } catch (e: Exception) {}
             state = ValidationState.Success
           }
           is com.android.sample.model.request.CloseRequestResult.PartialSuccess -> {
-            // Request closed but some kudos failed - still count as success for UI
+            try {
+              chatRepository.deleteChat(requestId)
+            } catch (e: Exception) {}
             state = ValidationState.Success
           }
           is com.android.sample.model.request.CloseRequestResult.Failure -> {
@@ -267,7 +275,8 @@ private const val UNKNOWN_VIEW_MODEL_CLASS = "Unknown ViewModel class"
 class ValidateRequestViewModelFactory(
     private val requestId: String,
     private val requestRepository: RequestRepository,
-    private val userProfileRepository: UserProfileRepository
+    private val userProfileRepository: UserProfileRepository,
+    private val chatRepository: ChatRepository
 ) : ViewModelProvider.Factory {
 
   @Suppress("UNCHECKED_CAST")
@@ -276,7 +285,8 @@ class ValidateRequestViewModelFactory(
       return ValidateRequestViewModel(
           requestId = requestId,
           requestRepository = requestRepository,
-          userProfileRepository = userProfileRepository)
+          userProfileRepository = userProfileRepository,
+          chatRepository = chatRepository)
           as T
     }
     throw IllegalArgumentException(UNKNOWN_VIEW_MODEL_CLASS)

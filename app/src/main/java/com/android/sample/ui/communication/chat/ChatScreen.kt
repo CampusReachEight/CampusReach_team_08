@@ -4,20 +4,13 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.AccessTime
-import androidx.compose.material.icons.filled.Cancel
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -27,16 +20,16 @@ import com.android.sample.ui.theme.appPalette
 
 // Test Tags
 private object ChatScreenTestTags {
-  const val SCREEN = "chat_screen"
+  // const val SCREEN = "chat_screen"
   const val TOP_BAR = "chat_top_bar"
   const val BACK_BUTTON = "chat_back_button"
   const val LOADING_INDICATOR = "chat_loading_indicator"
-  const val ERROR_MESSAGE = "chat_error_message"
+  // const val ERROR_MESSAGE = "chat_error_message"
   const val MESSAGE_LIST = "chat_message_list"
   const val MESSAGE_INPUT = "chat_message_input"
   const val SEND_BUTTON = "chat_send_button"
   const val INPUT_ROW = "chat_input_row"
-  const val READ_ONLY_MESSAGE = "chat_read_only_message"
+  // const val READ_ONLY_MESSAGE = "chat_read_only_message"
   const val LOADING_MORE_INDICATOR = "chat_loading_more_indicator"
 }
 
@@ -46,7 +39,7 @@ private object ChatScreenConstants {
   const val SEND_BUTTON_DESCRIPTION = "Send message"
   const val MESSAGE_INPUT_PLACEHOLDER = "Type a message..."
   const val ERROR_DISMISS = "Dismiss"
-
+  /*
   // Read-only messages
   const val CHAT_COMPLETED = "Request completed"
   const val CHAT_EXPIRED = "Request expired"
@@ -62,12 +55,14 @@ private object ChatScreenConstants {
   const val STATUS_TEXT_ALPHA = 0.7f
   const val STATUS_LOCK_ALPHA = 0.4f
   const val STATUS_BACKGROUND_ALPHA = 0.1f
-  const val LOADING_MORE_ICON_SIZE_DP = 24
+
 
   // Colors
   val COLOR_COMPLETED = Color(0xFF4CAF50)
   val COLOR_EXPIRED = Color(0xFFFF9800)
   val COLOR_CANCELLED = Color(0xFFF44336)
+    */
+  const val LOADING_MORE_ICON_SIZE_DP = 24
 }
 
 private const val WEIGHT = 1f
@@ -103,8 +98,6 @@ fun ChatScreen(
   val uiState by viewModel.uiState.collectAsState()
   val listState = rememberLazyListState()
   val snackbarHostState = remember { SnackbarHostState() }
-
-  val isExpired = uiState.chat?.let { isRequestExpired(it.requestStatus) } ?: false
 
   // Initialize chat when screen is created
   LaunchedEffect(chatId) { viewModel.initializeChat(chatId) }
@@ -156,17 +149,12 @@ fun ChatScreen(
       },
       snackbarHost = { SnackbarHost(snackbarHostState) },
       bottomBar = {
-        // Only show bottom bar when chat is loaded
-        uiState.chat?.let { chat ->
-          if (!isRequestExpired(chat.requestStatus)) {
-            MessageInputBar(
-                messageText = uiState.messageInput,
-                onMessageChange = viewModel::updateMessageInput,
-                onSendClick = { viewModel.sendMessage(uiState.messageInput) },
-                isSending = uiState.isSendingMessage)
-          } else {
-            ReadOnlyMessageBar(requestStatus = chat.requestStatus)
-          }
+        uiState.chat?.let {
+          MessageInputBar(
+              messageText = uiState.messageInput,
+              onMessageChange = viewModel::updateMessageInput,
+              onSendClick = { viewModel.sendMessage(uiState.messageInput) },
+              isSending = uiState.isSendingMessage)
         }
       }) { paddingValues ->
         Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
@@ -215,6 +203,7 @@ fun ChatScreen(
                             message = message,
                             isOwnMessage = message.senderId == uiState.currentUserProfile?.id,
                             onProfileClick = onProfileClick,
+                            profileRepository = viewModel.getProfileRepository(),
                             modifier =
                                 Modifier.padding(vertical = MessageBubbleDimens.MessageSpacing.dp))
                       }
@@ -235,10 +224,6 @@ fun ChatScreen(
           }
         }
       }
-}
-/** Checks if a request status indicates the chat is read-only. */
-private fun isRequestExpired(status: String?): Boolean {
-  return status in listOf("COMPLETED", "EXPIRED", "CANCELLED")
 }
 /**
  * Message input bar at the bottom of the screen.
@@ -297,96 +282,6 @@ private fun MessageInputBar(
                         tint =
                             if (messageText.isNotBlank() && !isSending) appPalette().accent
                             else appPalette().secondary)
-                  }
-            }
-      }
-}
-
-/**
- * Read-only message bar shown for expired/completed chats.
- *
- * @param requestStatus The status of the request
- */
-@Composable
-private fun ReadOnlyMessageBar(requestStatus: String?) {
-  data class StatusInfo(val icon: ImageVector, val text: String, val backgroundColor: Color)
-
-  val statusInfo: StatusInfo =
-      when (requestStatus) {
-        "COMPLETED" ->
-            StatusInfo(
-                icon = Icons.Filled.CheckCircle,
-                text = ChatScreenConstants.CHAT_COMPLETED,
-                backgroundColor =
-                    ChatScreenConstants.COLOR_COMPLETED.copy(
-                        alpha = ChatScreenConstants.STATUS_BACKGROUND_ALPHA))
-        "EXPIRED" ->
-            StatusInfo(
-                icon = Icons.Filled.AccessTime,
-                text = ChatScreenConstants.CHAT_EXPIRED,
-                backgroundColor =
-                    ChatScreenConstants.COLOR_EXPIRED.copy(
-                        alpha = ChatScreenConstants.STATUS_BACKGROUND_ALPHA))
-        "CANCELLED" ->
-            StatusInfo(
-                icon = Icons.Filled.Cancel,
-                text = ChatScreenConstants.CHAT_CANCELLED,
-                backgroundColor =
-                    ChatScreenConstants.COLOR_CANCELLED.copy(
-                        alpha = ChatScreenConstants.STATUS_BACKGROUND_ALPHA))
-        else ->
-            StatusInfo(
-                icon = Icons.Filled.Lock,
-                text = ChatScreenConstants.CHAT_CLOSED,
-                backgroundColor =
-                    appPalette()
-                        .secondary
-                        .copy(alpha = ChatScreenConstants.STATUS_BACKGROUND_ALPHA))
-      }
-
-  Surface(
-      modifier = Modifier.fillMaxWidth(),
-      color = appPalette().surface,
-      tonalElevation = UiDimens.CardElevation) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(UiDimens.SpacingMd),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically) {
-              Surface(
-                  shape = RoundedCornerShape(ChatScreenConstants.STATUS_CHIP_CORNER_RADIUS_DP.dp),
-                  color = statusInfo.backgroundColor,
-                  modifier = Modifier.testTag(ChatScreenTestTags.READ_ONLY_MESSAGE)) {
-                    Row(
-                        modifier =
-                            Modifier.padding(
-                                horizontal = UiDimens.SpacingMd, vertical = UiDimens.SpacingSm),
-                        horizontalArrangement = Arrangement.spacedBy(UiDimens.SpacingXs),
-                        verticalAlignment = Alignment.CenterVertically) {
-                          Icon(
-                              imageVector = statusInfo.icon,
-                              contentDescription = null,
-                              modifier = Modifier.size(ChatScreenConstants.STATUS_ICON_SIZE_DP.dp),
-                              tint =
-                                  appPalette()
-                                      .text
-                                      .copy(alpha = ChatScreenConstants.STATUS_ICON_ALPHA))
-                          Text(
-                              text = statusInfo.text,
-                              style = MaterialTheme.typography.bodyMedium,
-                              color =
-                                  appPalette()
-                                      .text
-                                      .copy(alpha = ChatScreenConstants.STATUS_TEXT_ALPHA))
-                          Icon(
-                              imageVector = Icons.Filled.Lock,
-                              contentDescription = ChatScreenConstants.READ_ONLY,
-                              modifier =
-                                  Modifier.size(ChatScreenConstants.STATUS_LOCK_ICON_SIZE_DP.dp),
-                              tint =
-                                  appPalette()
-                                      .text
-                                      .copy(alpha = ChatScreenConstants.STATUS_LOCK_ALPHA))
-                        }
                   }
             }
       }

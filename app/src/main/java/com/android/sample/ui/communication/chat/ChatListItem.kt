@@ -5,9 +5,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccessTime
-import androidx.compose.material.icons.filled.Cancel
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Handshake
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
@@ -16,8 +13,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -52,9 +47,9 @@ private object ChatListItemConstants {
   const val STATUS_ICON_ALPHA = 0.7f
 
   // Status colors
-  val COLOR_COMPLETED = Color(0xFF4CAF50)
-  val COLOR_EXPIRED = Color(0xFFFF9800)
-  val COLOR_CANCELLED = Color(0xFFF44336)
+  // val COLOR_COMPLETED = Color(0xFF4CAF50)
+  // val COLOR_EXPIRED = Color(0xFFFF9800)
+  // val COLOR_CANCELLED = Color(0xFFF44336)
   val COMPLETED = "COMPLETED"
 
   val EXPIRED = "EXPIRED"
@@ -159,34 +154,6 @@ fun ChatListItem(
                                   .copy(alpha = ChatListItemConstants.TEXT_ALPHA_SECONDARY),
                           modifier = Modifier.testTag(ChatListItemTestTags.TIMESTAMP))
                     }
-
-                    // Status badge for expired/completed
-                    if (isExpired) {
-                      data class StatusIconInfo(val icon: ImageVector, val color: Color)
-
-                      val iconInfo: StatusIconInfo =
-                          when (chat.requestStatus) {
-                            ChatListItemConstants.COMPLETED ->
-                                StatusIconInfo(
-                                    Icons.Filled.CheckCircle, ChatListItemConstants.COLOR_COMPLETED)
-                            ChatListItemConstants.EXPIRED ->
-                                StatusIconInfo(
-                                    Icons.Filled.AccessTime, ChatListItemConstants.COLOR_EXPIRED)
-                            ChatListItemConstants.CANCELLED ->
-                                StatusIconInfo(
-                                    Icons.Filled.Cancel, ChatListItemConstants.COLOR_CANCELLED)
-                            else -> StatusIconInfo(Icons.Filled.CheckCircle, appPalette().text)
-                          }
-
-                      Icon(
-                          imageVector = iconInfo.icon,
-                          contentDescription = chat.requestStatus,
-                          tint =
-                              iconInfo.color.copy(alpha = ChatListItemConstants.STATUS_ICON_ALPHA),
-                          modifier =
-                              Modifier.size(ChatListItemConstants.STATUS_ICON_SIZE_DP.dp)
-                                  .testTag(ChatListItemTestTags.STATUS_BADGE))
-                    }
                   }
             }
       }
@@ -227,7 +194,7 @@ private fun RoleBadge(isCreator: Boolean, modifier: Modifier = Modifier) {
  * @param date The date to format
  * @return Formatted string (e.g., "Dec 16, 14:30")
  */
-private fun formatTimestamp(date: Date): String {
+fun formatTimestamp(date: Date): String {
   val formatter = SimpleDateFormat(ChatListItemConstants.TIMESTAMP_PATTERN, Locale.getDefault())
   return formatter.format(date)
 }

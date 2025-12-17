@@ -32,15 +32,6 @@ class ChatListItemTest {
   }
 
   @Test
-  fun chatListItem_displaysCorrectly() {
-    val chat = createTestChat()
-
-    composeTestRule.setContent { ChatListItem(chat = chat, isCreator = true, onClick = {}) }
-
-    composeTestRule.onNodeWithTag(ChatListItemTestTags.ITEM).assertExists().assertIsDisplayed()
-  }
-
-  @Test
   fun chatListItem_isClickable() {
     val chat = createTestChat()
     var clickCount = 0
@@ -179,30 +170,6 @@ class ChatListItemTest {
   }
 
   // ==================== EXPIRED CHAT TESTS ====================
-
-  @Test
-  fun chatListItem_completedChat_showsStatusBadge() {
-    val chat = createTestChat(requestStatus = "COMPLETED")
-
-    composeTestRule.setContent { ChatListItem(chat = chat, isCreator = true, onClick = {}) }
-
-    composeTestRule
-        .onNodeWithTag(ChatListItemTestTags.STATUS_BADGE, useUnmergedTree = true)
-        .assertExists()
-        .assertIsDisplayed()
-  }
-
-  @Test
-  fun chatListItem_expiredChat_showsStatusBadge() {
-    val chat = createTestChat(requestStatus = "EXPIRED")
-
-    composeTestRule.setContent { ChatListItem(chat = chat, isCreator = true, onClick = {}) }
-
-    composeTestRule
-        .onNodeWithTag(ChatListItemTestTags.STATUS_BADGE, useUnmergedTree = true)
-        .assertExists()
-        .assertIsDisplayed()
-  }
 
   @Test
   fun chatListItem_cancelledChat_showsStatusBadge() {
