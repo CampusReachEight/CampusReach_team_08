@@ -38,7 +38,7 @@ private object MessagesScreenTestTags {
 private const val WEIGHT_2 = 2f
 private const val WEIGHT_6 = 0.6f
 private const val ALPHA = WEIGHT_6
-private const val AUTO_REFRESH_INTERVAL_MS = 30_000L // 30 seconds
+private const val AUTO_REFRESH_INTERVAL_MS = 3_000L // 3 seconds
 
 // Constants
 private object MessagesScreenConstants {
