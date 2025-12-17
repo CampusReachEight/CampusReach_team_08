@@ -448,6 +448,9 @@ class EndToEndTests : BaseEmulatorTest() {
       composeTestRule.waitUntilAtLeastOneExists(
           matcher = hasTestTag(SignInScreenTestTags.LOGIN_BUTTON), timeoutMillis = UI_WAIT_TIMEOUT)
 
+      android.util.Log.d(TAG, "Delaying 5 seconds for login button to stabilize")
+      delay(5_000)
+      composeTestRule.waitForIdle()
       android.util.Log.d(TAG, "Clicking on LOGIN_BUTTON")
       composeTestRule
           .onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON, useUnmergedTree = true)
