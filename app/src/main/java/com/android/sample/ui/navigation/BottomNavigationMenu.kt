@@ -7,9 +7,7 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.Message
 import androidx.compose.material.icons.outlined.EmojiEvents
-import androidx.compose.material.icons.outlined.Message
 import androidx.compose.material.icons.outlined.ModeComment
 import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material.icons.outlined.SyncAlt
@@ -29,16 +27,20 @@ import com.android.sample.ui.theme.appPalette
 
 sealed class NavigationTab(val name: String, val icon: ImageVector, val destination: Screen) {
   object Requests : NavigationTab("Reach", Icons.Outlined.SyncAlt, Screen.Requests)
-    object Messages : NavigationTab("Messages", Icons.Outlined.ModeComment, Screen.Messages)
 
+  object Messages : NavigationTab("Messages", Icons.Outlined.ModeComment, Screen.Messages)
 
-    object Leaderboard : NavigationTab("Leaderboard", Icons.Outlined.EmojiEvents, Screen.Leaderboard)
+  object Leaderboard : NavigationTab("Leaderboard", Icons.Outlined.EmojiEvents, Screen.Leaderboard)
 
   object Map : NavigationTab("Map", Icons.Outlined.Place, Screen.Map())
 }
 
 private val navigationTabs =
-    listOf(NavigationTab.Requests, NavigationTab.Messages, NavigationTab.Leaderboard, NavigationTab.Map)
+    listOf(
+        NavigationTab.Requests,
+        NavigationTab.Messages,
+        NavigationTab.Leaderboard,
+        NavigationTab.Map)
 
 @Composable
 fun BottomNavigationMenu(
@@ -46,47 +48,46 @@ fun BottomNavigationMenu(
     navigationActions: NavigationActions? = null,
     modifier: Modifier = Modifier,
 ) {
-    NavigationBar(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .windowInsetsPadding(WindowInsets.navigationBars)
-                .height(UiDimens.ButtonHeight)
-                .testTag(NavigationTestTags.BOTTOM_NAVIGATION_MENU),
-        containerColor = appPalette().surface,
-        content = {
-            navigationTabs.forEach { tab ->
-                val isSelected = tab == selectedNavigationTab
-                NavigationBarItem(
-                    selected = isSelected,
-                    icon = { Icon(imageVector = tab.icon, contentDescription = null) },
-                    label = { Text(tab.name) },
-                    onClick = {
-                        when (tab) {
-                            NavigationTab.Requests -> {
-                                navigationActions?.navigateTo(Screen.Requests)
-                            }
-                            NavigationTab.Messages -> {
-                                navigationActions?.navigateTo(Screen.Messages)
-                            }
-                            NavigationTab.Leaderboard -> {
-                                navigationActions?.navigateTo(Screen.Leaderboard)
-                            }
-                            NavigationTab.Map -> {
-                                navigationActions?.navigateTo(Screen.Map())
-                            }
-                        }
-                    },
-                    modifier =
-                        Modifier.clip(RoundedCornerShape(50.dp))
-                            .testTag(NavigationTestTags.getTabTestTag(tab)),
-                    colors =
-                        NavigationBarItemDefaults.colors(
-                            selectedIconColor = appPalette().surface,
-                            unselectedIconColor = appPalette().onSurface,
-                            indicatorColor = appPalette().accent))
-            }
-        },
-    )
+  NavigationBar(
+      modifier =
+          modifier
+              .fillMaxWidth()
+              .windowInsetsPadding(WindowInsets.navigationBars)
+              .height(UiDimens.ButtonHeight)
+              .testTag(NavigationTestTags.BOTTOM_NAVIGATION_MENU),
+      containerColor = appPalette().surface,
+      content = {
+        navigationTabs.forEach { tab ->
+          val isSelected = tab == selectedNavigationTab
+          NavigationBarItem(
+              selected = isSelected,
+              icon = { Icon(imageVector = tab.icon, contentDescription = null) },
+              label = { Text(tab.name) },
+              onClick = {
+                when (tab) {
+                  NavigationTab.Requests -> {
+                    navigationActions?.navigateTo(Screen.Requests)
+                  }
+                  NavigationTab.Messages -> {
+                    navigationActions?.navigateTo(Screen.Messages)
+                  }
+                  NavigationTab.Leaderboard -> {
+                    navigationActions?.navigateTo(Screen.Leaderboard)
+                  }
+                  NavigationTab.Map -> {
+                    navigationActions?.navigateTo(Screen.Map())
+                  }
+                }
+              },
+              modifier =
+                  Modifier.clip(RoundedCornerShape(50.dp))
+                      .testTag(NavigationTestTags.getTabTestTag(tab)),
+              colors =
+                  NavigationBarItemDefaults.colors(
+                      selectedIconColor = appPalette().surface,
+                      unselectedIconColor = appPalette().onSurface,
+                      indicatorColor = appPalette().accent))
+        }
+      },
+  )
 }
-

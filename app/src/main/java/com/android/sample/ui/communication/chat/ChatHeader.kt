@@ -17,16 +17,15 @@ import com.android.sample.ui.theme.appPalette
 
 // Test Tags
 private object ChatHeaderTestTags {
-    const val HEADER = "chat_header"
-    const val TITLE = "chat_header_title"
+  const val HEADER = "chat_header"
+  const val TITLE = "chat_header_title"
 }
 
 // Constants
 private object ChatHeaderConstants {
-    const val HEADER_CORNER_RADIUS_DP = 12
+  const val HEADER_CORNER_RADIUS_DP = 12
+  const val TWO = 2
 }
-
-private const val TWO = 2
 
 /**
  * Header card displaying request details at the top of the chat.
@@ -39,25 +38,25 @@ private const val TWO = 2
  */
 @Composable
 fun ChatHeader(chat: Chat, modifier: Modifier = Modifier) {
-    Box(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .padding(UiDimens.SpacingMd)
-                .clip(RoundedCornerShape(ChatHeaderConstants.HEADER_CORNER_RADIUS_DP.dp))
-                .background(appPalette().secondary)
-                .testTag(ChatHeaderTestTags.HEADER)) {
+  Box(
+      modifier =
+          modifier
+              .fillMaxWidth()
+              .padding(UiDimens.SpacingMd)
+              .clip(RoundedCornerShape(ChatHeaderConstants.HEADER_CORNER_RADIUS_DP.dp))
+              .background(appPalette().secondary)
+              .testTag(ChatHeaderTestTags.HEADER)) {
         Column(
             modifier = Modifier.fillMaxWidth().padding(UiDimens.SpacingMd),
             verticalArrangement = Arrangement.spacedBy(UiDimens.SpacingXs)) {
-            // Request Title
-            Text(
-                text = chat.requestTitle,
-                style = MaterialTheme.typography.titleMedium,
-                color = appPalette().text,
-                maxLines = TWO,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.testTag(ChatHeaderTestTags.TITLE))
-        }
-    }
+              // Request Title
+              Text(
+                  text = chat.requestTitle,
+                  style = MaterialTheme.typography.titleMedium,
+                  color = appPalette().text,
+                  maxLines = ChatHeaderConstants.TWO,
+                  overflow = TextOverflow.Ellipsis,
+                  modifier = Modifier.testTag(ChatHeaderTestTags.TITLE))
+            }
+      }
 }

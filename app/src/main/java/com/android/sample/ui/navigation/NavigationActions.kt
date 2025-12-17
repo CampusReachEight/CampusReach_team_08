@@ -36,8 +36,8 @@ sealed class Screen(
   object MyRequest : Screen(route = "profile/myRequest", NavigationType.SUB_SCREEN)
 
   object AcceptedRequests : Screen(route = "profile/acceptedRequests", NavigationType.SUB_SCREEN)
-  object Messages : Screen(route = "messages/main", NavigationType.TAB)
 
+  object Messages : Screen(route = "messages/main", NavigationType.TAB)
 
   data class RequestAccept(val requestId: String) : Screen(route = "requests/accept/${requestId}") {
     companion object {
@@ -82,6 +82,7 @@ sealed class Screen(
       const val route = "follow_list/{$ARG_USER_ID}/{$ARG_LIST_TYPE}"
     }
   }
+
   data class Chat(val chatId: String) : Screen(route = "messages/chat/${chatId}") {
     companion object {
       const val ARG_CHAT_ID = "chatId"

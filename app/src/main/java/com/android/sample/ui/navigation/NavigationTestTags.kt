@@ -33,6 +33,6 @@ object NavigationTestTags {
         is NavigationTab.Map -> MAP_TAB
         is NavigationTab.Leaderboard -> LEADERBOARD_TAB
         is NavigationTab.Requests -> REQUEST_TAB
-          NavigationTab.Messages -> MESSAGES_TAB
+        NavigationTab.Messages -> MESSAGES_TAB
       }
 }
