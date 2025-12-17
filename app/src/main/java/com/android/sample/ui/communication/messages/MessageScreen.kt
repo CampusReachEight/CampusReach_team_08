@@ -11,8 +11,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -38,6 +36,9 @@ private object MessagesScreenTestTags {
 }
 
 private const val WEIGHT_2 = 2f
+private const val WEIGHT_6 = 0.6f
+private const val ALPHA = WEIGHT_6
+private const val AUTO_REFRESH_INTERVAL_MS = 30_000L // 30 seconds
 
 // Constants
 private object MessagesScreenConstants {
@@ -54,8 +55,9 @@ private object MessagesScreenConstants {
  * Features:
  * - List of all chats sorted by most recent message
  * - Badge showing user role (Creator/Helper)
- * - Pull-to-refresh functionality
+ * - Auto-refresh every 30 seconds
  * - Empty state when no chats exist
+ * - Offline state when network unavailable
  * - Error handling with Snackbar
  *
  * @param onChatClick Callback when a chat item is clicked, receives chatId
@@ -71,10 +73,18 @@ fun MessagesScreen(
   val uiState by viewModel.uiState.collectAsState()
   val snackbarHostState = androidx.compose.material3.SnackbarHostState()
 
+  // Auto-refresh every 30 seconds when online
+  LaunchedEffect(Unit) {
+    while (true) {
+      kotlinx.coroutines.delay(AUTO_REFRESH_INTERVAL_MS)
+      if (!uiState.isOffline && !uiState.isLoading) {
+        viewModel.refresh()
+      }
+    }
+  }
+
   Scaffold(
       modifier = modifier.fillMaxSize().testTag(NavigationTestTags.MESSAGES_SCREEN),
-      // REMOVED: topBar
-      // REMOVED: bottomBar
       snackbarHost = { SnackbarHost(snackbarHostState) }) { paddingValues ->
         Box(
             modifier =
@@ -96,57 +106,37 @@ fun MessagesScreen(
                   EmptyMessagesState(modifier = Modifier.align(Alignment.Center))
                 }
                 else -> {
-                  val refreshing = remember { mutableStateOf(false) }
-
-                  com.google.accompanist.swiperefresh.SwipeRefresh(
-                      state =
-                          com.google.accompanist.swiperefresh.rememberSwipeRefreshState(
-                              refreshing.value),
-                      onRefresh = {
-                        refreshing.value = true
-                        viewModel.refresh()
-                      }) {
-                        LazyColumn(
-                            modifier =
-                                Modifier.fillMaxSize().testTag(MessagesScreenTestTags.CHAT_LIST),
-                            verticalArrangement = Arrangement.spacedBy(UiDimens.SpacingSm),
-                            contentPadding = PaddingValues(vertical = UiDimens.SpacingMd)) {
-                              items(items = uiState.chatItems, key = { it.chat.chatId }) { chatItem
-                                ->
-                                ChatListItem(
-                                    chat = chatItem.chat,
-                                    isCreator = chatItem.isCreator,
-                                    onClick = {
-                                      if (!uiState.isOffline) {
-                                        onChatClick(chatItem.chat.chatId)
-                                      }
-                                    })
-                              }
-                            }
+                  LazyColumn(
+                      modifier = Modifier.fillMaxSize().testTag(MessagesScreenTestTags.CHAT_LIST),
+                      verticalArrangement = Arrangement.spacedBy(UiDimens.SpacingSm),
+                      contentPadding = PaddingValues(vertical = UiDimens.SpacingMd)) {
+                        items(items = uiState.chatItems, key = { it.chat.chatId }) { chatItem ->
+                          ChatListItem(
+                              chat = chatItem.chat,
+                              isCreator = chatItem.isCreator,
+                              onClick = {
+                                if (!uiState.isOffline) {
+                                  onChatClick(chatItem.chat.chatId)
+                                }
+                              })
+                        }
                       }
-
-                  // Stop refresh animation when loading completes
-                  LaunchedEffect(uiState.isLoading) { refreshing.value = false }
                 }
               }
             }
+
+        // Error handling
+        uiState.errorMessage?.let { errorMessage ->
+          androidx.compose.runtime.LaunchedEffect(errorMessage) {
+            snackbarHostState.showSnackbar(
+                message = errorMessage,
+                actionLabel = MessagesScreenConstants.ERROR_DISMISS,
+                duration = SnackbarDuration.Short)
+            viewModel.clearError()
+          }
+        }
       }
-
-  // Error handling
-  uiState.errorMessage?.let { errorMessage ->
-    androidx.compose.runtime.LaunchedEffect(errorMessage) {
-      snackbarHostState.showSnackbar(
-          message = errorMessage,
-          actionLabel = MessagesScreenConstants.ERROR_DISMISS,
-          duration = SnackbarDuration.Short)
-      viewModel.clearError()
-    }
-  }
 }
-
-private const val WEIGHT_6 = 0.6f
-
-private const val ALPHA = WEIGHT_6
 
 /**
  * Empty state displayed when user has no chats.
@@ -192,6 +182,11 @@ private const val YOU_RE_OFFLINE = "You're Offline"
 private const val CONNECT_TO_THE_INTERNET_MESSAGE =
     "Connect to the internet to view and access your messages"
 
+/**
+ * Offline state displayed when network is unavailable.
+ *
+ * @param modifier Modifier for the composable
+ */
 @Composable
 private fun OfflineState(modifier: Modifier = Modifier) {
   Column(

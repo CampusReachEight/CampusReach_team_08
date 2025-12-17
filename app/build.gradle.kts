@@ -169,7 +169,6 @@ dependencies {
     implementation(libs.maps.compose)
     implementation(libs.maps.compose.utils)
     implementation(libs.play.services.auth)
-    implementation("com.google.accompanist:accompanist-swiperefresh:0.34.0")
 
     // Firebase
     implementation(platform("com.google.firebase:firebase-bom:32.8.0"))

@@ -55,7 +55,7 @@ class MessagesViewModel(
    * completed/expired/cancelled/archived requests.
    */
   fun loadChats() {
-    _uiState.update { it.copy(isLoading = true) }
+    _uiState.update { it.copy(isLoading = true, isOffline = false) }
     viewModelScope.launch {
       try {
         val currentUserId = firebaseAuth.currentUser?.uid
@@ -89,8 +89,9 @@ class MessagesViewModel(
             activeChats.map { chat ->
               ChatItem(chat = chat, isCreator = chat.creatorId == currentUserId)
             }
-
-        _uiState.update { it.copy(chatItems = chatItems, isLoading = false, errorMessage = null) }
+        _uiState.update {
+          it.copy(chatItems = chatItems, isLoading = false, errorMessage = null, isOffline = false)
+        }
       } catch (e: Exception) {
         // Check if it's a network unavailable error
         val isNetworkError =
