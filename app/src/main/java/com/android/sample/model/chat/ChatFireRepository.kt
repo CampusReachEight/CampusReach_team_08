@@ -360,4 +360,30 @@ class ChatRepositoryFirestore(private val db: FirebaseFirestore) : ChatRepositor
       throw Exception("$FAILED_TO_DELETE_CHAT_WITH_ID $chatId: ${e.message}", e)
     }
   }
+  /**
+   * Adds the current user back to chat participants. Any former participant can add themselves back
+   * (used when re-accepting).
+   */
+  override suspend fun addSelfToChat(chatId: String) {
+    val currentUserId = Firebase.auth.currentUser?.uid ?: notAuthenticated()
+
+    try {
+      val chat = getChat(chatId)
+
+      // Check if user is already a participant
+      if (chat.participants.contains(currentUserId)) {
+        return // Already a participant, nothing to do
+      }
+
+      // Add current user to participants
+      val updatedParticipants = chat.participants + currentUserId
+
+      chatsCollectionRef.document(chatId).update(PARTICIPANTS, updatedParticipants).await()
+    } catch (e: FirebaseFirestoreException) {
+      if (e.code == FirebaseFirestoreException.Code.UNAVAILABLE) {
+        throw IllegalStateException(NETWORK_UNAVAILABLE_CANNOT_UPDATE_PARTICIPANTS, e)
+      }
+      throw Exception("$FAILED_TO_UPDATE_PARTICIPANTS $chatId: ${e.message}", e)
+    }
+  }
 }

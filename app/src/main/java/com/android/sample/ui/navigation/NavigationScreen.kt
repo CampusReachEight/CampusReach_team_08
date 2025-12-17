@@ -24,6 +24,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.navigation
+import com.android.sample.model.chat.ChatRepositoryFirestore
 import com.android.sample.model.map.FusedLocationProvider
 import com.android.sample.model.map.NominatimLocationRepository
 import com.android.sample.model.profile.UserProfileCache
@@ -39,7 +40,6 @@ import com.android.sample.ui.map.MapViewModel
 import com.android.sample.ui.map.MapViewModelFactory
 import com.android.sample.ui.overview.AcceptRequestScreen
 import com.android.sample.ui.overview.AcceptRequestViewModel
-import com.android.sample.ui.overview.AcceptRequestViewModelFactory
 import com.android.sample.ui.profile.ProfileScreen
 import com.android.sample.ui.profile.ProfileViewModel
 import com.android.sample.ui.profile.ProfileViewModelFactory
@@ -86,6 +86,7 @@ fun NavigationScreen(
 
   // repositories
   val requestRepository = RequestRepositoryFirestore(Firebase.firestore)
+  val chatRepository = ChatRepositoryFirestore(Firebase.firestore)
   val locationRepository = NominatimLocationRepository(client = OkHttpClient())
   val fusedLocationProvider = FusedLocationProvider(LocalContext.current)
   val userProfileRepository = UserProfileRepositoryFirestore(Firebase.firestore)
@@ -134,10 +135,11 @@ fun NavigationScreen(
   val acceptRequestViewModel: AcceptRequestViewModel =
       viewModel(
           factory =
-              AcceptRequestViewModelFactory(
+              AcceptRequestViewModel.AcceptRequestViewModelFactory(
                   requestRepository = requestRepository,
                   userProfileRepository = UserProfileRepositoryFirestore(Firebase.firestore),
-                  requestCache = requestCache))
+                  requestCache = requestCache,
+                  chatRepository = chatRepository))
 
   val acceptedRequestsViewModel: AcceptedRequestsViewModel =
       viewModel(

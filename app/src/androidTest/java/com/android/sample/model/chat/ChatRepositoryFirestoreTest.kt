@@ -1141,4 +1141,89 @@ class ChatRepositoryFirestoreTest : BaseEmulatorTest() {
         }
     assertExceptionContains(exception, NOT_FOUND)
   }
+
+  // ==================== ADD SELF TO CHAT TESTS ====================
+
+  @Test
+  fun addSelfToChat_doesNothingWhenAlreadyParticipant() = runTest {
+    // Create chat with current user as participant
+    val participants = listOf(currentUserId, HELPER_1)
+    repository.createChat(TEST_CHAT_ID_1, TEST_TITLE_1, participants, currentUserId, OPEN)
+    delay(FIRESTORE_WRITE_DELAY_MS)
+
+    // Try to add self again
+    repository.addSelfToChat(TEST_CHAT_ID_1)
+    delay(FIRESTORE_WRITE_DELAY_MS)
+
+    // Verify no duplicate
+    val chat = repository.getChat(TEST_CHAT_ID_1)
+    assertEquals(2, chat.participants.size)
+    assertEquals(participants, chat.participants)
+  }
+
+  @Test
+  fun addSelfToChat_failsWhenNotAuthenticated() = runTest {
+    createTestChat()
+
+    // Sign out
+    Firebase.auth.signOut()
+
+    val exception =
+        assertThrows(IllegalStateException::class.java) {
+          runBlocking { repository.addSelfToChat(TEST_CHAT_ID_1) }
+        }
+    assertExceptionContains(exception, AUTHENTICATED)
+  }
+
+  // ==================== ADD SELF TO CHAT TESTS ====================
+
+  @Test
+  fun addSelfToChat_failsWhenChatDoesNotExist() = runTest {
+    val exception =
+        assertThrows(Exception::class.java) {
+          runBlocking { repository.addSelfToChat(NON_EXISTENT_CHAT) }
+        }
+    assertExceptionContains(exception, NOT_FOUND)
+  }
+
+  @Test
+  fun addSelfToChat_allowsFormerParticipantToRejoin() = runTest {
+    // Use the already signed-in creator from setUp()
+    val creatorId = currentUserId
+    val creatorEmail = DEFAULT_USER_EMAIL
+    val creatorPassword = DEFAULT_USER_PASSWORD
+
+    // Create a helper user
+    val helperEmail = "helper1@test.com"
+    val helperPassword = PASSWORD
+    createAndSignInUser(helperEmail, helperPassword)
+    val helperId = auth.currentUser?.uid ?: throw IllegalStateException("No helper user")
+
+    // Sign back in as creator
+    signInUser(creatorEmail, creatorPassword)
+
+    // Create chat with helper as participant
+    val participants = listOf(creatorId, helperId)
+    repository.createChat(TEST_CHAT_ID_1, TEST_TITLE_1, participants, creatorId, OPEN)
+    delay(FIRESTORE_WRITE_DELAY_MS)
+
+    // Sign in as helper and remove self
+    signInUser(helperEmail, helperPassword)
+    repository.removeSelfFromChat(TEST_CHAT_ID_1)
+    delay(FIRESTORE_WRITE_DELAY_MS)
+
+    // Verify removed
+    var chat = repository.getChat(TEST_CHAT_ID_1)
+    assertFalse(chat.participants.contains(helperId))
+    assertEquals(1, chat.participants.size)
+
+    // Add self back
+    repository.addSelfToChat(TEST_CHAT_ID_1)
+    delay(FIRESTORE_WRITE_DELAY_MS)
+
+    // Verify added back
+    chat = repository.getChat(TEST_CHAT_ID_1)
+    assertTrue(chat.participants.contains(helperId))
+    assertEquals(2, chat.participants.size)
+  }
 }
