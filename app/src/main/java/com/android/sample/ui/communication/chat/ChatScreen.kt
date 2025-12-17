@@ -111,7 +111,7 @@ fun ChatScreen(
   }
 
   Scaffold(
-      modifier = Modifier.fillMaxSize().testTag(NavigationTestTags.CHAT_SCREEN),
+      modifier = Modifier.fillMaxSize().imePadding().testTag(NavigationTestTags.CHAT_SCREEN),
       topBar = {
         TopAppBar(
             title = {
@@ -227,7 +227,7 @@ private fun MessageInputBar(
     modifier: Modifier = Modifier
 ) {
   Surface(
-      modifier = modifier.fillMaxWidth().navigationBarsPadding().imePadding(),
+      modifier = modifier.fillMaxWidth().imePadding(),
       color = appPalette().surface,
       tonalElevation = UiDimens.CardElevation) {
         Row(

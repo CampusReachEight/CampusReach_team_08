@@ -8,8 +8,11 @@ import androidx.compose.material.icons.automirrored.filled.Message
 import androidx.compose.material.icons.filled.Message
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -93,36 +96,52 @@ fun MessagesScreen(
                   EmptyMessagesState(modifier = Modifier.align(Alignment.Center))
                 }
                 else -> {
-                  LazyColumn(
-                      modifier = Modifier.fillMaxSize().testTag(MessagesScreenTestTags.CHAT_LIST),
-                      verticalArrangement = Arrangement.spacedBy(UiDimens.SpacingSm),
-                      contentPadding = PaddingValues(vertical = UiDimens.SpacingMd)) {
-                        items(items = uiState.chatItems, key = { it.chat.chatId }) { chatItem ->
-                          ChatListItem(
-                              chat = chatItem.chat,
-                              isCreator = chatItem.isCreator,
-                              onClick = {
-                                if (!uiState.isOffline) {
-                                  onChatClick(chatItem.chat.chatId)
-                                }
-                              })
-                        }
+                  val refreshing = remember { mutableStateOf(false) }
+
+                  com.google.accompanist.swiperefresh.SwipeRefresh(
+                      state =
+                          com.google.accompanist.swiperefresh.rememberSwipeRefreshState(
+                              refreshing.value),
+                      onRefresh = {
+                        refreshing.value = true
+                        viewModel.refresh()
+                      }) {
+                        LazyColumn(
+                            modifier =
+                                Modifier.fillMaxSize().testTag(MessagesScreenTestTags.CHAT_LIST),
+                            verticalArrangement = Arrangement.spacedBy(UiDimens.SpacingSm),
+                            contentPadding = PaddingValues(vertical = UiDimens.SpacingMd)) {
+                              items(items = uiState.chatItems, key = { it.chat.chatId }) { chatItem
+                                ->
+                                ChatListItem(
+                                    chat = chatItem.chat,
+                                    isCreator = chatItem.isCreator,
+                                    onClick = {
+                                      if (!uiState.isOffline) {
+                                        onChatClick(chatItem.chat.chatId)
+                                      }
+                                    })
+                              }
+                            }
                       }
+
+                  // Stop refresh animation when loading completes
+                  LaunchedEffect(uiState.isLoading) { refreshing.value = false }
                 }
               }
             }
-
-        // Error handling
-        uiState.errorMessage?.let { errorMessage ->
-          androidx.compose.runtime.LaunchedEffect(errorMessage) {
-            snackbarHostState.showSnackbar(
-                message = errorMessage,
-                actionLabel = MessagesScreenConstants.ERROR_DISMISS,
-                duration = SnackbarDuration.Short)
-            viewModel.clearError()
-          }
-        }
       }
+
+  // Error handling
+  uiState.errorMessage?.let { errorMessage ->
+    androidx.compose.runtime.LaunchedEffect(errorMessage) {
+      snackbarHostState.showSnackbar(
+          message = errorMessage,
+          actionLabel = MessagesScreenConstants.ERROR_DISMISS,
+          duration = SnackbarDuration.Short)
+      viewModel.clearError()
+    }
+  }
 }
 
 private const val WEIGHT_6 = 0.6f
