@@ -9,6 +9,7 @@ import com.android.sample.model.chat.ChatRepositoryFirestore
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import java.util.Date
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -54,14 +55,61 @@ class MessagesViewModel(
         }
 
         val chats = chatRepository.getUserChats(currentUserId)
+
+        // Filter out completed/expired/cancelled chats and check expiration
+        val now = Date()
+        val activeChats =
+            chats.filter { chat ->
+              val isNotTerminalStatus =
+                  chat.requestStatus !in listOf("COMPLETED", "EXPIRED", "CANCELLED", "ARCHIVED")
+              // Check if request has expired based on time (we'll need to get this from the
+              // request)
+              // For now, just filter by status
+              isNotTerminalStatus
+            }
+
         val chatItems =
-            chats.map { chat -> ChatItem(chat = chat, isCreator = chat.creatorId == currentUserId) }
+            activeChats.map { chat ->
+              ChatItem(chat = chat, isCreator = chat.creatorId == currentUserId)
+            }
 
         _uiState.update { it.copy(chatItems = chatItems, isLoading = false, errorMessage = null) }
+
+        // Start listening to status updates for each chat
+        listenToChatUpdates(currentUserId, activeChats.map { it.chatId })
       } catch (e: Exception) {
         val friendly =
-            e.message?.takeIf { it.isNotBlank() } ?: "Failed to load chats. Please try again."
+            e.message?.takeIf { it.isNotBlank() } ?: FAILED_TO_LOAD_CHATS_PLEASE_TRY_AGAIN_
         _uiState.update { it.copy(isLoading = false, errorMessage = friendly) }
+      }
+    }
+  }
+  /** Listens to chat status updates and removes chats that become completed/expired/cancelled. */
+  private fun listenToChatUpdates(userId: String, chatIds: List<String>) {
+    viewModelScope.launch {
+      chatIds.forEach { chatId ->
+        launch {
+          try {
+            // Poll for changes every 30 seconds (simple approach)
+            while (true) {
+              kotlinx.coroutines.delay(30_000) // 30 seconds
+
+              val updatedChat = chatRepository.getChat(chatId)
+
+              // Check if status changed to terminal
+              if (updatedChat.requestStatus in
+                  listOf("COMPLETED", "EXPIRED", "CANCELLED", "ARCHIVED")) {
+                // Remove this chat from the list
+                _uiState.update { state ->
+                  state.copy(chatItems = state.chatItems.filter { it.chat.chatId != chatId })
+                }
+                break // Stop listening to this chat
+              }
+            }
+          } catch (e: Exception) {
+            // Silently ignore errors in background polling
+          }
+        }
       }
     }
   }

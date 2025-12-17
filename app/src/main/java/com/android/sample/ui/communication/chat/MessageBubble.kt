@@ -14,12 +14,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.android.sample.model.chat.Message
 import com.android.sample.model.profile.UserProfileRepository
 import com.android.sample.model.profile.UserProfileRepositoryFirestore
+import com.android.sample.ui.profile.ProfilePicture
 import com.android.sample.ui.theme.UiDimens
 import com.android.sample.ui.theme.appPalette
 import com.google.firebase.Firebase
@@ -60,6 +60,8 @@ object MessageBubbleDimens {
 
 private const val F = 0.3f
 
+private const val PROFILE_CLICKED = "PROFILE CLICKED"
+
 /**
  * Message bubble component.
  *
@@ -95,20 +97,26 @@ fun MessageBubble(
       verticalAlignment = Alignment.Top,
       horizontalArrangement = if (isOwnMessage) Arrangement.End else Arrangement.Start) {
         // Profile picture (only for other's messages)
+        // Profile picture (only for other's messages)
         if (!isOwnMessage) {
           Box(
               modifier =
                   Modifier.padding(end = MessageBubbleDimens.ProfilePicturePadding.dp)
                       .size(MessageBubbleDimens.ProfilePictureSize.dp)
                       .clip(CircleShape)
-                      .background(Color.Red.copy(alpha = F))
                       .clickable(
                           onClick = {
-                            println("PROFILE CLICKED: ${message.senderId}")
+                            println("$PROFILE_CLICKED: ${message.senderId}")
                             onProfileClick(message.senderId)
                           },
                           interactionSource = remember { MutableInteractionSource() },
-                          indication = LocalIndication.current))
+                          indication = LocalIndication.current)) {
+                ProfilePicture(
+                    profileRepository = profileRepository,
+                    profileId = message.senderId,
+                    modifier = Modifier.fillMaxSize(),
+                    withName = false)
+              }
         }
       }
 

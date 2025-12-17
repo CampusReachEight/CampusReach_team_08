@@ -131,7 +131,7 @@ fun ChatScreen(
   }
 
   Scaffold(
-      modifier = Modifier.fillMaxSize().testTag(NavigationTestTags.CHAT_SCREEN),
+      modifier = Modifier.fillMaxSize().imePadding().testTag(NavigationTestTags.CHAT_SCREEN),
       topBar = {
         TopAppBar(
             title = {
