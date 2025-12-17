@@ -3,6 +3,8 @@ package com.android.sample.ui.request.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.android.sample.model.chat.ChatRepository
+import com.android.sample.model.chat.ChatRepositoryProvider
 import com.android.sample.model.map.Location
 import com.android.sample.model.map.LocationProvider
 import com.android.sample.model.map.LocationRepository
@@ -16,6 +18,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -30,11 +33,15 @@ import kotlinx.coroutines.launch
 class EditRequestViewModel(
     private val requestRepository: RequestRepository = RequestRepositoryProvider.repository,
     private val locationRepository: LocationRepository,
-    private val locationProvider: LocationProvider
+    private val locationProvider: LocationProvider,
+    private val chatRepository: ChatRepository = ChatRepositoryProvider.repository
 ) : ViewModel() {
 
   // Date formatter for validation
   private val dateFormat = SimpleDateFormat(DateFormats.DATE_TIME_FORMAT, Locale.getDefault())
+
+  // Debounce job for description updates
+  private var descriptionUpdateJob: Job? = null
 
   // Current request being edited (null for create mode)
   private val _currentRequest = MutableStateFlow<Request?>(null)
@@ -85,6 +92,7 @@ class EditRequestViewModel(
 
       try {
         requestRepository.deleteRequest(requestId)
+        chatRepository.deleteChat(requestId)
         _uiState.update { it.copy(isDeleting = false, showDeleteConfirmation = false) }
         onSuccess()
       } catch (e: Exception) {
@@ -166,11 +174,23 @@ class EditRequestViewModel(
    * @param value New description
    */
   fun updateDescription(value: String) {
+    // Cancel previous job if active
+    descriptionUpdateJob?.cancel()
+
+    // Update immediately for UI responsiveness
     _uiState.update { state ->
       state.copy(
           description = value,
           validationState = state.validationState.copy(showDescriptionError = value.isBlank()))
     }
+
+    // Debounce heavy operations if any (currently none, but good practice for markdown parsing if
+    // we move it here)
+    descriptionUpdateJob =
+        viewModelScope.launch {
+          delay(300) // Debounce time
+          // Future: Parse markdown here if needed to offload from UI
+        }
   }
 
   /**
@@ -371,12 +391,15 @@ class EditRequestViewModel(
 class EditRequestViewModelFactory(
     private val requestRepository: RequestRepository = RequestRepositoryProvider.repository,
     private val locationRepository: LocationRepository,
-    private val locationProvider: LocationProvider
+    private val locationProvider: LocationProvider,
+    private val chatRepository: ChatRepository = ChatRepositoryProvider.repository
 ) : ViewModelProvider.Factory {
   @Suppress("UNCHECKED_CAST")
   override fun <T : ViewModel> create(modelClass: Class<T>): T {
     if (modelClass.isAssignableFrom(EditRequestViewModel::class.java)) {
-      return EditRequestViewModel(requestRepository, locationRepository, locationProvider) as T
+      return EditRequestViewModel(
+          requestRepository, locationRepository, locationProvider, chatRepository)
+          as T
     }
     throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
   }

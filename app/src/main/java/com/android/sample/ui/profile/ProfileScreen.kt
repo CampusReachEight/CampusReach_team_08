@@ -31,10 +31,6 @@ fun ProfileScreen(
     navigationActions: NavigationActions? = null
 ) {
   val state by viewModel.state.collectAsState()
-  var shouldShowContent by remember { mutableStateOf(false) }
-
-  // Defer content rendering to next frame to avoid initial jank
-  LaunchedEffect(Unit) { shouldShowContent = true }
 
   Scaffold(
       modifier = Modifier.testTag(NavigationTestTags.PROFILE_SCREEN),
@@ -42,7 +38,7 @@ fun ProfileScreen(
       topBar = { ProfileTopBar(onBackClick) }) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
           when {
-            state.isLoading || !shouldShowContent -> ProfileLoadingBuffer(Modifier.fillMaxSize())
+            state.isLoading -> ProfileLoadingBuffer(Modifier.fillMaxSize())
             else -> {
               Column {
                 if (state.offlineMode) {

@@ -34,6 +34,8 @@ import com.android.sample.ui.theme.AppPalette
 import com.android.sample.ui.theme.appPalette
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
+import com.halilibo.richtext.markdown.Markdown
+import com.halilibo.richtext.ui.material3.Material3RichText
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.Calendar
@@ -355,16 +357,30 @@ private fun TitleField(
 ) {
   OutlinedTextField(
       value = title,
-      onValueChange = onTitleChange,
+      onValueChange = {
+        if (it.length <= MAX_TITLE_LENGTH) {
+          onTitleChange(it)
+        }
+      },
       label = { Text(stringResource(R.string.title_field_label)) },
       placeholder = { Text(stringResource(R.string.title_field_placeholder)) },
       isError = showError,
       supportingText = {
-        if (showError) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+          if (showError) {
+            Text(
+                text = stringResource(R.string.title_error_empty),
+                color = appPalette().error,
+                modifier = Modifier.testTag(EditRequestScreenTestTags.ERROR_MESSAGE))
+          } else {
+            Spacer(modifier = Modifier.width(0.dp))
+          }
           Text(
-              text = stringResource(R.string.title_error_empty),
-              color = appPalette().error,
-              modifier = Modifier.testTag(EditRequestScreenTestTags.ERROR_MESSAGE))
+              text = "${title.length}/$MAX_TITLE_LENGTH",
+              style = MaterialTheme.typography.bodySmall,
+              color =
+                  if (title.length >= MAX_TITLE_LENGTH) appPalette().error
+                  else MaterialTheme.colorScheme.onSurfaceVariant)
         }
       },
       modifier = Modifier.fillMaxWidth().testTag(EditRequestScreenTestTags.INPUT_TITLE),
@@ -379,24 +395,59 @@ private fun DescriptionField(
     isLoading: Boolean,
     onDescriptionChange: (String) -> Unit
 ) {
-  OutlinedTextField(
-      value = description,
-      onValueChange = onDescriptionChange,
-      label = { Text(stringResource(R.string.description_field_label)) },
-      placeholder = { Text(stringResource(R.string.description_field_placeholder)) },
-      isError = showError,
-      supportingText = {
-        if (showError) {
-          Text(
-              text = stringResource(R.string.description_error_empty),
-              color = appPalette().error,
-              modifier = Modifier.testTag(EditRequestScreenTestTags.ERROR_MESSAGE))
-        }
-      },
-      minLines = 3,
-      modifier = Modifier.fillMaxWidth().testTag(EditRequestScreenTestTags.INPUT_DESCRIPTION),
-      enabled = !isLoading,
-      colors = getTextFieldColors())
+  Column {
+    OutlinedTextField(
+        value = description,
+        onValueChange = {
+          if (it.length <= MAX_DESCRIPTION_LENGTH) {
+            onDescriptionChange(it)
+          }
+        },
+        label = { Text(stringResource(R.string.description_field_label)) },
+        placeholder = { Text(stringResource(R.string.description_field_placeholder)) },
+        isError = showError,
+        supportingText = {
+          Row(
+              modifier = Modifier.fillMaxWidth(),
+              horizontalArrangement = Arrangement.SpaceBetween) {
+                if (showError) {
+                  Text(
+                      text = stringResource(R.string.description_error_empty),
+                      color = appPalette().error,
+                      modifier = Modifier.testTag(EditRequestScreenTestTags.ERROR_MESSAGE))
+                } else {
+                  Spacer(modifier = Modifier.width(0.dp))
+                }
+                Text(
+                    text = "${description.length}/$MAX_DESCRIPTION_LENGTH",
+                    style = MaterialTheme.typography.bodySmall,
+                    color =
+                        if (description.length >= MAX_DESCRIPTION_LENGTH) appPalette().error
+                        else MaterialTheme.colorScheme.onSurfaceVariant)
+              }
+        },
+        minLines = 3,
+        modifier = Modifier.fillMaxWidth().testTag(EditRequestScreenTestTags.INPUT_DESCRIPTION),
+        enabled = !isLoading,
+        colors = getTextFieldColors())
+
+    if (description.isNotEmpty()) {
+      Spacer(modifier = Modifier.height(8.dp))
+      Text(
+          text = "Preview:",
+          style = MaterialTheme.typography.labelMedium,
+          color = MaterialTheme.colorScheme.onSurfaceVariant)
+      Card(
+          modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+          colors =
+              CardDefaults.cardColors(
+                  containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))) {
+            Box(modifier = Modifier.padding(8.dp)) {
+              Material3RichText { Markdown(content = description) }
+            }
+          }
+    }
+  }
 }
 
 @Composable
@@ -594,7 +645,14 @@ fun RequestTypeChipGroup(
               },
               label = { Text(type.name.replace("_", " ")) },
               enabled = enabled,
-              modifier = Modifier.testTag(EditRequestScreenTestTags.getTestTagForRequestType(type)))
+              modifier = Modifier.testTag(EditRequestScreenTestTags.getTestTagForRequestType(type)),
+              colors =
+                  FilterChipDefaults.filterChipColors(
+                      selectedContainerColor = appPalette().accent,
+                      selectedLabelColor = appPalette().onAccent,
+                      selectedLeadingIconColor = appPalette().onAccent,
+                      containerColor = appPalette().transparent,
+                      labelColor = appPalette().onSurface))
         }
       }
 }
@@ -625,7 +683,14 @@ fun TagsChipGroup(
               },
               label = { Text(tag.name.replace("_", " ")) },
               enabled = enabled,
-              modifier = Modifier.testTag(EditRequestScreenTestTags.getTestTagForRequestTags(tag)))
+              modifier = Modifier.testTag(EditRequestScreenTestTags.getTestTagForRequestTags(tag)),
+              colors =
+                  FilterChipDefaults.filterChipColors(
+                      selectedContainerColor = appPalette().accent,
+                      selectedLabelColor = appPalette().onAccent,
+                      selectedLeadingIconColor = appPalette().onAccent,
+                      containerColor = appPalette().transparent,
+                      labelColor = appPalette().onSurface))
         }
       }
 }
