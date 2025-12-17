@@ -378,10 +378,13 @@ class EndToEndTests : BaseEmulatorTest() {
 
     composeTestRule.waitForIdle()
 
+    // Wait for the Requests screen to be displayed (more reliable than text matching on CI)
     composeTestRule.waitUntilAtLeastOneExists(
-        matcher = hasText("Reach Out"), timeoutMillis = UI_WAIT_TIMEOUT)
+        matcher = hasTestTag(NavigationTestTags.REQUESTS_SCREEN), timeoutMillis = UI_WAIT_TIMEOUT)
 
-    composeTestRule.onNodeWithText("Reach Out", useUnmergedTree = true).assertIsDisplayed()
+    composeTestRule
+        .onNodeWithTag(NavigationTestTags.REQUESTS_SCREEN, useUnmergedTree = true)
+        .assertIsDisplayed()
   }
 
   private fun logOut() {
