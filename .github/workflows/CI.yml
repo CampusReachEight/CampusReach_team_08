@@ -237,6 +237,7 @@ jobs:
           script: .github/scripts/run_tests.sh
           cores: 4
           ram-size: 4096
+          disable-linux-hw-accel: true
 
 
       # Upload Coverage (Merged from Unit + Android automatically by the script running both)
