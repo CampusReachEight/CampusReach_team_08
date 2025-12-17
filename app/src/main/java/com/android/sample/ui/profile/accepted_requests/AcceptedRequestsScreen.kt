@@ -23,11 +23,6 @@ import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.ui.navigation.NavigationActions
 import com.android.sample.ui.profile.ProfilePicture
-import com.android.sample.ui.profile.accepted_requests.AcceptedRequestsViewModel
-import com.android.sample.ui.profile.accepted_requests.AcceptedRequestsViewModelFactory
-import com.android.sample.ui.profile.accepted_requests.ConstantAcceptedRequest
-import com.android.sample.ui.profile.accepted_requests.KudosStatus
-import com.android.sample.ui.profile.accepted_requests.RequestWithKudosStatus
 import com.android.sample.ui.request.ConstantRequestList
 import com.android.sample.ui.request.RequestListViewModel
 import com.android.sample.ui.request.TypeChip
@@ -339,7 +334,6 @@ private fun RequestDetailsDialog(
                           onClick = {},
                           modifier = Modifier.size(ConstantAcceptedRequest.BIG_MODIFIER),
                           navigationActions = navigationActions,
-                          modifier = Modifier.size(BIG_MODIFIER),
                           withName = true)
                     }
 
