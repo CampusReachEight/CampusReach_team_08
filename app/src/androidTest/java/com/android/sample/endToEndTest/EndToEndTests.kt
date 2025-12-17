@@ -381,9 +381,7 @@ class EndToEndTests : BaseEmulatorTest() {
     composeTestRule.waitUntilAtLeastOneExists(
         matcher = hasText("Reach Out"), timeoutMillis = UI_WAIT_TIMEOUT)
 
-    composeTestRule
-        .onNodeWithText("Reach Out", useUnmergedTree = true)
-        .assertIsDisplayed()
+    composeTestRule.onNodeWithText("Reach Out", useUnmergedTree = true).assertIsDisplayed()
   }
 
   private fun logOut() {
