@@ -43,6 +43,8 @@ import com.android.sample.utils.FakeJwtGenerator
 import com.android.sample.utils.FirebaseEmulator
 import com.android.sample.utils.UI_WAIT_TIMEOUT
 import java.util.Date
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
@@ -87,6 +89,7 @@ class EndToEndTests : BaseEmulatorTest() {
 
   @Before
   override fun setUp() {
+    println("TEST STARTED")
     db = FirebaseEmulator.firestore
     auth = FirebaseEmulator.auth
 
@@ -113,9 +116,20 @@ class EndToEndTests : BaseEmulatorTest() {
 
   @After
   override fun tearDown() {
-    super.tearDown()
+    // Attendre que l'UI soit stable avant de fermer
+    composeTestRule.waitForIdle()
+
     scenario?.close()
     scenario = null
+
+    // Forcer la déconnexion Firebase
+    runBlocking {
+      FirebaseEmulator.signOut()
+      delay(500) // Petit délai pour laisser le temps au cleanup
+    }
+
+    super.tearDown()
+    println("TEST ENDED")
   }
 
   // initialize all you want for an end to end test
