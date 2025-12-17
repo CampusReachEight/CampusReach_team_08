@@ -14,45 +14,67 @@ The app addresses a common challenge faced by university students: the difficult
 
 ## Core Features
 
-###  Support Request System
-Students can create and respond to various types of support requests:
+### Handle Requests
+
+**Create Requests:**
 - Borrow textbooks, lab equipment, calculators, or other academic materials
 - Find study partners, project collaborators, or tutoring help
-- Connect with students who can help based on location and availability
-- Organized by academic subject, urgency, and type of assistance needed
+- Set a **time and date** for the request
+- Set **location** when creating a request
+- Organize by academic subject, urgency, and type of assistance needed
+
+**Interact with Requests:**
+- Give **kudos** to users who accepted their request
+- Visualize **color-coded tags** for requests posted by followers or followees
+- **Filter requests** (by subject, urgency, location, etc.)
+
+**Manage Requests:**
+- Consult **own requests** and **accepted requests**
+- **Delete** requests
+
+### Profile Features
+
+**Personal Profile (Private, Login Required):**
+- View and edit **personal details, interests, and activity history**
+- Customize profile sections (e.g., skills, courses, hobbies)
+- Consult **followers** and **followees**
+- Manage **privacy settings** for profile visibility
+
+**Public Profile (Visible to All Users):**
+- View **basic user details** (name, profile picture, skills, courses)
+- See **public activity history** (e.g., requests accepted, kudos received)
+- Follow/unfollow users
 
 ### Interactive Campus Map
-A dynamic map interface that visualizes:
-- Active support requests with location markers
-- Real-time updates as new requests and events are posted
-- Proximity-based filtering to find nearby opportunities
+- Visualize **active support requests** with location markers
+- **Real-time updates** for new requests
+- **Proximity-based filtering** for nearby opportunities
 
-###  Event Discovery & Sharing
-Beyond official university events, students can:
-- Share informal gatherings, study sessions, and social meetups
-- Browse events by category using tag-based filtering (sports, culture, academics, social)
-- Discover spontaneous activities happening across campus
+### Chat Feature
+- **Direct messaging** between users for coordination and support
+- **Real-time chat** for quick communication
 
-###  Trust & Safety System
-Building a reliable community through:
-- User rating system based on completed interactions
-- Reputation scores that help identify reliable peers
-- Report and moderation features for maintaining community standards
-- Transaction history for accountability
+### Trust & Safety System
+- **User rating system** based on completed interactions
+- **Kudos system** to recognize helpful contributions
+- **Report and moderation features** for maintaining community standards
+- **Transaction history** for accountability
 
-###  Offline Mode
-Practical functionality for connectivity issues:
-- View cached event listings and details
-- Browse previously loaded support requests
-- Access saved locations and favorite events
-- Automatic sync when connection is restored
+### Leaderboard
+- **Fully customizable leaderboard** to rank users based on activity, kudos, and contributions
+- **Sort and filter** by profile components (e.g., kudos, skills, subjects, or activity level)
+
+### Offline Mode
+- View **cached support requests** and details
+- Browse **previously loaded content**
+- Access **saved locations** and favorite requests
+- **Automatic sync** when connection is restored
 
 ## Design
 
 View our complete UI/UX design, user flows, and interactive prototypes on Figma:
 
 **[→ CampusReach Design File](https://www.figma.com/design/yc3KeqSlTPlHXqwDUrHBgG/CampusReach?m=auto&t=KTpDechYdmQCsms0-6)**
-
 
 ## Technology Stack
 
