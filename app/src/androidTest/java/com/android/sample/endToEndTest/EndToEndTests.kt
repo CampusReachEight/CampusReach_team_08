@@ -381,7 +381,7 @@ class EndToEndTests : BaseEmulatorTest() {
     composeTestRule.waitUntilAtLeastOneExists(
         matcher = hasTestTag(NavigationTestTags.REQUESTS_SCREEN), timeoutMillis = UI_WAIT_TIMEOUT)
 
-    composeTestRule.onNodeWithTag(NavigationTestTags.REQUESTS_SCREEN).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(NavigationTestTags.REQUESTS_SCREEN, useUnmergedTree = true).assertIsDisplayed()
   }
 
   private fun logOut() {
