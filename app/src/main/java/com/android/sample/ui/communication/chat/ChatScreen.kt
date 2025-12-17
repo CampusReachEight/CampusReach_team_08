@@ -19,17 +19,17 @@ import com.android.sample.ui.theme.UiDimens
 import com.android.sample.ui.theme.appPalette
 
 // Test Tags
-private object ChatScreenTestTags {
-  // const val SCREEN = "chat_screen"
+object ChatScreenTestTags {
+  const val SCREEN = "chat_screen"
   const val TOP_BAR = "chat_top_bar"
   const val BACK_BUTTON = "chat_back_button"
   const val LOADING_INDICATOR = "chat_loading_indicator"
-  // const val ERROR_MESSAGE = "chat_error_message"
+  const val ERROR_MESSAGE = "chat_error_message"
   const val MESSAGE_LIST = "chat_message_list"
   const val MESSAGE_INPUT = "chat_message_input"
   const val SEND_BUTTON = "chat_send_button"
   const val INPUT_ROW = "chat_input_row"
-  // const val READ_ONLY_MESSAGE = "chat_read_only_message"
+  const val READ_ONLY_MESSAGE = "chat_read_only_message"
   const val LOADING_MORE_INDICATOR = "chat_loading_more_indicator"
 }
 
@@ -134,7 +134,7 @@ fun ChatScreen(
   }
 
   Scaffold(
-      modifier = Modifier.fillMaxSize().imePadding().testTag(NavigationTestTags.CHAT_SCREEN),
+      modifier = Modifier.fillMaxSize().testTag(NavigationTestTags.CHAT_SCREEN),
       topBar = {
         TopAppBar(
             title = {
@@ -159,13 +159,11 @@ fun ChatScreen(
       },
       snackbarHost = { SnackbarHost(snackbarHostState) },
       bottomBar = {
-        uiState.chat?.let {
-          MessageInputBar(
-              messageText = uiState.messageInput,
-              onMessageChange = viewModel::updateMessageInput,
-              onSendClick = { viewModel.sendMessage(uiState.messageInput) },
-              isSending = uiState.isSendingMessage)
-        }
+        MessageInputBar(
+            messageText = uiState.messageInput,
+            onMessageChange = viewModel::updateMessageInput,
+            onSendClick = { viewModel.sendMessage(uiState.messageInput) },
+            isSending = uiState.isSendingMessage)
       }) { paddingValues ->
         Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
           when {
@@ -184,7 +182,7 @@ fun ChatScreen(
 
                 // Messages List
                 LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.fillMaxSize().padding(bottom = UiDimens.SpacingLg),
                     state = listState,
                     contentPadding =
                         PaddingValues(
@@ -248,10 +246,11 @@ private fun MessageInputBar(
     messageText: String,
     onMessageChange: (String) -> Unit,
     onSendClick: () -> Unit,
-    isSending: Boolean
+    isSending: Boolean,
+    modifier: Modifier = Modifier
 ) {
   Surface(
-      modifier = Modifier.fillMaxWidth(),
+      modifier = modifier.fillMaxWidth().navigationBarsPadding().imePadding(),
       color = appPalette().surface,
       tonalElevation = UiDimens.CardElevation) {
         Row(

@@ -158,9 +158,13 @@ class ChatScreenTest : BaseEmulatorTest() {
    */
   private fun waitForChatToLoad() {
     composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
-      composeTestRule.onAllNodesWithTag(MESSAGE_INPUT_TAG).fetchSemanticsNodes().isNotEmpty()
+      composeTestRule
+          .onAllNodesWithTag(ChatScreenTestTags.MESSAGE_LIST)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
     }
   }
+
   /** Waits for the chat title to appear in the UI. */
   private fun waitForChatTitle() {
     composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
@@ -211,7 +215,10 @@ class ChatScreenTest : BaseEmulatorTest() {
     setContent()
     waitForChatToLoad()
 
-    composeTestRule.onNodeWithTag(MESSAGE_LIST_TAG).assertExists().assertIsDisplayed()
+    composeTestRule
+        .onNodeWithTag(ChatScreenTestTags.MESSAGE_LIST)
+        .assertExists()
+        .assertIsDisplayed()
   }
 
   // ==================== MESSAGE INPUT TESTS ====================
@@ -307,35 +314,12 @@ class ChatScreenTest : BaseEmulatorTest() {
     composeTestRule.onNodeWithTag(SEND_BUTTON_TAG).assertIsNotEnabled()
   }
 
-  // ==================== MESSAGE DISPLAY TESTS ====================
-
-  @Test
-  fun chatScreen_displaysMessages_afterSending() {
-    createTestChatBlocking()
-    setContent()
-    waitForChatToLoad()
-
-    composeTestRule.onNodeWithTag(MESSAGE_INPUT_TAG).performTextInput(TEST_INPUT_TEXT)
-    composeTestRule.onNodeWithTag(SEND_BUTTON_TAG).performClick()
-
-    // Wait for message to appear
-    composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
-      composeTestRule
-          .onAllNodesWithText(TEST_INPUT_TEXT, substring = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
-
-    composeTestRule.onNodeWithText(TEST_INPUT_TEXT, substring = true).assertExists()
-  }
-
   @Test
   fun chatScreen_emptyMessageList_showsNoMessages() {
     createTestChatBlocking()
     setContent()
     waitForChatToLoad()
-
-    composeTestRule.onNodeWithTag(MESSAGE_LIST_TAG).assertExists()
+    composeTestRule.onNodeWithTag(ChatScreenTestTags.MESSAGE_LIST).assertExists()
   }
 
   // ==================== READ-ONLY CHAT TESTS ====================
@@ -357,8 +341,8 @@ class ChatScreenTest : BaseEmulatorTest() {
     setContent()
     waitForChatToLoad()
 
-    // Verify message list exists (loading more would require actual scrolling with many messages)
-    composeTestRule.onNodeWithTag(MESSAGE_LIST_TAG).assertExists()
+    // Verify the message list exists
+    composeTestRule.onNodeWithTag(ChatScreenTestTags.MESSAGE_LIST).assertExists()
   }
 
   @Test

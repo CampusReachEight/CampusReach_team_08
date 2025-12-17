@@ -23,6 +23,8 @@ import kotlinx.coroutines.launch
 
 private const val CANNOT_SEE_MESSAGES_INVALID_STATE = "Cannot send message: invalid state"
 
+private const val FAILED_TO_LOAD_MESSAGE_ERROR = "Failed to load more messages. Please try again."
+
 /**
  * ViewModel for the Chat conversation screen.
  *
@@ -168,7 +170,8 @@ class ChatViewModel(
               isLoadingMore = false)
         }
       } catch (e: Exception) {
-        _uiState.update { it.copy(isLoadingMore = false) }
+        val friendlyError = e.message?.takeIf { it.isNotBlank() } ?: FAILED_TO_LOAD_MESSAGE_ERROR
+        _uiState.update { it.copy(isLoadingMore = false, errorMessage = friendlyError) }
       }
     }
   }

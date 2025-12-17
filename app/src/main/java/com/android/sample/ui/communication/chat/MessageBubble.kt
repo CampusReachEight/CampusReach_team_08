@@ -27,7 +27,7 @@ import com.google.firebase.firestore.firestore
 import java.util.*
 
 // Test Tags
-private object MessageBubbleTestTags {
+object MessageBubbleTestTags {
   const val BUBBLE = "message_bubble"
   const val SENDER_NAME = "message_sender_name"
   const val MESSAGE_TEXT = "message_text"
@@ -102,15 +102,13 @@ fun MessageBubble(
                       .size(MessageBubbleDimens.ProfilePictureSize.dp)
                       .clip(CircleShape)
                       .clickable(
-                          onClick = {
-                            println("$PROFILE_CLICKED: ${message.senderId}")
-                            onProfileClick(message.senderId)
-                          },
+                          onClick = {},
                           interactionSource = remember { MutableInteractionSource() },
                           indication = LocalIndication.current)) {
                 ProfilePicture(
                     profileRepository = profileRepository,
                     profileId = message.senderId,
+                    onClick = onProfileClick,
                     modifier = Modifier.fillMaxSize(),
                     withName = false)
               }
