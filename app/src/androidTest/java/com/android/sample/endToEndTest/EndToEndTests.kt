@@ -7,6 +7,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.hasTestTag
@@ -455,6 +456,7 @@ class EndToEndTests : BaseEmulatorTest() {
       composeTestRule
           .onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON, useUnmergedTree = true)
           .assertIsDisplayed()
+          .assertHasClickAction()
           .performClick()
 
       android.util.Log.d(TAG, "Waiting for idle")
