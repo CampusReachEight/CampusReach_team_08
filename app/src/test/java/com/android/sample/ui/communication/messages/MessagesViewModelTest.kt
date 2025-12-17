@@ -82,9 +82,14 @@ class MessagesViewModelTest {
     firebaseAuth = mockk(relaxed = true)
     firebaseUser = mockk(relaxed = true)
     requestRepository = mockk(relaxed = true)
-    // Mock Firebase Auth
+
     every { firebaseAuth.currentUser } returns firebaseUser
     every { firebaseUser.uid } returns CURRENT_USER_ID
+
+    coEvery { requestRepository.getRequest(any()) } answers
+        {
+          mockRequest(firstArg(), RequestStatus.OPEN)
+        }
   }
 
   @After
@@ -560,5 +565,119 @@ class MessagesViewModelTest {
 
     // Then
     assertUiState(expectedChatCount = EXPECTED_ZERO_CHATS, expectedIsLoading = false)
+  }
+  // ============ Tests for Offline State ============
+
+  @Test
+  fun loadChats_whenNetworkUnavailable_setsOfflineState() = runTest {
+    // Given
+    val networkError =
+        IllegalStateException("Network unavailable: cannot retrieve chats from server")
+    coEvery { chatRepository.getUserChats(CURRENT_USER_ID) } throws networkError
+
+    // When
+    initializeViewModel()
+
+    // Then
+    val state = viewModel.uiState.value
+    assertTrue("Should be in offline state", state.isOffline)
+    assertFalse("Should not be loading", state.isLoading)
+    assertNull("Error message should be null when offline", state.errorMessage)
+    assertEquals("Should have no chats", EXPECTED_ZERO_CHATS, state.chatItems.size)
+  }
+
+  @Test
+  fun loadChats_whenNetworkUnavailableWithDifferentMessage_setsOfflineState() = runTest {
+    // Given - Test case insensitive matching
+    val networkError = IllegalStateException("NETWORK UNAVAILABLE: some other message")
+    coEvery { chatRepository.getUserChats(CURRENT_USER_ID) } throws networkError
+
+    // When
+    initializeViewModel()
+
+    // Then
+    val state = viewModel.uiState.value
+    assertTrue("Should be in offline state", state.isOffline)
+    assertFalse("Should not be loading", state.isLoading)
+    assertNull("Error message should be null when offline", state.errorMessage)
+  }
+
+  @Test
+  fun loadChats_whenOtherError_setsErrorMessageNotOffline() = runTest {
+    // Given
+    val otherError = Exception("Database error")
+    coEvery { chatRepository.getUserChats(CURRENT_USER_ID) } throws otherError
+
+    // When
+    initializeViewModel()
+
+    // Then
+    val state = viewModel.uiState.value
+    assertFalse("Should not be in offline state", state.isOffline)
+    assertFalse("Should not be loading", state.isLoading)
+    assertEquals("Should have error message", "Database error", state.errorMessage)
+    assertEquals("Should have no chats", EXPECTED_ZERO_CHATS, state.chatItems.size)
+  }
+
+  @Test
+  fun loadChats_whenIllegalStateButNotNetwork_setsErrorMessageNotOffline() = runTest {
+    // Given - IllegalStateException but not network related
+    val otherError = IllegalStateException("Some other illegal state")
+    coEvery { chatRepository.getUserChats(CURRENT_USER_ID) } throws otherError
+
+    // When
+    initializeViewModel()
+
+    // Then
+    val state = viewModel.uiState.value
+    assertFalse("Should not be in offline state", state.isOffline)
+    assertFalse("Should not be loading", state.isLoading)
+    assertEquals("Should have error message", "Some other illegal state", state.errorMessage)
+  }
+
+  @Test
+  fun refresh_whenOffline_clearsOfflineStateAndReloads() = runTest {
+    // Given - Start in offline state
+    val networkError =
+        IllegalStateException("Network unavailable: cannot retrieve chats from server")
+    coEvery { chatRepository.getUserChats(CURRENT_USER_ID) } throws networkError
+    initializeViewModel()
+    assertTrue("Should start in offline state", viewModel.uiState.value.isOffline)
+
+    // When - Network comes back and refresh is called
+    val chats = listOf(createChatAsCreator())
+    coEvery { chatRepository.getUserChats(CURRENT_USER_ID) } returns chats
+    viewModel.refresh()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Then
+    val state = viewModel.uiState.value
+    assertFalse("Should not be in offline state", state.isOffline)
+    assertFalse("Should not be loading", state.isLoading)
+    assertNull("Error message should be null", state.errorMessage)
+    assertEquals("Should have one chat", EXPECTED_ONE_CHAT, state.chatItems.size)
+  }
+
+  @Test
+  fun loadChats_whenRequestRepositoryThrowsNetworkError_filtersOutChat() = runTest {
+    // Given - One valid chat and one chat whose request throws network error
+    val chat1 = createChatAsCreator(CHAT_ID_1, REQUEST_TITLE_1, LAST_MESSAGE_1)
+    val chat2 = createChatAsHelper(CHAT_ID_2, REQUEST_TITLE_2, LAST_MESSAGE_2)
+
+    coEvery { chatRepository.getUserChats(CURRENT_USER_ID) } returns listOf(chat1, chat2)
+    coEvery { requestRepository.getRequest(CHAT_ID_1) } returns
+        mockRequest(CHAT_ID_1, RequestStatus.OPEN)
+    coEvery { requestRepository.getRequest(CHAT_ID_2) } throws
+        IllegalStateException("Network unavailable")
+
+    // When
+    initializeViewModel()
+
+    // Then - Should only have chat1, chat2 filtered out due to network error
+    val state = viewModel.uiState.value
+    assertFalse("Should not be in offline state", state.isOffline)
+    assertEquals(
+        "Should have one chat (other filtered out)", EXPECTED_ONE_CHAT, state.chatItems.size)
+    assertEquals("Should have chat1", CHAT_ID_1, state.chatItems[0].chat.chatId)
   }
 }

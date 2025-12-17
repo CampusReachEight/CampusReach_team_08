@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.android.sample.model.chat.ChatRepository
 import com.android.sample.model.profile.UserProfile
 import com.android.sample.model.profile.UserProfileRepository
+import com.android.sample.model.request.CloseRequestResult
 import com.android.sample.model.request.CloseRequestUseCase
 import com.android.sample.model.request.Request
 import com.android.sample.model.request.RequestClosureException
@@ -62,6 +63,7 @@ private const val UNEXPECTED_ERROR = "An unexpected error occurred:"
 private const val FAILED_TO_AWARD_KUDOS_ERROR = "Failed to award kudos after closing request"
 
 private const val FAILED_TO_CLOSE_REQUEST_ERROR = "Failed to close request:"
+const val TAG = "ValidationViewModel"
 
 /**
  * ViewModel for the request validation screen.
@@ -227,20 +229,15 @@ class ValidateRequestViewModel(
         val selectedHelperIds = currentState.selectedHelpers.map { it.id }
 
         // Use the use case to close request and award kudos
-        when (val result = closeRequestUseCase.execute(requestId, selectedHelperIds)) {
-          is com.android.sample.model.request.CloseRequestResult.Success -> {
-            try {
-              chatRepository.deleteChat(requestId)
-            } catch (e: Exception) {}
+        val result = closeRequestUseCase.execute(requestId, selectedHelperIds)
+
+        when (result) {
+          is CloseRequestResult.Success,
+          is CloseRequestResult.PartialSuccess -> {
+            deleteChatSafely()
             state = ValidationState.Success
           }
-          is com.android.sample.model.request.CloseRequestResult.PartialSuccess -> {
-            try {
-              chatRepository.deleteChat(requestId)
-            } catch (e: Exception) {}
-            state = ValidationState.Success
-          }
-          is com.android.sample.model.request.CloseRequestResult.Failure -> {
+          is CloseRequestResult.Failure -> {
             throw result.error
           }
         }
@@ -255,6 +252,20 @@ class ValidateRequestViewModel(
       } catch (e: Exception) {
         state = ValidationState.Error(message = "$UNEXPECTED_ERROR ${e.message}", canRetry = true)
       }
+    }
+  }
+
+  /**
+   * Safely deletes the chat associated with the request. Failures are logged but don't affect the
+   * overall operation success.
+   */
+  private suspend fun deleteChatSafely() {
+    try {
+      chatRepository.deleteChat(requestId)
+    } catch (e: IllegalStateException) {
+      android.util.Log.w(TAG, "Failed to delete chat $requestId: ${e.message}")
+    } catch (e: Exception) {
+      android.util.Log.e(TAG, "Unexpected error deleting chat $requestId", e)
     }
   }
 

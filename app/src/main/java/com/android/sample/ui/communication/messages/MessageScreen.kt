@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Message
 import androidx.compose.material.icons.filled.Message
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -30,7 +31,10 @@ private object MessagesScreenTestTags {
   const val EMPTY_STATE_ICON = "messages_empty_state_icon"
   const val EMPTY_STATE_TEXT = "messages_empty_state_text"
   const val EMPTY_STATE_SUBTITLE = "messages_empty_state_subtitle"
+  const val MESSAGES_OFFLINE_STATE = "messages_offline_state"
 }
+
+private const val WEIGHT_2 = 2f
 
 // Constants
 private object MessagesScreenConstants {
@@ -38,7 +42,7 @@ private object MessagesScreenConstants {
   const val EMPTY_STATE_MESSAGE = "No messages yet"
   const val EMPTY_STATE_SUBTITLE = "Start helping others or create a request to begin chatting"
   const val ERROR_DISMISS = "Dismiss"
-  const val EMPTY_STATE_ICON_SIZE_MULTIPLIER = 2f
+  const val EMPTY_STATE_ICON_SIZE_MULTIPLIER = WEIGHT_2
 }
 
 /**
@@ -82,6 +86,9 @@ fun MessagesScreen(
                               .testTag(MessagesScreenTestTags.LOADING_INDICATOR),
                       color = appPalette().accent)
                 }
+                uiState.isOffline -> {
+                  OfflineState(modifier = Modifier.align(Alignment.Center))
+                }
                 uiState.chatItems.isEmpty() -> {
                   EmptyMessagesState(modifier = Modifier.align(Alignment.Center))
                 }
@@ -94,27 +101,33 @@ fun MessagesScreen(
                           ChatListItem(
                               chat = chatItem.chat,
                               isCreator = chatItem.isCreator,
-                              onClick = { onChatClick(chatItem.chat.chatId) })
+                              onClick = {
+                                if (!uiState.isOffline) {
+                                  onChatClick(chatItem.chat.chatId)
+                                }
+                              })
                         }
                       }
                 }
               }
-
-              // Error handling
-              uiState.errorMessage?.let { errorMessage ->
-                androidx.compose.runtime.LaunchedEffect(errorMessage) {
-                  snackbarHostState.showSnackbar(
-                      message = errorMessage,
-                      actionLabel = MessagesScreenConstants.ERROR_DISMISS,
-                      duration = SnackbarDuration.Short)
-                  viewModel.clearError()
-                }
-              }
             }
+
+        // Error handling
+        uiState.errorMessage?.let { errorMessage ->
+          androidx.compose.runtime.LaunchedEffect(errorMessage) {
+            snackbarHostState.showSnackbar(
+                message = errorMessage,
+                actionLabel = MessagesScreenConstants.ERROR_DISMISS,
+                duration = SnackbarDuration.Short)
+            viewModel.clearError()
+          }
+        }
       }
 }
 
-private const val ALPHA = 0.6f
+private const val WEIGHT_6 = 0.6f
+
+private const val ALPHA = WEIGHT_6
 
 /**
  * Empty state displayed when user has no chats.
@@ -152,5 +165,37 @@ private fun EmptyMessagesState(modifier: Modifier = Modifier) {
             modifier =
                 Modifier.padding(horizontal = UiDimens.SpacingXl)
                     .testTag(MessagesScreenTestTags.EMPTY_STATE_SUBTITLE))
+      }
+}
+
+private const val YOU_RE_OFFLINE = "You're Offline"
+
+private const val CONNECT_TO_THE_INTERNET_MESSAGE =
+    "Connect to the internet to view and access your messages"
+
+@Composable
+private fun OfflineState(modifier: Modifier = Modifier) {
+  Column(
+      modifier = modifier.fillMaxWidth().testTag(MessagesScreenTestTags.MESSAGES_OFFLINE_STATE),
+      horizontalAlignment = Alignment.CenterHorizontally,
+      verticalArrangement = Arrangement.spacedBy(UiDimens.SpacingMd)) {
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.Message,
+            contentDescription = null,
+            modifier = Modifier.size(UiDimens.IconLarge * WEIGHT_2),
+            tint = appPalette().secondary.copy(alpha = WEIGHT_6))
+
+        Text(
+            text = YOU_RE_OFFLINE,
+            style = MaterialTheme.typography.titleLarge,
+            color = appPalette().text,
+            textAlign = TextAlign.Center)
+
+        Text(
+            text = CONNECT_TO_THE_INTERNET_MESSAGE,
+            style = MaterialTheme.typography.bodyMedium,
+            color = appPalette().text.copy(alpha = WEIGHT_6),
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = UiDimens.SpacingXl))
       }
 }

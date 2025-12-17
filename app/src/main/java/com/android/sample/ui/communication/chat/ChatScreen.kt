@@ -39,29 +39,6 @@ private object ChatScreenConstants {
   const val SEND_BUTTON_DESCRIPTION = "Send message"
   const val MESSAGE_INPUT_PLACEHOLDER = "Type a message..."
   const val ERROR_DISMISS = "Dismiss"
-  /*
-  // Read-only messages
-  const val CHAT_COMPLETED = "Request completed"
-  const val CHAT_EXPIRED = "Request expired"
-  const val CHAT_CANCELLED = "Request cancelled"
-  const val CHAT_CLOSED = "Chat closed"
-  const val READ_ONLY = "Read-only"
-
-  // Status chip styling
-  const val STATUS_CHIP_CORNER_RADIUS_DP = 20
-  const val STATUS_ICON_SIZE_DP = 18
-  const val STATUS_LOCK_ICON_SIZE_DP = 16
-  const val STATUS_ICON_ALPHA = 0.6f
-  const val STATUS_TEXT_ALPHA = 0.7f
-  const val STATUS_LOCK_ALPHA = 0.4f
-  const val STATUS_BACKGROUND_ALPHA = 0.1f
-
-
-  // Colors
-  val COLOR_COMPLETED = Color(0xFF4CAF50)
-  val COLOR_EXPIRED = Color(0xFFFF9800)
-  val COLOR_CANCELLED = Color(0xFFF44336)
-    */
   const val LOADING_MORE_ICON_SIZE_DP = 24
 }
 

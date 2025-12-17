@@ -21,6 +21,8 @@ private const val NO_AUTHENTICATED_USER_ERROR = "No authenticated user"
 
 private const val FAILED_TO_LOAD_CHATS_PLEASE_TRY_AGAIN_ = "Failed to load chats. Please try again."
 
+private const val NETWORK_UNAVAILABLE = "Network unavailable"
+
 /**
  * ViewModel for the Messages screen (list of all chats).
  *
@@ -90,9 +92,18 @@ class MessagesViewModel(
 
         _uiState.update { it.copy(chatItems = chatItems, isLoading = false, errorMessage = null) }
       } catch (e: Exception) {
-        val friendly =
-            e.message?.takeIf { it.isNotBlank() } ?: FAILED_TO_LOAD_CHATS_PLEASE_TRY_AGAIN_
-        _uiState.update { it.copy(isLoading = false, errorMessage = friendly) }
+        // Check if it's a network unavailable error
+        val isNetworkError =
+            e is IllegalStateException &&
+                e.message?.contains(NETWORK_UNAVAILABLE, ignoreCase = true) == true
+
+        if (isNetworkError) {
+          _uiState.update { it.copy(isLoading = false, isOffline = true, errorMessage = null) }
+        } else {
+          val friendly =
+              e.message?.takeIf { it.isNotBlank() } ?: FAILED_TO_LOAD_CHATS_PLEASE_TRY_AGAIN_
+          _uiState.update { it.copy(isLoading = false, errorMessage = friendly, isOffline = false) }
+        }
       }
     }
   }
@@ -169,7 +180,8 @@ class MessagesViewModelFactory(
 data class MessagesUiState(
     val chatItems: List<ChatItem> = emptyList(),
     val isLoading: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val isOffline: Boolean = false
 )
 
 /**
