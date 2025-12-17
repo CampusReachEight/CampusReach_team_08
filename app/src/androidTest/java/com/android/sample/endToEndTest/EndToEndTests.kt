@@ -305,6 +305,8 @@ class EndToEndTests : BaseEmulatorTest() {
       composeTestRule.waitUntilAtLeastOneExists(
           matcher = hasTestTagThatStartsWith(), timeoutMillis = UI_WAIT_TIMEOUT)
 
+      composeTestRule.waitForIdle()
+
       // click on the first Location that is proposed
       android.util.Log.d(TAG, "Clicking on first location result")
       composeTestRule
