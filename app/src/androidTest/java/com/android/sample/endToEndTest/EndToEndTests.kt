@@ -31,6 +31,8 @@ import com.android.sample.model.request.RequestStatus
 import com.android.sample.model.request.RequestType
 import com.android.sample.model.request.Tags
 import com.android.sample.ui.authentication.SignInScreenTestTags
+import com.android.sample.ui.leaderboard.LeaderboardSort
+import com.android.sample.ui.leaderboard.LeaderboardTestTags
 import com.android.sample.ui.map.MapTestTags
 import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.overview.AcceptRequestScreenTestTags
@@ -1198,4 +1200,47 @@ class EndToEndTests : BaseEmulatorTest() {
       android.util.Log.d(TAG, "========== TEST: userCanSeeSpecificRequestOnMap END ==========")
     }
   }
+
+
+    @Test
+    fun canUserGoToLeaderBoard() {
+        runBlocking {
+            hadARequestWithOtherAccount()
+
+            val testName = "0dwadmioaw9idjccccc"
+            val testEmail = "dawdi0jaw89dhw77jdja777@example.com"
+
+            initialize(testName, testEmail)
+            composeTestRule.waitForIdle()
+
+            composeTestRule.waitUntilAtLeastOneExists(
+                matcher = hasTestTag(NavigationTestTags.LEADERBOARD_TAB), timeoutMillis = UI_WAIT_TIMEOUT)
+            composeTestRule
+                .onNodeWithTag(NavigationTestTags.LEADERBOARD_TAB, useUnmergedTree = true)
+                .assertIsDisplayed()
+                .performClick()
+
+            composeTestRule.waitUntilAtLeastOneExists(
+                matcher = hasTestTag(LeaderboardTestTags.LEADERBOARD_LIST),
+                timeoutMillis = UI_WAIT_TIMEOUT)
+
+            composeTestRule.waitUntilAtLeastOneExists(
+                matcher = hasTestTag(LeaderboardTestTags.SORT_BUTTON), timeoutMillis = UI_WAIT_TIMEOUT)
+
+            composeTestRule
+                .onNodeWithTag(LeaderboardTestTags.SORT_BUTTON, useUnmergedTree = true)
+                .assertIsDisplayed()
+                .performClick()
+
+            composeTestRule.waitUntilAtLeastOneExists(
+                matcher = hasTestTag(LeaderboardTestTags.SORT_MENU), timeoutMillis = UI_WAIT_TIMEOUT)
+
+            composeTestRule
+                .onNodeWithTag(
+                    LeaderboardTestTags.getSortOptionTag(LeaderboardSort.KUDOS_ASC),
+                    useUnmergedTree = true)
+                .assertIsDisplayed()
+                .performClick()
+        }
+    }
 }
