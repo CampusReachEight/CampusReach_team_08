@@ -1,5 +1,7 @@
 package com.android.sample.ui.profile.composables
 
+import android.annotation.SuppressLint
+import android.content.Intent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -21,7 +23,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.core.net.toUri
 import com.android.sample.ui.profile.ProfileDimens
 import com.android.sample.ui.profile.ProfileTestTags
 import com.android.sample.ui.theme.AppPalette
@@ -40,6 +44,8 @@ private const val FIND_OUT_MORE = "Find out more about CampusReach"
 private const val TITLE_MY_REQUESTS = "My Request"
 
 private const val SEE_AND_EDIT = "See and edit your own request"
+private const val README_URL =
+    "https://github.com/CampusReachEight/CampusReach_team_08/blob/main/README.md"
 
 /**
  * A composable function that displays a list of profile-related actions in the form of buttons.
@@ -48,6 +54,7 @@ private const val SEE_AND_EDIT = "See and edit your own request"
  * @param palette An instance of [AppPalette] to define the color palette for the UI. Defaults to
  *   the global `appPalette()`.
  */
+@SuppressLint("UseKtx")
 @Composable
 fun ProfileActions(
     onLogoutClick: () -> Unit = {},
@@ -55,6 +62,8 @@ fun ProfileActions(
     onAcceptedRequestsClick: () -> Unit = {},
     palette: AppPalette = appPalette()
 ) {
+  val context = LocalContext.current
+
   Column(
       modifier =
           Modifier.padding(horizontal = ProfileDimens.Horizontal)
@@ -87,7 +96,11 @@ fun ProfileActions(
             icon = Icons.Default.Info,
             title = TITLE_ABOUT,
             subtitle = FIND_OUT_MORE,
-            tag = ProfileTestTags.PROFILE_ACTION_ABOUT_APP)
+            tag = ProfileTestTags.PROFILE_ACTION_ABOUT_APP,
+            onClick = {
+              val intent = Intent(Intent.ACTION_VIEW, README_URL.toUri())
+              context.startActivity(intent)
+            })
 
         // Logout action item - LAST
         ActionItem(
