@@ -153,6 +153,8 @@ fun AcceptRequestScreen(
   Scaffold(
       modifier = Modifier.testTag(NavigationTestTags.ACCEPT_REQUEST_SCREEN),
       topBar = {
+        var backClicked by remember { mutableStateOf(false) }
+
         TopAppBar(
             title = {
               Text(
@@ -161,8 +163,12 @@ fun AcceptRequestScreen(
             },
             navigationIcon = {
               IconButton(
-                  onClick = { onGoBack() },
-                  Modifier.testTag(AcceptRequestScreenTestTags.REQUEST_GO_BACK)) {
+                  onClick = {
+                    onGoBack()
+                    backClicked = true
+                  },
+                  enabled = !backClicked,
+                  modifier = Modifier.testTag(AcceptRequestScreenTestTags.REQUEST_GO_BACK)) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
                         contentDescription = AcceptRequestScreenLabels.BACK)
