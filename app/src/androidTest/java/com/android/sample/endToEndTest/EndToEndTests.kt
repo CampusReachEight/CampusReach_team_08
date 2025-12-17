@@ -1201,46 +1201,45 @@ class EndToEndTests : BaseEmulatorTest() {
     }
   }
 
+  @Test
+  fun canUserGoToLeaderBoard() {
+    runBlocking {
+      hadARequestWithOtherAccount()
 
-    @Test
-    fun canUserGoToLeaderBoard() {
-        runBlocking {
-            hadARequestWithOtherAccount()
+      val testName = "0dwadmioaw9idjccccc"
+      val testEmail = "dawdi0jaw89dhw77jdja777@example.com"
 
-            val testName = "0dwadmioaw9idjccccc"
-            val testEmail = "dawdi0jaw89dhw77jdja777@example.com"
+      initialize(testName, testEmail)
+      composeTestRule.waitForIdle()
 
-            initialize(testName, testEmail)
-            composeTestRule.waitForIdle()
+      composeTestRule.waitUntilAtLeastOneExists(
+          matcher = hasTestTag(NavigationTestTags.LEADERBOARD_TAB), timeoutMillis = UI_WAIT_TIMEOUT)
+      composeTestRule
+          .onNodeWithTag(NavigationTestTags.LEADERBOARD_TAB, useUnmergedTree = true)
+          .assertIsDisplayed()
+          .performClick()
 
-            composeTestRule.waitUntilAtLeastOneExists(
-                matcher = hasTestTag(NavigationTestTags.LEADERBOARD_TAB), timeoutMillis = UI_WAIT_TIMEOUT)
-            composeTestRule
-                .onNodeWithTag(NavigationTestTags.LEADERBOARD_TAB, useUnmergedTree = true)
-                .assertIsDisplayed()
-                .performClick()
+      composeTestRule.waitUntilAtLeastOneExists(
+          matcher = hasTestTag(LeaderboardTestTags.LEADERBOARD_LIST),
+          timeoutMillis = UI_WAIT_TIMEOUT)
 
-            composeTestRule.waitUntilAtLeastOneExists(
-                matcher = hasTestTag(LeaderboardTestTags.LEADERBOARD_LIST),
-                timeoutMillis = UI_WAIT_TIMEOUT)
+      composeTestRule.waitUntilAtLeastOneExists(
+          matcher = hasTestTag(LeaderboardTestTags.SORT_BUTTON), timeoutMillis = UI_WAIT_TIMEOUT)
 
-            composeTestRule.waitUntilAtLeastOneExists(
-                matcher = hasTestTag(LeaderboardTestTags.SORT_BUTTON), timeoutMillis = UI_WAIT_TIMEOUT)
+      composeTestRule
+          .onNodeWithTag(LeaderboardTestTags.SORT_BUTTON, useUnmergedTree = true)
+          .assertIsDisplayed()
+          .performClick()
 
-            composeTestRule
-                .onNodeWithTag(LeaderboardTestTags.SORT_BUTTON, useUnmergedTree = true)
-                .assertIsDisplayed()
-                .performClick()
+      composeTestRule.waitUntilAtLeastOneExists(
+          matcher = hasTestTag(LeaderboardTestTags.SORT_MENU), timeoutMillis = UI_WAIT_TIMEOUT)
 
-            composeTestRule.waitUntilAtLeastOneExists(
-                matcher = hasTestTag(LeaderboardTestTags.SORT_MENU), timeoutMillis = UI_WAIT_TIMEOUT)
-
-            composeTestRule
-                .onNodeWithTag(
-                    LeaderboardTestTags.getSortOptionTag(LeaderboardSort.KUDOS_ASC),
-                    useUnmergedTree = true)
-                .assertIsDisplayed()
-                .performClick()
-        }
+      composeTestRule
+          .onNodeWithTag(
+              LeaderboardTestTags.getSortOptionTag(LeaderboardSort.KUDOS_ASC),
+              useUnmergedTree = true)
+          .assertIsDisplayed()
+          .performClick()
     }
+  }
 }
