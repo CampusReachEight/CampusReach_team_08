@@ -20,7 +20,6 @@ import androidx.compose.ui.unit.dp
 import com.android.sample.model.chat.Message
 import com.android.sample.model.profile.UserProfileRepository
 import com.android.sample.model.profile.UserProfileRepositoryFirestore
-import com.android.sample.ui.profile.ProfilePicture
 import com.android.sample.ui.theme.UiDimens
 import com.android.sample.ui.theme.appPalette
 import com.google.firebase.Firebase
@@ -59,6 +58,8 @@ object MessageBubbleDimens {
   const val HorizontalPadding = 16
 }
 
+private const val F = 0.3f
+
 /**
  * Message bubble component.
  *
@@ -94,74 +95,71 @@ fun MessageBubble(
       verticalAlignment = Alignment.Top,
       horizontalArrangement = if (isOwnMessage) Arrangement.End else Arrangement.Start) {
         // Profile picture (only for other's messages)
-      if (!isOwnMessage) {
+        if (!isOwnMessage) {
           Box(
-              modifier = Modifier
-                  .padding(end = MessageBubbleDimens.ProfilePicturePadding.dp)
-                  .size(MessageBubbleDimens.ProfilePictureSize.dp)
-                  .clip(CircleShape)
-                  .background(Color.Red.copy(alpha = 0.3f))
-                  .clickable(
-                      onClick = {
-                          println("PROFILE CLICKED: ${message.senderId}")
-                          onProfileClick(message.senderId)
-                      },
-                      interactionSource = remember { MutableInteractionSource() },
-                      indication = LocalIndication.current
-                  )
-          )
-              }
+              modifier =
+                  Modifier.padding(end = MessageBubbleDimens.ProfilePicturePadding.dp)
+                      .size(MessageBubbleDimens.ProfilePictureSize.dp)
+                      .clip(CircleShape)
+                      .background(Color.Red.copy(alpha = F))
+                      .clickable(
+                          onClick = {
+                            println("PROFILE CLICKED: ${message.senderId}")
+                            onProfileClick(message.senderId)
+                          },
+                          interactionSource = remember { MutableInteractionSource() },
+                          indication = LocalIndication.current))
         }
-
-        // Message bubble container
-        Box(
-            modifier =
-                Modifier.fillMaxWidth(maxWidthFraction)
-                    .wrapContentWidth(if (isOwnMessage) Alignment.End else Alignment.Start)) {
-              Column(
-                  modifier =
-                      Modifier.clip(
-                              RoundedCornerShape(
-                                  topStart =
-                                      if (isOwnMessage) MessageBubbleDimens.NO_PADDING.dp
-                                      else MessageBubbleDimens.BubbleCornerRadius.dp,
-                                  topEnd = MessageBubbleDimens.BubbleCornerRadius.dp,
-                                  bottomStart = MessageBubbleDimens.BubbleCornerRadius.dp,
-                                  bottomEnd =
-                                      if (isOwnMessage) MessageBubbleDimens.NO_PADDING.dp
-                                      else MessageBubbleDimens.BubbleCornerRadius.dp))
-                          .background(bubbleColor)
-                          .padding(MessageBubbleDimens.BubblePadding.dp)
-                          .testTag(MessageBubbleTestTags.BUBBLE),
-                  verticalArrangement = Arrangement.spacedBy(UiDimens.SpacingXs)) {
-                    // Sender Name (only for other's messages)
-                    if (!isOwnMessage) {
-                      Text(
-                          text = message.senderName,
-                          style = MaterialTheme.typography.labelSmall,
-                          color = textColor.copy(alpha = MessageBubbleConstants.SENDER_NAME_ALPHA),
-                          modifier = Modifier.testTag(MessageBubbleTestTags.SENDER_NAME))
-                    }
-
-                    // Message Text
-                    Text(
-                        text = message.text,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = textColor,
-                        modifier = Modifier.testTag(MessageBubbleTestTags.MESSAGE_TEXT))
-
-                    // Timestamp
-                    Text(
-                        text = formatTimestamp(message.timestamp),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = textColor.copy(alpha = MessageBubbleConstants.TIMESTAMP_ALPHA),
-                        modifier =
-                            Modifier.align(if (isOwnMessage) Alignment.End else Alignment.Start)
-                                .testTag(MessageBubbleTestTags.TIMESTAMP))
-                  }
-            }
       }
 
+  // Message bubble container
+  Box(
+      modifier =
+          Modifier.fillMaxWidth(maxWidthFraction)
+              .wrapContentWidth(if (isOwnMessage) Alignment.End else Alignment.Start)) {
+        Column(
+            modifier =
+                Modifier.clip(
+                        RoundedCornerShape(
+                            topStart =
+                                if (isOwnMessage) MessageBubbleDimens.NO_PADDING.dp
+                                else MessageBubbleDimens.BubbleCornerRadius.dp,
+                            topEnd = MessageBubbleDimens.BubbleCornerRadius.dp,
+                            bottomStart = MessageBubbleDimens.BubbleCornerRadius.dp,
+                            bottomEnd =
+                                if (isOwnMessage) MessageBubbleDimens.NO_PADDING.dp
+                                else MessageBubbleDimens.BubbleCornerRadius.dp))
+                    .background(bubbleColor)
+                    .padding(MessageBubbleDimens.BubblePadding.dp)
+                    .testTag(MessageBubbleTestTags.BUBBLE),
+            verticalArrangement = Arrangement.spacedBy(UiDimens.SpacingXs)) {
+              // Sender Name (only for other's messages)
+              if (!isOwnMessage) {
+                Text(
+                    text = message.senderName,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = textColor.copy(alpha = MessageBubbleConstants.SENDER_NAME_ALPHA),
+                    modifier = Modifier.testTag(MessageBubbleTestTags.SENDER_NAME))
+              }
+
+              // Message Text
+              Text(
+                  text = message.text,
+                  style = MaterialTheme.typography.bodyMedium,
+                  color = textColor,
+                  modifier = Modifier.testTag(MessageBubbleTestTags.MESSAGE_TEXT))
+
+              // Timestamp
+              Text(
+                  text = formatTimestamp(message.timestamp),
+                  style = MaterialTheme.typography.labelSmall,
+                  color = textColor.copy(alpha = MessageBubbleConstants.TIMESTAMP_ALPHA),
+                  modifier =
+                      Modifier.align(if (isOwnMessage) Alignment.End else Alignment.Start)
+                          .testTag(MessageBubbleTestTags.TIMESTAMP))
+            }
+      }
+}
 
 /**
  * Formats a timestamp to a time string.

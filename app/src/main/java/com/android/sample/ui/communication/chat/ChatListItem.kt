@@ -5,13 +5,19 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Handshake
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -29,6 +35,7 @@ object ChatListItemTestTags {
   const val TITLE = "chat_list_item_title"
   const val LAST_MESSAGE = "chat_list_item_last_message"
   const val TIMESTAMP = "chat_list_item_timestamp"
+  const val STATUS_BADGE = "chat_list_item_status_badge"
 }
 
 // Constants
@@ -39,10 +46,24 @@ private object ChatListItemConstants {
   const val TIMESTAMP_PATTERN = "MMM d, HH:mm"
   const val BADGE_CORNER_RADIUS_DP = 12
   const val TEXT_ALPHA_SECONDARY = 0.7f
+  const val EXPIRED_ALPHA = 0.6f
+  const val EXPIRED_SURFACE_ALPHA = 0.5f
+  const val STATUS_ICON_SIZE_DP = 20
+  const val STATUS_ICON_ALPHA = 0.7f
+
+  // Status colors
+  val COLOR_COMPLETED = Color(0xFF4CAF50)
+  val COLOR_EXPIRED = Color(0xFFFF9800)
+  val COLOR_CANCELLED = Color(0xFFF44336)
+  val COMPLETED = "COMPLETED"
+
+  val EXPIRED = "EXPIRED"
+
+  val CANCELLED = "CANCELLED"
+  val WEIGHT = 1f
 }
 
 private const val MAX_LINES = 1
-
 private const val LAST_MESSAGE_MAX_LINES = 2
 
 /**
@@ -53,6 +74,7 @@ private const val LAST_MESSAGE_MAX_LINES = 2
  * - Last message preview
  * - Timestamp of last message
  * - User role badge (Creator/Helper)
+ * - Status badge for expired/completed chats
  *
  * @param chat The chat to display
  * @param isCreator Whether the current user is the creator
@@ -66,6 +88,13 @@ fun ChatListItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+  val isExpired =
+      chat.requestStatus in
+          listOf(
+              ChatListItemConstants.COMPLETED,
+              ChatListItemConstants.EXPIRED,
+              ChatListItemConstants.CANCELLED)
+
   Surface(
       modifier =
           modifier
@@ -73,10 +102,18 @@ fun ChatListItem(
               .clip(RoundedCornerShape(UiDimens.CornerRadiusSm))
               .clickable(onClick = onClick)
               .testTag(ChatListItemTestTags.ITEM),
-      color = appPalette().surface,
+      color =
+          if (isExpired)
+              appPalette().surface.copy(alpha = ChatListItemConstants.EXPIRED_SURFACE_ALPHA)
+          else appPalette().surface,
       tonalElevation = UiDimens.CardElevation) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(UiDimens.SpacingMd),
+            modifier =
+                Modifier.fillMaxWidth()
+                    .padding(UiDimens.SpacingMd)
+                    .alpha(
+                        if (isExpired) ChatListItemConstants.EXPIRED_ALPHA
+                        else ChatListItemConstants.WEIGHT),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(UiDimens.SpacingMd)) {
               // Role Badge
@@ -84,7 +121,7 @@ fun ChatListItem(
 
               // Chat Details
               Column(
-                  modifier = Modifier.weight(1f),
+                  modifier = Modifier.weight(ChatListItemConstants.WEIGHT),
                   verticalArrangement = Arrangement.spacedBy(UiDimens.SpacingXs)) {
                     // Title
                     Text(
@@ -108,15 +145,49 @@ fun ChatListItem(
                         modifier = Modifier.testTag(ChatListItemTestTags.LAST_MESSAGE))
                   }
 
-              // Timestamp
-              chat.lastMessageTimestamp?.let { timestamp ->
-                Text(
-                    text = formatTimestamp(timestamp),
-                    style = MaterialTheme.typography.bodySmall,
-                    color =
-                        appPalette().text.copy(alpha = ChatListItemConstants.TEXT_ALPHA_SECONDARY),
-                    modifier = Modifier.testTag(ChatListItemTestTags.TIMESTAMP))
-              }
+              // Timestamp and Status
+              Column(
+                  horizontalAlignment = Alignment.End,
+                  verticalArrangement = Arrangement.spacedBy(UiDimens.SpacingXs)) {
+                    chat.lastMessageTimestamp?.let { timestamp ->
+                      Text(
+                          text = formatTimestamp(timestamp),
+                          style = MaterialTheme.typography.bodySmall,
+                          color =
+                              appPalette()
+                                  .text
+                                  .copy(alpha = ChatListItemConstants.TEXT_ALPHA_SECONDARY),
+                          modifier = Modifier.testTag(ChatListItemTestTags.TIMESTAMP))
+                    }
+
+                    // Status badge for expired/completed
+                    if (isExpired) {
+                      data class StatusIconInfo(val icon: ImageVector, val color: Color)
+
+                      val iconInfo: StatusIconInfo =
+                          when (chat.requestStatus) {
+                            ChatListItemConstants.COMPLETED ->
+                                StatusIconInfo(
+                                    Icons.Filled.CheckCircle, ChatListItemConstants.COLOR_COMPLETED)
+                            ChatListItemConstants.EXPIRED ->
+                                StatusIconInfo(
+                                    Icons.Filled.AccessTime, ChatListItemConstants.COLOR_EXPIRED)
+                            ChatListItemConstants.CANCELLED ->
+                                StatusIconInfo(
+                                    Icons.Filled.Cancel, ChatListItemConstants.COLOR_CANCELLED)
+                            else -> StatusIconInfo(Icons.Filled.CheckCircle, appPalette().text)
+                          }
+
+                      Icon(
+                          imageVector = iconInfo.icon,
+                          contentDescription = chat.requestStatus,
+                          tint =
+                              iconInfo.color.copy(alpha = ChatListItemConstants.STATUS_ICON_ALPHA),
+                          modifier =
+                              Modifier.size(ChatListItemConstants.STATUS_ICON_SIZE_DP.dp)
+                                  .testTag(ChatListItemTestTags.STATUS_BADGE))
+                    }
+                  }
             }
       }
 }

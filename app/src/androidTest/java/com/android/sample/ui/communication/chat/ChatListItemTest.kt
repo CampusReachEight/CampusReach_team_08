@@ -17,7 +17,8 @@ class ChatListItemTest {
   private fun createTestChat(
       requestTitle: String = "Help with moving",
       lastMessage: String = "Sure, I can help!",
-      lastMessageTimestamp: Date = Date()
+      lastMessageTimestamp: Date = Date(),
+      requestStatus: String = "OPEN"
   ): Chat {
     return Chat(
         chatId = "chat-123",
@@ -27,7 +28,7 @@ class ChatListItemTest {
         creatorId = "user-1",
         lastMessage = lastMessage,
         lastMessageTimestamp = lastMessageTimestamp,
-        requestStatus = "OPEN")
+        requestStatus = requestStatus)
   }
 
   @Test
@@ -175,5 +176,54 @@ class ChatListItemTest {
         .onNodeWithTag(ChatListItemTestTags.LAST_MESSAGE, useUnmergedTree = true)
         .assertExists()
         .assertIsDisplayed()
+  }
+
+  // ==================== EXPIRED CHAT TESTS ====================
+
+  @Test
+  fun chatListItem_completedChat_showsStatusBadge() {
+    val chat = createTestChat(requestStatus = "COMPLETED")
+
+    composeTestRule.setContent { ChatListItem(chat = chat, isCreator = true, onClick = {}) }
+
+    composeTestRule
+        .onNodeWithTag(ChatListItemTestTags.STATUS_BADGE, useUnmergedTree = true)
+        .assertExists()
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun chatListItem_expiredChat_showsStatusBadge() {
+    val chat = createTestChat(requestStatus = "EXPIRED")
+
+    composeTestRule.setContent { ChatListItem(chat = chat, isCreator = true, onClick = {}) }
+
+    composeTestRule
+        .onNodeWithTag(ChatListItemTestTags.STATUS_BADGE, useUnmergedTree = true)
+        .assertExists()
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun chatListItem_cancelledChat_showsStatusBadge() {
+    val chat = createTestChat(requestStatus = "CANCELLED")
+
+    composeTestRule.setContent { ChatListItem(chat = chat, isCreator = true, onClick = {}) }
+
+    composeTestRule
+        .onNodeWithTag(ChatListItemTestTags.STATUS_BADGE, useUnmergedTree = true)
+        .assertExists()
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun chatListItem_openChat_doesNotShowStatusBadge() {
+    val chat = createTestChat(requestStatus = "OPEN")
+
+    composeTestRule.setContent { ChatListItem(chat = chat, isCreator = true, onClick = {}) }
+
+    composeTestRule
+        .onNodeWithTag(ChatListItemTestTags.STATUS_BADGE, useUnmergedTree = true)
+        .assertDoesNotExist()
   }
 }
