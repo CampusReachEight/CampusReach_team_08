@@ -1,5 +1,6 @@
 package com.android.sample.ui.communication.chat
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -21,6 +22,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 private const val CANNOT_SEE_MESSAGES_INVALID_STATE = "Cannot send message: invalid state"
+
+private const val FAILED_TO_LOAD_MESSAGE_ERROR = "Failed to load more messages. Please try again."
 
 /**
  * ViewModel for the Chat conversation screen.
@@ -52,7 +55,10 @@ class ChatViewModel(
    */
   fun initializeChat(chatId: String) {
     currentChatId = chatId
-    _uiState.update { it.copy(isLoading = true) }
+    _uiState.update {
+      Log.d("ChatViewModel", "Chat initialized with messages")
+      it.copy(isLoading = true)
+    }
 
     viewModelScope.launch {
       try {
@@ -83,6 +89,8 @@ class ChatViewModel(
         // Start listening to messages in real-time
         val lastTimestamp = messages.lastOrNull()?.timestamp ?: Date()
         listenToNewMessages(chatId, lastTimestamp)
+
+        // Start listening to chat metadata changes (status, etc.)
       } catch (e: Exception) {
         val friendly =
             e.message?.takeIf { it.isNotBlank() } ?: "Failed to load chat. Please try again."
@@ -110,13 +118,24 @@ class ChatViewModel(
             _uiState.update { it.copy(errorMessage = friendly) }
           }
           .collect { newMessages ->
-            // Append new messages to existing list
-            _uiState.update { state ->
-              state.copy(
-                  messages =
-                      (state.messages + newMessages)
-                          .distinctBy { it.messageId }
-                          .sortedBy { it.timestamp })
+            Log.d("ChatViewModel", "=== NEW MESSAGES RECEIVED: ${newMessages.size} ===")
+
+            if (newMessages.isNotEmpty()) {
+              // Append new messages to existing list
+              _uiState.update { state ->
+                Log.d(
+                    "ChatViewModel",
+                    "Current messages: ${state.messages.size}, New: ${newMessages.size}")
+                val currentIds = state.messages.map { it.messageId }.toSet()
+                val trulyNewMessages = newMessages.filter { it.messageId !in currentIds }
+
+                if (trulyNewMessages.isNotEmpty()) {
+                  state.copy(
+                      messages = (state.messages + trulyNewMessages).sortedBy { it.timestamp })
+                } else {
+                  state
+                }
+              }
             }
           }
     }
@@ -126,7 +145,7 @@ class ChatViewModel(
     val chatId = currentChatId ?: return
     val currentMessages = _uiState.value.messages
 
-    if (currentMessages.isEmpty()) {
+    if (currentMessages.isEmpty() || _uiState.value.isLoadingMore || _uiState.value.isLoading) {
       return
     }
 
@@ -134,12 +153,16 @@ class ChatViewModel(
 
     viewModelScope.launch {
       try {
-        // Get the timestamp of the oldest message
         val oldestMessage = currentMessages.first()
         val beforeTimestamp = oldestMessage.timestamp
 
-        // Load more messages
         val moreMessages = chatRepository.getMessages(chatId, 10, beforeTimestamp)
+
+        // If no more messages, don't update state (prevents infinite loop)
+        if (moreMessages.isEmpty()) {
+          _uiState.update { it.copy(isLoadingMore = false, hasMoreMessages = false) }
+          return@launch
+        }
 
         _uiState.update { state ->
           state.copy(
@@ -147,11 +170,8 @@ class ChatViewModel(
               isLoadingMore = false)
         }
       } catch (e: Exception) {
-        _uiState.update { it.copy(isLoadingMore = false) }
-        val friendly =
-            e.message?.takeIf { it.isNotBlank() }
-                ?: "Failed to load more messages. Please try again."
-        _uiState.update { it.copy(errorMessage = friendly) }
+        val friendlyError = e.message?.takeIf { it.isNotBlank() } ?: FAILED_TO_LOAD_MESSAGE_ERROR
+        _uiState.update { it.copy(isLoadingMore = false, errorMessage = friendlyError) }
       }
     }
   }
@@ -167,7 +187,10 @@ class ChatViewModel(
     val userProfile = _uiState.value.currentUserProfile
 
     if (chatId == null || userId == null || userProfile == null) {
-      _uiState.update { it.copy(errorMessage = CANNOT_SEE_MESSAGES_INVALID_STATE) }
+      _uiState.update {
+        Log.d("ChatViewModel", "Message sent successfully")
+        it.copy(errorMessage = CANNOT_SEE_MESSAGES_INVALID_STATE)
+      }
       return
     }
 
@@ -213,6 +236,8 @@ class ChatViewModel(
   fun refresh() {
     currentChatId?.let { initializeChat(it) }
   }
+
+  fun getProfileRepository(): UserProfileRepository = profileRepository
 }
 
 const val UNKNOWN_VIEW_MODEL_ERROR = "Unknown ViewModel class"
@@ -272,5 +297,6 @@ data class ChatUiState(
     val isLoading: Boolean = false,
     val isSendingMessage: Boolean = false,
     val errorMessage: String? = null,
-    val isLoadingMore: Boolean = false
+    val isLoadingMore: Boolean = false,
+    val hasMoreMessages: Boolean = true
 )

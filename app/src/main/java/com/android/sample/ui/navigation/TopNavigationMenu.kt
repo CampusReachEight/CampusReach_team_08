@@ -35,6 +35,7 @@ fun TopNavigationBar(
         NavigationTab.Requests -> "Reach Out"
         NavigationTab.Leaderboard -> "Leaderboard"
         NavigationTab.Map -> "Map"
+        NavigationTab.Messages -> "Messages"
       }
 
   CenterAlignedTopAppBar(

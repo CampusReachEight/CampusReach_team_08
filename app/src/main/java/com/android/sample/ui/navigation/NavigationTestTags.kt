@@ -24,11 +24,15 @@ object NavigationTestTags {
   const val MAP_TAB = "MapTab"
   const val PROFILE_BUTTON = "ProfileButton"
   const val SETTINGS_BUTTON = "settingsButton"
+  const val MESSAGES_SCREEN = "messages_screen"
+  const val CHAT_SCREEN = "chat_screen"
+  const val MESSAGES_TAB = "messages_tab"
 
   fun getTabTestTag(navigationTab: NavigationTab): String =
       when (navigationTab) {
         is NavigationTab.Map -> MAP_TAB
         is NavigationTab.Leaderboard -> LEADERBOARD_TAB
         is NavigationTab.Requests -> REQUEST_TAB
+        NavigationTab.Messages -> MESSAGES_TAB
       }
 }

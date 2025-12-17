@@ -6,6 +6,9 @@ import androidx.lifecycle.viewModelScope
 import com.android.sample.model.chat.Chat
 import com.android.sample.model.chat.ChatRepository
 import com.android.sample.model.chat.ChatRepositoryFirestore
+import com.android.sample.model.request.RequestRepository
+import com.android.sample.model.request.RequestRepositoryFirestore
+import com.android.sample.model.request.RequestStatus
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
@@ -15,6 +18,10 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 private const val NO_AUTHENTICATED_USER_ERROR = "No authenticated user"
+
+private const val FAILED_TO_LOAD_CHATS_PLEASE_TRY_AGAIN_ = "Failed to load chats. Please try again."
+
+private const val NETWORK_UNAVAILABLE = "Network unavailable"
 
 /**
  * ViewModel for the Messages screen (list of all chats).
@@ -27,6 +34,8 @@ private const val NO_AUTHENTICATED_USER_ERROR = "No authenticated user"
  */
 class MessagesViewModel(
     private val chatRepository: ChatRepository = ChatRepositoryFirestore(Firebase.firestore),
+    private val requestRepository: RequestRepository =
+        RequestRepositoryFirestore(Firebase.firestore),
     private val firebaseAuth: FirebaseAuth = FirebaseAuth.getInstance()
 ) : ViewModel() {
 
@@ -41,8 +50,12 @@ class MessagesViewModel(
    * Loads all chats where the current user is a participant. Chats are automatically sorted by most
    * recent message (handled by repository).
    */
+  /**
+   * Loads all chats where the current user is a participant. Filters out chats for
+   * completed/expired/cancelled/archived requests.
+   */
   fun loadChats() {
-    _uiState.update { it.copy(isLoading = true) }
+    _uiState.update { it.copy(isLoading = true, isOffline = false) }
     viewModelScope.launch {
       try {
         val currentUserId = firebaseAuth.currentUser?.uid
@@ -52,18 +65,63 @@ class MessagesViewModel(
         }
 
         val chats = chatRepository.getUserChats(currentUserId)
-        val chatItems =
-            chats.map { chat -> ChatItem(chat = chat, isCreator = chat.creatorId == currentUserId) }
 
-        _uiState.update { it.copy(chatItems = chatItems, isLoading = false, errorMessage = null) }
+        // Filter out chats for expired/completed/cancelled/archived requests
+        val activeChats =
+            chats.mapNotNull { chat ->
+              try {
+                val request = requestRepository.getRequest(chat.requestId)
+
+                // Check if request is active (not completed/expired/cancelled/archived)
+                val isActive =
+                    request.viewStatus != RequestStatus.COMPLETED &&
+                        request.viewStatus != RequestStatus.CANCELLED &&
+                        request.viewStatus != RequestStatus.ARCHIVED
+
+                if (isActive) chat else null
+              } catch (e: Exception) {
+                // If request doesn't exist or can't be loaded, exclude this chat
+                null
+              }
+            }
+
+        val chatItems =
+            activeChats.map { chat ->
+              ChatItem(chat = chat, isCreator = chat.creatorId == currentUserId)
+            }
+        _uiState.update {
+          it.copy(chatItems = chatItems, isLoading = false, errorMessage = null, isOffline = false)
+        }
       } catch (e: Exception) {
-        val friendly =
-            e.message?.takeIf { it.isNotBlank() } ?: "Failed to load chats. Please try again."
-        _uiState.update { it.copy(isLoading = false, errorMessage = friendly) }
+        // Check if it's a network unavailable error
+        val isNetworkError =
+            e is IllegalStateException &&
+                e.message?.contains(NETWORK_UNAVAILABLE, ignoreCase = true) == true
+
+        if (isNetworkError) {
+          _uiState.update { it.copy(isLoading = false, isOffline = true, errorMessage = null) }
+        } else {
+          val friendly =
+              e.message?.takeIf { it.isNotBlank() } ?: FAILED_TO_LOAD_CHATS_PLEASE_TRY_AGAIN_
+          _uiState.update { it.copy(isLoading = false, errorMessage = friendly, isOffline = false) }
+        }
       }
     }
   }
-
+  /** Listens to chat status updates and removes chats that become completed/expired/cancelled. */
+  /**
+   * private fun listenToChatUpdates(userId: String, chatIds: List<String>) { viewModelScope.launch
+   * { chatIds.forEach { chatId -> launch { try { // Poll for changes every 30 seconds (simple
+   * approach) while (true) { kotlinx.coroutines.delay(30_000) // 30 seconds
+   *
+   * val updatedChat = chatRepository.getChat(chatId)
+   *
+   * // Check if status changed to terminal if (updatedChat.requestStatus in listOf("COMPLETED",
+   * "EXPIRED", "CANCELLED", "ARCHIVED")) { // Remove this chat from the list _uiState.update {
+   * state -> state.copy(chatItems = state.chatItems.filter { it.chat.chatId != chatId }) } break //
+   * Stop listening to this chat } } } catch (e: Exception) { // Silently ignore errors in
+   * background polling } } } } }
+   */
   /** Refreshes the chat list from the server. */
   fun refresh() {
     loadChats()
@@ -75,6 +133,8 @@ class MessagesViewModel(
   }
 }
 
+private const val UNKNOWN_VIEW_MODEL_CLASS = "Unknown ViewModel class"
+
 /**
  * Factory for creating [MessagesViewModel] instances with custom dependencies.
  *
@@ -83,20 +143,31 @@ class MessagesViewModel(
  */
 class MessagesViewModelFactory(
     private val chatRepository: ChatRepository? = null,
+    private val requestRepository: RequestRepository? = null,
     private val firebaseAuth: FirebaseAuth? = null
 ) : ViewModelProvider.Factory {
   override fun <T : ViewModel> create(modelClass: Class<T>): T {
     if (modelClass.isAssignableFrom(MessagesViewModel::class.java)) {
       @Suppress("UNCHECKED_CAST")
-      return if (chatRepository != null && firebaseAuth != null) {
-        MessagesViewModel(chatRepository = chatRepository, firebaseAuth = firebaseAuth) as T
-      } else if (chatRepository != null) {
-        MessagesViewModel(chatRepository = chatRepository) as T
-      } else {
-        MessagesViewModel() as T
+      return when {
+        chatRepository != null && requestRepository != null && firebaseAuth != null -> {
+          MessagesViewModel(
+              chatRepository = chatRepository,
+              requestRepository = requestRepository,
+              firebaseAuth = firebaseAuth)
+              as T
+        }
+        chatRepository != null && requestRepository != null -> {
+          MessagesViewModel(chatRepository = chatRepository, requestRepository = requestRepository)
+              as T
+        }
+        chatRepository != null -> {
+          MessagesViewModel(chatRepository = chatRepository) as T
+        }
+        else -> MessagesViewModel() as T
       }
     }
-    throw IllegalArgumentException("Unknown ViewModel class")
+    throw IllegalArgumentException(UNKNOWN_VIEW_MODEL_CLASS)
   }
 }
 
@@ -110,7 +181,8 @@ class MessagesViewModelFactory(
 data class MessagesUiState(
     val chatItems: List<ChatItem> = emptyList(),
     val isLoading: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val isOffline: Boolean = false
 )
 
 /**
@@ -120,3 +192,36 @@ data class MessagesUiState(
  * @property isCreator Whether the current user is the creator of the associated request
  */
 data class ChatItem(val chat: Chat, val isCreator: Boolean)
+
+/**
+ * fun loadChats() { _uiState.update { it.copy(isLoading = true) } viewModelScope.launch { try { val
+ * currentUserId = firebaseAuth.currentUser?.uid if (currentUserId == null) { _uiState.update {
+ * it.copy(isLoading = false, errorMessage = NO_AUTHENTICATED_USER_ERROR) } return@launch }
+ *
+ *         val chats = chatRepository.getUserChats(currentUserId)
+ *         // Filter out completed/expired/cancelled chats and check expiration
+ *         val now = Date()
+ *         val activeChats =
+ *             chats.filter { chat ->
+ *               val isNotTerminalStatus =
+ *                   chat.requestStatus !in listOf("COMPLETED", "EXPIRED", "CANCELLED", "ARCHIVED")
+ *               // Check if request has expired based on time (we'll need to get this from the
+ *               // request)
+ *               // For now, just filter by status
+ *               isNotTerminalStatus
+ *             }
+ *         val chatItems =
+ *             activeChats.map { chat ->
+ *               ChatItem(chat = chat, isCreator = chat.creatorId == currentUserId)
+ *             }
+ *         _uiState.update { it.copy(chatItems = chatItems, isLoading = false, errorMessage = null) }
+ *         // Start listening to status updates for each chat
+ *         listenToChatUpdates(currentUserId, activeChats.map { it.chatId })
+ *       } catch (e: Exception) {
+ *         val friendly =
+ *             e.message?.takeIf { it.isNotBlank() } ?: FAILED_TO_LOAD_CHATS_PLEASE_TRY_AGAIN_
+ *         _uiState.update { it.copy(isLoading = false, errorMessage = friendly) }
+ *       }
+ *     }
+ *   }
+ */

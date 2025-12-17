@@ -1,5 +1,6 @@
 package com.android.sample.ui.resolverequest
 
+import com.android.sample.model.chat.ChatRepository
 import com.android.sample.model.map.Location
 import com.android.sample.model.profile.UserProfile
 import com.android.sample.model.profile.UserProfileRepository
@@ -51,6 +52,7 @@ class ValidateRequestViewModelTest {
   private lateinit var requestRepository: RequestRepository
   private lateinit var userProfileRepository: UserProfileRepository
   private lateinit var viewModel: ValidateRequestViewModel
+  private lateinit var chatRepository: ChatRepository
 
   // Single test dispatcher shared across all tests
   private val testDispatcher = TestCoroutineDispatcher()
@@ -99,6 +101,7 @@ class ValidateRequestViewModelTest {
     Dispatchers.setMain(testDispatcher)
     requestRepository = mockk(relaxed = true)
     userProfileRepository = mockk(relaxed = true)
+    chatRepository = mockk(relaxed = true)
   }
 
   @After
@@ -118,10 +121,10 @@ class ValidateRequestViewModelTest {
         coEvery { requestRepository.isOwnerOfRequest(testRequest) } returns true
         coEvery { userProfileRepository.getUserProfile(HELPER_1) } returns testHelper1
         coEvery { userProfileRepository.getUserProfile(ID_HELPER2) } returns testHelper2
-
         // When
         viewModel =
-            ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
+            ValidateRequestViewModel(
+                testRequestId, requestRepository, userProfileRepository, chatRepository)
 
         // Then
         val state = viewModel.state
@@ -141,7 +144,8 @@ class ValidateRequestViewModelTest {
 
         // When
         viewModel =
-            ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
+            ValidateRequestViewModel(
+                testRequestId, requestRepository, userProfileRepository, chatRepository)
 
         // Then
         val state = viewModel.state
@@ -161,7 +165,8 @@ class ValidateRequestViewModelTest {
 
         // When
         viewModel =
-            ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
+            ValidateRequestViewModel(
+                testRequestId, requestRepository, userProfileRepository, chatRepository)
 
         // Then
         val state = viewModel.state
@@ -181,7 +186,8 @@ class ValidateRequestViewModelTest {
 
         // When
         viewModel =
-            ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
+            ValidateRequestViewModel(
+                testRequestId, requestRepository, userProfileRepository, chatRepository)
 
         // Then
         val state = viewModel.state
@@ -201,7 +207,8 @@ class ValidateRequestViewModelTest {
 
         // When
         viewModel =
-            ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
+            ValidateRequestViewModel(
+                testRequestId, requestRepository, userProfileRepository, chatRepository)
 
         // Then
         val state = viewModel.state
@@ -223,7 +230,8 @@ class ValidateRequestViewModelTest {
 
         // When
         viewModel =
-            ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
+            ValidateRequestViewModel(
+                testRequestId, requestRepository, userProfileRepository, chatRepository)
 
         // Then
         val state = viewModel.state
@@ -240,7 +248,8 @@ class ValidateRequestViewModelTest {
 
         // When
         viewModel =
-            ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
+            ValidateRequestViewModel(
+                testRequestId, requestRepository, userProfileRepository, chatRepository)
 
         // Then
         val state = viewModel.state
@@ -260,7 +269,8 @@ class ValidateRequestViewModelTest {
 
         // When
         viewModel =
-            ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
+            ValidateRequestViewModel(
+                testRequestId, requestRepository, userProfileRepository, chatRepository)
 
         // Then
         val state = viewModel.state
@@ -281,7 +291,8 @@ class ValidateRequestViewModelTest {
 
         // When
         viewModel =
-            ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
+            ValidateRequestViewModel(
+                testRequestId, requestRepository, userProfileRepository, chatRepository)
 
         // Then
         val state = viewModel.state
@@ -299,7 +310,8 @@ class ValidateRequestViewModelTest {
 
         // When
         viewModel =
-            ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
+            ValidateRequestViewModel(
+                testRequestId, requestRepository, userProfileRepository, chatRepository)
 
         // Then
         val state = viewModel.state
@@ -366,7 +378,8 @@ class ValidateRequestViewModelTest {
         coEvery { requestRepository.getRequest(testRequestId) } returns testRequest
         coEvery { requestRepository.isOwnerOfRequest(testRequest) } returns false
         viewModel =
-            ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
+            ValidateRequestViewModel(
+                testRequestId, requestRepository, userProfileRepository, chatRepository)
         // State is now Error
 
         // When
@@ -614,7 +627,8 @@ class ValidateRequestViewModelTest {
         // Given
         coEvery { requestRepository.getRequest(testRequestId) } throws Exception(NETWORK_ERROR)
         viewModel =
-            ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
+            ValidateRequestViewModel(
+                testRequestId, requestRepository, userProfileRepository, chatRepository)
         assertTrue(viewModel.state is ValidationState.Error)
 
         // Now make it succeed
@@ -650,7 +664,8 @@ class ValidateRequestViewModelTest {
       testDispatcher.runBlockingTest {
         // Given
         val factory =
-            ValidateRequestViewModelFactory(testRequestId, requestRepository, userProfileRepository)
+            ValidateRequestViewModelFactory(
+                testRequestId, requestRepository, userProfileRepository, chatRepository)
 
         // When
         val vm = factory.create(ValidateRequestViewModel::class.java)
@@ -663,7 +678,8 @@ class ValidateRequestViewModelTest {
   fun factoryThrowsExceptionForWrongViewModelClass() {
     // Given
     val factory =
-        ValidateRequestViewModelFactory(testRequestId, requestRepository, userProfileRepository)
+        ValidateRequestViewModelFactory(
+            testRequestId, requestRepository, userProfileRepository, chatRepository)
 
     // When
     factory.create(DummyViewModel::class.java)
@@ -691,7 +707,8 @@ class ValidateRequestViewModelTest {
         } just Runs
 
         viewModel =
-            ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
+            ValidateRequestViewModel(
+                testRequestId, requestRepository, userProfileRepository, chatRepository)
 
         // Select a helper and show confirmation
         viewModel.toggleHelperSelection(HELPER_1)
@@ -719,7 +736,8 @@ class ValidateRequestViewModelTest {
         coEvery { userProfileRepository.awardKudosBatch(any()) } throws Exception("Kudos failed")
 
         viewModel =
-            ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
+            ValidateRequestViewModel(
+                testRequestId, requestRepository, userProfileRepository, chatRepository)
 
         viewModel.toggleHelperSelection(HELPER_1)
         viewModel.showConfirmation()
@@ -745,7 +763,8 @@ class ValidateRequestViewModelTest {
         coEvery { requestRepository.closeRequest(testRequestId, listOf(HELPER_1)) } throws exception
 
         viewModel =
-            ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
+            ValidateRequestViewModel(
+                testRequestId, requestRepository, userProfileRepository, chatRepository)
 
         viewModel.toggleHelperSelection(HELPER_1)
         viewModel.showConfirmation()
@@ -774,7 +793,8 @@ class ValidateRequestViewModelTest {
             Exception(NETWORK_ERROR)
 
         viewModel =
-            ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
+            ValidateRequestViewModel(
+                testRequestId, requestRepository, userProfileRepository, chatRepository)
 
         viewModel.toggleHelperSelection(HELPER_1)
         viewModel.showConfirmation()
@@ -799,7 +819,8 @@ class ValidateRequestViewModelTest {
         coEvery { userProfileRepository.getUserProfile(ID_HELPER2) } returns testHelper2
 
         viewModel =
-            ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
+            ValidateRequestViewModel(
+                testRequestId, requestRepository, userProfileRepository, chatRepository)
 
         val initialState = viewModel.state
 
@@ -833,7 +854,8 @@ class ValidateRequestViewModelTest {
         coEvery { userProfileRepository.awardKudos(any(), any()) } just Runs
 
         viewModel =
-            ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
+            ValidateRequestViewModel(
+                testRequestId, requestRepository, userProfileRepository, chatRepository)
 
         viewModel.toggleHelperSelection(HELPER_1)
         viewModel.showConfirmation()
@@ -859,10 +881,75 @@ class ValidateRequestViewModelTest {
     coEvery { userProfileRepository.getUserProfile(HELPER_1) } returns testHelper1
     coEvery { userProfileRepository.getUserProfile(ID_HELPER2) } returns testHelper2
 
-    viewModel = ValidateRequestViewModel(testRequestId, requestRepository, userProfileRepository)
+    viewModel =
+        ValidateRequestViewModel(
+            testRequestId, requestRepository, userProfileRepository, chatRepository)
 
     assertTrue(viewModel.state is ValidationState.Ready)
   }
+
+  @Test
+  fun confirmAndClose_deletesChatAfterSuccess() =
+      testDispatcher.runBlockingTest {
+        // Given
+        coEvery { requestRepository.getRequest(testRequestId) } returns testRequest
+        coEvery { requestRepository.isOwnerOfRequest(testRequest) } returns true
+        coEvery { userProfileRepository.getUserProfile(HELPER_1) } returns testHelper1
+        coEvery { userProfileRepository.getUserProfile(ID_HELPER2) } returns testHelper2
+
+        // Mock chat deletion
+        coEvery { chatRepository.deleteChat(testRequestId) } just Runs
+
+        viewModel =
+            ValidateRequestViewModel(
+                testRequestId, requestRepository, userProfileRepository, chatRepository)
+
+        // Select helpers
+        viewModel.toggleHelperSelection(HELPER_1)
+        viewModel.showConfirmation()
+
+        // When
+        viewModel.confirmAndClose()
+        testScheduler.apply {
+          advanceTimeBy(1000)
+          runCurrent()
+        }
+
+        // Then
+        coVerify(exactly = 1) { chatRepository.deleteChat(testRequestId) }
+        assertTrue(viewModel.state is ValidationState.Success)
+      }
+
+  @Test
+  fun confirmAndClose_succeedsEvenIfChatDeletionFails() =
+      testDispatcher.runBlockingTest {
+        // Given
+        coEvery { requestRepository.getRequest(testRequestId) } returns testRequest
+        coEvery { requestRepository.isOwnerOfRequest(testRequest) } returns true
+        coEvery { userProfileRepository.getUserProfile(HELPER_1) } returns testHelper1
+        coEvery { userProfileRepository.getUserProfile(ID_HELPER2) } returns testHelper2
+
+        // Mock chat deletion failure
+        coEvery { chatRepository.deleteChat(testRequestId) } throws
+            Exception("Chat deletion failed")
+
+        viewModel =
+            ValidateRequestViewModel(
+                testRequestId, requestRepository, userProfileRepository, chatRepository)
+
+        viewModel.toggleHelperSelection(HELPER_1)
+        viewModel.showConfirmation()
+
+        // When
+        viewModel.confirmAndClose()
+        testScheduler.apply {
+          advanceTimeBy(1000)
+          runCurrent()
+        }
+
+        // Then - should still succeed despite chat deletion failure
+        assertTrue(viewModel.state is ValidationState.Success)
+      }
 
   // Dummy ViewModel for factory test
   private class DummyViewModel : androidx.lifecycle.ViewModel()
