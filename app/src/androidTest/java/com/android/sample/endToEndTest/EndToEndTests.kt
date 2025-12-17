@@ -2,6 +2,7 @@ package com.android.sample.endToEndTest
 
 import android.Manifest
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -10,7 +11,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -18,6 +19,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
+import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso
 import androidx.test.rule.GrantPermissionRule
 import com.android.sample.AppNavigation
@@ -49,7 +51,7 @@ import org.junit.Test
 
 @OptIn(ExperimentalTestApi::class)
 class EndToEndTests : BaseEmulatorTest() {
-  @get:Rule val composeTestRule = createAndroidComposeRule<ComponentActivity>()
+  @get:Rule val composeTestRule = createEmptyComposeRule()
 
   @get:Rule
   val permissionRule: GrantPermissionRule =
@@ -81,6 +83,8 @@ class EndToEndTests : BaseEmulatorTest() {
   private lateinit var repository: RequestRepositoryFirestore
   private lateinit var request1: Request
 
+  private var scenario: ActivityScenario<ComponentActivity>? = null
+
   @Before
   override fun setUp() {
     db = FirebaseEmulator.firestore
@@ -110,7 +114,8 @@ class EndToEndTests : BaseEmulatorTest() {
   @After
   override fun tearDown() {
     super.tearDown()
-    composeTestRule.activityRule.scenario.close()
+    scenario?.close()
+    scenario = null
   }
 
   // initialize all you want for an end to end test
@@ -118,9 +123,11 @@ class EndToEndTests : BaseEmulatorTest() {
     val fakeGoogleIdToken = FakeJwtGenerator.createFakeGoogleIdToken(name, email)
 
     val fakeCredentialManager = FakeCredentialManager.create(fakeGoogleIdToken)
-    composeTestRule.waitForIdle()
 
-    composeTestRule.setContent { AppNavigation(credentialManager = fakeCredentialManager) }
+    scenario = ActivityScenario.launch(ComponentActivity::class.java)
+    scenario!!.onActivity { activity ->
+      activity.setContent { AppNavigation(credentialManager = fakeCredentialManager) }
+    }
 
     composeTestRule.waitForIdle()
     logIn()
