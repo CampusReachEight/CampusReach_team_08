@@ -359,6 +359,8 @@ class EndToEndTests : BaseEmulatorTest() {
         .performClick()
 
     composeTestRule.waitForIdle()
+    composeTestRule.waitForIdle()
+    composeTestRule.waitForIdle()
 
     composeTestRule.waitUntilAtLeastOneExists(
         matcher = hasTestTag(NavigationTestTags.REQUESTS_SCREEN), timeoutMillis = UI_WAIT_TIMEOUT)
