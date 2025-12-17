@@ -18,6 +18,10 @@ object ConstantRequestEdit {
   val CIRCULAR_PROGRESS_INDICATOR = 20.dp
   val SAVE_BUTTON_PADDING = 24.dp
 
+  val MAX_TITLE_LENGTH = 120
+
+  val MAX_DESCRIPTION_LENGTH = 2000
+
   // UI State //
 
   const val ONE_HOUR_MS = 3_600_000L

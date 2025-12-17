@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.R
@@ -358,7 +359,7 @@ private fun TitleField(
   OutlinedTextField(
       value = title,
       onValueChange = {
-        if (it.length <= MAX_TITLE_LENGTH) {
+        if (it.length <= ConstantRequestEdit.MAX_TITLE_LENGTH) {
           onTitleChange(it)
         }
       },
@@ -376,10 +377,10 @@ private fun TitleField(
             Spacer(modifier = Modifier.width(0.dp))
           }
           Text(
-              text = "${title.length}/$MAX_TITLE_LENGTH",
+              text = "${title.length}/$ConstantRequestEdit.MAX_TITLE_LENGTH",
               style = MaterialTheme.typography.bodySmall,
               color =
-                  if (title.length >= MAX_TITLE_LENGTH) appPalette().error
+                  if (title.length >= ConstantRequestEdit.MAX_TITLE_LENGTH) appPalette().error
                   else MaterialTheme.colorScheme.onSurfaceVariant)
         }
       },
@@ -399,7 +400,7 @@ private fun DescriptionField(
     OutlinedTextField(
         value = description,
         onValueChange = {
-          if (it.length <= MAX_DESCRIPTION_LENGTH) {
+          if (it.length <= ConstantRequestEdit.MAX_DESCRIPTION_LENGTH) {
             onDescriptionChange(it)
           }
         },
@@ -419,10 +420,11 @@ private fun DescriptionField(
                   Spacer(modifier = Modifier.width(0.dp))
                 }
                 Text(
-                    text = "${description.length}/$MAX_DESCRIPTION_LENGTH",
+                    text = "${description.length}/$ConstantRequestEdit.MAX_DESCRIPTION_LENGTH",
                     style = MaterialTheme.typography.bodySmall,
                     color =
-                        if (description.length >= MAX_DESCRIPTION_LENGTH) appPalette().error
+                        if (description.length >= ConstantRequestEdit.MAX_DESCRIPTION_LENGTH)
+                            appPalette().error
                         else MaterialTheme.colorScheme.onSurfaceVariant)
               }
         },
