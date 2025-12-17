@@ -195,20 +195,24 @@ class EndToEndTests : BaseEmulatorTest() {
 
   // go to the screen AddRequest
   private fun goAddRequest() {
-    composeTestRule.waitUntilAtLeastOneExists(
-        matcher = hasTestTag(RequestListTestTags.REQUEST_ADD_BUTTON),
-        timeoutMillis = UI_WAIT_TIMEOUT)
+      runBlocking {
+          composeTestRule.waitUntilAtLeastOneExists(
+              matcher = hasTestTag(RequestListTestTags.REQUEST_ADD_BUTTON),
+              timeoutMillis = UI_WAIT_TIMEOUT
+          )
 
-    composeTestRule
-        .onNodeWithTag(RequestListTestTags.REQUEST_ADD_BUTTON, useUnmergedTree = true)
-        .assertIsDisplayed()
-        .performClick()
+          composeTestRule
+              .onNodeWithTag(RequestListTestTags.REQUEST_ADD_BUTTON, useUnmergedTree = true)
+              .assertIsDisplayed()
+              .performClick()
 
-    composeTestRule.waitForIdle()
+          composeTestRule.waitForIdle()
 
-    composeTestRule.waitUntilAtLeastOneExists(
-        matcher = hasTestTag(EditRequestScreenTestTags.INPUT_TITLE),
-        timeoutMillis = UI_WAIT_TIMEOUT)
+          composeTestRule.waitUntilAtLeastOneExists(
+              matcher = hasTestTag(EditRequestScreenTestTags.INPUT_TITLE),
+              timeoutMillis = UI_WAIT_TIMEOUT
+          )
+      }
   }
 
   // fill all the element of a request and save it
@@ -220,171 +224,203 @@ class EndToEndTests : BaseEmulatorTest() {
       tags: Tags = Tags.GROUP_WORK
   ) {
     // title
-    composeTestRule.waitUntilAtLeastOneExists(
-        matcher = hasTestTag(EditRequestScreenTestTags.INPUT_TITLE),
-        timeoutMillis = UI_WAIT_TIMEOUT)
-    composeTestRule
-        .onNodeWithTag(EditRequestScreenTestTags.INPUT_TITLE, useUnmergedTree = true)
-        .performScrollTo()
-        .assertIsDisplayed()
-        .performTextInput(title)
+      runBlocking {
+          composeTestRule.waitUntilAtLeastOneExists(
+              matcher = hasTestTag(EditRequestScreenTestTags.INPUT_TITLE),
+              timeoutMillis = UI_WAIT_TIMEOUT
+          )
+          composeTestRule
+              .onNodeWithTag(EditRequestScreenTestTags.INPUT_TITLE, useUnmergedTree = true)
+              .performScrollTo()
+              .assertIsDisplayed()
+              .performTextInput(title)
 
-    // description
-    composeTestRule.waitUntilAtLeastOneExists(
-        matcher = hasTestTag(EditRequestScreenTestTags.INPUT_DESCRIPTION),
-        timeoutMillis = UI_WAIT_TIMEOUT)
-    composeTestRule
-        .onNodeWithTag(EditRequestScreenTestTags.INPUT_DESCRIPTION, useUnmergedTree = true)
-        .performScrollTo()
-        .assertIsDisplayed()
-        .performTextInput(description)
+          // description
+          composeTestRule.waitUntilAtLeastOneExists(
+              matcher = hasTestTag(EditRequestScreenTestTags.INPUT_DESCRIPTION),
+              timeoutMillis = UI_WAIT_TIMEOUT
+          )
+          composeTestRule
+              .onNodeWithTag(EditRequestScreenTestTags.INPUT_DESCRIPTION, useUnmergedTree = true)
+              .performScrollTo()
+              .assertIsDisplayed()
+              .performTextInput(description)
 
-    // requestType
-    composeTestRule.waitUntilAtLeastOneExists(
-        matcher = hasTestTag(EditRequestScreenTestTags.getTestTagForRequestType(type)),
-        timeoutMillis = UI_WAIT_TIMEOUT)
-    composeTestRule
-        .onNodeWithTag(
-            EditRequestScreenTestTags.getTestTagForRequestType(type), useUnmergedTree = true)
-        .performScrollTo()
-        .assertIsDisplayed()
-        .performClick()
+          // requestType
+          composeTestRule.waitUntilAtLeastOneExists(
+              matcher = hasTestTag(EditRequestScreenTestTags.getTestTagForRequestType(type)),
+              timeoutMillis = UI_WAIT_TIMEOUT
+          )
+          composeTestRule
+              .onNodeWithTag(
+                  EditRequestScreenTestTags.getTestTagForRequestType(type), useUnmergedTree = true
+              )
+              .performScrollTo()
+              .assertIsDisplayed()
+              .performClick()
 
-    // location input
-    composeTestRule.waitUntilAtLeastOneExists(
-        matcher = hasTestTag(LocationSearchFieldTestTags.InputLocationName),
-        timeoutMillis = UI_WAIT_TIMEOUT)
-    composeTestRule
-        .onNodeWithTag(LocationSearchFieldTestTags.InputLocationName, useUnmergedTree = true)
-        .performScrollTo()
-        .assertIsDisplayed()
-        .performTextInput(location)
+          // location input
+          composeTestRule.waitUntilAtLeastOneExists(
+              matcher = hasTestTag(LocationSearchFieldTestTags.InputLocationName),
+              timeoutMillis = UI_WAIT_TIMEOUT
+          )
+          composeTestRule
+              .onNodeWithTag(LocationSearchFieldTestTags.InputLocationName, useUnmergedTree = true)
+              .performScrollTo()
+              .assertIsDisplayed()
+              .performTextInput(location)
 
-    composeTestRule.waitForIdle()
-    composeTestRule.waitUntilAtLeastOneExists(
-        matcher = hasTestTagThatStartsWith(), timeoutMillis = UI_WAIT_TIMEOUT)
+          composeTestRule.waitForIdle()
+          composeTestRule.waitUntilAtLeastOneExists(
+              matcher = hasTestTagThatStartsWith(), timeoutMillis = UI_WAIT_TIMEOUT
+          )
 
-    // click on the first Location that is proposed
-    composeTestRule
-        .onAllNodes(hasTestTagThatStartsWith(), useUnmergedTree = true)
-        .onFirst()
-        .performClick()
+          // click on the first Location that is proposed
+          composeTestRule
+              .onAllNodes(hasTestTagThatStartsWith(), useUnmergedTree = true)
+              .onFirst()
+              .performClick()
 
-    composeTestRule.waitForIdle()
-    // put a tag
-    composeTestRule.waitUntilAtLeastOneExists(
-        matcher = hasTestTag(EditRequestScreenTestTags.getTestTagForRequestTags(tags)),
-        timeoutMillis = UI_WAIT_TIMEOUT)
-    composeTestRule
-        .onNodeWithTag(
-            EditRequestScreenTestTags.getTestTagForRequestTags(tags), useUnmergedTree = true)
-        .performScrollTo()
-        .assertIsDisplayed()
-        .performClick()
+          composeTestRule.waitForIdle()
+          // put a tag
+          composeTestRule.waitUntilAtLeastOneExists(
+              matcher = hasTestTag(EditRequestScreenTestTags.getTestTagForRequestTags(tags)),
+              timeoutMillis = UI_WAIT_TIMEOUT
+          )
+          composeTestRule
+              .onNodeWithTag(
+                  EditRequestScreenTestTags.getTestTagForRequestTags(tags), useUnmergedTree = true
+              )
+              .performScrollTo()
+              .assertIsDisplayed()
+              .performClick()
 
-    // save
-    composeTestRule.waitUntilAtLeastOneExists(
-        matcher = hasTestTag(EditRequestScreenTestTags.SAVE_BUTTON),
-        timeoutMillis = UI_WAIT_TIMEOUT)
-    composeTestRule
-        .onNodeWithTag(EditRequestScreenTestTags.SAVE_BUTTON, useUnmergedTree = true)
-        .performScrollTo()
-        .assertIsDisplayed()
-        .performClick()
+          // save
+          composeTestRule.waitUntilAtLeastOneExists(
+              matcher = hasTestTag(EditRequestScreenTestTags.SAVE_BUTTON),
+              timeoutMillis = UI_WAIT_TIMEOUT
+          )
+          composeTestRule
+              .onNodeWithTag(EditRequestScreenTestTags.SAVE_BUTTON, useUnmergedTree = true)
+              .performScrollTo()
+              .assertIsDisplayed()
+              .performClick()
+      }
   }
 
   // Go to editScreen (not for adding a request, but for editing it)
   // , and check the element is displayed
   private fun goToEditScreen() {
-    composeTestRule.waitUntilAtLeastOneExists(
-        matcher = hasTestTag(RequestListTestTags.REQUEST_ITEM), timeoutMillis = UI_WAIT_TIMEOUT)
-    composeTestRule
-        .onNodeWithTag(RequestListTestTags.REQUEST_ITEM, useUnmergedTree = true)
-        .assertIsDisplayed()
-        .performClick()
+      runBlocking {
+          composeTestRule.waitUntilAtLeastOneExists(
+              matcher = hasTestTag(RequestListTestTags.REQUEST_ITEM),
+              timeoutMillis = UI_WAIT_TIMEOUT
+          )
+          composeTestRule
+              .onNodeWithTag(RequestListTestTags.REQUEST_ITEM, useUnmergedTree = true)
+              .assertIsDisplayed()
+              .performClick()
 
-    // Scroll, assert edit button is displayed and click on it
-    composeTestRule.waitUntilAtLeastOneExists(
-        matcher = hasTestTag(AcceptRequestScreenTestTags.REQUEST_BUTTON),
-        timeoutMillis = UI_WAIT_TIMEOUT)
-    composeTestRule
-        .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON, useUnmergedTree = true)
-        .performScrollTo()
-        .assertIsDisplayed()
-        .performClick()
+          // Scroll, assert edit button is displayed and click on it
+          composeTestRule.waitUntilAtLeastOneExists(
+              matcher = hasTestTag(AcceptRequestScreenTestTags.REQUEST_BUTTON),
+              timeoutMillis = UI_WAIT_TIMEOUT
+          )
+          composeTestRule
+              .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON, useUnmergedTree = true)
+              .performScrollTo()
+              .assertIsDisplayed()
+              .performClick()
 
-    composeTestRule.waitForIdle()
-    composeTestRule.waitUntilAtLeastOneExists(
-        matcher = hasTestTag(EditRequestScreenTestTags.INPUT_TITLE),
-        timeoutMillis = UI_WAIT_TIMEOUT)
+          composeTestRule.waitForIdle()
+          composeTestRule.waitUntilAtLeastOneExists(
+              matcher = hasTestTag(EditRequestScreenTestTags.INPUT_TITLE),
+              timeoutMillis = UI_WAIT_TIMEOUT
+          )
+      }
   }
 
   // Navigate to Profile > My Requests, open first item, then go to Edit screen
   private fun goToEditScreenFromMyRequests() {
-    // Profile screen
-    composeTestRule.waitUntilAtLeastOneExists(
-        matcher = hasTestTag(NavigationTestTags.PROFILE_BUTTON), timeoutMillis = UI_WAIT_TIMEOUT)
-    composeTestRule
-        .onNodeWithTag(NavigationTestTags.PROFILE_BUTTON, useUnmergedTree = true)
-        .assertIsDisplayed()
-        .performClick()
+      runBlocking {
+          // Profile screen
+          composeTestRule.waitUntilAtLeastOneExists(
+              matcher = hasTestTag(NavigationTestTags.PROFILE_BUTTON),
+              timeoutMillis = UI_WAIT_TIMEOUT
+          )
+          composeTestRule
+              .onNodeWithTag(NavigationTestTags.PROFILE_BUTTON, useUnmergedTree = true)
+              .assertIsDisplayed()
+              .performClick()
 
-    composeTestRule.waitForIdle()
-    composeTestRule.waitUntilAtLeastOneExists(
-        matcher = hasTestTag(ProfileTestTags.PROFILE_ACTION_MY_REQUEST),
-        timeoutMillis = UI_WAIT_TIMEOUT)
+          composeTestRule.waitForIdle()
+          composeTestRule.waitUntilAtLeastOneExists(
+              matcher = hasTestTag(ProfileTestTags.PROFILE_ACTION_MY_REQUEST),
+              timeoutMillis = UI_WAIT_TIMEOUT
+          )
 
-    // My Requests
-    composeTestRule
-        .onNodeWithTag(ProfileTestTags.PROFILE_ACTION_MY_REQUEST, useUnmergedTree = true)
-        .assertIsDisplayed()
-        .performClick()
+          // My Requests
+          composeTestRule
+              .onNodeWithTag(ProfileTestTags.PROFILE_ACTION_MY_REQUEST, useUnmergedTree = true)
+              .assertIsDisplayed()
+              .performClick()
 
-    composeTestRule.waitForIdle()
-    composeTestRule.waitUntilAtLeastOneExists(
-        matcher = hasTestTag(RequestListTestTags.REQUEST_ITEM), timeoutMillis = UI_WAIT_TIMEOUT)
+          composeTestRule.waitForIdle()
+          composeTestRule.waitUntilAtLeastOneExists(
+              matcher = hasTestTag(RequestListTestTags.REQUEST_ITEM),
+              timeoutMillis = UI_WAIT_TIMEOUT
+          )
 
-    // Open first item
-    composeTestRule
-        .onNodeWithTag(RequestListTestTags.REQUEST_ITEM, useUnmergedTree = true)
-        .assertIsDisplayed()
-        .performClick()
+          // Open first item
+          composeTestRule
+              .onNodeWithTag(RequestListTestTags.REQUEST_ITEM, useUnmergedTree = true)
+              .assertIsDisplayed()
+              .performClick()
 
-    // Click Edit
-    composeTestRule.waitUntilAtLeastOneExists(
-        matcher = hasTestTag(AcceptRequestScreenTestTags.REQUEST_BUTTON),
-        timeoutMillis = UI_WAIT_TIMEOUT)
-    composeTestRule
-        .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON, useUnmergedTree = true)
-        .performScrollTo()
-        .assertIsDisplayed()
-        .performClick()
+          // Click Edit
+          composeTestRule.waitUntilAtLeastOneExists(
+              matcher = hasTestTag(AcceptRequestScreenTestTags.REQUEST_BUTTON),
+              timeoutMillis = UI_WAIT_TIMEOUT
+          )
+          composeTestRule
+              .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON, useUnmergedTree = true)
+              .performScrollTo()
+              .assertIsDisplayed()
+              .performClick()
 
-    composeTestRule.waitForIdle()
-    composeTestRule.waitUntilAtLeastOneExists(
-        matcher = hasTestTag(EditRequestScreenTestTags.INPUT_TITLE),
-        timeoutMillis = UI_WAIT_TIMEOUT)
+          composeTestRule.waitForIdle()
+          composeTestRule.waitUntilAtLeastOneExists(
+              matcher = hasTestTag(EditRequestScreenTestTags.INPUT_TITLE),
+              timeoutMillis = UI_WAIT_TIMEOUT
+          )
+      }
   }
 
   // log in and check if you are in RequestList
   private fun logIn() {
-    composeTestRule.waitUntilAtLeastOneExists(
-        matcher = hasTestTag(SignInScreenTestTags.LOGIN_BUTTON), timeoutMillis = UI_WAIT_TIMEOUT)
+      runBlocking {
+          composeTestRule.waitUntilAtLeastOneExists(
+              matcher = hasTestTag(SignInScreenTestTags.LOGIN_BUTTON),
+              timeoutMillis = UI_WAIT_TIMEOUT
+          )
 
-    composeTestRule
-        .onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON, useUnmergedTree = true)
-        .assertIsDisplayed()
-        .performClick()
+          composeTestRule
+              .onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON, useUnmergedTree = true)
+              .assertIsDisplayed()
+              .performClick()
 
-    composeTestRule.waitForIdle()
+          composeTestRule.waitForIdle()
+          delay(5_000)
+          // Wait for the Requests screen to be displayed (more reliable than text matching on CI)
+          composeTestRule.waitUntilAtLeastOneExists(
+              matcher = hasTestTag(NavigationTestTags.REQUESTS_SCREEN),
+              timeoutMillis = UI_WAIT_TIMEOUT
+          )
 
-    // Wait for the Requests screen to be displayed (more reliable than text matching on CI)
-    composeTestRule.waitUntilAtLeastOneExists(
-        matcher = hasTestTag(NavigationTestTags.REQUESTS_SCREEN), timeoutMillis = UI_WAIT_TIMEOUT)
-
-    composeTestRule
-        .onNodeWithTag(NavigationTestTags.REQUESTS_SCREEN, useUnmergedTree = true)
-        .assertIsDisplayed()
+          composeTestRule
+              .onNodeWithTag(NavigationTestTags.REQUESTS_SCREEN, useUnmergedTree = true)
+              .assertIsDisplayed()
+      }
   }
 
   private fun logOut() {
