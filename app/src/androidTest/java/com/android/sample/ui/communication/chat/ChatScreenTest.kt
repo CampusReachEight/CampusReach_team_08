@@ -91,6 +91,7 @@ class ChatScreenTest : BaseEmulatorTest() {
     Thread.sleep(DELAY_MEDIUM)
   }
 
+  /** Checks if a request status indicates the chat is read-only. */
   private fun waitForChatToLoad() {
     composeTestRule.waitUntil(UI_WAIT_TIMEOUT) {
       composeTestRule.onAllNodesWithTag(MESSAGE_INPUT_TAG).fetchSemanticsNodes().isNotEmpty()
@@ -343,5 +344,62 @@ class ChatScreenTest : BaseEmulatorTest() {
     // This test verifies the loading indicator exists in the UI
     // Actual loading state would need messages and scrolling
     composeTestRule.onNodeWithTag(MESSAGE_LIST_TAG).assertExists()
+  }
+
+  // ==================== READ-ONLY MESSAGE BAR TESTS ====================
+
+  @Test
+  fun chatScreen_completedChat_showsCorrectReadOnlyMessage() {
+    createTestChatBlocking(requestStatus = "COMPLETED")
+    setContent()
+    waitForChatToLoad()
+
+    composeTestRule.onNodeWithTag("chat_read_only_message").assertExists().assertIsDisplayed()
+  }
+
+  @Test
+  fun chatScreen_expiredChat_showsCorrectReadOnlyMessage() {
+    createTestChatBlocking(requestStatus = "EXPIRED")
+    setContent()
+    waitForChatToLoad()
+
+    composeTestRule.onNodeWithTag("chat_read_only_message").assertExists().assertIsDisplayed()
+  }
+
+  @Test
+  fun chatScreen_cancelledChat_showsCorrectReadOnlyMessage() {
+    createTestChatBlocking(requestStatus = "CANCELLED")
+    setContent()
+    waitForChatToLoad()
+
+    composeTestRule.onNodeWithTag("chat_read_only_message").assertExists().assertIsDisplayed()
+  }
+
+  @Test
+  fun chatScreen_completedChat_hidesMessageInput() {
+    createTestChatBlocking(requestStatus = "COMPLETED")
+    setContent()
+    waitForChatToLoad()
+
+    composeTestRule.onNodeWithTag(MESSAGE_INPUT_TAG).assertDoesNotExist()
+  }
+
+  @Test
+  fun chatScreen_cancelledChat_hidesSendButton() {
+    createTestChatBlocking(requestStatus = "CANCELLED")
+    setContent()
+    waitForChatToLoad()
+
+    composeTestRule.onNodeWithTag(SEND_BUTTON_TAG).assertDoesNotExist()
+  }
+
+  @Test
+  fun chatScreen_loadingMoreIndicator_doesNotShowInitially() {
+    createTestChatBlocking()
+    setContent()
+    waitForChatToLoad()
+
+    // Loading more indicator should not show initially
+    composeTestRule.onNodeWithTag("chat_loading_more_indicator").assertDoesNotExist()
   }
 }

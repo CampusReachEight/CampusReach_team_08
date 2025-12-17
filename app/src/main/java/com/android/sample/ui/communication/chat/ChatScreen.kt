@@ -104,7 +104,7 @@ fun ChatScreen(
   val listState = rememberLazyListState()
   val snackbarHostState = remember { SnackbarHostState() }
 
-  val isExpired = uiState.chat?.requestStatus in listOf("COMPLETED", "EXPIRED", "CANCELLED")
+  val isExpired = isRequestExpired(uiState.chat?.requestStatus)
 
   // Initialize chat when screen is created
   LaunchedEffect(chatId) { viewModel.initializeChat(chatId) }
@@ -233,7 +233,10 @@ fun ChatScreen(
         }
       }
 }
-
+/** Checks if a request status indicates the chat is read-only. */
+private fun isRequestExpired(status: String?): Boolean {
+  return status in listOf("COMPLETED", "EXPIRED", "CANCELLED")
+}
 /**
  * Message input bar at the bottom of the screen.
  *
