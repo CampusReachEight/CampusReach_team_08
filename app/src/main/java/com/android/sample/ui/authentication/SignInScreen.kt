@@ -31,18 +31,18 @@ import kotlinx.coroutines.launch
  * @author Thibaud Babin
  */
 object SignInScreenTestTags {
-  const val APP_LOGO = "appLogo"
-  const val LOGIN_TITLE = "loginTitle"
-  const val LOGIN_BUTTON = "loginButton"
+    const val APP_LOGO = "appLogo"
+    const val LOGIN_TITLE = "loginTitle"
+    const val LOGIN_BUTTON = "loginButton"
 }
 
 /**
- * Displays the Google Sign-In screen using Jetpack Compose.
+ * Displays the Sign-In screen with demo mode using Jetpack Compose.
  *
  * This composable is responsible for:
  * - Rendering the sign-in UI.
  * - Observing loading and error states from the ViewModel.
- * - Initiating the Google sign-in flow using CredentialManager.
+ * - Initiating anonymous demo sign-in flow.
  *
  * The ViewModel handles authentication and backend logic.
  *
@@ -57,74 +57,74 @@ fun SignInScreen(
     onSignInSuccess: () -> Unit = {},
     credentialManager: CredentialManager = CredentialManager.create(LocalContext.current)
 ) {
-  val context = LocalContext.current
-  val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
-  // Observe loading and error states from the ViewModel
-  val isLoading by viewModel.loading.collectAsState()
-  val errorText by viewModel.errorText.collectAsState()
+    // Observe loading and error states from the ViewModel
+    val isLoading by viewModel.loading.collectAsState()
+    val errorText by viewModel.errorText.collectAsState()
 
-  /**
-   * Initiates the Google sign-in flow using CredentialManager. Handles exceptions and delegates
-   * authentication to the ViewModel.
-   *
-   * @author Thibaud Babin
-   */
-  fun startGoogleLogin() {
-    val clientId = context.getString(R.string.default_web_client_id)
-    viewModel.setLoading(true)
-    viewModel.clearError()
+    /**
+     * Initiates the Google sign-in flow using CredentialManager. Handles exceptions and delegates
+     * authentication to the ViewModel.
+     *
+     * @author Thibaud Babin
+     */
+    fun startGoogleLogin() {
+        val clientId = context.getString(R.string.default_web_client_id)
+        viewModel.setLoading(true)
+        viewModel.clearError()
 
-    scope.launch {
-      try {
-        // Android 15+ Credential Manager Google Sign-In option
-        val signInOption = GetSignInWithGoogleOption.Builder(serverClientId = clientId).build()
-
-        val request = GetCredentialRequest.Builder().addCredentialOption(signInOption).build()
-
-        val result = credentialManager.getCredential(context as Activity, request)
-        viewModel.signInWithGoogle(result.credential, onSignInSuccess)
-      } catch (e: NoCredentialException) {
-        viewModel.setError("No Google account found")
-      } catch (e: GetCredentialException) {
-        when (e) {
-          is GetCredentialCancellationException -> {
+        scope.launch {
             try {
-              // Android 14 and below Google Sign-In fallback
-              val googleIdOption =
-                  GetGoogleIdOption.Builder()
-                      .setServerClientId(clientId)
-                      .setFilterByAuthorizedAccounts(false)
-                      .build()
+                // Android 15+ Credential Manager Google Sign-In option
+                val signInOption = GetSignInWithGoogleOption.Builder(serverClientId = clientId).build()
 
-              val request =
-                  GetCredentialRequest.Builder().addCredentialOption(googleIdOption).build()
-              val result = credentialManager.getCredential(context as Activity, request)
-              val credential = result.credential
+                val request = GetCredentialRequest.Builder().addCredentialOption(signInOption).build()
 
-              viewModel.signInWithGoogle(credential, onSignInSuccess)
+                val result = credentialManager.getCredential(context as Activity, request)
+                viewModel.signInWithGoogle(result.credential, onSignInSuccess)
             } catch (e: NoCredentialException) {
-              viewModel.setError("No Google account found")
+                viewModel.setError("No Google account found")
             } catch (e: GetCredentialException) {
-              viewModel.setError("Connection cancelled")
-            }
-          }
-          else -> viewModel.setError("Connection error: ${e.localizedMessage}")
-        }
-      } catch (e: Exception) {
-        viewModel.setError("Unexpected error: ${e.localizedMessage}")
-      }
-    }
-  }
+                when (e) {
+                    is GetCredentialCancellationException -> {
+                        try {
+                            // Android 14 and below Google Sign-In fallback
+                            val googleIdOption =
+                                GetGoogleIdOption.Builder()
+                                    .setServerClientId(clientId)
+                                    .setFilterByAuthorizedAccounts(false)
+                                    .build()
 
-  // Main UI layout
-  Column(
-      modifier =
-          Modifier.fillMaxSize()
-              .padding(UiDimens.SpacingXl)
-              .testTag(NavigationTestTags.LOGIN_SCREEN),
-      horizontalAlignment = Alignment.CenterHorizontally,
-      verticalArrangement = Arrangement.Center) {
+                            val request =
+                                GetCredentialRequest.Builder().addCredentialOption(googleIdOption).build()
+                            val result = credentialManager.getCredential(context as Activity, request)
+                            val credential = result.credential
+
+                            viewModel.signInWithGoogle(credential, onSignInSuccess)
+                        } catch (e: NoCredentialException) {
+                            viewModel.setError("No Google account found")
+                        } catch (e: GetCredentialException) {
+                            viewModel.setError("Connection cancelled")
+                        }
+                    }
+                    else -> viewModel.setError("Connection error: ${e.localizedMessage}")
+                }
+            } catch (e: Exception) {
+                viewModel.setError("Unexpected error: ${e.localizedMessage}")
+            }
+        }
+    }
+
+    // Main UI layout
+    Column(
+        modifier =
+            Modifier.fillMaxSize()
+                .padding(UiDimens.SpacingXl)
+                .testTag(NavigationTestTags.LOGIN_SCREEN),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center) {
         // App logo icon
         Image(
             painter = painterResource(R.drawable.campusreach_logo),
@@ -139,9 +139,13 @@ fun SignInScreen(
                 Modifier.padding(bottom = UiDimens.SpacingLg)
                     .testTag(SignInScreenTestTags.LOGIN_TITLE))
 
-        // Google sign-in button
+        // Demo sign-in button (replaces Google Sign-In)
         Button(
-            onClick = { startGoogleLogin() },
+            onClick = {
+                viewModel.setLoading(true)
+                viewModel.clearError()
+                viewModel.signInAnonymously(onSignInSuccess)
+            },
             enabled = !isLoading,
             modifier =
                 Modifier.fillMaxWidth()
@@ -151,32 +155,33 @@ fun SignInScreen(
                 ButtonDefaults.buttonColors(
                     containerColor = appPalette().accent,
                     disabledContainerColor = appPalette().secondary)) {
-              if (isLoading) {
+            if (isLoading) {
                 // Show loading indicator while signing in
                 CircularProgressIndicator(
-                    modifier = Modifier.size(UiDimens.ProgressSize), color = appPalette().accent)
-              } else {
-                // Button content: Google icon and text
+                    modifier = Modifier.size(UiDimens.ProgressSize),
+                    color = appPalette().surface)
+            } else {
+                // Button content: Demo user icon and text
                 Row(
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically) {
-                      Icon(
-                          imageVector = Icons.Default.AccountCircle,
-                          contentDescription = "Google",
-                          modifier = Modifier.size(UiDimens.ProgressSize))
-                      Spacer(modifier = Modifier.width(UiDimens.SpacingSm))
-                      Text("Sign in with Google")
-                    }
-              }
+                    Icon(
+                        imageVector = Icons.Default.AccountCircle,
+                        contentDescription = "Demo User",
+                        modifier = Modifier.size(UiDimens.ProgressSize))
+                    Spacer(modifier = Modifier.width(UiDimens.SpacingSm))
+                    Text("Continue as Demo User")
+                }
             }
+        }
 
         // Display error message if present
         if (errorText != null) {
-          Spacer(modifier = Modifier.height(UiDimens.SpacingMd))
-          Text(
-              text = errorText!!,
-              modifier = Modifier.padding(UiDimens.SpacingMd),
-              color = appPalette().error)
+            Spacer(modifier = Modifier.height(UiDimens.SpacingMd))
+            Text(
+                text = errorText!!,
+                modifier = Modifier.padding(UiDimens.SpacingMd),
+                color = appPalette().error)
         }
-      }
+    }
 }

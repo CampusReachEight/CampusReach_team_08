@@ -129,6 +129,70 @@ class SignInViewModel(
       }
     }
   }
+
+  /**
+   * Signs in anonymously with Firebase for demo/testing purposes.
+   * Creates a demo user profile with fixed data.
+   */
+  fun signInAnonymously(onSuccess: () -> Unit) {
+    viewModelScope.launch {
+      _loading.value = true
+      _errorText.value = null
+
+      try {
+        firebaseAuth.signInAnonymously().addOnCompleteListener { task ->
+          _loading.value = false
+          if (task.isSuccessful) {
+            createDemoUserProfile()
+            onSuccess()
+          } else {
+            _errorText.value = "Demo sign-in failed: ${task.exception?.localizedMessage}"
+          }
+        }
+      } catch (e: Exception) {
+        _errorText.value = "Demo sign-in failed: ${e.localizedMessage}"
+        _loading.value = false
+      }
+    }
+  }
+
+  /**
+   * Creates a demo user profile in Firestore with fixed data.
+   */
+  private fun createDemoUserProfile() {
+    viewModelScope.launch {
+      try {
+        val user = firebaseAuth.currentUser ?: return@launch
+
+        // Check if profile already exists
+        try {
+          val existingProfile = profileRepository.getUserProfile(user.uid)
+          profileCache?.deleteProfile(user.uid)
+          profileCache?.saveProfile(existingProfile)
+          return@launch
+        } catch (_: NoSuchElementException) {
+          // Profile doesn't exist, create it
+        }
+
+        val demoProfile = UserProfile(
+          id = user.uid,
+          name = "Demo",
+          lastName = "User",
+          email = "demo@campusreach.com",
+          photo = null,
+          kudos = 0,
+          helpReceived = 0,
+          section = UserSections.NONE,
+          arrivalDate = java.util.Date())
+
+        profileRepository.addUserProfile(demoProfile)
+        profileCache?.deleteProfile(user.uid)
+        profileCache?.saveProfile(demoProfile)
+      } catch (e: Exception) {
+        setError("Failed to create demo profile: ${e.localizedMessage}")
+      }
+    }
+  }
 }
 
 class SignInViewModelFactory(
