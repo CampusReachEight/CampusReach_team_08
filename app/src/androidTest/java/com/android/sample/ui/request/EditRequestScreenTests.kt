@@ -19,6 +19,7 @@ import com.android.sample.model.request.RequestStatus
 import com.android.sample.model.request.RequestType
 import com.android.sample.model.request.Tags
 import com.android.sample.ui.navigation.NavigationTestTags
+import com.android.sample.ui.request.edit.DateOrderError
 import com.android.sample.ui.request.edit.EditRequestActions
 import com.android.sample.ui.request.edit.EditRequestContent
 import com.android.sample.ui.request.edit.EditRequestScreen
@@ -111,7 +112,7 @@ class FieldValidationStateBuilder {
   private var showLocationError = false
   private var showStartDateError = false
   private var showExpirationDateError = false
-  private var showDateOrderError = false
+  private var dateOrderError: DateOrderError = DateOrderError.None
   private var showSuccessMessage = false
 
   fun withTitleError() = apply { this.showTitleError = true }
@@ -128,7 +129,9 @@ class FieldValidationStateBuilder {
 
   fun withExpirationDateError() = apply { this.showExpirationDateError = true }
 
-  fun withDateOrderError() = apply { this.showDateOrderError = true }
+  fun withDateOrderError(error: DateOrderError = DateOrderError.ExpirationBeforeStart) = apply {
+    this.dateOrderError = error
+  }
 
   fun withSuccessMessage() = apply { this.showSuccessMessage = true }
 
@@ -138,7 +141,7 @@ class FieldValidationStateBuilder {
           showDescriptionError = showDescriptionError,
           showRequestTypeError = showRequestTypeError,
           showLocationNameError = showLocationNameError,
-          showDateOrderError = showDateOrderError,
+          dateOrderError = dateOrderError,
           showSuccessMessage = showSuccessMessage)
 }
 
@@ -149,6 +152,7 @@ open class EditRequestScreenTestBase {
   protected val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
   protected val currentDate = Date()
   protected val futureDate = Date(System.currentTimeMillis() + 86400000)
+  protected val errorMessageDateInFuture = "Expiration date must be in the future"
 
   protected fun createTestViewModel(): EditRequestViewModel {
     val mockRequestRepo = mock<RequestRepository>()
@@ -1133,10 +1137,25 @@ class EditRequestScreenTests : EditRequestScreenTestBase() {
     composeTestRule.setContent {
       TestEditRequestContentWithStaticState(
           uiState =
-              EditRequestUiState(validationState = FieldValidationState(showDateOrderError = true)))
+              EditRequestUiState(
+                  validationState =
+                      FieldValidationState(dateOrderError = DateOrderError.ExpirationBeforeStart)))
     }
 
     assertErrorMessage("Expiration date must be after start date")
+  }
+
+  @Test
+  fun expirationDateField_beforeCurrentDate_displaysCurrentDateError() {
+    composeTestRule.setContent {
+      TestEditRequestContentWithStaticState(
+          uiState =
+              EditRequestUiState(
+                  validationState =
+                      FieldValidationState(dateOrderError = DateOrderError.ExpirationBeforeNow)))
+    }
+
+    assertErrorMessage(errorMessageDateInFuture)
   }
 
   // ========== PERMISSION AND LOCATION TESTS (UI-based) ==========
@@ -1437,7 +1456,7 @@ class EditRequestScreenTests : EditRequestScreenTestBase() {
     viewModel.updateExpirationTime(currentDate)
     waitForUI()
 
-    assert(viewModel.uiState.value.validationState.showDateOrderError)
+    assert(viewModel.uiState.value.validationState.dateOrderError != DateOrderError.None)
   }
 
   @Test

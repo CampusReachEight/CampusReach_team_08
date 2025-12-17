@@ -11,8 +11,6 @@ class RequestFormValidator(
     private val requestTypes: List<RequestType>,
     private val location: Location?,
     private val locationName: String,
-    private val startDateString: String,
-    private val expirationDateString: String,
     private val startTimeStamp: Date,
     private val expirationTime: Date
 ) {
@@ -22,14 +20,21 @@ class RequestFormValidator(
     val isRequestTypeValid = requestTypes.isNotEmpty()
     val isLocationValid = location != null
     val isLocationNameValid = locationName.isNotBlank()
-    val isDateOrderValid = !expirationTime.before(startTimeStamp)
+
+    val currentDate = Date()
+    val dateOrderError =
+        when {
+          expirationTime <= startTimeStamp -> DateOrderError.ExpirationBeforeStart
+          expirationTime <= currentDate -> DateOrderError.ExpirationBeforeNow
+          else -> DateOrderError.None
+        }
 
     return FieldValidationState(
         showTitleError = !isTitleValid,
         showDescriptionError = !isDescriptionValid,
         showRequestTypeError = !isRequestTypeValid,
-        showLocationNameError = !isLocationNameValid,
-        showDateOrderError = !isDateOrderValid)
+        showLocationNameError = !isLocationNameValid && !isLocationValid,
+        dateOrderError = dateOrderError)
   }
 
   fun isValid(): Boolean {
@@ -38,6 +43,6 @@ class RequestFormValidator(
         !state.showDescriptionError &&
         !state.showRequestTypeError &&
         !state.showLocationNameError &&
-        !state.showDateOrderError
+        state.dateOrderError == DateOrderError.None
   }
 }

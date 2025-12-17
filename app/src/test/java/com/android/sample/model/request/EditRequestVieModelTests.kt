@@ -4,6 +4,7 @@ import com.android.sample.model.chat.ChatRepository
 import com.android.sample.model.map.FusedLocationProvider
 import com.android.sample.model.map.Location
 import com.android.sample.model.map.LocationRepository
+import com.android.sample.ui.request.edit.DateOrderError
 import com.android.sample.ui.request.edit.EditRequestViewModel
 import java.util.*
 import kotlinx.coroutines.Dispatchers
@@ -185,7 +186,9 @@ class EditRequestViewModelTest {
     viewModel.updateStartTimeStamp(startDate)
     viewModel.updateExpirationTime(expirationDate)
 
-    assertTrue(viewModel.uiState.value.validationState.showDateOrderError)
+    assertEquals(
+        DateOrderError.ExpirationBeforeStart,
+        viewModel.uiState.value.validationState.dateOrderError)
   }
 
   @Test
@@ -196,7 +199,7 @@ class EditRequestViewModelTest {
     viewModel.updateStartTimeStamp(startDate)
     viewModel.updateExpirationTime(expirationDate)
 
-    assertFalse(viewModel.uiState.value.validationState.showDateOrderError)
+    assertEquals(DateOrderError.None, viewModel.uiState.value.validationState.dateOrderError)
   }
 
   @Test
@@ -748,7 +751,9 @@ class EditRequestViewModelTest {
     viewModel.updateStartTimeStamp(startDate)
     testDispatcher.scheduler.advanceUntilIdle()
 
-    assertTrue(viewModel.uiState.value.validationState.showDateOrderError)
+    assertEquals(
+        DateOrderError.ExpirationBeforeStart,
+        viewModel.uiState.value.validationState.dateOrderError)
   }
 
   @Test
@@ -760,7 +765,9 @@ class EditRequestViewModelTest {
     viewModel.updateExpirationTime(expirationDate)
     testDispatcher.scheduler.advanceUntilIdle()
 
-    assertTrue(viewModel.uiState.value.validationState.showDateOrderError)
+    assertEquals(
+        DateOrderError.ExpirationBeforeStart,
+        viewModel.uiState.value.validationState.dateOrderError)
   }
 
   @Test
@@ -772,7 +779,20 @@ class EditRequestViewModelTest {
     viewModel.updateExpirationTime(expirationDate)
     testDispatcher.scheduler.advanceUntilIdle()
 
-    assertFalse(viewModel.uiState.value.validationState.showDateOrderError)
+    assertEquals(DateOrderError.None, viewModel.uiState.value.validationState.dateOrderError)
+  }
+
+  @Test
+  fun updateExpirationTime_afterStart_Error_ExpirationTime_After_Now() {
+    val startDate = Date(1672531200000L) // 2023
+    val expirationDate = Date(1704067200000L) // 2024
+
+    viewModel.updateStartTimeStamp(startDate)
+    viewModel.updateExpirationTime(expirationDate)
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    assertEquals(
+        DateOrderError.ExpirationBeforeNow, viewModel.uiState.value.validationState.dateOrderError)
   }
 
   @Test

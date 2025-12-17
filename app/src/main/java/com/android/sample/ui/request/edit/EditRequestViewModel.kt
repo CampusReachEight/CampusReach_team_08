@@ -237,10 +237,17 @@ class EditRequestViewModel(
    */
   fun updateStartTimeStamp(date: Date) {
     _uiState.update { state ->
+      val currentDate = Date()
+      val dateOrderError =
+          when {
+            state.expirationTime <= date -> DateOrderError.ExpirationBeforeStart
+            state.expirationTime <= currentDate -> DateOrderError.ExpirationBeforeNow
+            else -> DateOrderError.None
+          }
+
       state.copy(
           startTimeStamp = date,
-          validationState =
-              state.validationState.copy(showDateOrderError = state.expirationTime.before(date)))
+          validationState = state.validationState.copy(dateOrderError = dateOrderError))
     }
   }
 
@@ -251,10 +258,17 @@ class EditRequestViewModel(
    */
   fun updateExpirationTime(date: Date) {
     _uiState.update { state ->
+      val currentDate = Date()
+      val dateOrderError =
+          when {
+            date <= state.startTimeStamp -> DateOrderError.ExpirationBeforeStart
+            date <= currentDate -> DateOrderError.ExpirationBeforeNow
+            else -> DateOrderError.None
+          }
+
       state.copy(
           expirationTime = date,
-          validationState =
-              state.validationState.copy(showDateOrderError = date.before(state.startTimeStamp)))
+          validationState = state.validationState.copy(dateOrderError = dateOrderError))
     }
   }
 
@@ -269,8 +283,6 @@ class EditRequestViewModel(
   /** Validate all form fields using RequestFormValidator */
   private fun validateAllFields(): Boolean {
     val state = _uiState.value
-    val startDateString = dateFormat.format(state.startTimeStamp)
-    val expirationDateString = dateFormat.format(state.expirationTime)
 
     val validator =
         RequestFormValidator(
@@ -279,8 +291,6 @@ class EditRequestViewModel(
             requestTypes = state.requestTypes,
             location = state.location,
             locationName = state.locationName,
-            startDateString = startDateString,
-            expirationDateString = expirationDateString,
             startTimeStamp = state.startTimeStamp,
             expirationTime = state.expirationTime)
 

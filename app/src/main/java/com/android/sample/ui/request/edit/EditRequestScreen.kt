@@ -262,7 +262,7 @@ fun EditRequestContent(
             onClick = { pickerState.showStartDatePicker = true })
         ExpirationDateField(
             dateString = dateFormat.format(uiState.expirationTime),
-            showDateOrderError = uiState.validationState.showDateOrderError,
+            dateOrderError = uiState.validationState.dateOrderError,
             isLoading = uiState.isLoading,
             onClick = { pickerState.showExpirationDatePicker = true })
         TagsSection(
@@ -552,16 +552,23 @@ private fun StartDateField(dateString: String, isLoading: Boolean, onClick: () -
  * Expiration date field with additional date order error handling.
  *
  * @param dateString The current expiration date string.
- * @param showError Whether to show a format error.
- * @param showDateOrderError Whether to show a date order error.
+ * @param onClick the effect of click
+ * @param dateOrderError Whether to show a date order error.
  * @param isLoading Whether the field is in a loading state. composable.
  */
 private fun ExpirationDateField(
     dateString: String,
-    showDateOrderError: Boolean,
+    dateOrderError: DateOrderError,
     isLoading: Boolean,
     onClick: () -> Unit
 ) {
+  val errorMessage =
+      when (dateOrderError) {
+        DateOrderError.None -> null
+        DateOrderError.ExpirationBeforeStart -> stringResource(R.string.date_order_error)
+        DateOrderError.ExpirationBeforeNow -> stringResource(R.string.expiration_before_now_error)
+      }
+
   Box {
     OutlinedTextField(
         value = dateString,
@@ -569,11 +576,11 @@ private fun ExpirationDateField(
         label = { Text(stringResource(R.string.expiration_date_field_label)) },
         placeholder = { Text(DateFormats.DATE_TIME_FORMAT) },
         readOnly = true,
-        isError = showDateOrderError,
+        isError = errorMessage != null,
         supportingText = {
-          if (showDateOrderError) {
+          if (errorMessage != null) {
             Text(
-                text = stringResource(R.string.date_order_error),
+                text = errorMessage,
                 color = appPalette().error,
                 modifier = Modifier.testTag(EditRequestScreenTestTags.ERROR_MESSAGE))
           }
