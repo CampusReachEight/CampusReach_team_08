@@ -104,7 +104,7 @@ fun ChatScreen(
   val listState = rememberLazyListState()
   val snackbarHostState = remember { SnackbarHostState() }
 
-  val isExpired = isRequestExpired(uiState.chat?.requestStatus)
+  val isExpired = uiState.chat?.let { isRequestExpired(it.requestStatus) } ?: false
 
   // Initialize chat when screen is created
   LaunchedEffect(chatId) { viewModel.initializeChat(chatId) }
@@ -156,14 +156,17 @@ fun ChatScreen(
       },
       snackbarHost = { SnackbarHost(snackbarHostState) },
       bottomBar = {
-        if (!isExpired) {
-          MessageInputBar(
-              messageText = uiState.messageInput,
-              onMessageChange = viewModel::updateMessageInput,
-              onSendClick = { viewModel.sendMessage(uiState.messageInput) },
-              isSending = uiState.isSendingMessage)
-        } else {
-          ReadOnlyMessageBar(requestStatus = uiState.chat?.requestStatus)
+        // Only show bottom bar when chat is loaded
+        uiState.chat?.let { chat ->
+          if (!isRequestExpired(chat.requestStatus)) {
+            MessageInputBar(
+                messageText = uiState.messageInput,
+                onMessageChange = viewModel::updateMessageInput,
+                onSendClick = { viewModel.sendMessage(uiState.messageInput) },
+                isSending = uiState.isSendingMessage)
+          } else {
+            ReadOnlyMessageBar(requestStatus = chat.requestStatus)
+          }
         }
       }) { paddingValues ->
         Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
