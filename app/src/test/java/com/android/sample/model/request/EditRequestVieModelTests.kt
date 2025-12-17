@@ -1,13 +1,9 @@
-package com.android.sample.ui.request
+package com.android.sample.model.request
 
+import com.android.sample.model.chat.ChatRepository
 import com.android.sample.model.map.FusedLocationProvider
 import com.android.sample.model.map.Location
 import com.android.sample.model.map.LocationRepository
-import com.android.sample.model.request.Request
-import com.android.sample.model.request.RequestRepository
-import com.android.sample.model.request.RequestStatus
-import com.android.sample.model.request.RequestType
-import com.android.sample.model.request.Tags
 import com.android.sample.ui.request.edit.DateOrderError
 import com.android.sample.ui.request.edit.EditRequestViewModel
 import java.util.*
@@ -48,13 +44,18 @@ class EditRequestViewModelTest {
           tags = listOf(Tags.URGENT),
           creatorId = "user1")
 
+  private lateinit var chatRepository: ChatRepository
+
   @Before
   fun setup() {
     Dispatchers.setMain(testDispatcher)
     fusedLocationProvider = mock(FusedLocationProvider::class.java)
     requestRepository = mock(RequestRepository::class.java)
     locationRepository = mock(LocationRepository::class.java)
-    viewModel = EditRequestViewModel(requestRepository, locationRepository, fusedLocationProvider)
+    chatRepository = mock(ChatRepository::class.java)
+    viewModel =
+        EditRequestViewModel(
+            requestRepository, locationRepository, fusedLocationProvider, chatRepository)
   }
 
   @After
@@ -792,5 +793,62 @@ class EditRequestViewModelTest {
 
     assertEquals(
         DateOrderError.ExpirationBeforeNow, viewModel.uiState.value.validationState.dateOrderError)
+  }
+
+  @Test
+  fun deleteRequest_success_deletesRequestAndChat() = runTest {
+    val requestId = "test-id"
+    whenever(requestRepository.deleteRequest(requestId)).thenReturn(Unit)
+    whenever(chatRepository.deleteChat(requestId)).thenReturn(Unit)
+
+    var onSuccessCalled = false
+    viewModel.deleteRequest(requestId) { onSuccessCalled = true }
+    advanceUntilIdle()
+
+    verify(requestRepository).deleteRequest(requestId)
+    verify(chatRepository).deleteChat(requestId)
+    assertTrue(onSuccessCalled)
+    assertFalse(viewModel.uiState.value.isDeleting)
+    assertFalse(viewModel.uiState.value.showDeleteConfirmation)
+    assertNull(viewModel.uiState.value.errorMessage)
+  }
+
+  @Test
+  fun deleteRequest_failureWhenDeletingRequest_setsErrorMessage() = runTest {
+    val requestId = "test-id"
+    val errorMessage = "Failed to delete request"
+    whenever(requestRepository.deleteRequest(requestId)).thenThrow(RuntimeException(errorMessage))
+
+    var onSuccessCalled = false
+    viewModel.deleteRequest(requestId) { onSuccessCalled = true }
+    advanceUntilIdle()
+
+    verify(requestRepository).deleteRequest(requestId)
+    verify(chatRepository, never()).deleteChat(requestId)
+    assertFalse(onSuccessCalled)
+    assertFalse(viewModel.uiState.value.isDeleting)
+    assertFalse(viewModel.uiState.value.showDeleteConfirmation)
+    assertNotNull(viewModel.uiState.value.errorMessage)
+    assertTrue(viewModel.uiState.value.errorMessage!!.contains(errorMessage))
+  }
+
+  @Test
+  fun deleteRequest_failureWhenDeletingChat_setsErrorMessage() = runTest {
+    val requestId = "test-id"
+    val errorMessage = "Failed to delete chat"
+    whenever(requestRepository.deleteRequest(requestId)).thenReturn(Unit)
+    whenever(chatRepository.deleteChat(requestId)).thenThrow(RuntimeException(errorMessage))
+
+    var onSuccessCalled = false
+    viewModel.deleteRequest(requestId) { onSuccessCalled = true }
+    advanceUntilIdle()
+
+    verify(requestRepository).deleteRequest(requestId)
+    verify(chatRepository).deleteChat(requestId)
+    assertFalse(onSuccessCalled)
+    assertFalse(viewModel.uiState.value.isDeleting)
+    assertFalse(viewModel.uiState.value.showDeleteConfirmation)
+    assertNotNull(viewModel.uiState.value.errorMessage)
+    assertTrue(viewModel.uiState.value.errorMessage!!.contains(errorMessage))
   }
 }
