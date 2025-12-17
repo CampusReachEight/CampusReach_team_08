@@ -85,11 +85,11 @@ fun NavigationScreen(
   var isSignedIn by rememberSaveable { mutableStateOf(user != null) }
   val startDestination = if (!isSignedIn) "login" else "requests"
 
-    LaunchedEffect(isSignedIn) {
-        if (isSignedIn) {
-            navigationActions.navigateTo(Screen.Requests)
-        }
+  LaunchedEffect(isSignedIn) {
+    if (isSignedIn) {
+      navigationActions.navigateTo(Screen.Requests)
     }
+  }
 
   // repositories
   val requestRepository = RequestRepositoryFirestore(Firebase.firestore)
