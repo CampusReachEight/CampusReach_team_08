@@ -772,7 +772,7 @@ class EndToEndTests : BaseEmulatorTest() {
           "========== TEST: canCreateRequestGoToProfileViewMyRequestsEditAndLogout START ==========")
       // 1. Sign in
       val testName = "43546437"
-      val testEmail = "myrequest@example.com"
+      val testEmail = "dadadk0aknbbbbbb@example.com"
       android.util.Log.d(TAG, "Step 1: Initializing with testName=$testName, testEmail=$testEmail")
       initialize(testName, testEmail)
 
@@ -951,7 +951,7 @@ class EndToEndTests : BaseEmulatorTest() {
           TAG, "========== TEST: canLoginGoToProfileEditProfileAndLogout START ==========")
       // 1. Sign in
       val testName = "12368933"
-      val testEmail = "editprofile@example.com"
+      val testEmail = "dadawdiadio0awd29382222@example.com"
       android.util.Log.d(TAG, "Step 1: Initializing with testName=$testName, testEmail=$testEmail")
       initialize(testName, testEmail)
       composeTestRule.waitForIdle()
@@ -1104,7 +1104,7 @@ class EndToEndTests : BaseEmulatorTest() {
       hadARequestWithOtherAccount()
 
       val testName = "092890490823"
-      val testEmail = "editprofile@example.com"
+      val testEmail = "dawdjiadniauuuuuu@example.com"
       android.util.Log.d(TAG, "Step 2: Initializing with testName=$testName, testEmail=$testEmail")
       initialize(testName, testEmail)
       composeTestRule.waitForIdle()
@@ -1161,7 +1161,7 @@ class EndToEndTests : BaseEmulatorTest() {
       hadARequestWithOtherAccount()
 
       val testName = "9012789890453777"
-      val testEmail = "editprofile@example.com"
+      val testEmail = "dawdhjdnu9wd78777@example.com"
       android.util.Log.d(TAG, "Step 2: Initializing with testName=$testName, testEmail=$testEmail")
       initialize(testName, testEmail)
       composeTestRule.waitForIdle()
