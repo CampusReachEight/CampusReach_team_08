@@ -71,7 +71,18 @@ fun ChatScreen(
 
   // Initialize chat when screen is created
   LaunchedEffect(chatId) { viewModel.initializeChat(chatId) }
+    val shouldLoadMore by remember {
+        derivedStateOf {
+            val firstVisibleItemIndex = listState.firstVisibleItemIndex
+            firstVisibleItemIndex == 0 && !uiState.isLoadingMore && uiState.messages.isNotEmpty()
+        }
+    }
 
+    LaunchedEffect(shouldLoadMore) {
+        if (shouldLoadMore) {
+            viewModel.loadMoreMessages()
+        }
+    }
   // Auto-scroll to bottom when new messages arrive
   LaunchedEffect(uiState.messages.size) {
     if (uiState.messages.isNotEmpty()) {
@@ -126,22 +137,42 @@ fun ChatScreen(
                 uiState.chat?.let { chat -> ChatHeader(chat = chat) }
 
                 // Messages List
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize().testTag(ChatScreenTestTags.MESSAGE_LIST),
-                    state = listState,
-                    contentPadding =
-                        PaddingValues(
-                            vertical = MessageBubbleDimens.VerticalPadding.dp,
-                            horizontal = MessageBubbleDimens.HorizontalPadding.dp)) {
-                      items(uiState.messages) { message ->
-                        MessageBubble(
-                            message = message,
-                            isOwnMessage = message.senderId == uiState.currentUserProfile?.id,
-                            onProfileClick = onProfileClick,
-                            modifier =
-                                Modifier.padding(vertical = MessageBubbleDimens.MessageSpacing.dp))
+                  LazyColumn(
+                      modifier = Modifier
+                          .fillMaxSize()
+                          .testTag(ChatScreenTestTags.MESSAGE_LIST),
+                      state = listState,
+                      contentPadding = PaddingValues(
+                          vertical = MessageBubbleDimens.VerticalPadding.dp,
+                          horizontal = MessageBubbleDimens.HorizontalPadding.dp
+                      )
+                  ) {
+                      // Loading indicator at top
+                      if (uiState.isLoadingMore) {
+                          item {
+                              Box(
+                                  modifier = Modifier
+                                      .fillMaxWidth()
+                                      .padding(MessageBubbleDimens.VerticalPadding.dp),
+                                  contentAlignment = Alignment.Center
+                              ) {
+                                  CircularProgressIndicator(
+                                      modifier = Modifier.size(24.dp),
+                                      color = appPalette().accent
+                                  )
+                              }
+                          }
                       }
-                    }
+
+                      items(uiState.messages) { message ->
+                          MessageBubble(
+                              message = message,
+                              isOwnMessage = message.senderId == uiState.currentUserProfile?.id,
+                              onProfileClick = onProfileClick,
+                              modifier = Modifier.padding(vertical = MessageBubbleDimens.MessageSpacing.dp)
+                          )
+                      }
+                  }
               }
             }
           }

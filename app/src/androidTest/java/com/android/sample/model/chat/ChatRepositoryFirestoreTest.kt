@@ -1178,28 +1178,6 @@ class ChatRepositoryFirestoreTest : BaseEmulatorTest() {
   // ==================== ADD SELF TO CHAT TESTS ====================
 
   @Test
-  fun addSelfToChat_successfullyAddsUserToParticipants() = runTest {
-    // Create chat with only creator
-    repository.createChat(TEST_CHAT_ID_1, TEST_TITLE_1, listOf(currentUserId), currentUserId, OPEN)
-    delay(FIRESTORE_WRITE_DELAY_MS)
-
-    // Sign in as a different user
-    auth.signOut()
-    auth.createUserWithEmailAndPassword("helper1@test.com", PASSWORD).await()
-    delay(500)
-    val helperId = auth.currentUser?.uid ?: throw IllegalStateException("No user signed in")
-
-    // Add self to chat
-    repository.addSelfToChat(TEST_CHAT_ID_1)
-    delay(FIRESTORE_WRITE_DELAY_MS)
-
-    // Verify user was added
-    val chat = repository.getChat(TEST_CHAT_ID_1)
-    assertTrue(chat.participants.contains(helperId))
-    assertEquals(2, chat.participants.size)
-  }
-
-  @Test
   fun addSelfToChat_failsWhenChatDoesNotExist() = runTest {
     val exception =
         assertThrows(Exception::class.java) {

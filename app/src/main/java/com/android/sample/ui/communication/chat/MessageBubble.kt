@@ -14,6 +14,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.android.sample.model.chat.Message
@@ -93,21 +94,22 @@ fun MessageBubble(
       verticalAlignment = Alignment.Top,
       horizontalArrangement = if (isOwnMessage) Arrangement.End else Arrangement.Start) {
         // Profile picture (only for other's messages)
-        if (!isOwnMessage) {
+      if (!isOwnMessage) {
           Box(
-              modifier =
-                  Modifier.padding(end = MessageBubbleDimens.ProfilePicturePadding.dp)
-                      .size(MessageBubbleDimens.ProfilePictureSize.dp)
-                      .clip(CircleShape)
-                      .clickable(
-                          onClick = { onProfileClick(message.senderId) },
-                          interactionSource = remember { MutableInteractionSource() },
-                          indication = LocalIndication.current)) {
-                ProfilePicture(
-                    profileRepository = profileRepository,
-                    profileId = message.senderId,
-                    modifier = Modifier.fillMaxSize(),
-                    withName = false)
+              modifier = Modifier
+                  .padding(end = MessageBubbleDimens.ProfilePicturePadding.dp)
+                  .size(MessageBubbleDimens.ProfilePictureSize.dp)
+                  .clip(CircleShape)
+                  .background(Color.Red.copy(alpha = 0.3f))
+                  .clickable(
+                      onClick = {
+                          println("PROFILE CLICKED: ${message.senderId}")
+                          onProfileClick(message.senderId)
+                      },
+                      interactionSource = remember { MutableInteractionSource() },
+                      indication = LocalIndication.current
+                  )
+          )
               }
         }
 
@@ -159,7 +161,7 @@ fun MessageBubble(
                   }
             }
       }
-}
+
 
 /**
  * Formats a timestamp to a time string.

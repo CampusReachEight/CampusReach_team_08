@@ -60,7 +60,7 @@ class MessagesViewModel(
         _uiState.update { it.copy(chatItems = chatItems, isLoading = false, errorMessage = null) }
       } catch (e: Exception) {
         val friendly =
-            e.message?.takeIf { it.isNotBlank() } ?: FAILED_TO_LOAD_CHATS_PLEASE_TRY_AGAIN_
+            e.message?.takeIf { it.isNotBlank() } ?: "Failed to load chats. Please try again."
         _uiState.update { it.copy(isLoading = false, errorMessage = friendly) }
       }
     }
@@ -100,7 +100,7 @@ class MessagesViewModelFactory(
         MessagesViewModel() as T
       }
     }
-    throw IllegalArgumentException(UNKNOWN_VIEW_MODEL_CLASS)
+    throw IllegalArgumentException("Unknown ViewModel class")
   }
 }
 

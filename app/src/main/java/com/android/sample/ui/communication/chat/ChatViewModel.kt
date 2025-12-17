@@ -22,17 +22,6 @@ import kotlinx.coroutines.launch
 
 private const val CANNOT_SEE_MESSAGES_INVALID_STATE = "Cannot send message: invalid state"
 
-private const val FAILED_TO_SEND_MESSAGE = "Failed to send message. Please try again."
-
-private const val NO_AUTHENTICATED_USER = "No authenticated user"
-
-private const val MESSAGES_LIMIT = 30
-private const val FAILED_TO_LOAD_CHAT = "Failed to load chat. Please try again."
-
-private const val FAILED_TO_LOAD_MESSAGES = "Failed to load messages. Please try again."
-
-private const val LIMIT = 10
-
 /**
  * ViewModel for the Chat conversation screen.
  *
@@ -69,7 +58,7 @@ class ChatViewModel(
       try {
         val currentUserId = firebaseAuth.currentUser?.uid
         if (currentUserId == null) {
-          _uiState.update { it.copy(isLoading = false, errorMessage = NO_AUTHENTICATED_USER) }
+          _uiState.update { it.copy(isLoading = false, errorMessage = "No authenticated user") }
           return@launch
         }
 
@@ -80,7 +69,7 @@ class ChatViewModel(
         val userProfile = profileRepository.getUserProfile(currentUserId)
 
         // Load all messages
-        val messages = chatRepository.getMessages(chatId, MESSAGES_LIMIT, null)
+        val messages = chatRepository.getMessages(chatId, 30, null)
 
         _uiState.update {
           it.copy(
@@ -95,7 +84,8 @@ class ChatViewModel(
         val lastTimestamp = messages.lastOrNull()?.timestamp ?: Date()
         listenToNewMessages(chatId, lastTimestamp)
       } catch (e: Exception) {
-        val friendly = e.message?.takeIf { it.isNotBlank() } ?: FAILED_TO_LOAD_CHAT
+        val friendly =
+            e.message?.takeIf { it.isNotBlank() } ?: "Failed to load chat. Please try again."
         _uiState.update { it.copy(isLoading = false, errorMessage = friendly) }
       }
     }
@@ -114,7 +104,9 @@ class ChatViewModel(
       chatRepository
           .listenToNewMessages(chatId, sinceTimestamp)
           .catch { e ->
-            val friendly = e.message?.takeIf { it.isNotBlank() } ?: FAILED_TO_LOAD_MESSAGES
+            val friendly =
+                e.message?.takeIf { it.isNotBlank() }
+                    ?: "Failed to load messages. Please try again."
             _uiState.update { it.copy(errorMessage = friendly) }
           }
           .collect { newMessages ->
@@ -147,7 +139,7 @@ class ChatViewModel(
         val beforeTimestamp = oldestMessage.timestamp
 
         // Load more messages
-        val moreMessages = chatRepository.getMessages(chatId, LIMIT, beforeTimestamp)
+        val moreMessages = chatRepository.getMessages(chatId, 10, beforeTimestamp)
 
         _uiState.update { state ->
           state.copy(
@@ -156,7 +148,9 @@ class ChatViewModel(
         }
       } catch (e: Exception) {
         _uiState.update { it.copy(isLoadingMore = false) }
-        val friendly = e.message?.takeIf { it.isNotBlank() } ?: FAILED_TO_LOAD_MESSAGES
+        val friendly =
+            e.message?.takeIf { it.isNotBlank() }
+                ?: "Failed to load more messages. Please try again."
         _uiState.update { it.copy(errorMessage = friendly) }
       }
     }
@@ -194,7 +188,8 @@ class ChatViewModel(
           it.copy(messageInput = "", isSendingMessage = false, errorMessage = null)
         }
       } catch (e: Exception) {
-        val friendly = e.message?.takeIf { it.isNotBlank() } ?: FAILED_TO_SEND_MESSAGE
+        val friendly =
+            e.message?.takeIf { it.isNotBlank() } ?: "Failed to send message. Please try again."
         _uiState.update { it.copy(isSendingMessage = false, errorMessage = friendly) }
       }
     }
