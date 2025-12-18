@@ -1,6 +1,7 @@
 package com.android.sample.ui.map
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -37,6 +38,8 @@ import com.android.sample.ui.theme.AppPalette
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.CameraPositionState
+import com.halilibo.richtext.markdown.Markdown
+import com.halilibo.richtext.ui.material3.Material3RichText
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -75,13 +78,17 @@ fun RequestDetailsTab(
       }
 
   // Description
-  Text(
-      text = request.description,
-      style = MaterialTheme.typography.bodyMedium,
-      color = MaterialTheme.colorScheme.onSurfaceVariant,
+  Box(
       modifier =
           Modifier.padding(bottom = ConstantMap.SPACER_HEIGHT_LARGE)
-              .testTag(MapTestTags.REQUEST_DESCRIPTION))
+              .testTag(MapTestTags.REQUEST_DESCRIPTION)) {
+        Material3RichText {
+          Markdown(
+              content = request.description,
+              // Links are not interactive in bottom sheet for simplicity
+              onLinkClicked = {})
+        }
+      }
 
   // Dates Row
   RequestDatesRow(request)
