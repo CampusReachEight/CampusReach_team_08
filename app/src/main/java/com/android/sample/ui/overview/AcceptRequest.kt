@@ -90,6 +90,7 @@ object AcceptRequestScreenTestTags {
   const val VOLUNTEERS_SECTION_HEADER = "volunteersHeader"
   const val VOLUNTEERS_SECTION_CONTAINER = "volunteersContainer"
   const val NAVIGATE_TO_MAP = "navigateToMap"
+  const val OWNER_CHAT_BUTTON = "ownerChatButton"
 }
 
 // Centralized user-visible strings for AcceptRequest screen
@@ -97,6 +98,7 @@ object AcceptRequestScreenLabels {
   const val BACK = "Back"
   const val VALIDATE_REQUEST = "Validate Request"
   const val GO_TO_CHAT = "Go to Chat"
+  const val CHAT_WITH_VOLUNTEERS = "Chat with Volunteers"
 
   const val DESCRIPTION = "Description"
   const val TAGS = "Tags"
@@ -436,8 +438,30 @@ fun AcceptRequestScreen(
                                 modifier =
                                     Modifier.height(AcceptRequestScreenConstants.SECTION_SPACING))
 
-                            // Safeguard: exclude creatorId from volunteers list if present
+                            // Chat with Volunteers button - only show if there are volunteers
                             val volunteers = request.people.filterNot { it == request.creatorId }
+                            if (volunteers.isNotEmpty()) {
+                              FilledTonalButton(
+                                  onClick = { onChatClick(requestId) },
+                                  modifier =
+                                      Modifier.fillMaxWidth()
+                                          .height(AcceptRequestScreenConstants.BUTTON_HEIGHT)
+                                          .testTag(AcceptRequestScreenTestTags.OWNER_CHAT_BUTTON),
+                                  colors =
+                                      ButtonDefaults.buttonColors(
+                                          containerColor = appPalette().accent,
+                                          contentColor = appPalette().onAccent)) {
+                                    Text(
+                                        text = AcceptRequestScreenLabels.CHAT_WITH_VOLUNTEERS,
+                                        style = MaterialTheme.typography.labelLarge)
+                                  }
+
+                              Spacer(
+                                  modifier =
+                                      Modifier.height(AcceptRequestScreenConstants.SECTION_SPACING))
+                            }
+
+                            // Now show the volunteers list or empty message
                             if (volunteers.isEmpty()) {
                               Text(
                                   text = AcceptRequestScreenLabels.NO_VOLUNTEERS_YET,
