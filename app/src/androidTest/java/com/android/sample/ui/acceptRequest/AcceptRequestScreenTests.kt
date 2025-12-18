@@ -978,4 +978,72 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
         .onNodeWithTag(AcceptRequestScreenTestTags.GO_TO_CHAT_BUTTON)
         .assertDoesNotExist()
   }
+
+  @Test
+  fun ownerChatButtonNotVisibleWhenVolunteersNotExpanded() {
+    // Sign in as owner of request1
+    signIn(DEFAULT_USER_EMAIL)
+
+    composeTestRule.setContent { AcceptRequestScreen(requestId = request1_id, onChatClick = {}) }
+
+    composeTestRule.waitUntil(uiWaitTimeout) {
+      composeTestRule
+          .onAllNodesWithTag(AcceptRequestScreenTestTags.REQUEST_TOP_BAR)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    composeTestRule.waitForIdle()
+
+    // Verify volunteers section header exists (is owner)
+    composeTestRule
+        .onNodeWithTag(AcceptRequestScreenTestTags.VOLUNTEERS_SECTION_HEADER)
+        .assertExists()
+
+    // Verify owner chat button is not visible when volunteers section is collapsed
+    composeTestRule
+        .onNodeWithTag(AcceptRequestScreenTestTags.OWNER_CHAT_BUTTON)
+        .assertDoesNotExist()
+  }
+
+  @Test
+  fun ownerChatButtonNotVisibleWhenNoVolunteers() {
+    // Sign in as owner of request1 which has no volunteers
+    signIn(DEFAULT_USER_EMAIL)
+
+    composeTestRule.setContent { AcceptRequestScreen(requestId = request1_id, onChatClick = {}) }
+
+    composeTestRule.waitUntil(uiWaitTimeout) {
+      composeTestRule
+          .onAllNodesWithTag(AcceptRequestScreenTestTags.REQUEST_TOP_BAR)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    composeTestRule.waitForIdle()
+
+    // Wait for volunteers section
+    composeTestRule.waitUntil(timeoutMillis = 10_000) {
+      try {
+        composeTestRule
+            .onAllNodesWithTag(AcceptRequestScreenTestTags.VOLUNTEERS_SECTION_HEADER)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      } catch (e: Exception) {
+        false
+      }
+    }
+
+    // Expand volunteers section
+    composeTestRule
+        .onNodeWithTag(AcceptRequestScreenTestTags.VOLUNTEERS_SECTION_HEADER)
+        .performClick()
+
+    composeTestRule.waitForIdle()
+
+    // Verify owner chat button does NOT exist (no volunteers)
+    composeTestRule
+        .onNodeWithTag(AcceptRequestScreenTestTags.OWNER_CHAT_BUTTON)
+        .assertDoesNotExist()
+  }
 }
