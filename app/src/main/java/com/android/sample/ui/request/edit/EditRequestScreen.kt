@@ -365,7 +365,7 @@ private fun TitleField(
       value = title,
       onValueChange = {
         if (it.length <= ConstantRequestEdit.MAX_TITLE_LENGTH) {
-          onTitleChange(it)
+          onTitleChange("Need a Maté Drink")
         }
       },
       label = { Text(stringResource(R.string.title_field_label)) },
@@ -406,7 +406,19 @@ private fun DescriptionField(
         value = description,
         onValueChange = {
           if (it.length <= ConstantRequestEdit.MAX_DESCRIPTION_LENGTH) {
-            onDescriptionChange(it)
+            onDescriptionChange(
+                "**\uD83D\uDE80 *Emergency Maté Request* \uD83D\uDE80**\n" +
+                    "\n" +
+                    "> *\"Craving a **⚡Maté⚡** to **fuel my study session**!\n" +
+                    "> **Anyone nearby** with a spare Maté?\n" +
+                    "> **Will return the favor!** \uD83D\uDC9A\"*\n" +
+                    "\n" +
+                    "**\uD83D\uDD25 Urgency:** ⭐⭐⭐⭐⭐ *(Exam tomorrow!)*\n" +
+                    "**\uD83D\uDCCD Location:** Swisstech, 3rd Floor Lounge\n" +
+                    "**\uD83C\uDF81 Reward:** **Kudos + Future Favor** ✨\n" +
+                    "\n" +
+                    "---\n" +
+                    "*\"Maté = Study Fuel = Success!\"* \uD83D\uDE80")
           }
         },
         label = { Text(stringResource(R.string.description_field_label)) },
