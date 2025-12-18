@@ -1,5 +1,8 @@
 package com.android.sample.ui.leaderboard
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -43,6 +46,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -51,6 +55,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -388,6 +393,16 @@ private fun LeaderboardCard(
   val badgeTheme = forRank(position)
   val addon = resolveAddon(position, profile.id)
   val cardBorder = resolveCardBorder(badgeTheme, addon)
+
+  var targetScale by remember { mutableFloatStateOf(ConstantLeaderboard.CardInitialSizeRatio) }
+  LaunchedEffect(Unit) { targetScale = 1f }
+  val scale by
+      animateFloatAsState(
+          targetValue = targetScale,
+          animationSpec =
+              spring(
+                  dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMedium))
+
   Card(
       shape = RoundedCornerShape(ConstantLeaderboard.CardCornerRadius),
       border = cardBorder,
@@ -395,7 +410,8 @@ private fun LeaderboardCard(
       modifier =
           Modifier.fillMaxWidth()
               .height(ConstantLeaderboard.CardHeight)
-              .testTag(LeaderboardTestTags.getCardTag(profile.id))) {
+              .testTag(LeaderboardTestTags.getCardTag(profile.id))
+              .graphicsLayer(scaleX = scale, scaleY = scale)) {
         Row(
             modifier = Modifier.fillMaxSize().padding(ConstantLeaderboard.CardInnerPadding),
             verticalAlignment = Alignment.CenterVertically) {

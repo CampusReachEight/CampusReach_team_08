@@ -51,4 +51,6 @@ object ConstantLeaderboard {
   val SingleLineMax = 1
 
   val TwoLineMax = 2
+
+  val CardInitialSizeRatio = 0.5f
 }
