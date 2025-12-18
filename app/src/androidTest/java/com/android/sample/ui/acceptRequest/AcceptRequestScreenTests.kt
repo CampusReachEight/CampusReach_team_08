@@ -865,4 +865,117 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
 
     composeTestRule.onNodeWithTag(AcceptRequestScreenTestTags.NAVIGATE_TO_MAP).performClick()
   }
+
+  @Test
+  fun goToChatButtonNotDisplayedWhenNotAccepted() {
+    composeTestRule.setContent { AcceptRequestScreen(requestId = request1_id, onChatClick = {}) }
+
+    composeTestRule.waitUntil(uiWaitTimeout) {
+      composeTestRule
+          .onAllNodesWithTag(AcceptRequestScreenTestTags.REQUEST_TOP_BAR)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Wait for UI to fully load
+    composeTestRule.waitForIdle()
+
+    // Verify "Go to Chat" button is not displayed when request is not accepted
+    composeTestRule
+        .onNodeWithTag(AcceptRequestScreenTestTags.GO_TO_CHAT_BUTTON)
+        .assertDoesNotExist()
+  }
+
+  @Test
+  fun goToChatButtonDisappearsAfterCancellingAcceptance() {
+    composeTestRule.setContent { AcceptRequestScreen(requestId = request1_id, onChatClick = {}) }
+
+    composeTestRule.waitUntil(uiWaitTimeout) {
+      composeTestRule
+          .onAllNodesWithTag(AcceptRequestScreenTestTags.REQUEST_TOP_BAR)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Wait for button to be ready
+    composeTestRule.waitUntil(timeoutMillis = 10_000) {
+      try {
+        composeTestRule
+            .onAllNodesWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      } catch (e: Exception) {
+        false
+      }
+    }
+
+    // Accept the request first
+    composeTestRule.onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON).performClick()
+    composeTestRule.waitForIdle()
+
+    // Wait for "Go to Chat" button to appear
+    composeTestRule.waitUntil(timeoutMillis = 15_000) {
+      try {
+        composeTestRule
+            .onAllNodesWithTag(AcceptRequestScreenTestTags.GO_TO_CHAT_BUTTON)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      } catch (e: Exception) {
+        false
+      }
+    }
+
+    // Verify button exists
+    composeTestRule.onNodeWithTag(AcceptRequestScreenTestTags.GO_TO_CHAT_BUTTON).assertExists()
+
+    // Wait for loading to finish before canceling
+    composeTestRule.waitUntil(timeoutMillis = 10_000) {
+      try {
+        val buttonNode =
+            composeTestRule
+                .onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON)
+                .fetchSemanticsNode()
+        // Check if button is enabled (not loading)
+        buttonNode.config.getOrNull(androidx.compose.ui.semantics.SemanticsProperties.Disabled) ==
+            null
+      } catch (e: Exception) {
+        false
+      }
+    }
+
+    // Cancel acceptance
+    composeTestRule.onNodeWithTag(AcceptRequestScreenTestTags.REQUEST_BUTTON).performClick()
+    composeTestRule.waitForIdle()
+
+    // Wait for state to update
+    Thread.sleep(2000)
+    composeTestRule.waitForIdle()
+
+    // Verify "Go to Chat" button disappears
+    composeTestRule
+        .onNodeWithTag(AcceptRequestScreenTestTags.GO_TO_CHAT_BUTTON)
+        .assertDoesNotExist()
+  }
+
+  @Test
+  fun goToChatButtonNotDisplayedForOwner() {
+    // request1 is owned by currentUserId (DEFAULT_USER_EMAIL)
+    // We're already signed in as DEFAULT_USER_EMAIL from setUp
+
+    composeTestRule.setContent { AcceptRequestScreen(requestId = request1_id, onChatClick = {}) }
+
+    composeTestRule.waitUntil(uiWaitTimeout) {
+      composeTestRule
+          .onAllNodesWithTag(AcceptRequestScreenTestTags.REQUEST_TOP_BAR)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    composeTestRule.waitForIdle()
+
+    // Verify "Go to Chat" button is not displayed for owner
+    composeTestRule
+        .onNodeWithTag(AcceptRequestScreenTestTags.GO_TO_CHAT_BUTTON)
+        .assertDoesNotExist()
+  }
 }
