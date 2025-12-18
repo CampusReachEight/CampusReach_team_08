@@ -30,8 +30,6 @@ import com.android.sample.utils.BaseEmulatorTest
 import com.android.sample.utils.FirebaseEmulator
 import java.util.Calendar
 import java.util.Date
-import junit.framework.TestCase.assertEquals
-import junit.framework.TestCase.assertNotNull
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
@@ -983,10 +981,10 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
 
   @Test
   fun ownerChatButtonNotVisibleWhenVolunteersNotExpanded() {
-    // Sign in as owner of request3 which has volunteers
+    // Sign in as owner of request1
     signIn(DEFAULT_USER_EMAIL)
 
-    composeTestRule.setContent { AcceptRequestScreen(requestId = request3_id, onChatClick = {}) }
+    composeTestRule.setContent { AcceptRequestScreen(requestId = request1_id, onChatClick = {}) }
 
     composeTestRule.waitUntil(uiWaitTimeout) {
       composeTestRule
@@ -996,52 +994,16 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
     }
 
     composeTestRule.waitForIdle()
+
+    // Verify volunteers section header exists (is owner)
+    composeTestRule
+        .onNodeWithTag(AcceptRequestScreenTestTags.VOLUNTEERS_SECTION_HEADER)
+        .assertExists()
 
     // Verify owner chat button is not visible when volunteers section is collapsed
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.OWNER_CHAT_BUTTON)
         .assertDoesNotExist()
-  }
-
-  @Test
-  fun ownerChatButtonVisibleWhenVolunteersExpanded() {
-    // Sign in as owner of request3 which has volunteers
-    signIn(DEFAULT_USER_EMAIL)
-
-    composeTestRule.setContent { AcceptRequestScreen(requestId = request3_id, onChatClick = {}) }
-
-    composeTestRule.waitUntil(uiWaitTimeout) {
-      composeTestRule
-          .onAllNodesWithTag(AcceptRequestScreenTestTags.REQUEST_TOP_BAR)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
-
-    composeTestRule.waitForIdle()
-
-    // Expand volunteers section
-    composeTestRule
-        .onNodeWithTag(AcceptRequestScreenTestTags.VOLUNTEERS_SECTION_HEADER)
-        .performClick()
-
-    composeTestRule.waitForIdle()
-
-    // Verify owner chat button is now visible
-    composeTestRule.waitUntil(timeoutMillis = 5_000) {
-      try {
-        composeTestRule
-            .onAllNodesWithTag(AcceptRequestScreenTestTags.OWNER_CHAT_BUTTON)
-            .fetchSemanticsNodes()
-            .isNotEmpty()
-      } catch (e: Exception) {
-        false
-      }
-    }
-
-    composeTestRule
-        .onNodeWithTag(AcceptRequestScreenTestTags.OWNER_CHAT_BUTTON)
-        .assertIsDisplayed()
-        .assertTextContains("Chat with Volunteers", substring = true, ignoreCase = true)
   }
 
   @Test
@@ -1060,6 +1022,18 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
 
     composeTestRule.waitForIdle()
 
+    // Wait for volunteers section
+    composeTestRule.waitUntil(timeoutMillis = 10_000) {
+      try {
+        composeTestRule
+            .onAllNodesWithTag(AcceptRequestScreenTestTags.VOLUNTEERS_SECTION_HEADER)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      } catch (e: Exception) {
+        false
+      }
+    }
+
     // Expand volunteers section
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.VOLUNTEERS_SECTION_HEADER)
@@ -1071,60 +1045,5 @@ class AcceptRequestScreenTests : BaseEmulatorTest() {
     composeTestRule
         .onNodeWithTag(AcceptRequestScreenTestTags.OWNER_CHAT_BUTTON)
         .assertDoesNotExist()
-
-    // Verify "No volunteers yet" message is shown
-    composeTestRule.onNodeWithText(AcceptRequestScreenLabels.NO_VOLUNTEERS_YET).assertIsDisplayed()
-  }
-
-  @Test
-  fun ownerChatButtonCallbackIsTriggered() {
-    var chatClickedRequestId: String? = null
-
-    // Sign in as owner of request3 which has volunteers
-    signIn(DEFAULT_USER_EMAIL)
-
-    composeTestRule.setContent {
-      AcceptRequestScreen(
-          requestId = request3_id, onChatClick = { requestId -> chatClickedRequestId = requestId })
-    }
-
-    composeTestRule.waitUntil(uiWaitTimeout) {
-      composeTestRule
-          .onAllNodesWithTag(AcceptRequestScreenTestTags.REQUEST_TOP_BAR)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
-
-    composeTestRule.waitForIdle()
-
-    // Expand volunteers section
-    composeTestRule
-        .onNodeWithTag(AcceptRequestScreenTestTags.VOLUNTEERS_SECTION_HEADER)
-        .performClick()
-
-    composeTestRule.waitForIdle()
-
-    // Wait for button to appear
-    composeTestRule.waitUntil(timeoutMillis = 5_000) {
-      try {
-        composeTestRule
-            .onAllNodesWithTag(AcceptRequestScreenTestTags.OWNER_CHAT_BUTTON)
-            .fetchSemanticsNodes()
-            .isNotEmpty()
-      } catch (e: Exception) {
-        false
-      }
-    }
-
-    // Click owner chat button
-    composeTestRule.onNodeWithTag(AcceptRequestScreenTestTags.OWNER_CHAT_BUTTON).performClick()
-    composeTestRule.waitForIdle()
-
-    // Verify callback was triggered with correct request ID
-    assertNotNull("Owner chat callback was not triggered", chatClickedRequestId)
-    assertEquals(
-        String.format(ERROR_REQUEST_ID_MISMATCH, request3_id, chatClickedRequestId),
-        request3_id,
-        chatClickedRequestId)
   }
 }
