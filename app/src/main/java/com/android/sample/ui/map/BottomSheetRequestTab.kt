@@ -78,17 +78,14 @@ fun RequestDetailsTab(
       }
 
   // Description
-  Box(
-      modifier =
-          Modifier.padding(bottom = ConstantMap.SPACER_HEIGHT_LARGE)
-              .testTag(MapTestTags.REQUEST_DESCRIPTION)) {
-        Material3RichText {
-          Markdown(
-              content = request.description,
-              // Links are not interactive in bottom sheet for simplicity
-              onLinkClicked = {})
-        }
-      }
+  Box(modifier = Modifier.padding(bottom = ConstantMap.SPACER_HEIGHT_LARGE)) {
+    Material3RichText(modifier = Modifier.testTag(MapTestTags.REQUEST_DESCRIPTION)) {
+      Markdown(
+          content = request.description,
+          // Links are not interactive in bottom sheet for simplicity
+          onLinkClicked = {})
+    }
+  }
 
   // Dates Row
   RequestDatesRow(request)
