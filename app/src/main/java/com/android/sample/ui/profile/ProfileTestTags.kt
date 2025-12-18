@@ -33,6 +33,9 @@ object ProfileTestTags {
   const val PROFILE_STAT_BOTTOM_HELP_RECEIVED = "profile_stat_bottom_help_received"
   const val PROFILE_STAT_TOP_FOLLOWERS = "profile_stat_top_followers"
   const val PROFILE_STAT_BOTTOM_FOLLOWING = "profile_stat_bottom_following"
+
+  const val PROFILE_STAT_TOP_FOLLOWERS_BUTTON = "profile_stat_top_followers"
+  const val PROFILE_STAT_BOTTOM_FOLLOWING_BUTTON = "profile_stat_bottom_following"
   const val PROFILE_STAT_TOP_RANK = "profile_stat_top_rank"
 
   // Information section and individual info rows (match InfoRow generated tags)
@@ -75,4 +78,6 @@ object ProfileTestTags {
   const val SECTION_DROPDOWN = "section_dropdown" // used by SectionDropDown.testTag
   const val SECTION_OPTION_PREFIX = "section_option_" // optional per-option tag prefix
   const val EDIT_PROFILE_SECTION_DROPDOWN_ITEM_PREFIX = "edit_profile_section_dropdown_item_"
+
+  const val BUTTON_SUFFIX = "_follow_button"
 }
