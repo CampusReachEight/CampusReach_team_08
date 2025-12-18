@@ -92,7 +92,7 @@ fun MessagesScreen(
                     .padding(paddingValues)
                     .padding(horizontal = UiDimens.SpacingMd)) {
               when {
-                uiState.isLoading -> {
+                uiState.isFirstLoad -> {
                   CircularProgressIndicator(
                       modifier =
                           Modifier.align(Alignment.Center)

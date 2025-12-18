@@ -60,7 +60,7 @@ class MessagesViewModel(
       try {
         val currentUserId = firebaseAuth.currentUser?.uid
         if (currentUserId == null) {
-          _uiState.update { it.copy(isLoading = false, errorMessage = NO_AUTHENTICATED_USER_ERROR) }
+          _uiState.update { it.copy(isLoading = false, isFirstLoad = false, errorMessage = NO_AUTHENTICATED_USER_ERROR) }
           return@launch
         }
 
@@ -90,7 +90,7 @@ class MessagesViewModel(
               ChatItem(chat = chat, isCreator = chat.creatorId == currentUserId)
             }
         _uiState.update {
-          it.copy(chatItems = chatItems, isLoading = false, errorMessage = null, isOffline = false)
+          it.copy(chatItems = chatItems, isFirstLoad = false, isLoading = false, errorMessage = null, isOffline = false)
         }
       } catch (e: Exception) {
         // Check if it's a network unavailable error
@@ -99,11 +99,11 @@ class MessagesViewModel(
                 e.message?.contains(NETWORK_UNAVAILABLE, ignoreCase = true) == true
 
         if (isNetworkError) {
-          _uiState.update { it.copy(isLoading = false, isOffline = true, errorMessage = null) }
+          _uiState.update { it.copy(isLoading = false, isFirstLoad = false, isOffline = true, errorMessage = null) }
         } else {
           val friendly =
               e.message?.takeIf { it.isNotBlank() } ?: FAILED_TO_LOAD_CHATS_PLEASE_TRY_AGAIN_
-          _uiState.update { it.copy(isLoading = false, errorMessage = friendly, isOffline = false) }
+          _uiState.update { it.copy(isLoading = false, isFirstLoad = false, errorMessage = friendly, isOffline = false) }
         }
       }
     }
@@ -182,7 +182,8 @@ data class MessagesUiState(
     val chatItems: List<ChatItem> = emptyList(),
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
-    val isOffline: Boolean = false
+    val isOffline: Boolean = false,
+    val isFirstLoad: Boolean = true
 )
 
 /**
