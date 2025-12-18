@@ -1,6 +1,5 @@
 package com.android.sample.ui.authentication
 
-import android.app.Activity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -9,122 +8,40 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
-import androidx.credentials.CredentialManager
-import androidx.credentials.GetCredentialRequest
-import androidx.credentials.exceptions.GetCredentialCancellationException
-import androidx.credentials.exceptions.GetCredentialException
-import androidx.credentials.exceptions.NoCredentialException
 import com.android.sample.R
 import com.android.sample.ui.navigation.NavigationTestTags
 import com.android.sample.ui.theme.UiDimens
 import com.android.sample.ui.theme.appPalette
-import com.google.android.libraries.identity.googleid.GetGoogleIdOption
-import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
-import kotlinx.coroutines.launch
 
-/**
- * Contains test tags for UI testing of the SignInScreen.
- *
- * @author Thibaud Babin
- */
+/** Contains test tags for UI testing of the SignInScreen. */
 object SignInScreenTestTags {
-    const val APP_LOGO = "appLogo"
-    const val LOGIN_TITLE = "loginTitle"
-    const val LOGIN_BUTTON = "loginButton"
+  const val APP_LOGO = "appLogo"
+  const val LOGIN_TITLE = "loginTitle"
+  const val LOGIN_BUTTON = "loginButton"
 }
 
 /**
- * Displays the Sign-In screen with demo mode using Jetpack Compose.
+ * Displays the Demo Sign-In screen.
  *
- * This composable is responsible for:
- * - Rendering the sign-in UI.
- * - Observing loading and error states from the ViewModel.
- * - Initiating anonymous demo sign-in flow.
- *
- * The ViewModel handles authentication and backend logic.
- *
- * @param viewModel The ViewModel managing sign-in logic.
- * @param onSignInSuccess Callback invoked when sign-in succeeds.
- * @param credentialManager Injected CredentialManager instance (for testability).
- * @author Thibaud Babin
+ * Signs in anonymously as "Demo User" with full access.
  */
 @Composable
-fun SignInScreen(
-    viewModel: SignInViewModel,
-    onSignInSuccess: () -> Unit = {},
-    credentialManager: CredentialManager = CredentialManager.create(LocalContext.current)
-) {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
+fun SignInScreen(viewModel: SignInViewModel, onSignInSuccess: () -> Unit = {}) {
+  // Observe loading and error states from the ViewModel
+  val isLoading by viewModel.loading.collectAsState()
+  val errorText by viewModel.errorText.collectAsState()
 
-    // Observe loading and error states from the ViewModel
-    val isLoading by viewModel.loading.collectAsState()
-    val errorText by viewModel.errorText.collectAsState()
+  // Main UI layout
+  Column(
+      modifier =
+          Modifier.fillMaxSize()
+              .padding(UiDimens.SpacingXl)
+              .testTag(NavigationTestTags.LOGIN_SCREEN),
+      horizontalAlignment = Alignment.CenterHorizontally,
+      verticalArrangement = Arrangement.Center) {
 
-    /**
-     * Initiates the Google sign-in flow using CredentialManager. Handles exceptions and delegates
-     * authentication to the ViewModel.
-     *
-     * @author Thibaud Babin
-     */
-    fun startGoogleLogin() {
-        val clientId = context.getString(R.string.default_web_client_id)
-        viewModel.setLoading(true)
-        viewModel.clearError()
-
-        scope.launch {
-            try {
-                // Android 15+ Credential Manager Google Sign-In option
-                val signInOption = GetSignInWithGoogleOption.Builder(serverClientId = clientId).build()
-
-                val request = GetCredentialRequest.Builder().addCredentialOption(signInOption).build()
-
-                val result = credentialManager.getCredential(context as Activity, request)
-                viewModel.signInWithGoogle(result.credential, onSignInSuccess)
-            } catch (e: NoCredentialException) {
-                viewModel.setError("No Google account found")
-            } catch (e: GetCredentialException) {
-                when (e) {
-                    is GetCredentialCancellationException -> {
-                        try {
-                            // Android 14 and below Google Sign-In fallback
-                            val googleIdOption =
-                                GetGoogleIdOption.Builder()
-                                    .setServerClientId(clientId)
-                                    .setFilterByAuthorizedAccounts(false)
-                                    .build()
-
-                            val request =
-                                GetCredentialRequest.Builder().addCredentialOption(googleIdOption).build()
-                            val result = credentialManager.getCredential(context as Activity, request)
-                            val credential = result.credential
-
-                            viewModel.signInWithGoogle(credential, onSignInSuccess)
-                        } catch (e: NoCredentialException) {
-                            viewModel.setError("No Google account found")
-                        } catch (e: GetCredentialException) {
-                            viewModel.setError("Connection cancelled")
-                        }
-                    }
-                    else -> viewModel.setError("Connection error: ${e.localizedMessage}")
-                }
-            } catch (e: Exception) {
-                viewModel.setError("Unexpected error: ${e.localizedMessage}")
-            }
-        }
-    }
-
-    // Main UI layout
-    Column(
-        modifier =
-            Modifier.fillMaxSize()
-                .padding(UiDimens.SpacingXl)
-                .testTag(NavigationTestTags.LOGIN_SCREEN),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center) {
         // App logo icon
         Image(
             painter = painterResource(R.drawable.campusreach_logo),
@@ -139,13 +56,9 @@ fun SignInScreen(
                 Modifier.padding(bottom = UiDimens.SpacingLg)
                     .testTag(SignInScreenTestTags.LOGIN_TITLE))
 
-        // Demo sign-in button (replaces Google Sign-In)
+        // Demo sign-in button
         Button(
-            onClick = {
-                viewModel.setLoading(true)
-                viewModel.clearError()
-                viewModel.signInAnonymously(onSignInSuccess)
-            },
+            onClick = { viewModel.signInAnonymously(onSignInSuccess) },
             enabled = !isLoading,
             modifier =
                 Modifier.fillMaxWidth()
@@ -155,33 +68,30 @@ fun SignInScreen(
                 ButtonDefaults.buttonColors(
                     containerColor = appPalette().accent,
                     disabledContainerColor = appPalette().secondary)) {
-            if (isLoading) {
-                // Show loading indicator while signing in
+              if (isLoading) {
                 CircularProgressIndicator(
-                    modifier = Modifier.size(UiDimens.ProgressSize),
-                    color = appPalette().surface)
-            } else {
-                // Button content: Demo user icon and text
+                    modifier = Modifier.size(UiDimens.ProgressSize), color = appPalette().surface)
+              } else {
                 Row(
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.AccountCircle,
-                        contentDescription = "Demo User",
-                        modifier = Modifier.size(UiDimens.ProgressSize))
-                    Spacer(modifier = Modifier.width(UiDimens.SpacingSm))
-                    Text("Continue as Demo User")
-                }
+                      Icon(
+                          imageVector = Icons.Default.AccountCircle,
+                          contentDescription = "Demo User",
+                          modifier = Modifier.size(UiDimens.ProgressSize))
+                      Spacer(modifier = Modifier.width(UiDimens.SpacingSm))
+                      Text("Continue as Demo User")
+                    }
+              }
             }
-        }
 
         // Display error message if present
         if (errorText != null) {
-            Spacer(modifier = Modifier.height(UiDimens.SpacingMd))
-            Text(
-                text = errorText!!,
-                modifier = Modifier.padding(UiDimens.SpacingMd),
-                color = appPalette().error)
+          Spacer(modifier = Modifier.height(UiDimens.SpacingMd))
+          Text(
+              text = errorText!!,
+              modifier = Modifier.padding(UiDimens.SpacingMd),
+              color = appPalette().error)
         }
-    }
+      }
 }

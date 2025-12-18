@@ -178,13 +178,9 @@ fun NavigationScreen(
   ) {
     navigation(startDestination = Screen.Login.route, route = "login") {
       composable(Screen.Login.route) {
-        SignInScreen(
-            viewModel = signInViewModel,
-            onSignInSuccess = { isSignedIn = true },
-            credentialManager = credentialManager)
+        SignInScreen(viewModel = signInViewModel, onSignInSuccess = { isSignedIn = true })
       }
     }
-
     navigation(startDestination = Screen.Requests.route, route = "requests") {
       composable(Screen.Requests.route) {
         RequestListScreen(

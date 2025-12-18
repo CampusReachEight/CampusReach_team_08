@@ -131,8 +131,8 @@ class SignInViewModel(
   }
 
   /**
-   * Signs in anonymously with Firebase for demo/testing purposes.
-   * Creates a demo user profile with fixed data.
+   * Signs in anonymously with Firebase for demo/testing purposes. Creates a demo user profile with
+   * fixed data.
    */
   fun signInAnonymously(onSuccess: () -> Unit) {
     viewModelScope.launch {
@@ -156,9 +156,7 @@ class SignInViewModel(
     }
   }
 
-  /**
-   * Creates a demo user profile in Firestore with fixed data.
-   */
+  /** Creates a demo user profile in Firestore with fixed data. */
   private fun createDemoUserProfile() {
     viewModelScope.launch {
       try {
@@ -174,16 +172,17 @@ class SignInViewModel(
           // Profile doesn't exist, create it
         }
 
-        val demoProfile = UserProfile(
-          id = user.uid,
-          name = "Demo",
-          lastName = "User",
-          email = "demo@campusreach.com",
-          photo = null,
-          kudos = 0,
-          helpReceived = 0,
-          section = UserSections.NONE,
-          arrivalDate = java.util.Date())
+        val demoProfile =
+            UserProfile(
+                id = user.uid,
+                name = "Demo",
+                lastName = "User",
+                email = "demo@campusreach.com",
+                photo = null,
+                kudos = 0,
+                helpReceived = 0,
+                section = UserSections.NONE,
+                arrivalDate = java.util.Date())
 
         profileRepository.addUserProfile(demoProfile)
         profileCache?.deleteProfile(user.uid)

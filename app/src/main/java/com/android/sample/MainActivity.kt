@@ -21,6 +21,7 @@ import com.android.sample.ui.navigation.NavigationActions
 import com.android.sample.ui.navigation.NavigationScreen
 import com.android.sample.ui.theme.SampleAppTheme
 import com.android.sample.ui.theme.SynchronizedShimmerProvider
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestoreSettings
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
@@ -32,6 +33,9 @@ class MainActivity : ComponentActivity() {
 
     val settings = FirebaseFirestoreSettings.Builder().setPersistenceEnabled(false).build()
     Firebase.firestore.firestoreSettings = settings
+
+    // Sign out any existing user to force demo login screen
+    FirebaseAuth.getInstance().signOut()
 
     setContent {
       SampleAppTheme {
