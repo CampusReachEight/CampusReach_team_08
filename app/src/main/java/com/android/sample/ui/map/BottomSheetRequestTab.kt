@@ -296,8 +296,7 @@ fun ListOfRequest(
     AnimatedBottomSheet(viewModel, appPalette, modifier) {
       LazyColumn(
           modifier =
-              modifier
-                  .padding(ConstantRequestList.ListPadding)
+              Modifier.padding(ConstantRequestList.ListPadding)
                   .testTag(MapTestTags.MAP_LIST_REQUEST)) {
             items(list.size) { index ->
               val request = list[index]
