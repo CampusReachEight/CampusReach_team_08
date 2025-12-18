@@ -141,24 +141,17 @@ class EndToEndTests : BaseEmulatorTest() {
 
   // initialize all you want for an end to end test
   private fun initialize(name: String = firstName, email: String = firstEmail) {
-    android.util.Log.d(TAG, "=== INITIALIZE START ===")
-    android.util.Log.d(TAG, "Creating fake credentials for user: $name, email: $email")
     val fakeGoogleIdToken = FakeJwtGenerator.createFakeGoogleIdToken(name, email)
 
     val fakeCredentialManager = FakeCredentialManager.create(fakeGoogleIdToken)
 
-    android.util.Log.d(TAG, "Launching ComponentActivity")
     scenario = ActivityScenario.launch(ComponentActivity::class.java)
     scenario!!.onActivity { activity ->
-      android.util.Log.d(TAG, "Setting content with AppNavigation")
       activity.setContent { AppNavigation(credentialManager = fakeCredentialManager) }
     }
 
-    android.util.Log.d(TAG, "Waiting for idle")
     composeTestRule.waitForIdle()
-    android.util.Log.d(TAG, "Calling logIn()")
     logIn()
-    android.util.Log.d(TAG, "=== INITIALIZE END ===")
   }
 
   private fun hadARequestWithOtherAccount() {
@@ -1237,6 +1230,156 @@ class EndToEndTests : BaseEmulatorTest() {
       composeTestRule
           .onNodeWithTag(
               LeaderboardTestTags.getSortOptionTag(LeaderboardSort.KUDOS_ASC),
+              useUnmergedTree = true)
+          .assertIsDisplayed()
+          .performClick()
+    }
+  }
+
+  @Test
+  fun canLoginVisitLeaderboardSearchUserFollowUnfollowAndLogout() {
+    runBlocking {
+      // First, create another user account that will be searchable
+      val targetUserName = "TargetUser123"
+      val targetUserEmail = "targetuser123@example.com"
+      initialize(targetUserName, targetUserEmail)
+
+      // Ensure target user exists in the system
+      composeTestRule.waitForIdle()
+      delay(2000)
+
+      // Logout from target user
+      logOut()
+      composeTestRule.waitForIdle()
+
+      // Now login with the main test user
+      val testUserName = "TestUser456"
+      val testUserEmail = "testuser456@example.com"
+      initialize(testUserName, testUserEmail)
+
+      // Navigate to Leaderboard
+      composeTestRule.waitUntilAtLeastOneExists(
+          matcher = hasTestTag(NavigationTestTags.LEADERBOARD_TAB), timeoutMillis = UI_WAIT_TIMEOUT)
+      composeTestRule
+          .onNodeWithTag(NavigationTestTags.LEADERBOARD_TAB, useUnmergedTree = true)
+          .assertIsDisplayed()
+          .performClick()
+
+      composeTestRule.waitForIdle()
+      composeTestRule.waitUntilAtLeastOneExists(
+          matcher = hasTestTag(LeaderboardTestTags.LEADERBOARD_LIST),
+          timeoutMillis = UI_WAIT_TIMEOUT)
+
+      // Search for the target user
+      composeTestRule.waitUntilAtLeastOneExists(
+          matcher = hasTestTag(LeaderboardTestTags.SEARCH_BAR), timeoutMillis = UI_WAIT_TIMEOUT)
+      composeTestRule
+          .onNodeWithTag(LeaderboardTestTags.SEARCH_BAR, useUnmergedTree = true)
+          .assertIsDisplayed()
+          .performTextInput(targetUserName)
+
+      composeTestRule.waitForIdle()
+      delay(1000)
+
+      // Click on the user's profile picture to view their public profile
+      composeTestRule.waitUntilAtLeastOneExists(
+          matcher = hasTestTag(LeaderboardTestTags.CARD_PROFILE_PICTURE),
+          timeoutMillis = UI_WAIT_TIMEOUT)
+      composeTestRule
+          .onNodeWithTag(LeaderboardTestTags.CARD_PROFILE_PICTURE, useUnmergedTree = true)
+          .assertIsDisplayed()
+          .performClick()
+
+      // Wait for public profile screen to load
+      composeTestRule.waitForIdle()
+      composeTestRule.waitUntilAtLeastOneExists(
+          matcher =
+              hasTestTag(
+                  com.android.sample.ui.profile.publicProfile.PublicProfileTestTags
+                      .PUBLIC_PROFILE_SCREEN),
+          timeoutMillis = UI_WAIT_TIMEOUT)
+
+      // Follow the user
+      composeTestRule.waitUntilAtLeastOneExists(
+          matcher =
+              hasTestTag(
+                  com.android.sample.ui.profile.publicProfile.PublicProfileTestTags.FOLLOW_BUTTON),
+          timeoutMillis = UI_WAIT_TIMEOUT)
+      composeTestRule
+          .onNodeWithTag(
+              com.android.sample.ui.profile.publicProfile.PublicProfileTestTags.FOLLOW_BUTTON,
+              useUnmergedTree = true)
+          .assertIsDisplayed()
+          .performClick()
+
+      composeTestRule.waitForIdle()
+      delay(1000)
+
+      // Go back to navigate to own profile
+      Espresso.pressBack()
+
+      composeTestRule.waitForIdle()
+
+      // Navigate to own profile
+      composeTestRule.waitUntilAtLeastOneExists(
+          matcher = hasTestTag(NavigationTestTags.PROFILE_BUTTON), timeoutMillis = UI_WAIT_TIMEOUT)
+      composeTestRule
+          .onNodeWithTag(NavigationTestTags.PROFILE_BUTTON, useUnmergedTree = true)
+          .assertIsDisplayed()
+          .performClick()
+
+      // Click on "Following" stat to view following list
+      composeTestRule.waitUntilAtLeastOneExists(
+          matcher =
+              hasTestTag(
+                  ProfileTestTags.PROFILE_STAT_BOTTOM_FOLLOWING + ProfileTestTags.BUTTON_SUFFIX),
+          timeoutMillis = UI_WAIT_TIMEOUT * 10)
+      composeTestRule
+          .onNodeWithTag(
+              ProfileTestTags.PROFILE_STAT_BOTTOM_FOLLOWING + ProfileTestTags.BUTTON_SUFFIX,
+              useUnmergedTree = true)
+          .assertIsDisplayed()
+          .performClick()
+
+      // Wait for following list screen to load
+      composeTestRule.waitForIdle()
+      composeTestRule.waitUntilAtLeastOneExists(
+          matcher =
+              hasTestTag(
+                  com.android.sample.ui.profile.follow.FollowListTestTags.FOLLOW_LIST_SCREEN),
+          timeoutMillis = UI_WAIT_TIMEOUT)
+
+      // Click on the user in the following list to view their profile
+      composeTestRule.waitUntilAtLeastOneExists(
+          matcher =
+              hasTestTag(com.android.sample.ui.profile.follow.FollowListTestTags.FOLLOW_LIST_ITEM),
+          timeoutMillis = UI_WAIT_TIMEOUT)
+      composeTestRule
+          .onNodeWithTag(
+              com.android.sample.ui.profile.follow.FollowListTestTags.FOLLOW_LIST_ITEM,
+              useUnmergedTree = true)
+          .assertIsDisplayed()
+          .performClick()
+
+      // Wait for public profile screen to load
+      composeTestRule.waitForIdle()
+      composeTestRule.waitUntilAtLeastOneExists(
+          matcher =
+              hasTestTag(
+                  com.android.sample.ui.profile.publicProfile.PublicProfileTestTags
+                      .PUBLIC_PROFILE_SCREEN),
+          timeoutMillis = UI_WAIT_TIMEOUT)
+
+      // Unfollow the user
+      composeTestRule.waitUntilAtLeastOneExists(
+          matcher =
+              hasTestTag(
+                  com.android.sample.ui.profile.publicProfile.PublicProfileTestTags
+                      .UNFOLLOW_BUTTON),
+          timeoutMillis = UI_WAIT_TIMEOUT)
+      composeTestRule
+          .onNodeWithTag(
+              com.android.sample.ui.profile.publicProfile.PublicProfileTestTags.UNFOLLOW_BUTTON,
               useUnmergedTree = true)
           .assertIsDisplayed()
           .performClick()

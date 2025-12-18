@@ -382,7 +382,7 @@ private fun TitleField(
             Spacer(modifier = Modifier.width(0.dp))
           }
           Text(
-              text = "${title.length}/$ConstantRequestEdit.MAX_TITLE_LENGTH",
+              text = "${title.length}/${ConstantRequestEdit.MAX_TITLE_LENGTH}",
               style = MaterialTheme.typography.bodySmall,
               color =
                   if (title.length >= ConstantRequestEdit.MAX_TITLE_LENGTH) appPalette().error
@@ -425,7 +425,7 @@ private fun DescriptionField(
                   Spacer(modifier = Modifier.width(0.dp))
                 }
                 Text(
-                    text = "${description.length}/$ConstantRequestEdit.MAX_DESCRIPTION_LENGTH",
+                    text = "${description.length}/${ConstantRequestEdit.MAX_DESCRIPTION_LENGTH}",
                     style = MaterialTheme.typography.bodySmall,
                     color =
                         if (description.length >= ConstantRequestEdit.MAX_DESCRIPTION_LENGTH)

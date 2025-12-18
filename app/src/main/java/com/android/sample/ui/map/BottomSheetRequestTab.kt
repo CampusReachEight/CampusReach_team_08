@@ -1,6 +1,7 @@
 package com.android.sample.ui.map
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -24,6 +25,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.text
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.model.request.Request
@@ -37,6 +41,8 @@ import com.android.sample.ui.theme.AppPalette
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.CameraPositionState
+import com.halilibo.richtext.markdown.Markdown
+import com.halilibo.richtext.ui.material3.Material3RichText
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -75,13 +81,18 @@ fun RequestDetailsTab(
       }
 
   // Description
-  Text(
-      text = request.description,
-      style = MaterialTheme.typography.bodyMedium,
-      color = MaterialTheme.colorScheme.onSurfaceVariant,
-      modifier =
-          Modifier.padding(bottom = ConstantMap.SPACER_HEIGHT_LARGE)
-              .testTag(MapTestTags.REQUEST_DESCRIPTION))
+  Box(modifier = Modifier.padding(bottom = ConstantMap.SPACER_HEIGHT_LARGE)) {
+    Material3RichText(
+        modifier =
+            Modifier.testTag(MapTestTags.REQUEST_DESCRIPTION).semantics {
+              text = AnnotatedString(request.description)
+            }) {
+          Markdown(
+              content = request.description,
+              // Links are not interactive in bottom sheet for simplicity
+              onLinkClicked = {})
+        }
+  }
 
   // Dates Row
   RequestDatesRow(request)

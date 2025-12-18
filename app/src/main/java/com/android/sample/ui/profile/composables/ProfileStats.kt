@@ -57,7 +57,8 @@ fun StatGroupCard(
               // Top half (weighted) to ensure vertical symmetry across cards
               Column(
                   modifier =
-                      Modifier.weight(WEIGHT_1F)
+                      Modifier.testTag(topTag + ProfileTestTags.BUTTON_SUFFIX)
+                          .weight(WEIGHT_1F)
                           .then(
                               if (onTopClick != null) Modifier.clickable(onClick = onTopClick)
                               else Modifier),
@@ -81,7 +82,8 @@ fun StatGroupCard(
               // Bottom half (weighted) to ensure vertical symmetry across cards
               Column(
                   modifier =
-                      Modifier.weight(WEIGHT_1F)
+                      Modifier.testTag(bottomTag + ProfileTestTags.BUTTON_SUFFIX)
+                          .weight(WEIGHT_1F)
                           .then(
                               if (onBottomClick != null) Modifier.clickable(onClick = onBottomClick)
                               else Modifier),
