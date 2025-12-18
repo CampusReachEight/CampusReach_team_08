@@ -111,7 +111,7 @@ fun ChatScreen(
   }
 
   Scaffold(
-      modifier = Modifier.fillMaxSize().imePadding().testTag(NavigationTestTags.CHAT_SCREEN),
+      modifier = Modifier.fillMaxSize().testTag(NavigationTestTags.CHAT_SCREEN),
       topBar = {
         TopAppBar(
             title = {
@@ -159,7 +159,7 @@ fun ChatScreen(
 
                 // Messages List
                 LazyColumn(
-                    modifier = Modifier.fillMaxSize().padding(bottom = UiDimens.SpacingLg),
+                    modifier = Modifier.fillMaxSize(),
                     state = listState,
                     contentPadding =
                         PaddingValues(
@@ -227,7 +227,7 @@ private fun MessageInputBar(
     modifier: Modifier = Modifier
 ) {
   Surface(
-      modifier = modifier.fillMaxWidth().imePadding(),
+      modifier = modifier.fillMaxWidth().navigationBarsPadding().imePadding(),
       color = appPalette().surface,
       tonalElevation = UiDimens.CardElevation) {
         Row(

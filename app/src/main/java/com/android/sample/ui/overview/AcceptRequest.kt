@@ -68,6 +68,8 @@ import java.util.Date
 import java.util.Locale
 
 object AcceptRequestScreenTestTags {
+  const val GO_TO_CHAT_BUTTON = "goToChatButton"
+
   const val REQUEST_BUTTON = "requestButton"
   const val REQUEST_TITLE = "requestTitle"
   const val VALIDATE_REQUEST_BUTTON = "validateRequestButton"
@@ -94,6 +96,7 @@ object AcceptRequestScreenTestTags {
 object AcceptRequestScreenLabels {
   const val BACK = "Back"
   const val VALIDATE_REQUEST = "Validate Request"
+  const val GO_TO_CHAT = "Go to Chat"
 
   const val DESCRIPTION = "Description"
   const val TAGS = "Tags"
@@ -129,7 +132,8 @@ fun AcceptRequestScreen(
     onGoBack: () -> Unit = {},
     onEditClick: (String) -> Unit = {},
     onValidateClick: (String) -> Unit = {},
-    onMapClick: (String) -> Unit = {}
+    onMapClick: (String) -> Unit = {},
+    onChatClick: (String) -> Unit = {}
 ) {
   LaunchedEffect(requestId) { acceptRequestViewModel.loadRequest(requestId) }
 
@@ -153,6 +157,8 @@ fun AcceptRequestScreen(
   Scaffold(
       modifier = Modifier.testTag(NavigationTestTags.ACCEPT_REQUEST_SCREEN),
       topBar = {
+        var backClicked by remember { mutableStateOf(false) }
+
         TopAppBar(
             title = {
               Text(
@@ -161,8 +167,12 @@ fun AcceptRequestScreen(
             },
             navigationIcon = {
               IconButton(
-                  onClick = { onGoBack() },
-                  Modifier.testTag(AcceptRequestScreenTestTags.REQUEST_GO_BACK)) {
+                  onClick = {
+                    onGoBack()
+                    backClicked = true
+                  },
+                  enabled = !backClicked,
+                  modifier = Modifier.testTag(AcceptRequestScreenTestTags.REQUEST_GO_BACK)) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
                         contentDescription = AcceptRequestScreenLabels.BACK)
@@ -314,6 +324,23 @@ fun AcceptRequestScreen(
                               style = MaterialTheme.typography.labelLarge)
                         }
                       }
+                  // Go to Chat button - only shown for non-owners who have accepted
+                  if (!isOwner && requestState.accepted) {
+                    FilledTonalButton(
+                        onClick = { onChatClick(requestId) },
+                        modifier =
+                            Modifier.fillMaxWidth()
+                                .height(AcceptRequestScreenConstants.BUTTON_HEIGHT)
+                                .testTag(AcceptRequestScreenTestTags.GO_TO_CHAT_BUTTON),
+                        colors =
+                            ButtonDefaults.buttonColors(
+                                containerColor = appPalette().accent,
+                                contentColor = appPalette().onAccent)) {
+                          Text(
+                              text = AcceptRequestScreenLabels.GO_TO_CHAT,
+                              style = MaterialTheme.typography.labelLarge)
+                        }
+                  }
                   FilledTonalButton(
                       onClick = {
                         isLoading = true

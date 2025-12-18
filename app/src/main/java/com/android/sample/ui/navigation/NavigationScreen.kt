@@ -207,6 +207,9 @@ fun NavigationScreen(
               acceptRequestViewModel = acceptRequestViewModel,
               onMapClick = { requestIdForMap ->
                 navigationActions.navigateTo(Screen.Map(requestIdForMap))
+              },
+              onChatClick = { requestIdForChat ->
+                navigationActions.navigateTo(Screen.Chat(requestIdForChat))
               })
         }
       }
