@@ -25,6 +25,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.text
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.sample.model.request.Request
@@ -79,12 +82,16 @@ fun RequestDetailsTab(
 
   // Description
   Box(modifier = Modifier.padding(bottom = ConstantMap.SPACER_HEIGHT_LARGE)) {
-    Material3RichText(modifier = Modifier.testTag(MapTestTags.REQUEST_DESCRIPTION)) {
-      Markdown(
-          content = request.description,
-          // Links are not interactive in bottom sheet for simplicity
-          onLinkClicked = {})
-    }
+    Material3RichText(
+        modifier =
+            Modifier.testTag(MapTestTags.REQUEST_DESCRIPTION).semantics {
+              text = AnnotatedString(request.description)
+            }) {
+          Markdown(
+              content = request.description,
+              // Links are not interactive in bottom sheet for simplicity
+              onLinkClicked = {})
+        }
   }
 
   // Dates Row
